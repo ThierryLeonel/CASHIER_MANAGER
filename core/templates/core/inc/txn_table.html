@@ -1,0 +1,17 @@
+{% load i18n cashier %}<div class="tbl-wrap"><table class="t">
+<thead><tr><th>{% trans "Recorded at" %}</th><th>{% trans "Business date" %}</th><th>{% trans "Reference" %}</th><th>{% trans "Type" %}</th><th>{% trans "Customer" %}</th><th>{% trans "Account" %}</th><th>{% trans "Entered by" %}</th><th class="money">{% trans "Amount" %}</th></tr></thead>
+<tbody>
+{% for t in txns %}
+<tr{% if t.is_corrected %} class="corrected"{% endif %}>
+  <td>{{ t.posted_at|date:"d/m/Y H:i" }}</td>
+  <td>{{ t.business_date|date:"d/m/Y" }}</td>
+  <td class="keep"><a href="{% url 'txn_detail' t.pk %}">{{ t.reference }}</a>{% if t.is_corrected %} <span class="badge bad">{% trans "CORRECTED" %}</span>{% endif %}{% if t.type == 'REVERSAL' %} <span class="badge">↺ {{ t.reverses.reference }}</span>{% endif %}</td>
+  <td>{{ t.get_type_display }}{% if t.product %} · {{ t.product }}{% endif %}{% if t.payment_method %} · {{ t.get_payment_method_display }}{% endif %}</td>
+  <td>{% if t.counterparty %}{{ t.counterparty.business_sim|sim }} {{ t.counterparty.name }}{% endif %}{% if t.counterparty_2 %}<br><span class="muted small">{{ t.counterparty_2.business_sim|sim }} {{ t.counterparty_2.name }}</span>{% endif %}</td>
+  <td class="small">{% if t.source_account %}↑ {{ t.source_account }}{% endif %}{% if t.dest_account %}<br>↓ {{ t.dest_account }}{% endif %}</td>
+  <td class="small">{{ t.entered_by }}</td>
+  <td class="money">{% if t.type == 'REVERSAL' %}<span class="neg">−{{ t.amount|fcfa }}</span>{% else %}{{ t.amount|fcfa }}{% endif %}</td>
+</tr>
+{% empty %}<tr><td colspan="8" class="muted">{% trans "No transactions." %}</td></tr>
+{% endfor %}
+</tbody></table></div>

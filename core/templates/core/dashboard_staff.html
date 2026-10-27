@@ -1,0 +1,31 @@
+{% extends "core/base.html" %}{% load i18n cashier %}
+{% block title %}{% trans "Home" %}{% endblock %}
+{% block content %}
+<h1>{% trans "Overview — all zones" %}</h1>
+<div class="grid" style="margin:12px 0">
+  <div class="tile"><div class="label">{% trans "Customers owe the company" %}</div><div class="value">{{ owed|fcfa }}</div></div>
+  <div class="tile"><div class="label">{% trans "Supply due to customers" %}</div><div class="value">{{ due|fcfa }}</div></div>
+  <div class="tile"><div class="label">{% trans "Unresolved closing differences" %}</div><div class="value">{{ open_disc|length }}</div></div>
+</div>
+<div class="actions">
+  <a class="btn" href="{% url 'reports' %}">{% trans "Reports" %}</a>
+  <a class="btn" href="{% url 'report' 'reconciliation' %}">{% trans "Reconciliation" %}</a>
+  <a class="btn" href="{% url 'discrepancies' %}">{% trans "Differences" %}</a>
+  {% if user.is_superadmin %}<a class="btn" href="{% url 'opening_balances' %}">{% trans "Opening balances" %}</a>{% endif %}
+</div>
+<h2>{% trans "Company cash, wallets and banks (book balances)" %}</h2>
+<div class="tbl-wrap"><table class="t">
+<thead><tr><th>{% trans "Account" %}</th><th>{% trans "Type" %}</th><th>{% trans "Custodian" %}</th><th class="money">{% trans "Balance" %}</th></tr></thead>
+<tbody>{% for a, bal in accounts %}<tr><td>{{ a }}</td><td>{{ a.get_kind_display }}</td><td>{{ a.custodian|default:"" }}</td><td class="money">{{ bal|fcfa }}</td></tr>{% endfor %}</tbody>
+</table></div>
+<h2>{% trans "Open business days" %}</h2>
+<div class="tbl-wrap"><table class="t"><thead><tr><th>{% trans "Cashier" %}</th><th>{% trans "Subzone" %}</th><th>{% trans "Business date" %}</th></tr></thead>
+<tbody>{% for d in days %}<tr><td>{{ d.cashier }}</td><td>{{ d.cashier.subzone }}</td><td>{{ d.business_date|date:"d/m/Y" }}{% if d.business_date < today %} <span class="badge bad">{% trans "not closed" %}</span>{% endif %}</td></tr>{% endfor %}</tbody></table></div>
+{% if open_disc %}
+<h2>{% trans "Unresolved differences" %}</h2>
+<div class="tbl-wrap"><table class="t"><thead><tr><th>{% trans "Business date" %}</th><th>{% trans "Cashier" %}</th><th>{% trans "Account" %}</th><th class="money">{% trans "Amount" %}</th><th></th></tr></thead>
+<tbody>{% for d in open_disc %}<tr><td>{{ d.closing_line.closing.cashier_day.business_date|date:"d/m/Y" }}</td><td>{{ d.closing_line.closing.cashier_day.cashier }}</td><td>{{ d.account }}</td><td class="money {% if d.amount|negative %}neg{% endif %}">{{ d.amount|fcfa }}</td><td><a href="{% url 'discrepancy_detail' d.pk %}">{% trans "Investigate" %}</a></td></tr>{% endfor %}</tbody></table></div>
+{% endif %}
+<h2>{% trans "Latest transactions" %}</h2>
+{% include "core/inc/txn_table.html" with txns=recent %}
+{% endblock %}

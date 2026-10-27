@@ -1,0 +1,13 @@
+{% extends "core/base.html" %}{% load i18n %}
+{% block title %}{% trans "Close day" %}{% endblock %}
+{% block content %}
+<h1>{% trans "Close business day" %}{% if day %} {{ day.business_date|date:"d/m/Y" }}{% endif %}</h1>
+<p class="muted">{% blocktrans %}Count your cash and read each SIM wallet balance, then enter the ACTUAL figures. Expected balances are shown after closing (blind count). Differences stay open for investigation; they are never absorbed. After closing, all new entries belong to the next business day.{% endblocktrans %}</p>
+<div class="panel">
+<form method="post" class="entry" novalidate id="close-form">{% csrf_token %}
+  {% include "core/inc/fields.html" %}
+  <div class="field"><label><input type="checkbox" name="confirm" value="1" style="width:auto"> {% trans "I confirm these are the actual counted/read balances." %}</label></div>
+  <button type="submit" class="btn primary">{% trans "Close the day" %}</button>
+</form>
+</div>
+{% endblock %}

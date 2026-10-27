@@ -1,0 +1,11 @@
+{% extends "core/base.html" %}{% load i18n cashier %}
+{% block title %}{% trans "Opening balances" %}{% endblock %}
+{% block content %}
+<h1>{% trans "Opening balances (launch)" %}</h1>
+<p class="muted">{% trans "Each account can be initialised once, through an auditable ledger entry against opening equity. To change one later, a manager or finance manager corrects it." %}</p>
+<div class="panel"><form method="post" class="entry" novalidate>{% csrf_token %}{% include "core/inc/fields.html" %}<button class="btn primary" type="submit">{% trans "Record opening balance" %}</button></form></div>
+<h2>{% trans "Recorded" %}</h2>
+<div class="tbl-wrap"><table class="t"><thead><tr><th>{% trans "Reference" %}</th><th>{% trans "As of" %}</th><th>{% trans "Account" %}</th><th class="money">{% trans "Amount" %}</th><th>{% trans "By" %}</th></tr></thead>
+<tbody>{% for t in done %}<tr{% if t.is_corrected %} class="corrected"{% endif %}><td class="keep"><a href="{% url 'txn_detail' t.pk %}">{{ t.reference }}</a>{% if t.is_corrected %} <span class="badge bad">{% trans "CORRECTED" %}</span>{% endif %}</td><td>{{ t.business_date|date:"d/m/Y" }}</td><td>{{ t.opening_for_account|default:t.dest_account|default:t.counterparty|default:"" }}</td><td class="money">{{ t.amount|fcfa }}</td><td>{{ t.entered_by }}</td></tr>
+{% empty %}<tr><td colspan="5" class="muted">{% trans "None yet." %}</td></tr>{% endfor %}</tbody></table></div>
+{% endblock %}

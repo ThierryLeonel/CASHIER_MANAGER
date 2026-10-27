@@ -1,0 +1,24 @@
+{% extends "core/base.html" %}{% load i18n cashier %}
+{% block title %}{{ ex.reference }}{% endblock %}
+{% block content %}
+<h1>{% trans "Exchange" %} {{ ex.reference }} <span class="badge {% if ex.status == 'COMPLETE' %}ok{% else %}acc{% endif %}">{{ ex.status }}</span></h1>
+<div class="panel"><dl class="kv">
+  <dt>{% trans "Cash manager" %}</dt><dd>{{ ex.cash_manager }}</dd>
+  <dt>{% trans "Direction" %}</dt><dd>{{ ex.get_direction_display }}</dd>
+  <dt>{% trans "Agreed amount" %}</dt><dd>{{ ex.amount|fcfa }} FCFA</dd>
+  <dt>{% trans "Company has given" %}</dt><dd>{{ give|fcfa }} FCFA</dd>
+  <dt>{% trans "Company has received" %}</dt><dd>{{ recv|fcfa }} FCFA</dd>
+  <dt>{% trans "Recorded by" %}</dt><dd>{{ ex.created_by }} · {{ ex.created_at|date:"d/m/Y H:i" }}</dd>
+  {% if ex.note %}<dt>{% trans "Note" %}</dt><dd>{{ ex.note }}</dd>{% endif %}
+</dl></div>
+{% if form and ex.status != 'COMPLETE' %}
+<h2>{% trans "Record a completed side" %}</h2>
+<div class="panel"><form method="post" class="entry" novalidate>{% csrf_token %}
+  {% include "core/inc/fields.html" %}
+  <p class="small muted">{% trans "Company gives" %}: {{ give_kind }} · {% trans "Company receives" %}: {{ receive_kind }}</p>
+  <button class="btn primary" type="submit">{% trans "Record" %}</button>
+</form></div>
+{% endif %}
+<h2>{% trans "Legs" %}</h2>
+{% include "core/inc/txn_table.html" with txns=legs %}
+{% endblock %}

@@ -1,0 +1,10 @@
+{% extends "core/base.html" %}{% load i18n %}
+{% block title %}{% trans "Conversion rate" %}{% endblock %}
+{% block content %}
+<h1>{% trans "UVE → ER conversion rate" %}</h1>
+<p class="muted">{% if current %}{% blocktrans with p=current.percent %}Current uplift: +{{ p }}%. 100,000 UVE gives 100,000 × (1 + rate) ER, rounded half-up to whole FCFA.{% endblocktrans %}{% endif %} {% trans "A change applies to future conversions only; each conversion stores the rate it used." %}</p>
+<div class="panel"><form method="post" class="entry" novalidate>{% csrf_token %}{% include "core/inc/fields.html" %}<button class="btn primary" type="submit">{% trans "Set new rate" %}</button></form></div>
+<h2>{% trans "History" %}</h2>
+<div class="tbl-wrap"><table class="t"><thead><tr><th>{% trans "Effective from" %}</th><th>{% trans "Uplift" %}</th><th>{% trans "Set by" %}</th><th>{% trans "Note" %}</th></tr></thead>
+<tbody>{% for r in rates %}<tr><td>{{ r.effective_from|date:"d/m/Y H:i" }}</td><td>+{{ r.percent }}%</td><td>{{ r.created_by }}</td><td>{{ r.note }}</td></tr>{% endfor %}</tbody></table></div>
+{% endblock %}

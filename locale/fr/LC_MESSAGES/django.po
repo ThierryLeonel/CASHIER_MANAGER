@@ -1,0 +1,1944 @@
+#
+msgid ""
+msgstr ""
+"Language: fr\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#, python-format
+msgid ""
+"%(acct)s already has an opening balance (%(ref)s). Use a correction to "
+"change it."
+msgstr ""
+"%(acct)s a déjà un solde d'ouverture (%(ref)s). Utilisez une correction pour"
+" le modifier."
+
+#, python-format
+msgid "%(cp)s is inactive."
+msgstr "%(cp)s est inactif."
+
+#, python-format
+msgid "%(cp)s is not a %(kind)s."
+msgstr "%(cp)s n'est pas : %(kind)s."
+
+#, python-format
+msgid "%(cp)s registered."
+msgstr "%(cp)s enregistré."
+
+#, python-format
+msgid "%(label)s is required."
+msgstr "%(label)s est obligatoire."
+
+#, python-format
+msgid ""
+"%(party)s currently owes %(owed)s FCFA, less than the %(amt)s FCFA of "
+"%(ref)s. Part of it is already settled, so the full supply cannot be "
+"transferred without moving settled debt. A manager must decide how to handle"
+" this case."
+msgstr ""
+"%(party)s doit actuellement %(owed)s FCFA, moins que les %(amt)s FCFA de "
+"%(ref)s. Une partie est déjà réglée : l'approvisionnement complet ne peut "
+"pas être transféré sans déplacer une dette réglée. Un responsable doit "
+"décider comment traiter ce cas."
+
+#, python-format
+msgid "%(ref)s has already been corrected."
+msgstr "%(ref)s a déjà été corrigée."
+
+#, python-format
+msgid "%(ref)s marked CORRECTED."
+msgstr "%(ref)s marquée CORRIGÉE."
+
+#, python-format
+msgid "%(type)s %(ref)s recorded: %(amt)s FCFA."
+msgstr "%(type)s %(ref)s enregistré(e) : %(amt)s FCFA."
+
+msgid ""
+"(you already closed today; new entries belong to the next business day)"
+msgstr ""
+"(vous avez déjà clôturé aujourd'hui ; les nouvelles saisies appartiennent à "
+"la journée suivante)"
+
+msgid "..."
+msgstr "..."
+
+msgid ""
+"1:1 exchanges of cash and UVE, no fees. Never sales, revenue or expenses."
+msgstr ""
+"Échanges 1:1 d'espèces et d'UVE, sans frais. Jamais des ventes, recettes ou "
+"dépenses."
+
+msgid "A cashier must belong to a subzone."
+msgstr "Un caissier doit appartenir à une sous-zone."
+
+msgid ""
+"A change applies to future conversions only; each conversion stores the rate"
+" it used."
+msgstr ""
+"Un changement ne s'applique qu'aux conversions futures ; chaque conversion "
+"conserve le taux utilisé."
+
+msgid "A company drawer/wallet/bank cannot open negative."
+msgstr ""
+"Une caisse, un portefeuille ou une banque de l'entreprise ne peut pas ouvrir"
+" en négatif."
+
+msgid ""
+"A completed move of cash or electronic value between company accounts. No "
+"customer is affected."
+msgstr ""
+"Un mouvement effectué d'espèces ou de valeur électronique entre comptes de "
+"l'entreprise. Aucun client n'est concerné."
+
+msgid "A correction reason is required."
+msgstr "Le motif de la correction est obligatoire."
+
+msgid ""
+"A different responsible party is only allowed when a POS receives the supply"
+" and it is explicitly assigned to a commercial agent."
+msgstr ""
+"Un autre responsable n'est permis que si un PDV reçoit l'approvisionnement "
+"et qu'il est explicitement attribué à un agent commercial."
+
+msgid "A responsibility transfer can only be cancelled, then recorded again."
+msgstr ""
+"Un transfert de responsabilité peut seulement être annulé, puis ressaisi."
+
+msgid "A subzone's parent must be a master zone."
+msgstr "Le parent d'une sous-zone doit être une zone principale."
+
+msgid "A4 receipt / print"
+msgstr "Reçu A4 / imprimer"
+
+msgid "Account"
+msgstr "Compte"
+
+#, python-format
+msgid "Account %(acct)s is inactive."
+msgstr "Le compte %(acct)s est inactif."
+
+msgid "Actual"
+msgstr "Réel"
+
+msgid "Actual balances cannot be negative."
+msgstr "Les soldes réels ne peuvent pas être négatifs."
+
+msgid "Actual counted/read"
+msgstr "Réel compté/lu"
+
+msgid "Add note"
+msgstr "Ajouter une note"
+
+msgid "Agent (owes)"
+msgstr "Agent (redevable)"
+
+msgid "Agent who received the UVE and owes (business SIM)"
+msgstr "Agent qui a reçu l'UVE et doit (SIM business)"
+
+msgid "Agents & POS"
+msgstr "Agents & PDV"
+
+msgid "Agreed"
+msgstr "Convenu"
+
+msgid "Agreed amount"
+msgstr "Montant convenu"
+
+msgid "Agreed amount (FCFA, 1:1)"
+msgstr "Montant convenu (FCFA, 1:1)"
+
+msgid "All"
+msgstr "Tout"
+
+msgid "All dates"
+msgstr "Toutes les dates"
+
+msgid "Amount"
+msgstr "Montant"
+
+msgid "Amount (FCFA)"
+msgstr "Montant (FCFA)"
+
+msgid "Amount must be greater than zero."
+msgstr "Le montant doit être supérieur à zéro."
+
+msgid "Amount received (FCFA)"
+msgstr "Montant reçu (FCFA)"
+
+msgid "Amount too large"
+msgstr "Montant trop élevé"
+
+msgid "Amounts must be whole FCFA"
+msgstr "Les montants doivent être en FCFA entiers"
+
+msgid ""
+"An adjustment posts a reconciliation entry so the book matches the count "
+"(shortage written off / surplus recognised). It is linked here and visible "
+"in reports."
+msgstr ""
+"Un ajustement passe une écriture de rapprochement pour que le solde "
+"comptable corresponde au comptage (manquant passé en perte / excédent "
+"constaté). Il est lié ici et visible dans les rapports."
+
+msgid "An agent login must be linked to an agent account."
+msgstr "Un accès agent doit être lié à un compte agent."
+
+msgid ""
+"An agreement moves no money. Company balances change only when you record "
+"each completed side."
+msgstr ""
+"Un accord ne déplace aucun argent. Les soldes de l'entreprise ne changent "
+"que lorsque vous enregistrez chaque volet effectué."
+
+msgid "Apply"
+msgstr "Appliquer"
+
+msgid "As of"
+msgstr "Au"
+
+msgid "Asset rows reconcile"
+msgstr "Les lignes d'actifs concordent"
+
+msgid "Assign the cashier to a subzone, not to a master zone with subzones."
+msgstr ""
+"Affectez le caissier à une sous-zone, pas à une zone principale qui a des "
+"sous-zones."
+
+msgid "Back"
+msgstr "Retour"
+
+msgid "Balance"
+msgstr "Solde"
+
+msgid "Balance as of (go-live date)"
+msgstr "Solde au (date de démarrage)"
+
+msgid "Balances"
+msgstr "Soldes"
+
+msgid "Bank account"
+msgstr "Compte bancaire"
+
+msgid "Bank deposit"
+msgstr "Versement bancaire"
+
+msgid "Bank deposit reference"
+msgstr "Référence du versement bancaire"
+
+#, python-format
+msgid "Bank reference %(ref)s is already recorded for this bank account."
+msgstr ""
+"La référence bancaire %(ref)s est déjà enregistrée pour ce compte bancaire."
+
+msgid "Business SIM"
+msgstr "SIM business"
+
+#, python-format
+msgid "Business SIM %(sim)s is already registered to %(cp)s."
+msgstr "La SIM business %(sim)s est déjà attribuée à %(cp)s."
+
+msgid "Business SIM number"
+msgstr "Numéro de SIM business"
+
+msgid "Business date"
+msgstr "Date comptable"
+
+#, python-format
+msgid "Business dates %(a)s → %(b)s"
+msgstr "Dates comptables %(a)s → %(b)s"
+
+msgid "Business day"
+msgstr "Journée"
+
+#, python-format
+msgid ""
+"Business day %(d)s closed. New entries now belong to the next business day."
+msgstr ""
+"Journée du %(d)s clôturée. Les nouvelles saisies appartiennent désormais à "
+"la journée suivante."
+
+msgid "By"
+msgstr "Par"
+
+msgid "CANCELLED"
+msgstr "ANNULÉ"
+
+msgid "CORRECTED"
+msgstr "CORRIGÉ"
+
+#, python-format
+msgid "CORRECTED: %(reason)s"
+msgstr "CORRIGÉ : %(reason)s"
+
+msgid "Cancel"
+msgstr "Annuler"
+
+msgid "Cancel (reverse only)"
+msgstr "Annuler (contre-passation seule)"
+
+#, python-format
+msgid "Cancel the responsibility transfer of %(ref)s before correcting it."
+msgstr ""
+"Annulez le transfert de responsabilité de %(ref)s avant de la corriger."
+
+msgid "Carried unresolved"
+msgstr "Reporté non résolu"
+
+msgid "Cash"
+msgstr "Espèces"
+
+msgid "Cash drawer"
+msgstr "Caisse"
+
+msgid "Cash drawer, SIM wallet and bank movements"
+msgstr "Mouvements des caisses, portefeuilles SIM et banques"
+
+msgid "Cash given to POS"
+msgstr "Espèces remises au PDV"
+
+msgid "Cash manager"
+msgstr "Gestionnaire de cash"
+
+msgid "Cash manager / bank"
+msgstr "Gestionnaire de cash / banque"
+
+msgid "Cash manager position"
+msgstr "Position gestionnaire de cash"
+
+msgid "Cash manager: company gives"
+msgstr "Gestionnaire de cash : l'entreprise donne"
+
+msgid "Cash manager: company receives"
+msgstr "Gestionnaire de cash : l'entreprise reçoit"
+
+msgid "Cash managers"
+msgstr "Gestionnaires de cash"
+
+msgid "Cash managers / banks"
+msgstr "Gestionnaires de cash / banques"
+
+msgid "Cash managers net position (end of period, + = they owe)"
+msgstr ""
+"Position nette des gestionnaires de cash (fin de période, + = ils doivent)"
+
+msgid "Cash paid out of your drawer. Expenses never reduce an agent's debt."
+msgstr ""
+"Espèces sorties de votre caisse. Les dépenses ne réduisent jamais la dette "
+"d'un agent."
+
+msgid "Cash-manager exchange"
+msgstr "Échange gestionnaire de cash"
+
+msgid "Cash-manager exchanges"
+msgstr "Échanges gestionnaires de cash"
+
+msgid "Cash-manager exchanges and positions"
+msgstr "Échanges et positions des gestionnaires de cash"
+
+msgid "Cashier"
+msgstr "Caissier"
+
+msgid "Cashier Manager"
+msgstr "Gestion de caisse"
+
+msgid "Cashier desk"
+msgstr "Poste caissier"
+
+msgid "Cashier signature"
+msgstr "Signature du caissier"
+
+msgid "Category"
+msgstr "Catégorie"
+
+msgid "Changed by"
+msgstr "Modifié par"
+
+msgid "Changes"
+msgstr "Modifications"
+
+msgid "Check"
+msgstr "Contrôle"
+
+msgid "Choose UVE, ER or cash."
+msgstr "Choisissez UVE, ER ou espèces."
+
+msgid "Choose a UVE wallet to convert from."
+msgstr "Choisissez le portefeuille UVE à convertir."
+
+msgid "Choose a payment method."
+msgstr "Choisissez un mode de paiement."
+
+msgid "Choose a resolution."
+msgstr "Choisissez une résolution."
+
+msgid "Choose an active expense category."
+msgstr "Choisissez une catégorie de dépense active."
+
+msgid "Choose the correction type."
+msgstr "Choisissez le type de correction."
+
+msgid "Choose the exchange direction."
+msgstr "Choisissez le sens de l'échange."
+
+msgid "Choose which side of the exchange happened."
+msgstr "Choisissez le volet de l'échange qui a eu lieu."
+
+msgid "Close business day"
+msgstr "Clôturer la journée"
+
+msgid "Close day"
+msgstr "Clôture"
+
+msgid "Close the day"
+msgstr "Clôturer la journée"
+
+msgid "Closed"
+msgstr "Clôturée"
+
+msgid "Closed at"
+msgstr "Clôturée le"
+
+msgid "Closed by"
+msgstr "Clôturée par"
+
+msgid "Closing"
+msgstr "Clôture"
+
+msgid "Closing balance"
+msgstr "Solde de clôture"
+
+msgid "Closing balance (end of period)"
+msgstr "Solde de clôture (fin de période)"
+
+msgid "Closing differences"
+msgstr "Écarts de clôture"
+
+msgid "Closing lines (book balance carries forward)"
+msgstr "Lignes de clôture (le solde comptable est reporté)"
+
+msgid "Closings"
+msgstr "Clôtures"
+
+msgid "Collect a payment"
+msgstr "Encaisser un paiement"
+
+msgid "Collection (payment)"
+msgstr "Encaissement (paiement)"
+
+msgid "Collections"
+msgstr "Encaissements"
+
+msgid "Collections by payment method"
+msgstr "Encaissements par mode de paiement"
+
+msgid "Commercial agent"
+msgstr "Agent commercial"
+
+msgid "Commercial agents and POS"
+msgstr "Agents commerciaux et PDV"
+
+msgid "Company account"
+msgstr "Compte de l'entreprise"
+
+msgid "Company account sending"
+msgstr "Compte de l'entreprise émetteur"
+
+msgid "Company assets: opening + period movements = closing"
+msgstr ""
+"Actifs de l'entreprise : ouverture + mouvements de la période = clôture"
+
+msgid "Company cash, wallets and banks (book balances)"
+msgstr "Espèces, portefeuilles et banques de l'entreprise (soldes comptables)"
+
+msgid "Company gave"
+msgstr "L'entreprise a donné"
+
+msgid "Company gave its side"
+msgstr "L'entreprise a donné sa part"
+
+msgid "Company gives"
+msgstr "L'entreprise donne"
+
+msgid "Company gives UVE, receives cash"
+msgstr "L'entreprise donne de l'UVE, reçoit des espèces"
+
+msgid "Company gives cash, receives UVE"
+msgstr "L'entreprise donne des espèces, reçoit de l'UVE"
+
+msgid "Company has given"
+msgstr "L'entreprise a donné"
+
+msgid "Company has received"
+msgstr "L'entreprise a reçu"
+
+msgid "Company owes"
+msgstr "L'entreprise doit"
+
+msgid "Company received"
+msgstr "L'entreprise a reçu"
+
+msgid "Company received its side"
+msgstr "L'entreprise a reçu sa part"
+
+msgid "Company receives"
+msgstr "L'entreprise reçoit"
+
+msgid "Completed legs"
+msgstr "Volets effectués"
+
+msgid "Configuration"
+msgstr "Configuration"
+
+msgid "Conversion rate"
+msgstr "Taux de conversion"
+
+msgid "Conversion uplift"
+msgstr "Bonus de conversion"
+
+msgid "Conversion uplift in period"
+msgstr "Bonus de conversion de la période"
+
+msgid "Conversions"
+msgstr "Conversions"
+
+msgid "Conversions and rates"
+msgstr "Conversions et taux"
+
+msgid "Convert UVE to ER"
+msgstr "Convertir l'UVE en ER"
+
+msgid "Correct"
+msgstr "Corriger"
+
+msgid "Corrected"
+msgstr "Corrigé"
+
+msgid "Corrected amount (FCFA)"
+msgstr "Montant corrigé (FCFA)"
+
+msgid "Corrected at"
+msgstr "Corrigé le"
+
+msgid "Corrected by"
+msgstr "Corrigé par"
+
+msgid "Corrected company account"
+msgstr "Compte de l'entreprise corrigé"
+
+msgid "Corrected customer (business SIM)"
+msgstr "Client corrigé (SIM business)"
+
+msgid "Corrected note/description"
+msgstr "Note/description corrigée"
+
+msgid "Correction"
+msgstr "Correction"
+
+msgid "Correction reversal"
+msgstr "Contre-passation de correction"
+
+msgid "Correction reversals"
+msgstr "Contre-passations"
+
+msgid "Correction: reference of the corrected transaction"
+msgstr "Correction : référence de la transaction corrigée"
+
+msgid "Corrections"
+msgstr "Corrections"
+
+msgid "Corrections / opening"
+msgstr "Corrections / ouverture"
+
+msgid "Corrections and responsibility transfers"
+msgstr "Corrections et transferts de responsabilité"
+
+msgid "Corrections posted later for this day"
+msgstr "Corrections passées ultérieurement pour cette journée"
+
+msgid "Count"
+msgstr "Nombre"
+
+msgid ""
+"Count your cash and read each SIM wallet balance, then enter the ACTUAL "
+"figures. Expected balances are shown after closing (blind count). "
+"Differences stay open for investigation; they are never absorbed. After "
+"closing, all new entries belong to the next business day."
+msgstr ""
+"Comptez vos espèces et relevez le solde de chaque portefeuille SIM, puis "
+"saisissez les montants RÉELS. Les soldes attendus sont affichés après la "
+"clôture (comptage à l'aveugle). Les écarts restent ouverts pour enquête ; "
+"ils ne sont jamais absorbés. Après la clôture, toutes les nouvelles saisies "
+"appartiennent à la journée suivante."
+
+msgid "Counting/reading error – no posting"
+msgstr "Erreur de comptage/lecture – aucune écriture"
+
+msgid "Credit (−)"
+msgstr "Crédit (−)"
+
+msgid "Current"
+msgstr "Actuel"
+
+msgid "Current balance"
+msgstr "Solde actuel"
+
+msgid "Current balance (now)"
+msgstr "Solde actuel (maintenant)"
+
+#, python-format
+msgid ""
+"Current uplift: +%(p)s%%. 100,000 UVE gives 100,000 × (1 + rate) ER, rounded"
+" half-up to whole FCFA."
+msgstr ""
+"Bonus actuel : +%(p)s %%. 100 000 UVE donnent 100 000 × (1 + taux) ER, "
+"arrondi au FCFA entier le plus proche (0,5 vers le haut)."
+
+#, python-format
+msgid ""
+"Current uplift: +%(pct)s%% (rate stored on each conversion; ER rounded half-"
+"up to whole FCFA)."
+msgstr ""
+"Bonus actuel : +%(pct)s %% (taux conservé sur chaque conversion ; ER arrondi"
+" au FCFA entier, 0,5 vers le haut)."
+
+msgid "Currently responsible"
+msgstr "Responsable actuel"
+
+msgid "Custodian"
+msgstr "Détenteur"
+
+msgid "Custom dates"
+msgstr "Dates personnalisées"
+
+msgid "Customer"
+msgstr "Client"
+
+msgid "Customer account"
+msgstr "Compte client"
+
+msgid "Customer account statement"
+msgstr "Relevé de compte client"
+
+msgid "Customer balance after this transaction"
+msgstr "Solde du client après cette transaction"
+
+msgid "Customer balances"
+msgstr "Soldes clients"
+
+msgid "Customer balances (agents and POS)"
+msgstr "Soldes clients (agents et PDV)"
+
+msgid "Customer business SIM"
+msgstr "SIM business du client"
+
+msgid "Customer signature"
+msgstr "Signature du client"
+
+msgid ""
+"Customers / cash managers: positive = owes the company, negative = the "
+"company owes them (supply due). Drawers, wallets and banks: positive only."
+msgstr ""
+"Clients / gestionnaires de cash : positif = doit à l'entreprise, négatif = "
+"l'entreprise leur doit (approvisionnement dû). Caisses, portefeuilles et "
+"banques : positif uniquement."
+
+msgid "Customers owe the company"
+msgstr "Les clients doivent à l'entreprise"
+
+msgid "Customers owe the company (end of period)"
+msgstr "Les clients doivent à l'entreprise (fin de période)"
+
+msgid "Customers with supply due (as of end of period)"
+msgstr "Clients avec approvisionnement dû (fin de période)"
+
+msgid "Daily"
+msgstr "Journalier"
+
+msgid "Daily closings and differences"
+msgstr "Clôtures journalières et écarts"
+
+msgid "Daily closings and unresolved differences"
+msgstr "Clôtures journalières et écarts non résolus"
+
+msgid "Debit (+)"
+msgstr "Débit (+)"
+
+msgid "Describe the expense."
+msgstr "Décrivez la dépense."
+
+msgid "Description"
+msgstr "Description"
+
+msgid "Destockage"
+msgstr "Déstockage"
+
+msgid "Destockage is paid from a cash drawer."
+msgstr "Le déstockage est payé depuis une caisse."
+
+msgid ""
+"Destockage operations (cash out of drawer → agent debt; company UVE "
+"unchanged)"
+msgstr ""
+"Opérations de déstockage (espèces sorties de caisse → dette de l'agent ; UVE"
+" de l'entreprise inchangée)"
+
+msgid "Detail"
+msgstr "Détail"
+
+msgid "Details"
+msgstr "Détails"
+
+msgid "Difference"
+msgstr "Écart"
+
+msgid "Differences"
+msgstr "Écarts"
+
+msgid "Direction"
+msgstr "Sens"
+
+msgid "Discrepancy resolved."
+msgstr "Écart résolu."
+
+msgid "Download PDF"
+msgstr "Télécharger le PDF"
+
+msgid "Drawer and SIM wallet movements"
+msgstr "Mouvements des caisses et portefeuilles SIM"
+
+msgid "ER can only be transferred between SIMs of the same master zone."
+msgstr "L'ER ne peut être transféré qu'entre SIM d'une même zone principale."
+
+msgid "ER received"
+msgstr "ER reçu"
+
+#, python-format
+msgid ""
+"ER supplies must be sent from the master SIM of your master zone (%(zone)s)."
+msgstr ""
+"Les approvisionnements ER doivent partir de la SIM maître de votre zone "
+"principale (%(zone)s)."
+
+msgid "ER wallet"
+msgstr "Portefeuille ER"
+
+msgid ""
+"Each account can be initialised once, through an auditable ledger entry "
+"against opening equity. To change one later, a manager or finance manager "
+"corrects it."
+msgstr ""
+"Chaque compte ne peut être initialisé qu'une fois, par une écriture "
+"auditable contre les capitaux d'ouverture. Pour le modifier ensuite, un "
+"responsable ou un responsable financier le corrige."
+
+msgid "Edit"
+msgstr "Modifier"
+
+msgid "Effective from"
+msgstr "En vigueur depuis"
+
+msgid ""
+"Enter a 9-digit Cameroon mobile number starting with 6 (e.g. 699 12 34 56)"
+msgstr ""
+"Saisissez un numéro mobile camerounais à 9 chiffres commençant par 6 (ex. "
+"699 12 34 56)"
+
+#, python-format
+msgid "Enter the actual balance for %(acct)s."
+msgstr "Saisissez le solde réel de %(acct)s."
+
+msgid "Enter the bank deposit reference."
+msgstr "Saisissez la référence du versement bancaire."
+
+msgid "Enter the uplift as a percentage, e.g. 4 or 4.5."
+msgstr "Saisissez le bonus en pourcentage, ex. 4 ou 4,5."
+
+msgid "Entered by"
+msgstr "Saisi par"
+
+msgid ""
+"Every report has filters and Excel/PDF downloads that use exactly the same "
+"filters and permissions as the screen."
+msgstr ""
+"Chaque rapport a des filtres et des téléchargements Excel/PDF qui utilisent "
+"exactement les mêmes filtres et droits que l'écran."
+
+msgid ""
+"Every transaction is balanced (debits = credits). Customer account: debit = "
+"owes more; credit = paid / owes less."
+msgstr ""
+"Chaque transaction est équilibrée (débits = crédits). Compte client : débit "
+"= doit plus ; crédit = a payé / doit moins."
+
+msgid "Exceptional direct POS transactions and outstanding amounts"
+msgstr "Transactions directes exceptionnelles avec les PDV et montants dus"
+
+msgid "Exchange"
+msgstr "Échange"
+
+#, python-format
+msgid ""
+"Exchange agreement %(ref)s recorded. Record each side when it actually "
+"happens."
+msgstr ""
+"Accord d'échange %(ref)s enregistré. Enregistrez chaque volet lorsqu'il a "
+"réellement lieu."
+
+msgid "Exchange agreements (no money moves until a leg is recorded)"
+msgstr ""
+"Accords d'échange (aucun argent ne bouge avant qu'un volet soit enregistré)"
+
+msgid "Exchanges"
+msgstr "Échanges"
+
+msgid "Expected"
+msgstr "Attendu"
+
+msgid "Expected (book)"
+msgstr "Attendu (comptable)"
+
+msgid "Expense"
+msgstr "Dépense"
+
+msgid "Expenses"
+msgstr "Dépenses"
+
+msgid "Expenses are paid from a cash drawer."
+msgstr "Les dépenses sont payées depuis une caisse."
+
+msgid "Expenses by category"
+msgstr "Dépenses par catégorie"
+
+msgid "Expenses in period"
+msgstr "Dépenses de la période"
+
+msgid "Explain the resolution."
+msgstr "Expliquez la résolution."
+
+msgid "Explained by a transaction correction"
+msgstr "Expliqué par la correction d'une transaction"
+
+msgid "Finance manager"
+msgstr "Responsable financier"
+
+msgid "Floating-point money values are not allowed"
+msgstr "Les montants en virgule flottante ne sont pas autorisés"
+
+msgid ""
+"For a replacement, fill only the values that change; the others are copied "
+"from the original and re-validated."
+msgstr ""
+"Pour un remplacement, ne remplissez que les valeurs qui changent ; les "
+"autres sont reprises de l'original et revalidées."
+
+msgid "From"
+msgstr "De"
+
+msgid "From (business date)"
+msgstr "Du (date comptable)"
+
+msgid "From (your account)"
+msgstr "De (votre compte)"
+
+msgid "Full statement"
+msgstr "Relevé complet"
+
+msgid "Generated"
+msgstr "Généré le"
+
+msgid "Give the reason for the responsibility change."
+msgstr "Indiquez le motif du changement de responsabilité."
+
+msgid "History"
+msgstr "Historique"
+
+msgid "Home"
+msgstr "Accueil"
+
+msgid "I confirm these are the actual counted/read balances."
+msgstr "Je confirme qu'il s'agit des soldes réellement comptés/relevés."
+
+msgid ""
+"Identified by business SIM number. Balances are shared across all cashiers."
+msgstr ""
+"Identifiés par le numéro de SIM business. Les soldes sont communs à tous les"
+" caissiers."
+
+msgid "In"
+msgstr "Entrées"
+
+#, python-format
+msgid "Incompatible asset types: %(a)s cannot be transferred to %(b)s."
+msgstr ""
+"Types d'actifs incompatibles : %(a)s ne peut pas être transféré vers %(b)s."
+
+#, python-format
+msgid ""
+"Insufficient balance in %(acct)s: available %(avail)s FCFA, required %(req)s"
+" FCFA."
+msgstr ""
+"Solde insuffisant sur %(acct)s : disponible %(avail)s FCFA, requis %(req)s "
+"FCFA."
+
+msgid "Internal transfer"
+msgstr "Transfert interne"
+
+msgid "Internal transfers"
+msgstr "Transferts internes"
+
+msgid "Invalid amount"
+msgstr "Montant invalide"
+
+msgid "Invalid username or password."
+msgstr "Identifiant ou mot de passe incorrect."
+
+msgid "Investigate"
+msgstr "Enquêter"
+
+msgid "Investigation note"
+msgstr "Note d'enquête"
+
+msgid "Investigation notes"
+msgstr "Notes d'enquête"
+
+msgid "Latest movements"
+msgstr "Derniers mouvements"
+
+msgid "Latest transactions"
+msgstr "Dernières transactions"
+
+msgid "Launch opening"
+msgstr "Ouverture au démarrage"
+
+msgid "Ledger balanced in period (debits = credits)"
+msgstr "Grand livre équilibré sur la période (débits = crédits)"
+
+msgid "Ledger entries"
+msgstr "Écritures comptables"
+
+msgid "Legs"
+msgstr "Volets"
+
+msgid "Linked adjustment"
+msgstr "Ajustement lié"
+
+msgid "Linked correction"
+msgstr "Correction liée"
+
+msgid "Log out"
+msgstr "Déconnexion"
+
+msgid "MISMATCH"
+msgstr "ÉCART"
+
+msgid "MTN float"
+msgstr "Float MTN"
+
+msgid "MTN float SIM"
+msgstr "SIM float MTN"
+
+msgid "MTN float wallet"
+msgstr "Portefeuille float MTN"
+
+msgid "Manager"
+msgstr "Responsable"
+
+msgid "Master zone"
+msgstr "Zone principale"
+
+msgid "Method"
+msgstr "Mode"
+
+msgid "Monthly"
+msgstr "Mensuel"
+
+msgid "Movements"
+msgstr "Mouvements"
+
+msgid ""
+"Movements (positive = owed to company, negative balance = supply due to "
+"customer)"
+msgstr ""
+"Mouvements (positif = dû à l'entreprise, solde négatif = approvisionnement "
+"dû au client)"
+
+msgid "My account"
+msgstr "Mon compte"
+
+msgid "My statement"
+msgstr "Mon relevé"
+
+msgid "NO"
+msgstr "NON"
+
+msgid "Name"
+msgstr "Nom"
+
+msgid "Net amount"
+msgstr "Montant net"
+
+msgid "New cash-manager exchange"
+msgstr "Nouvel échange avec un gestionnaire de cash"
+
+msgid "New difference"
+msgstr "Nouvel écart"
+
+msgid "New exchange"
+msgstr "Nouvel échange"
+
+msgid "New responsible party"
+msgstr "Nouveau responsable"
+
+msgid "New responsible party (business SIM)"
+msgstr "Nouveau responsable (SIM business)"
+
+msgid "New supply"
+msgstr "Nouvel approvisionnement"
+
+#, python-format
+msgid "New uplift +%(p)s%% applies to future conversions only."
+msgstr ""
+"Le nouveau bonus +%(p)s %% s'applique uniquement aux conversions futures."
+
+msgid "No UVE→ER conversion rate is configured. Ask the super administrator."
+msgstr ""
+"Aucun taux de conversion UVE→ER n'est configuré. Contactez le super "
+"administrateur."
+
+#, python-format
+msgid ""
+"No agent or POS is registered with business SIM %(sim)s. Register it first."
+msgstr ""
+"Aucun agent ni PDV n'est enregistré avec la SIM business %(sim)s. "
+"Enregistrez-le d'abord."
+
+msgid "No closings yet."
+msgstr "Aucune clôture pour l'instant."
+
+#, python-format
+msgid "No correction found for %(ref)s."
+msgstr "Aucune correction trouvée pour %(ref)s."
+
+msgid "No data for these filters."
+msgstr "Aucune donnée pour ces filtres."
+
+msgid "No exchanges yet."
+msgstr "Aucun échange pour l'instant."
+
+msgid "No notes yet."
+msgstr "Aucune note pour l'instant."
+
+msgid "No transactions."
+msgstr "Aucune transaction."
+
+msgid "No value was changed. Use 'Cancel' to reverse without replacement."
+msgstr ""
+"Aucune valeur n'a été modifiée. Utilisez « Annuler » pour contre-passer sans"
+" remplacement."
+
+msgid "None yet."
+msgstr "Aucun pour l'instant."
+
+msgid "Note"
+msgstr "Note"
+
+msgid "Note added."
+msgstr "Note ajoutée."
+
+msgid "Notes"
+msgstr "Notes"
+
+msgid "Nothing found."
+msgstr "Aucun résultat."
+
+msgid "Nothing here."
+msgstr "Rien ici."
+
+msgid ""
+"Nothing is overwritten or deleted. The original stays on record with a "
+"CORRECTED stamp; a reversal (and, if you choose, a replacement with the "
+"corrected values) is posted on the cashier's current open business day. "
+"Closed days are not rewritten."
+msgstr ""
+"Rien n'est écrasé ni supprimé. L'original reste enregistré avec un tampon "
+"CORRIGÉ ; une contre-passation (et, si vous le choisissez, un remplacement "
+"avec les valeurs corrigées) est passée sur la journée ouverte du caissier. "
+"Les journées clôturées ne sont pas réécrites."
+
+msgid "OK"
+msgstr "OK"
+
+#, python-format
+msgid ""
+"Only %(rem)s FCFA remain to be delivered on this side of exchange %(ref)s."
+msgstr ""
+"Il ne reste que %(rem)s FCFA à livrer sur ce volet de l'échange %(ref)s."
+
+msgid "Only an opening amount owed by the customer can be transferred."
+msgstr "Seul un montant d'ouverture dû par le client peut être transféré."
+
+msgid "Only commercial agents (not POS) may have a login."
+msgstr "Seuls les agents commerciaux (pas les PDV) ont un accès."
+
+msgid "Only record transactions that are completed and confirmed."
+msgstr "N'enregistrez que des transactions effectuées et confirmées."
+
+msgid ""
+"Only supplies, destockages and opening debts can change responsibility."
+msgstr ""
+"Seuls les approvisionnements, déstockages et dettes d'ouverture peuvent "
+"changer de responsable."
+
+msgid ""
+"Only when a POS receives the supply and an agent explicitly assumes it."
+msgstr ""
+"Uniquement si un PDV reçoit l'approvisionnement et qu'un agent l'assume "
+"explicitement."
+
+msgid "Open"
+msgstr "Ouvrir"
+
+msgid "Open (unresolved) closing differences, all dates"
+msgstr "Écarts de clôture ouverts (non résolus), toutes dates"
+
+msgid "Open business days"
+msgstr "Journées ouvertes"
+
+msgid "Open – under investigation"
+msgstr "Ouvert – en cours d'enquête"
+
+msgid "Opening"
+msgstr "Ouverture"
+
+msgid "Opening (book)"
+msgstr "Ouverture (comptable)"
+
+msgid ""
+"Opening = balance before the first business date; Closing = balance at the "
+"end of the last business date; Current = balance now, including later "
+"entries."
+msgstr ""
+"Ouverture = solde avant la première date comptable ; Clôture = solde à la "
+"fin de la dernière date comptable ; Actuel = solde maintenant, y compris les"
+" saisies ultérieures."
+
+msgid ""
+"Opening amount cannot be zero; leave the account uninitialised instead."
+msgstr ""
+"Le montant d'ouverture ne peut pas être nul ; laissez plutôt le compte non "
+"initialisé."
+
+msgid "Opening balance"
+msgstr "Solde d'ouverture"
+
+#, python-format
+msgid "Opening balance %(ref)s recorded for %(acct)s."
+msgstr "Solde d'ouverture %(ref)s enregistré pour %(acct)s."
+
+msgid "Opening balance equity"
+msgstr "Capitaux d'ouverture"
+
+msgid "Opening balances"
+msgstr "Soldes d'ouverture"
+
+msgid "Opening balances (launch)"
+msgstr "Soldes d'ouverture (démarrage)"
+
+msgid ""
+"Opening balances are only for customers, cash managers, drawers, wallets and"
+" banks."
+msgstr ""
+"Les soldes d'ouverture concernent uniquement clients, gestionnaires de cash,"
+" caisses, portefeuilles et banques."
+
+msgid ""
+"Operational reports are limited to your own desk; customer balances are "
+"shared."
+msgstr ""
+"Les rapports opérationnels sont limités à votre poste ; les soldes clients "
+"sont communs."
+
+msgid "Orange SIM"
+msgstr "SIM Orange"
+
+msgid "Orange business SIM (UVE + ER)"
+msgstr "SIM business Orange (UVE + ER)"
+
+msgid "Original"
+msgstr "Original"
+
+msgid "Original business date"
+msgstr "Date comptable d'origine"
+
+msgid "Original difference"
+msgstr "Écart d'origine"
+
+msgid "Out"
+msgstr "Sorties"
+
+msgid "Outstanding amount owed"
+msgstr "Montant restant dû"
+
+msgid "Overall (since launch)"
+msgstr "Global (depuis le démarrage)"
+
+msgid "Overview — all zones"
+msgstr "Vue d'ensemble — toutes zones"
+
+msgid "Owed to company"
+msgstr "Dû à l'entreprise"
+
+msgid "Owes company"
+msgstr "Doit à l'entreprise"
+
+msgid "POS"
+msgstr "PDV"
+
+msgid "POS (received cash)"
+msgstr "PDV (a reçu les espèces)"
+
+msgid "POS balances"
+msgstr "Soldes des PDV"
+
+msgid "POS that received the cash (business SIM)"
+msgstr "PDV qui a reçu les espèces (SIM business)"
+
+msgid "POS transactions and outstanding"
+msgstr "Transactions PDV et montants dus"
+
+msgid "Page"
+msgstr "Page"
+
+msgid "Paid"
+msgstr "Payé"
+
+msgid "Paid / credited −"
+msgstr "Payé / crédité −"
+
+msgid "Paid by"
+msgstr "Payé par"
+
+#, python-format
+msgid "Paid by %(m)s"
+msgstr "Payé par %(m)s"
+
+msgid "Paid from drawer"
+msgstr "Payé depuis la caisse"
+
+msgid ""
+"Part of this obligation appears already settled: the transfer will be "
+"refused so that settled debt is not moved. Ask a manager."
+msgstr ""
+"Une partie de cette obligation semble déjà réglée : le transfert sera refusé"
+" pour ne pas déplacer une dette réglée. Demandez à un responsable."
+
+msgid "Password"
+msgstr "Mot de passe"
+
+msgid "Paying customer"
+msgstr "Client payeur"
+
+msgid "Paying customer (business SIM)"
+msgstr "Client payeur (SIM business)"
+
+msgid "Payment"
+msgstr "Paiement"
+
+msgid "Payment method"
+msgstr "Mode de paiement"
+
+msgid "Period"
+msgstr "Période"
+
+msgid "Point of sale (POS)"
+msgstr "Point de vente (PDV)"
+
+msgid "Positions"
+msgstr "Positions"
+
+msgid "Positions (positive = cash manager owes the company)"
+msgstr "Positions (positif = le gestionnaire de cash doit à l'entreprise)"
+
+msgid "Post correction"
+msgstr "Passer la correction"
+
+msgid "Post reconciliation adjustment (write-off / recognise)"
+msgstr "Passer un ajustement de rapprochement (perte / constatation)"
+
+msgid "Posted on business date"
+msgstr "Passée à la date comptable"
+
+msgid "Print (A4)"
+msgstr "Imprimer (A4)"
+
+#, python-format
+msgid "Printed %(when)s"
+msgstr "Imprimé le %(when)s"
+
+msgid "Product"
+msgstr "Produit"
+
+msgid "RECEIPT"
+msgstr "REÇU"
+
+msgid "Rate history (changes apply to future conversions only)"
+msgstr ""
+"Historique des taux (les changements ne s'appliquent qu'aux conversions "
+"futures)"
+
+msgid "Reason"
+msgstr "Motif"
+
+msgid "Reason (shown on the CORRECTED stamp)"
+msgstr "Motif (affiché sur le tampon CORRIGÉ)"
+
+msgid "Reason / details"
+msgstr "Motif / détails"
+
+msgid "Receipt"
+msgstr "Reçu"
+
+msgid "Receipt no."
+msgstr "Reçu n°"
+
+msgid "Received by POS"
+msgstr "Reçu par le PDV"
+
+msgid "Received into"
+msgstr "Reçu sur"
+
+msgid "Receiving POS, if assigned to the agent above"
+msgstr "PDV destinataire, s'il est attribué à l'agent ci-dessus"
+
+msgid "Recipient POS"
+msgstr "PDV destinataire"
+
+msgid "Reconciliation"
+msgstr "Rapprochement"
+
+msgid "Reconciliation (daily/weekly/monthly/custom/overall)"
+msgstr "Rapprochement (journalier/hebdomadaire/mensuel/personnalisé/global)"
+
+msgid "Reconciliation adj."
+msgstr "Ajust. rapprochement"
+
+msgid "Reconciliation adjustment"
+msgstr "Ajustement de rapprochement"
+
+msgid "Reconciliation adjustments"
+msgstr "Ajustements de rapprochement"
+
+msgid "Reconciliation adjustments in period (+ = shortage written off)"
+msgstr ""
+"Ajustements de rapprochement de la période (+ = manquant passé en perte)"
+
+msgid "Record"
+msgstr "Enregistrer"
+
+msgid ""
+"Record a completed UVE, ER or cash supply. ER must come from your master "
+"zone's master SIM."
+msgstr ""
+"Enregistrez un approvisionnement UVE, ER ou espèces effectué. L'ER doit "
+"partir de la SIM maître de votre zone principale."
+
+msgid "Record a completed side"
+msgstr "Enregistrer un volet effectué"
+
+msgid ""
+"Record a confirmed payment. It reduces the customer's single combined "
+"balance."
+msgstr ""
+"Enregistrez un paiement confirmé. Il réduit le solde unique et combiné du "
+"client."
+
+msgid "Record an expense"
+msgstr "Enregistrer une dépense"
+
+msgid "Record opening balance"
+msgstr "Enregistrer le solde d'ouverture"
+
+msgid "Recorded"
+msgstr "Enregistrés"
+
+msgid "Recorded at"
+msgstr "Enregistré le"
+
+msgid "Recorded at (Africa/Douala)"
+msgstr "Enregistré le (Africa/Douala)"
+
+msgid "Recorded by"
+msgstr "Enregistré par"
+
+msgid "Reference"
+msgstr "Référence"
+
+msgid "Register"
+msgstr "Enregistrer"
+
+msgid "Register agent/POS"
+msgstr "Enregistrer agent/PDV"
+
+msgid "Register an agent or POS"
+msgstr "Enregistrer un agent ou un PDV"
+
+msgid "Replacement"
+msgstr "Remplacement"
+
+msgid "Replaces"
+msgstr "Remplace"
+
+#, python-format
+msgid "Replaces %(ref)s"
+msgstr "Remplace %(ref)s"
+
+msgid "Reports"
+msgstr "Rapports"
+
+msgid "Resolution"
+msgstr "Résolution"
+
+msgid "Resolution notes"
+msgstr "Notes de résolution"
+
+msgid "Resolve"
+msgstr "Résoudre"
+
+msgid "Resolved"
+msgstr "Résolu"
+
+msgid "Resolved by"
+msgstr "Résolu par"
+
+msgid "Resp. transfers"
+msgstr "Transferts resp."
+
+#, python-format
+msgid ""
+"Responsibility for %(ref)s has already been transferred. Cancel that "
+"transfer first if it was wrong."
+msgstr ""
+"La responsabilité de %(ref)s a déjà été transférée. Annulez d'abord ce "
+"transfert s'il était erroné."
+
+#, python-format
+msgid "Responsibility for %(ref)s transferred to %(cp)s (%(amt)s FCFA)."
+msgstr "Responsabilité de %(ref)s transférée à %(cp)s (%(amt)s FCFA)."
+
+msgid "Responsibility history"
+msgstr "Historique de responsabilité"
+
+msgid "Responsibility transfer"
+msgstr "Transfert de responsabilité"
+
+msgid "Responsibility transfers"
+msgstr "Transferts de responsabilité"
+
+msgid "Responsible customer"
+msgstr "Client responsable"
+
+msgid "Responsible customer (business SIM)"
+msgstr "Client responsable (SIM business)"
+
+msgid "Reversal"
+msgstr "Contre-passation"
+
+#, python-format
+msgid "Reversal of %(ref)s (%(date)s)"
+msgstr "Contre-passation de %(ref)s (%(date)s)"
+
+#, python-format
+msgid "Reversal of %(ref)s: %(reason)s"
+msgstr "Contre-passation de %(ref)s : %(reason)s"
+
+msgid "Reverse and replace with corrected values"
+msgstr "Contre-passer et remplacer par les valeurs corrigées"
+
+msgid "SIM number"
+msgstr "Numéro de SIM"
+
+msgid "Save"
+msgstr "Enregistrer"
+
+msgid "Save as PDF"
+msgstr "Enregistrer en PDF"
+
+msgid "Saved."
+msgstr "Enregistré."
+
+msgid "Search"
+msgstr "Rechercher"
+
+msgid "Search (SIM or name)"
+msgstr "Recherche (SIM ou nom)"
+
+msgid "Select a customer business SIM to see the statement."
+msgstr "Choisissez la SIM business d'un client pour voir le relevé."
+
+msgid "Select a master zone."
+msgstr "Choisissez une zone principale."
+
+msgid "Select the correction that explains this difference."
+msgstr "Choisissez la correction qui explique cet écart."
+
+msgid "Sent from company account"
+msgstr "Envoyé depuis le compte de l'entreprise"
+
+msgid "Set by"
+msgstr "Défini par"
+
+msgid "Set new rate"
+msgstr "Définir le nouveau taux"
+
+msgid "Shortage"
+msgstr "Manquant"
+
+msgid "Sign in"
+msgstr "Connexion"
+
+msgid "Source and destination must be different."
+msgstr "La source et la destination doivent être différentes."
+
+msgid "Statement"
+msgstr "Relevé"
+
+msgid "Status"
+msgstr "Statut"
+
+msgid "Subzone"
+msgstr "Sous-zone"
+
+msgid "Super administrator"
+msgstr "Super administrateur"
+
+msgid "Supplied"
+msgstr "Approvisionné"
+
+msgid "Supplied / owed +"
+msgstr "Approvisionné / dû +"
+
+msgid "Supplied ER"
+msgstr "ER approvisionné"
+
+msgid "Supplied UVE"
+msgstr "UVE approvisionnée"
+
+msgid "Supplied cash"
+msgstr "Espèces approvisionnées"
+
+msgid "Supplies"
+msgstr "Approvisionnements"
+
+msgid "Supplies (UVE, ER, cash)"
+msgstr "Approvisionnements (UVE, ER, espèces)"
+
+msgid "Supplies: UVE, ER and cash (and destockage)"
+msgstr "Approvisionnements : UVE, ER et espèces (et déstockage)"
+
+msgid "Supply"
+msgstr "Approvisionnement"
+
+msgid "Supply due to customer"
+msgstr "Approvisionnement dû au client"
+
+msgid "Supply due to customers"
+msgstr "Approvisionnements dus aux clients"
+
+msgid "Supply due to customers (end of period)"
+msgstr "Approvisionnements dus aux clients (fin de période)"
+
+msgid "Supply due to customers (prepaid / overpaid balances)"
+msgstr "Approvisionnements dus aux clients (soldes prépayés / trop-perçus)"
+
+msgid "Supply due to you"
+msgstr "Approvisionnement qui vous est dû"
+
+msgid "Surplus"
+msgstr "Excédent"
+
+msgid ""
+"The book (expected) balance carries forward to the next day. Unresolved "
+"differences remain open until a manager or finance manager resolves them."
+msgstr ""
+"Le solde comptable (attendu) est reporté au jour suivant. Les écarts non "
+"résolus restent ouverts jusqu'à ce qu'un responsable ou un responsable "
+"financier les résolve."
+
+msgid ""
+"The business SIM number is the unique identifier and cannot be changed "
+"later."
+msgstr ""
+"Le numéro de SIM business est l'identifiant unique et ne peut pas être "
+"modifié ensuite."
+
+msgid "The cash recipient of a destockage must be a POS."
+msgstr "Le bénéficiaire des espèces d'un déstockage doit être un PDV."
+
+msgid "The custodian must be a cashier."
+msgstr "Le détenteur doit être un caissier."
+
+msgid "The new responsible party must be different."
+msgstr "Le nouveau responsable doit être différent."
+
+msgid "The original cashier is unknown; cancel and re-enter instead."
+msgstr "Le caissier d'origine est inconnu ; annulez puis ressaisissez."
+
+msgid "The receiving account does not match the payment method."
+msgstr "Le compte de réception ne correspond pas au mode de paiement."
+
+msgid "The responsible party of a destockage must be a commercial agent."
+msgstr "Le responsable d'un déstockage doit être un agent commercial."
+
+#, python-format
+msgid "The source account does not hold %(p)s."
+msgstr "Le compte source ne contient pas de %(p)s."
+
+msgid "The uplift must be between 0 and 100%."
+msgstr "Le bonus doit être compris entre 0 et 100 %."
+
+#, python-format
+msgid ""
+"The whole obligation of %(amt)s FCFA moves to the new party. Partial "
+"transfers are not allowed. Company cash and wallets do not change; the "
+"original supply is kept."
+msgstr ""
+"La totalité de l'obligation de %(amt)s FCFA passe au nouveau responsable. "
+"Les transferts partiels ne sont pas autorisés. Les espèces et portefeuilles "
+"de l'entreprise ne changent pas ; l'approvisionnement d'origine est "
+"conservé."
+
+msgid "Their current balance"
+msgstr "Son solde actuel"
+
+msgid ""
+"These were posted on a later open business day; this closing was not "
+"rewritten."
+msgstr ""
+"Elles ont été passées sur une journée ouverte ultérieure ; cette clôture n'a"
+" pas été réécrite."
+
+msgid "This business day is already closed."
+msgstr "Cette journée est déjà clôturée."
+
+msgid "This day is earlier than today: close it when you are ready."
+msgstr ""
+"Cette journée est antérieure à aujourd'hui : clôturez-la dès que possible."
+
+msgid "This discrepancy is already resolved."
+msgstr "Cet écart est déjà résolu."
+
+msgid "This entry reverses"
+msgstr "Cette écriture contre-passe"
+
+msgid ""
+"This receipt confirms a completed transaction recorded in the company "
+"ledger. Amounts in FCFA (XAF)."
+msgstr ""
+"Ce reçu confirme une transaction effectuée et enregistrée dans le grand "
+"livre de l'entreprise. Montants en FCFA (XAF)."
+
+#, python-format
+msgid "This side of the exchange must use a %(kind)s account."
+msgstr "Ce volet de l'échange doit utiliser un compte : %(kind)s."
+
+#, python-format
+msgid ""
+"This submission was already recorded as %(ref)s. Nothing was posted twice."
+msgstr ""
+"Cette saisie a déjà été enregistrée sous %(ref)s. Rien n'a été passé deux "
+"fois."
+
+msgid "This transaction has been corrected; transfer its replacement instead."
+msgstr ""
+"Cette transaction a été corrigée ; transférez plutôt son remplacement."
+
+msgid "This transaction has no customer obligation."
+msgstr "Cette transaction ne comporte aucune obligation client."
+
+msgid "This type of entry cannot be corrected directly."
+msgstr "Ce type d'écriture ne peut pas être corrigé directement."
+
+msgid "Tick the confirmation box to close the day."
+msgstr "Cochez la case de confirmation pour clôturer la journée."
+
+msgid "To"
+msgstr "Vers"
+
+msgid "To (business date)"
+msgstr "Au (date comptable)"
+
+msgid "To (company account)"
+msgstr "Vers (compte de l'entreprise)"
+
+msgid "Too many failed attempts. Try again in 15 minutes."
+msgstr "Trop de tentatives échouées. Réessayez dans 15 minutes."
+
+msgid "Total"
+msgstr "Total"
+
+msgid "Totals by category"
+msgstr "Totaux par catégorie"
+
+msgid "Totals by method"
+msgstr "Totaux par mode"
+
+msgid "Totals by product"
+msgstr "Totaux par produit"
+
+msgid "Transaction"
+msgstr "Transaction"
+
+msgid "Transaction type"
+msgstr "Type de transaction"
+
+msgid "Transactions"
+msgstr "Transactions"
+
+msgid "Transactions involving POS"
+msgstr "Transactions impliquant des PDV"
+
+msgid "Transfer"
+msgstr "Transfert"
+
+msgid "Transfer responsibility"
+msgstr "Transférer la responsabilité"
+
+msgid ""
+"Transfers are only between active company cash, wallet or bank accounts."
+msgstr ""
+"Les transferts se font uniquement entre caisses, portefeuilles ou banques "
+"actifs de l'entreprise."
+
+msgid "Transfers between company accounts"
+msgstr "Transferts entre comptes de l'entreprise"
+
+msgid "Type"
+msgstr "Type"
+
+msgid "UVE amount (FCFA)"
+msgstr "Montant UVE (FCFA)"
+
+msgid "UVE converted"
+msgstr "UVE convertie"
+
+msgid "UVE received by agent (owes)"
+msgstr "UVE reçue par l'agent (redevable)"
+
+msgid "UVE wallet"
+msgstr "Portefeuille UVE"
+
+msgid "UVE wallet to convert (ER arrives on the same SIM)"
+msgstr "Portefeuille UVE à convertir (l'ER arrive sur la même SIM)"
+
+msgid "UVE → ER conversion"
+msgstr "Conversion UVE → ER"
+
+msgid "UVE → ER conversion rate"
+msgstr "Taux de conversion UVE → ER"
+
+msgid "UVE → ER conversions and rates used"
+msgstr "Conversions UVE → ER et taux utilisés"
+
+msgid "UVE→ER"
+msgstr "UVE→ER"
+
+msgid "UVE→ER uplift (%)"
+msgstr "Bonus UVE→ER (%)"
+
+msgid "Unresolved closing differences"
+msgstr "Écarts de clôture non résolus"
+
+msgid "Unresolved differences"
+msgstr "Écarts non résolus"
+
+msgid "Unresolved differences (all dates)"
+msgstr "Écarts non résolus (toutes dates)"
+
+msgid "Uplift"
+msgstr "Bonus"
+
+msgid "Uplift rate"
+msgstr "Taux de bonus"
+
+msgid "Uplift rate used"
+msgstr "Taux de bonus utilisé"
+
+msgid "Username"
+msgstr "Identifiant"
+
+msgid "View"
+msgstr "Voir"
+
+msgid "Weekly"
+msgstr "Hebdomadaire"
+
+msgid "What happened"
+msgstr "Ce qui a eu lieu"
+
+msgid "When"
+msgstr "Quand"
+
+msgid "Write the investigation note."
+msgstr "Rédigez la note d'enquête."
+
+msgid "Yes"
+msgstr "Oui"
+
+msgid "You are not allowed to perform this action."
+msgstr "Vous n'êtes pas autorisé à effectuer cette action."
+
+#, python-format
+msgid "You are not authorised to receive into %(acct)s."
+msgstr "Vous n'êtes pas autorisé à recevoir sur %(acct)s."
+
+#, python-format
+msgid "You are not authorised to send from %(acct)s."
+msgstr "Vous n'êtes pas autorisé à envoyer depuis %(acct)s."
+
+msgid ""
+"You gave cash to a POS, and the POS sent the same value in UVE to an agent. "
+"The agent owes the company; company UVE does not change; the POS owes "
+"nothing."
+msgstr ""
+"Vous avez remis des espèces à un PDV, et le PDV a envoyé la même valeur en "
+"UVE à un agent. L'agent doit à l'entreprise ; l'UVE de l'entreprise ne "
+"change pas ; le PDV ne doit rien."
+
+msgid "Your drawers and wallets (book balances)"
+msgstr "Vos caisses et portefeuilles (soldes comptables)"
+
+#, python-format
+msgid "Your entries are recorded on business day %(d)s."
+msgstr "Vos saisies sont enregistrées sur la journée du %(d)s."
+
+msgid "Your latest entries"
+msgstr "Vos dernières saisies"
+
+msgid "account number"
+msgstr "numéro de compte"
+
+msgid "bank"
+msgstr "banque"
+
+msgid "business SIM"
+msgstr "SIM business"
+
+msgid "business SIM number"
+msgstr "numéro de SIM business"
+
+msgid "business date"
+msgstr "date comptable"
+
+msgid "by"
+msgstr "par"
+
+#, python-format
+msgid "cash to POS %(pos)s"
+msgstr "espèces au PDV %(pos)s"
+
+msgid "closing of"
+msgstr "clôture du"
+
+msgid "custodian cashier"
+msgstr "caissier détenteur"
+
+msgid "due to customer"
+msgstr "dû au client"
+
+#, python-format
+msgid "for %(ref)s"
+msgstr "pour %(ref)s"
+
+#, python-format
+msgid "from %(a)s to %(b)s"
+msgstr "de %(a)s à %(b)s"
+
+#, python-format
+msgid "from %(acct)s"
+msgstr "depuis %(acct)s"
+
+msgid "has login"
+msgstr "a un accès"
+
+msgid "inactive"
+msgstr "inactif"
+
+#, python-format
+msgid "into %(acct)s"
+msgstr "vers %(acct)s"
+
+msgid "label"
+msgstr "libellé"
+
+msgid "master SIM of the zone"
+msgstr "SIM maître de la zone"
+
+msgid "master zone"
+msgstr "zone principale"
+
+msgid "name"
+msgstr "nom"
+
+msgid "not closed"
+msgstr "non clôturée"
+
+msgid "notes"
+msgstr "notes"
+
+msgid "other phone"
+msgstr "autre téléphone"
+
+msgid "owed to the company"
+msgstr "dû à l'entreprise"
+
+msgid "phone / SIM"
+msgstr "téléphone / SIM"
+
+#, python-format
+msgid "rate +%(r)s%% → ER %(er)s"
+msgstr "taux +%(r)s %% → ER %(er)s"
+
+msgid "read-only access"
+msgstr "accès en lecture seule"
+
+#, python-format
+msgid "received by POS %(pos)s"
+msgstr "reçu par le PDV %(pos)s"
+
+msgid "replacement"
+msgstr "remplacement"
+
+msgid "role"
+msgstr "rôle"
+
+msgid "shared use"
+msgstr "usage partagé"
+
+msgid "subzone"
+msgstr "sous-zone"
+
+msgid "supply due to customer"
+msgstr "approvisionnement dû au client"
+
+msgid "type"
+msgstr "type"
+
+msgid "uplift rate"
+msgstr "taux de bonus"
+
+msgid "usual master zone"
+msgstr "zone principale habituelle"
+
+msgid "yes"
+msgstr "oui"
+
+msgid ""
+"ⓒ = transaction later corrected (see corrections report). Amounts in FCFA."
+msgstr ""
+"ⓒ = transaction corrigée ultérieurement (voir le rapport des corrections). "
+"Montants en FCFA."
+
+msgid "%(n)s unresolved closing difference on your accounts."
+msgid_plural "%(n)s unresolved closing differences on your accounts."
+msgstr[0] "%(n)s écart de clôture non résolu sur vos comptes."
+msgstr[1] "%(n)s écarts de clôture non résolus sur vos comptes."

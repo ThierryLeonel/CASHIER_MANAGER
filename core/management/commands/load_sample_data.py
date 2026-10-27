@@ -1,0 +1,78 @@
+"""Load the clearly marked [SAMPLE] organisation, optionally with activity.
+
+    python manage.py load_sample_data                # structure + users only
+    python manage.py load_sample_data --activity     # plus a realistic day of postings
+
+Refuses to run if any zone already exists (protects real data)."""
+from decimal import Decimal
+
+from django.core.management.base import BaseCommand, CommandError
+
+from core.models import ExpenseCategory, TxType, Zone
+from core.sample import build_sample_org
+from core.services import closing as cl
+from core.services import operations as ops
+from core.services.ledger import balance
+
+D = Decimal
+
+
+class Command(BaseCommand):
+    help = "Create the [SAMPLE] organisation (zones, cashiers, SIMs, agents, POS) for demo/testing."
+
+    def add_arguments(self, parser):
+        parser.add_argument("--password", default="Sample-Pass-2026!")
+        parser.add_argument("--activity", action="store_true", help="Also post sample transactions")
+
+    def handle(self, *args, **opts):
+        if Zone.objects.exists():
+            raise CommandError("Zones already exist. Sample data is only loaded into an empty database.")
+        o = build_sample_org(opts["password"])
+        self.stdout.write(self.style.SUCCESS("Sample organisation created. Users (password: %s):" % opts["password"]))
+        for u in ("admin", "manager", "finance", "cashier.fako1", "cashier.fako2", "cashier.meme", "agent.ndive",
+                  "agent.ekane"):
+            self.stdout.write(f"  {u}")
+        if opts["activity"]:
+            self._activity(o)
+            self.stdout.write(self.style.SUCCESS("Sample activity posted."))
+
+    def _activity(self, o):
+        admin, f1, f2, me = o["admin"], o["c_f1"], o["c_f2"], o["c_me"]
+        a1, a2, a3 = o["agents"]["a1"], o["agents"]["a2"], o["agents"]["a3"]
+        p1, p2 = o["pos"]["p1"], o["pos"]["p2"]
+        d1, d2, dm = o["drawers"]["f1"], o["drawers"]["f2"], o["drawers"]["me"]
+        for acct, amt in [(d1, 2_000_000), (d2, 1_500_000), (dm, 1_200_000), (o["uve_f1"], 5_000_000),
+                          (o["uve_f2"], 3_000_000), (o["uve_me"], 2_500_000), (o["er_f1"], 1_000_000),
+                          (o["er_me"], 600_000)]:
+            ops.record_opening_balance(admin, account=acct, amount=D(amt), description="[SAMPLE] launch balance")
+        ops.record_opening_balance(admin, account=a2.account, amount=D(150_000), description="[SAMPLE] owed at launch")
+        ops.record_opening_balance(admin, account=o["cm1"].account, amount=D(-50_000),
+                                   description="[SAMPLE] company owed cash manager at launch")
+        ops.record_supply(f1, product="UVE", customer=a1, amount=D(500_000), source_account=o["uve_f1"])
+        ops.record_supply(f1, product="ER", customer=a1, amount=D(120_000), source_account=o["er_f1"])
+        ops.record_supply(f2, product="ER", customer=a2, amount=D(80_000), source_account=o["er_f1"])
+        ops.record_supply(f2, product="CASH", customer=a2, amount=D(100_000), source_account=d2)
+        ops.record_collection(f1, payer=a1, method="CASH", amount=D(300_000), account=d1)
+        ops.record_collection(f2, payer=a1, method="MTN", amount=D(150_000), account=o["mtn_f2"])
+        ops.record_collection(me, payer=a1, method="BANK", amount=D(100_000), account=o["bank"],
+                              bank_reference="SAMPLE-DEP-001")
+        ops.record_destockage(f1, pos=p1, agent=a1, amount=D(200_000), drawer=d1)
+        ops.record_collection(f1, payer=a1, method="UVE", amount=D(200_000), account=o["uve_f1"])
+        s = ops.record_supply(f2, product="UVE", customer=p2, amount=D(60_000), source_account=o["uve_f2"])
+        ops.transfer_responsibility(f2, supply=s, new_party=a2, reason="[SAMPLE] agent collected the POS money")
+        ops.record_supply(me, product="UVE", customer=a3, amount=D(250_000), source_account=o["uve_me"])
+        ops.record_collection(me, payer=a3, method="CASH", amount=D(300_000), account=dm)  # 50,000 supply due
+        ops.record_conversion(f1, uve_account=o["uve_f1"], amount=D(100_000))
+        ops.record_expense(f1, category=ExpenseCategory.objects.get(code="fuel"), amount=D(15_000), drawer=d1,
+                           description="[SAMPLE] motorbike fuel")
+        ops.record_expense(me, category=ExpenseCategory.objects.get(code="orange-prefinance"), amount=D(40_000),
+                           drawer=dm, description="[SAMPLE] Orange pre-finance")
+        ops.record_internal_transfer(f2, source=d2, destination=o["bank"], amount=D(500_000),
+                                     description="[SAMPLE] bank deposit of cash")
+        ex = ops.create_exchange(f1, cash_manager=o["cm2"], direction="CASH_FOR_UVE", amount=D(400_000))
+        ops.record_exchange_leg(f1, exchange=ex, side=TxType.CM_GIVE, amount=D(400_000), account=d1)
+        ops.record_exchange_leg(f1, exchange=ex, side=TxType.CM_RECEIVE, amount=D(250_000), account=o["uve_f1"])
+        # Meme closes with a 2,000 cash shortage (left open for investigation)
+        actuals = {a.id: balance(a) for a in cl.closing_accounts(me)}
+        actuals[dm.id] -= D(2000)
+        cl.close_day(me, actuals=actuals, notes="[SAMPLE] closing")

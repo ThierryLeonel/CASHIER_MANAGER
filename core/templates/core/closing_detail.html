@@ -1,0 +1,17 @@
+{% extends "core/base.html" %}{% load i18n cashier %}
+{% block title %}{% trans "Closing" %}{% endblock %}
+{% block content %}
+<h1>{% trans "Closing" %} — {{ c.cashier_day.cashier }} · {{ c.cashier_day.business_date|date:"d/m/Y" }}</h1>
+<p class="muted">{% trans "Closed at" %} {{ c.closed_at|date:"d/m/Y H:i:s" }} {% trans "by" %} {{ c.closed_by }}{% if c.notes %} · {{ c.notes }}{% endif %}</p>
+<div class="tbl-wrap"><table class="t">
+<thead><tr><th>{% trans "Account" %}</th><th class="money">{% trans "Opening (book)" %}</th><th class="money">{% trans "Movements" %}</th><th class="money">{% trans "Expected" %}</th><th class="money">{% trans "Actual" %}</th><th class="money">{% trans "Difference" %}</th><th class="money">{% trans "Carried unresolved" %}</th><th class="money">{% trans "New difference" %}</th><th></th></tr></thead>
+<tbody>{% for l in lines %}<tr><td>{{ l.account }}</td><td class="money">{{ l.opening_book|fcfa }}</td><td class="money">{{ l.movements|fcfa }}</td><td class="money">{{ l.expected|fcfa }}</td><td class="money">{{ l.actual|fcfa }}</td>
+<td class="money {% if l.difference|negative %}neg{% elif l.difference %}pos{% endif %}">{{ l.difference|fcfa }}</td><td class="money">{{ l.carried_unresolved|fcfa }}</td><td class="money">{{ l.new_difference|fcfa }}</td>
+<td>{% if l.discrepancy %}<a href="{% url 'discrepancy_detail' l.discrepancy.pk %}">{{ l.discrepancy.get_status_display }}</a>{% endif %}</td></tr>{% endfor %}</tbody></table></div>
+<p class="small muted">{% trans "The book (expected) balance carries forward to the next day. Unresolved differences remain open until a manager or finance manager resolves them." %}</p>
+{% if later_corrections %}
+<h2>{% trans "Corrections posted later for this day" %}</h2>
+<p class="small muted">{% trans "These were posted on a later open business day; this closing was not rewritten." %}</p>
+{% include "core/inc/txn_table.html" with txns=later_corrections %}
+{% endif %}
+{% endblock %}

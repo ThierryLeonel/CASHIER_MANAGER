@@ -1,0 +1,9 @@
+{% extends "core/base.html" %}{% load i18n cashier %}
+{% block title %}{% trans "Differences" %}{% endblock %}
+{% block content %}
+<h1>{% trans "Closing differences" %}</h1>
+<div class="actions"><a class="btn {% if status == 'OPEN' %}primary{% endif %}" href="?status=OPEN">{% trans "Open" %}</a><a class="btn {% if status == 'RESOLVED' %}primary{% endif %}" href="?status=RESOLVED">{% trans "Resolved" %}</a><a class="btn {% if status == 'ALL' %}primary{% endif %}" href="?status=ALL">{% trans "All" %}</a></div>
+<div class="tbl-wrap"><table class="t"><thead><tr><th>{% trans "Business date" %}</th><th>{% trans "Cashier" %}</th><th>{% trans "Account" %}</th><th>{% trans "Type" %}</th><th class="money">{% trans "Amount" %}</th><th>{% trans "Status" %}</th><th></th></tr></thead>
+<tbody>{% for d in rows %}<tr><td>{{ d.closing_line.closing.cashier_day.business_date|date:"d/m/Y" }}</td><td>{{ d.closing_line.closing.cashier_day.cashier }}</td><td>{{ d.account }}</td><td>{{ d.kind_label }}</td><td class="money {% if d.amount|negative %}neg{% else %}pos{% endif %}">{{ d.amount|fcfa }}</td><td>{{ d.get_status_display }}{% if d.resolved_by %} · {{ d.resolved_by }}{% endif %}</td><td><a href="{% url 'discrepancy_detail' d.pk %}">{% trans "Open" %}</a></td></tr>
+{% empty %}<tr><td colspan="7" class="muted">{% trans "Nothing here." %}</td></tr>{% endfor %}</tbody></table></div>
+{% endblock %}

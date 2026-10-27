@@ -1,0 +1,8 @@
+{% extends "core/base.html" %}{% load i18n %}
+{% block title %}{% trans "Transactions" %}{% endblock %}
+{% block content %}
+<h1>{% trans "Transactions" %}</h1>
+{% include "core/inc/filters.html" with filters_text=filters.text %}
+{% include "core/inc/txn_table.html" with txns=page %}
+<div class="pager">{% if page.has_previous %}<a class="btn small" href="?{{ qs_params }}&page={{ page.previous_page_number }}">←</a>{% endif %}<span class="muted small">{{ page.number }} / {{ page.paginator.num_pages }} · {{ page.paginator.count }}</span>{% if page.has_next %}<a class="btn small" href="?{{ qs_params }}&page={{ page.next_page_number }}">→</a>{% endif %}</div>
+{% endblock %}

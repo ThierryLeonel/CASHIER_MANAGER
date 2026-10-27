@@ -1,0 +1,9 @@
+{% load i18n %}<form class="panel" method="get">
+  <div class="filters">
+  {% for f in form.visible_fields %}
+    <div class="field"><label for="{{ f.id_for_label }}">{{ f.label }}</label>{{ f }}{% if f.errors %}<ul class="err">{% for e in f.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}</div>
+  {% endfor %}
+    <div class="field"><button class="btn primary" type="submit">{% trans "Apply" %}</button></div>
+  </div>
+  <p class="small muted" style="margin:.5rem 0 0">{{ filters_text }}{% if user.is_cashier %} · {% trans "Operational reports are limited to your own desk; customer balances are shared." %}{% endif %}</p>
+</form>

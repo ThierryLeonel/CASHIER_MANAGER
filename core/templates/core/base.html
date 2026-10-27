@@ -1,0 +1,69 @@
+{% load i18n static %}<!doctype html>
+{% get_current_language as LANG %}
+<html lang="{{ LANG }}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}{{ title|default:"" }}{% endblock %} · {% trans "Cashier Manager" %}</title>
+<link rel="stylesheet" href="{% static 'core/app.css' %}">
+</head>
+<body>
+<header class="top">
+  <div class="top-inner">
+    <a class="brand" href="{% url 'dashboard' %}"><i></i>{% trans "Cashier Manager" %}</a>
+    <span class="small" style="color:#bdbdc3">{{ COMPANY_NAME }}</span>
+    <div class="who">
+      {% if user.is_authenticated %}
+        {% if open_day %}<span class="day-chip{% if open_day.business_date < today_douala %} warn{% endif %}" title="{% trans 'Business date of your entries' %}">{% trans "Business day" %} {{ open_day.business_date|date:"d/m/Y" }}</span>{% endif %}
+        <span>{{ user }} · {{ user.get_role_display }}{% if user.subzone %} · {{ user.subzone }}{% endif %}</span>
+      {% endif %}
+      <form action="{% url 'set_language' %}" method="post">{% csrf_token %}
+        <input name="next" type="hidden" value="{{ request.get_full_path }}">
+        <select name="language" onchange="this.form.submit()" aria-label="Language">
+          <option value="en" {% if LANG == 'en' %}selected{% endif %}>EN</option>
+          <option value="fr" {% if LANG == 'fr' %}selected{% endif %}>FR</option>
+        </select>
+      </form>
+      {% if user.is_authenticated %}
+      <form action="{% url 'logout' %}" method="post">{% csrf_token %}<button type="submit">{% trans "Log out" %}</button></form>
+      {% endif %}
+    </div>
+  </div>
+</header>
+{% if user.is_authenticated %}
+{% with u=request.resolver_match.url_name %}
+<nav class="main"><div class="inner">
+  <a href="{% url 'dashboard' %}" class="{% if u == 'dashboard' %}on{% endif %}">{% trans "Home" %}</a>
+  {% if user.is_cashier %}
+    <a href="{% url 'supply_new' %}" class="{% if u == 'supply_new' %}on{% endif %}">{% trans "Supply" %}</a>
+    <a href="{% url 'collection_new' %}" class="{% if u == 'collection_new' %}on{% endif %}">{% trans "Payment" %}</a>
+    <a href="{% url 'destockage_new' %}" class="{% if u == 'destockage_new' %}on{% endif %}">{% trans "Destockage" %}</a>
+    <a href="{% url 'expense_new' %}" class="{% if u == 'expense_new' %}on{% endif %}">{% trans "Expense" %}</a>
+    <a href="{% url 'transfer_new' %}" class="{% if u == 'transfer_new' %}on{% endif %}">{% trans "Transfer" %}</a>
+    <a href="{% url 'conversion_new' %}" class="{% if u == 'conversion_new' %}on{% endif %}">{% trans "UVE→ER" %}</a>
+  {% endif %}
+  {% if not user.is_agent %}
+    <a href="{% url 'exchanges' %}" class="{% if u == 'exchanges' or u == 'exchange_detail' or u == 'exchange_new' %}on{% endif %}">{% trans "Cash managers" %}</a>
+    <a href="{% url 'customers' %}" class="{% if u == 'customers' or u == 'customer_new' %}on{% endif %}">{% trans "Agents & POS" %}</a>
+    <a href="{% url 'txn_list' %}" class="{% if u == 'txn_list' or u == 'txn_detail' %}on{% endif %}">{% trans "Transactions" %}</a>
+    {% if user.is_cashier %}<a href="{% url 'close_day' %}" class="{% if u == 'close_day' %}on{% endif %}">{% trans "Close day" %}</a>{% endif %}
+    <a href="{% url 'closings' %}" class="{% if u == 'closings' or u == 'closing_detail' %}on{% endif %}">{% trans "Closings" %}</a>
+    <a href="{% url 'discrepancies' %}" class="{% if u == 'discrepancies' or u == 'discrepancy_detail' %}on{% endif %}">{% trans "Differences" %}</a>
+  {% endif %}
+  <a href="{% url 'reports' %}" class="{% if u == 'reports' or u == 'report' %}on{% endif %}">{% if user.is_agent %}{% trans "My statement" %}{% else %}{% trans "Reports" %}{% endif %}</a>
+  {% if user.is_superadmin %}
+    <a href="{% url 'opening_balances' %}" class="{% if u == 'opening_balances' %}on{% endif %}">{% trans "Opening balances" %}</a>
+    <a href="{% url 'conversion_rate' %}" class="{% if u == 'conversion_rate' %}on{% endif %}">{% trans "Conversion rate" %}</a>
+    <a href="{% url 'admin:index' %}">{% trans "Configuration" %}</a>
+  {% endif %}
+</div></nav>
+{% endwith %}
+{% endif %}
+<main>
+  {% if messages %}<div class="msgs">{% for m in messages %}<div class="msg {{ m.tags }}">{{ m }}</div>{% endfor %}</div>{% endif %}
+  {% block content %}{% endblock %}
+</main>
+{% if customers %}<datalist id="customer-list">{% for c in customers %}<option value="{{ c.business_sim }}">{{ c.business_sim }} – {{ c.name }} ({{ c.get_kind_display }})</option>{% endfor %}</datalist>{% endif %}
+{% block scripts %}{% endblock %}
+</body>
+</html>

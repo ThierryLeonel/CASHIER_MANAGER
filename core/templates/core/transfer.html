@@ -1,0 +1,20 @@
+{% extends "core/base.html" %}{% load i18n cashier %}
+{% block title %}{% trans "Transfer responsibility" %}{% endblock %}
+{% block content %}
+<h1>{% trans "Transfer responsibility" %} — {{ t.reference }}</h1>
+<p class="muted">{% blocktrans with amt=t.amount|fcfa %}The whole obligation of {{ amt }} FCFA moves to the new party. Partial transfers are not allowed. Company cash and wallets do not change; the original supply is kept.{% endblocktrans %}</p>
+<div class="panel"><dl class="kv">
+  <dt>{% trans "Transaction" %}</dt><dd>{{ t.get_type_display }} · {{ t.business_date|date:"d/m/Y" }} · {{ t.amount|fcfa }} FCFA</dd>
+  <dt>{% trans "Currently responsible" %}</dt><dd>{{ current }}</dd>
+  <dt>{% trans "Their current balance" %}</dt><dd>{{ current_balance|fcfa }} FCFA</dd>
+</dl>
+{% if current_balance < t.amount %}<div class="msg error">{% trans "Part of this obligation appears already settled: the transfer will be refused so that settled debt is not moved. Ask a manager." %}</div>{% endif %}
+</div>
+<div class="panel">
+<form method="post" class="entry" novalidate>{% csrf_token %}
+  {% include "core/inc/fields.html" %}
+  <button type="submit" class="btn primary">{% trans "Transfer" %}</button>
+  <a class="btn" href="{% url 'txn_detail' t.pk %}">{% trans "Cancel" %}</a>
+</form>
+</div>
+{% endblock %}

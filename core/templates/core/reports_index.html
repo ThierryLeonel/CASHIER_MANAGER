@@ -1,0 +1,9 @@
+{% extends "core/base.html" %}{% load i18n %}
+{% block title %}{% trans "Reports" %}{% endblock %}
+{% block content %}
+<h1>{% trans "Reports" %}</h1>
+<p class="muted">{% trans "Every report has filters and Excel/PDF downloads that use exactly the same filters and permissions as the screen." %}</p>
+<div class="grid">
+{% for key, item in reports %}<a class="tile" style="text-decoration:none;color:inherit" href="{% url 'report' key %}"><div class="value" style="font-size:1rem">{{ item.0 }}</div></a>{% endfor %}
+</div>
+{% endblock %}

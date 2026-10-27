@@ -1,0 +1,16 @@
+{% extends "core/base.html" %}{% load i18n cashier %}
+{% block title %}{% trans "My account" %}{% endblock %}
+{% block content %}
+<h1>{{ cp.name }}</h1>
+<p class="muted">{% trans "Business SIM" %} {{ cp.business_sim|sim }} · {% trans "read-only access" %}</p>
+<div class="grid" style="margin:12px 0">
+  <div class="tile"><div class="label">{% if balance|negative %}{% trans "Supply due to you" %}{% else %}{% trans "Outstanding amount owed" %}{% endif %}</div>
+  <div class="value">{% if balance|negative %}{{ balance|absval|fcfa }}{% else %}{{ balance|fcfa }}{% endif %} FCFA</div></div>
+</div>
+<div class="actions"><a class="btn primary" href="{% url 'report' 'statement' %}?preset=all">{% trans "Full statement" %}</a></div>
+<h2>{% trans "Latest movements" %}</h2>
+<div class="tbl-wrap"><table class="t">
+<thead><tr><th>{% trans "Recorded at" %}</th><th>{% trans "Reference" %}</th><th>{% trans "Type" %}</th><th class="money">{% trans "Amount" %}</th></tr></thead>
+<tbody>{% for t in recent %}<tr{% if t.is_corrected %} class="corrected"{% endif %}><td>{{ t.posted_at|date:"d/m/Y H:i" }}</td><td class="keep"><a href="{% url 'txn_detail' t.pk %}">{{ t.reference }}</a>{% if t.is_corrected %} <span class="badge bad">{% trans "CORRECTED" %}</span>{% endif %}</td><td>{{ t.get_type_display }}{% if t.product %} · {{ t.product }}{% endif %}{% if t.payment_method %} · {{ t.get_payment_method_display }}{% endif %}</td><td class="money">{{ t.amount|fcfa }}</td></tr>
+{% empty %}<tr><td colspan="4" class="muted">{% trans "No transactions." %}</td></tr>{% endfor %}</tbody></table></div>
+{% endblock %}

@@ -1,0 +1,23 @@
+{% extends "core/base.html" %}{% load i18n cashier %}
+{% block title %}{% trans "Receipt" %} {{ t.receipt_no }}{% endblock %}
+{% block content %}
+<div class="actions no-print">
+  <button class="btn primary" onclick="window.print()">{% trans "Print (A4)" %}</button>
+  <a class="btn" href="{% url 'receipt_pdf' t.pk %}?download=1">{% trans "Save as PDF" %}</a>
+  <a class="btn" href="{% url 'txn_detail' t.pk %}">{% trans "Back" %}</a>
+</div>
+<div class="receipt-page">
+  {% if t.is_corrected %}<div class="wm">{% trans "CORRECTED" %}<small>{% trans "Reason" %}: {{ t.correction.reason }}</small></div>{% endif %}
+  <div style="font-size:16pt;font-weight:800">{{ COMPANY_NAME }}</div>
+  <div style="font-size:10pt;color:#555">{{ company_address }}</div>
+  <div style="margin-top:8mm;font-weight:700;font-size:12pt">{% trans "RECEIPT" %} / {{ t.get_type_display|upper }}</div>
+  <div>{% trans "Receipt no." %} <strong>{{ t.receipt_no }}</strong> &nbsp; {% trans "Reference" %} <strong>{{ t.reference }}</strong></div>
+  <div class="amount">{{ t.amount|fcfa }} FCFA</div>
+  <table>
+    {% for k, v in rows %}<tr><td>{{ k }}</td><td>{{ v }}</td></tr>{% endfor %}
+    {% if balance_after is not None %}<tr><td>{% trans "Customer balance after this transaction" %}</td><td>{{ balance_after|absval|fcfa }} FCFA {% if balance_after|negative %}{% trans "supply due to customer" %}{% elif balance_after %}{% trans "owed to the company" %}{% endif %}</td></tr>{% endif %}
+  </table>
+  <div class="sig"><div>{% trans "Cashier signature" %}</div><div>{% trans "Customer signature" %}</div></div>
+  <p style="font-size:8pt;color:#666;margin-top:10mm">{% trans "This receipt confirms a completed transaction recorded in the company ledger. Amounts in FCFA (XAF)." %}</p>
+</div>
+{% endblock %}

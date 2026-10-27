@@ -1,0 +1,35 @@
+{% extends "core/base.html" %}{% load i18n cashier %}
+{% block title %}{{ t.reference }}{% endblock %}
+{% block content %}
+<h1>{{ t.get_type_display }} {{ t.reference }} {% if t.is_corrected %}<span class="stamp">{% trans "CORRECTED" %}</span>{% endif %}</h1>
+<p class="muted">{{ t.amount|fcfa }} FCFA{% if t.receipt_no %} · {% trans "Receipt" %} {{ t.receipt_no }}{% endif %}</p>
+<div class="actions">
+  {% if t.receipt_no %}<a class="btn primary" href="{% url 'receipt' t.pk %}">{% trans "A4 receipt / print" %}</a>
+  <a class="btn" href="{% url 'receipt_pdf' t.pk %}?download=1">{% trans "Download PDF" %}</a>{% endif %}
+  {% if can_transfer %}<a class="btn" href="{% url 'txn_transfer' t.pk %}">{% trans "Transfer responsibility" %}</a>{% endif %}
+  {% if can_correct %}<a class="btn danger" href="{% url 'txn_correct' t.pk %}">{% trans "Correct" %}</a>{% endif %}
+</div>
+{% if t.is_corrected %}
+<div class="msg error"><strong>{% trans "CORRECTED" %}</strong> — {{ t.correction.reason }}<br>
+<span class="small">{{ t.correction.get_kind_display }} · {{ t.correction.corrected_by }} · {{ t.correction.created_at|date:"d/m/Y H:i" }} ·
+{% trans "Reversal" %} <a href="{% url 'txn_detail' t.correction.reversal_txn.pk %}">{{ t.correction.reversal_txn.reference }}</a>
+{% if t.correction.replacement_txn %} · {% trans "Replacement" %} <a href="{% url 'txn_detail' t.correction.replacement_txn.pk %}">{{ t.correction.replacement_txn.reference }}</a>{% endif %}
+{% for k, v in t.correction.changes.items %} · {{ k }}: {{ v.0 }} → {{ v.1 }}{% endfor %}</span></div>
+{% endif %}
+{% if t.reverses %}<div class="msg info">{% trans "This entry reverses" %} <a href="{% url 'txn_detail' t.reverses.pk %}">{{ t.reverses.reference }}</a> ({% trans "business date" %} {{ t.original_business_date|date:"d/m/Y" }}).</div>{% endif %}
+<div class="panel"><dl class="kv">
+{% for k, v in rows %}<dt>{{ k }}</dt><dd>{{ v }}</dd>{% endfor %}
+{% if current_responsible %}<dt>{% trans "Currently responsible" %}</dt><dd><strong>{{ current_responsible }}</strong></dd>{% endif %}
+</dl></div>
+{% if transfers %}
+<h2>{% trans "Responsibility history" %}</h2>
+<div class="tbl-wrap"><table class="t"><thead><tr><th>{% trans "When" %}</th><th>{% trans "Reference" %}</th><th>{% trans "From" %}</th><th>{% trans "To" %}</th><th>{% trans "By" %}</th><th>{% trans "Reason" %}</th></tr></thead>
+<tbody>{% for x in transfers %}<tr{% if x.is_corrected %} class="corrected"{% endif %}><td>{{ x.posted_at|date:"d/m/Y H:i" }}</td><td class="keep"><a href="{% url 'txn_detail' x.pk %}">{{ x.reference }}</a>{% if x.is_corrected %} <span class="badge bad">{% trans "CANCELLED" %}</span>{% endif %}</td><td>{{ x.counterparty_2 }}</td><td>{{ x.counterparty }}</td><td>{{ x.entered_by }}</td><td>{{ x.description }}</td></tr>{% endfor %}</tbody></table></div>
+{% endif %}
+{% if entries %}
+<h2>{% trans "Ledger entries" %}</h2>
+<div class="tbl-wrap"><table class="t"><thead><tr><th>{% trans "Account" %}</th><th>{% trans "Type" %}</th><th class="money">{% trans "Debit (+)" %}</th><th class="money">{% trans "Credit (−)" %}</th></tr></thead>
+<tbody>{% for e in entries %}<tr><td>{{ e.account }}{% if e.account.counterparty %} — {{ e.account.counterparty }}{% endif %}</td><td>{{ e.account.get_kind_display }}</td><td class="money">{% if not e.amount|negative %}{{ e.amount|fcfa }}{% endif %}</td><td class="money">{% if e.amount|negative %}{{ e.amount|absval|fcfa }}{% endif %}</td></tr>{% endfor %}</tbody></table></div>
+<p class="small muted">{% trans "Every transaction is balanced (debits = credits). Customer account: debit = owes more; credit = paid / owes less." %}</p>
+{% endif %}
+{% endblock %}

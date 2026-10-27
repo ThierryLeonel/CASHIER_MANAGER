@@ -1,0 +1,12 @@
+{% extends "core/base.html" %}{% load i18n %}
+{% block content %}
+<h1>{{ title }}</h1>
+{% if intro %}<p class="muted">{{ intro }}</p>{% endif %}
+<div class="panel">
+<form method="post" class="entry" novalidate>{% csrf_token %}
+  {% include "core/inc/fields.html" %}
+  <button type="submit" class="btn primary">{% trans "Save" %}</button>
+  <a class="btn" href="javascript:history.back()">{% trans "Cancel" %}</a>
+</form>
+</div>
+{% endblock %}

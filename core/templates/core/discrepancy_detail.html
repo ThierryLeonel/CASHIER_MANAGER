@@ -1,0 +1,34 @@
+{% extends "core/base.html" %}{% load i18n cashier %}
+{% block title %}{% trans "Difference" %}{% endblock %}
+{% block content %}
+{% with cd=d.closing_line.closing.cashier_day %}
+<h1>{{ d.kind_label }} {{ d.amount|absval|fcfa }} FCFA — {{ d.account }}</h1>
+<p class="muted">{{ cd.cashier }} · {% trans "closing of" %} {{ cd.business_date|date:"d/m/Y" }} · <span class="badge {% if d.status == 'OPEN' %}bad{% else %}ok{% endif %}">{{ d.get_status_display }}</span></p>
+<div class="panel"><dl class="kv">
+  <dt>{% trans "Expected (book)" %}</dt><dd>{{ d.closing_line.expected|fcfa }}</dd>
+  <dt>{% trans "Actual counted/read" %}</dt><dd>{{ d.closing_line.actual|fcfa }}</dd>
+  <dt>{% trans "Original difference" %}</dt><dd>{{ d.amount|fcfa }}</dd>
+  {% if d.status == 'RESOLVED' %}
+  <dt>{% trans "Resolution" %}</dt><dd>{{ d.get_resolution_display }}</dd>
+  <dt>{% trans "Resolved by" %}</dt><dd>{{ d.resolved_by }} · {{ d.resolved_at|date:"d/m/Y H:i" }}</dd>
+  <dt>{% trans "Resolution notes" %}</dt><dd>{{ d.resolution_notes }}</dd>
+  {% if d.adjustment_txn %}<dt>{% trans "Linked adjustment" %}</dt><dd><a href="{% url 'txn_detail' d.adjustment_txn.pk %}">{{ d.adjustment_txn.reference }}</a></dd>{% endif %}
+  {% if d.correction %}<dt>{% trans "Linked correction" %}</dt><dd><a href="{% url 'txn_detail' d.correction.original.pk %}">{{ d.correction.original.reference }}</a> — {{ d.correction.reason }}</dd>{% endif %}
+  {% endif %}
+</dl></div>
+<h2>{% trans "Investigation notes" %}</h2>
+<div class="panel">
+{% for n in notes %}<p><strong>{{ n.author }}</strong> <span class="muted small">{{ n.created_at|date:"d/m/Y H:i" }}</span><br>{{ n.text|linebreaksbr }}</p>{% empty %}<p class="muted">{% trans "No notes yet." %}</p>{% endfor %}
+{% if d.status == 'OPEN' %}
+<form method="post" class="entry">{% csrf_token %}<input type="hidden" name="action" value="note">{% include "core/inc/fields.html" with form=note_form %}<button class="btn" type="submit">{% trans "Add note" %}</button></form>
+{% endif %}
+</div>
+{% if resolve_form and d.status == 'OPEN' %}
+<h2>{% trans "Resolve" %}</h2>
+<div class="panel"><form method="post" class="entry">{% csrf_token %}<input type="hidden" name="action" value="resolve">
+{% include "core/inc/fields.html" with form=resolve_form %}
+<p class="small muted">{% trans "An adjustment posts a reconciliation entry so the book matches the count (shortage written off / surplus recognised). It is linked here and visible in reports." %}</p>
+<button class="btn danger" type="submit">{% trans "Resolve" %}</button></form></div>
+{% endif %}
+{% endwith %}
+{% endblock %}
