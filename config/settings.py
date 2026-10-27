@@ -110,6 +110,11 @@ else:
             "CONN_MAX_AGE": 60,
         }
     }
+if DATABASES["default"].get("ENGINE") != "django.db.backends.postgresql":
+    raise ImproperlyConfigured(
+        "Cashier Manager requires PostgreSQL (the ledger uses PostgreSQL triggers, sequences and row locks). "
+        f"DATABASE_URL points to {DATABASES['default'].get('ENGINE')}. Attach a PostgreSQL database instead."
+    )
 # Safe behind connection poolers (e.g. Neon / PgBouncer transaction mode).
 DATABASES["default"]["DISABLE_SERVER_SIDE_CURSORS"] = True
 DATABASES["default"]["TEST"] = {"NAME": env("DB_TEST_NAME", "test_cashier")}
