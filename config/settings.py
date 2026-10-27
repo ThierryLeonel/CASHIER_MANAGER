@@ -177,3 +177,11 @@ import sys  # noqa: E402
 
 if "test" in sys.argv:
     PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]  # speed only; never in production
+
+# Cache-busting: in production collectstatic writes app.<hash>.css, so a new
+# deployment never serves a stylesheet cached by the browser or the CDN.
+if not DEBUG and "test" not in sys.argv:
+    STORAGES = {
+        "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+        "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.ManifestStaticFilesStorage"},
+    }
