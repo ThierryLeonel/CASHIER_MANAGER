@@ -53,6 +53,10 @@ msgstr "%(ref)s marquée CORRIGÉE."
 msgid "%(type)s %(ref)s recorded: %(amt)s FCFA."
 msgstr "%(type)s %(ref)s enregistré(e) : %(amt)s FCFA."
 
+#, python-format
+msgid "%(z)s desk · entries go to business day %(d)s"
+msgstr "Poste %(z)s · saisies sur la journée du %(d)s"
+
 msgid ""
 "(you already closed today; new entries belong to the next business day)"
 msgstr ""
@@ -129,6 +133,9 @@ msgstr "Réel compté/lu"
 msgid "Add note"
 msgstr "Ajouter une note"
 
+msgid "Administration"
+msgstr "Administration"
+
 msgid "Agent (owes)"
 msgstr "Agent (redevable)"
 
@@ -190,6 +197,9 @@ msgstr ""
 "Un accord ne déplace aucun argent. Les soldes de l'entreprise ne changent "
 "que lorsque vous enregistrez chaque volet effectué."
 
+msgid "Analysis"
+msgstr "Analyse"
+
 msgid "Apply"
 msgstr "Appliquer"
 
@@ -216,6 +226,9 @@ msgstr "Solde au (date de démarrage)"
 msgid "Balances"
 msgstr "Soldes"
 
+msgid "Balances and statements"
+msgstr "Soldes et relevés"
+
 msgid "Bank account"
 msgstr "Compte bancaire"
 
@@ -230,6 +243,9 @@ msgid "Bank reference %(ref)s is already recorded for this bank account."
 msgstr ""
 "La référence bancaire %(ref)s est déjà enregistrée pour ce compte bancaire."
 
+msgid "Between company drawers and wallets"
+msgstr "Entre caisses et portefeuilles de l'entreprise"
+
 msgid "Business SIM"
 msgstr "SIM business"
 
@@ -242,6 +258,9 @@ msgstr "Numéro de SIM business"
 
 msgid "Business date"
 msgstr "Date comptable"
+
+msgid "Business date of your entries"
+msgstr "Date comptable de vos saisies"
 
 #, python-format
 msgid "Business dates %(a)s → %(b)s"
@@ -321,10 +340,16 @@ msgid "Cash managers net position (end of period, + = they owe)"
 msgstr ""
 "Position nette des gestionnaires de cash (fin de période, + = ils doivent)"
 
+msgid "Cash paid out of your drawer"
+msgstr "Espèces sorties de votre caisse"
+
 msgid "Cash paid out of your drawer. Expenses never reduce an agent's debt."
 msgstr ""
 "Espèces sorties de votre caisse. Les dépenses ne réduisent jamais la dette "
 "d'un agent."
+
+msgid "Cash to a POS, UVE to an agent"
+msgstr "Espèces au PDV, UVE à l'agent"
 
 msgid "Cash-manager exchange"
 msgstr "Échange gestionnaire de cash"
@@ -388,6 +413,9 @@ msgstr "Clôturer la journée"
 
 msgid "Close day"
 msgstr "Clôture"
+
+msgid "Close menu"
+msgstr "Fermer le menu"
 
 msgid "Close the day"
 msgstr "Clôturer la journée"
@@ -507,6 +535,9 @@ msgstr "Conversions et taux"
 msgid "Convert UVE to ER"
 msgstr "Convertir l'UVE en ER"
 
+msgid "Convert UVE to ER on a SIM"
+msgstr "Convertir l'UVE en ER sur une SIM"
+
 msgid "Correct"
 msgstr "Corriger"
 
@@ -557,6 +588,9 @@ msgstr "Corrections passées ultérieurement pour cette journée"
 
 msgid "Count"
 msgstr "Nombre"
+
+msgid "Count cash and wallets"
+msgstr "Compter espèces et portefeuilles"
 
 msgid ""
 "Count your cash and read each SIM wallet balance, then enter the ACTUAL "
@@ -737,6 +771,9 @@ msgstr "Modifier"
 msgid "Effective from"
 msgstr "En vigueur depuis"
 
+msgid "End of day"
+msgstr "Fin de journée"
+
 msgid ""
 "Enter a 9-digit Cameroon mobile number starting with 6 (e.g. 699 12 34 56)"
 msgstr ""
@@ -788,6 +825,9 @@ msgid "Exchange agreements (no money moves until a leg is recorded)"
 msgstr ""
 "Accords d'échange (aucun argent ne bouge avant qu'un volet soit enregistré)"
 
+msgid "Exchange cash and UVE"
+msgstr "Échanger espèces et UVE"
+
 msgid "Exchanges"
 msgstr "Échanges"
 
@@ -824,6 +864,9 @@ msgstr "Responsable financier"
 msgid "Floating-point money values are not allowed"
 msgstr "Les montants en virgule flottante ne sont pas autorisés"
 
+msgid "Follow-up"
+msgstr "Suivi"
+
 msgid ""
 "For a replacement, fill only the values that change; the others are copied "
 "from the original and re-validated."
@@ -848,6 +891,10 @@ msgstr "Généré le"
 
 msgid "Give the reason for the responsibility change."
 msgstr "Indiquez le motif du changement de responsabilité."
+
+#, python-format
+msgid "Hello, %(name)s"
+msgstr "Bonjour, %(name)s"
 
 msgid "History"
 msgstr "Historique"
@@ -895,6 +942,9 @@ msgstr "Identifiant ou mot de passe incorrect."
 msgid "Investigate"
 msgstr "Enquêter"
 
+msgid "Investigate and resolve"
+msgstr "Enquêter et résoudre"
+
 msgid "Investigation note"
 msgstr "Note d'enquête"
 
@@ -906,6 +956,9 @@ msgstr "Derniers mouvements"
 
 msgid "Latest transactions"
 msgstr "Dernières transactions"
+
+msgid "Launch balances, once per account"
+msgstr "Soldes de démarrage, une fois par compte"
 
 msgid "Launch opening"
 msgstr "Ouverture au démarrage"
@@ -940,6 +993,9 @@ msgstr "SIM float MTN"
 msgid "MTN float wallet"
 msgstr "Portefeuille float MTN"
 
+msgid "Main menu"
+msgstr "Menu principal"
+
 msgid "Manager"
 msgstr "Responsable"
 
@@ -948,6 +1004,9 @@ msgstr "Zone principale"
 
 msgid "Method"
 msgstr "Mode"
+
+msgid "Money received from an agent or POS"
+msgstr "Argent reçu d'un agent ou d'un PDV"
 
 msgid "Monthly"
 msgstr "Mensuel"
@@ -976,6 +1035,9 @@ msgstr "Nom"
 
 msgid "Net amount"
 msgstr "Montant net"
+
+msgid "New agent/POS"
+msgstr "Nouvel agent/PDV"
 
 msgid "New cash-manager exchange"
 msgstr "Nouvel échange avec un gestionnaire de cash"
@@ -1104,6 +1166,9 @@ msgstr "Écarts de clôture ouverts (non résolus), toutes dates"
 msgid "Open business days"
 msgstr "Journées ouvertes"
 
+msgid "Open menu"
+msgstr "Ouvrir le menu"
+
 msgid "Open – under investigation"
 msgstr "Ouvert – en cours d'enquête"
 
@@ -1112,6 +1177,9 @@ msgstr "Ouverture"
 
 msgid "Opening (book)"
 msgstr "Ouverture (comptable)"
+
+msgid "Opening + movements = closing"
+msgstr "Ouverture + mouvements = clôture"
 
 msgid ""
 "Opening = balance before the first business date; Closing = balance at the "
@@ -1376,6 +1444,9 @@ msgstr "Référence"
 msgid "Register"
 msgstr "Enregistrer"
 
+msgid "Register a business SIM"
+msgstr "Enregistrer une SIM business"
+
 msgid "Register agent/POS"
 msgstr "Enregistrer agent/PDV"
 
@@ -1472,6 +1543,9 @@ msgstr "Rechercher"
 msgid "Search (SIM or name)"
 msgstr "Recherche (SIM ou nom)"
 
+msgid "Search, correct, transfer responsibility"
+msgstr "Rechercher, corriger, transférer la responsabilité"
+
 msgid "Select a customer business SIM to see the statement."
 msgstr "Choisissez la SIM business d'un client pour voir le relevé."
 
@@ -1501,6 +1575,9 @@ msgstr "La source et la destination doivent être différentes."
 
 msgid "Statement"
 msgstr "Relevé"
+
+msgid "Statements, supplies, collections, exports"
+msgstr "Relevés, approvisionnements, encaissements, exports"
 
 msgid "Status"
 msgstr "Statut"
@@ -1739,6 +1816,9 @@ msgstr "Taux de conversion UVE → ER"
 msgid "UVE → ER conversions and rates used"
 msgstr "Conversions UVE → ER et taux utilisés"
 
+msgid "UVE, ER or cash given to an agent or POS"
+msgstr "UVE, ER ou espèces remis à un agent ou PDV"
+
 msgid "UVE→ER"
 msgstr "UVE→ER"
 
@@ -1771,6 +1851,9 @@ msgstr "Voir"
 
 msgid "Weekly"
 msgstr "Hebdomadaire"
+
+msgid "What do you want to record?"
+msgstr "Que voulez-vous enregistrer ?"
 
 msgid "What happened"
 msgstr "Ce qui a eu lieu"
@@ -1813,6 +1896,9 @@ msgstr "Vos saisies sont enregistrées sur la journée du %(d)s."
 
 msgid "Your latest entries"
 msgstr "Vos dernières saisies"
+
+msgid "Zones, users, SIMs, drawers"
+msgstr "Zones, utilisateurs, SIM, caisses"
 
 msgid "account number"
 msgstr "numéro de compte"

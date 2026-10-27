@@ -1,4 +1,5 @@
 {% extends "core/base.html" %}{% load i18n %}
+{% block topbar %}{{ title }}{% endblock %}
 {% block content %}
 <h1>{{ title }}</h1>
 {% if intro %}<p class="muted">{{ intro }}</p>{% endif %}

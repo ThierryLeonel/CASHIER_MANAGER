@@ -1,17 +1,22 @@
 {% extends "core/base.html" %}{% load i18n cashier %}
 {% block title %}{% trans "Home" %}{% endblock %}
+{% block topbar %}{% trans "Home" %}{% endblock %}
 {% block content %}
 <h1>{% trans "Overview — all zones" %}</h1>
+<p class="muted">{{ user.get_role_display }} · {{ today|date:"d/m/Y" }}</p>
 <div class="grid" style="margin:12px 0">
   <div class="tile"><div class="label">{% trans "Customers owe the company" %}</div><div class="value">{{ owed|fcfa }}</div></div>
   <div class="tile"><div class="label">{% trans "Supply due to customers" %}</div><div class="value">{{ due|fcfa }}</div></div>
   <div class="tile"><div class="label">{% trans "Unresolved closing differences" %}</div><div class="value">{{ open_disc|length }}</div></div>
 </div>
-<div class="actions">
-  <a class="btn" href="{% url 'reports' %}">{% trans "Reports" %}</a>
-  <a class="btn" href="{% url 'report' 'reconciliation' %}">{% trans "Reconciliation" %}</a>
-  <a class="btn" href="{% url 'discrepancies' %}">{% trans "Differences" %}</a>
-  {% if user.is_superadmin %}<a class="btn" href="{% url 'opening_balances' %}">{% trans "Opening balances" %}</a>{% endif %}
+<div class="quick">
+  <a class="qa main" href="{% url 'reports' %}"><span class="qa-ic">{% icon "chart" 22 %}</span><strong>{% trans "Reports" %}</strong><span class="d">{% trans "Statements, supplies, collections, exports" %}</span></a>
+  <a class="qa" href="{% url 'report' 'reconciliation' %}"><span class="qa-ic">{% icon "percent" 22 %}</span><strong>{% trans "Reconciliation" %}</strong><span class="d">{% trans "Opening + movements = closing" %}</span></a>
+  <a class="qa" href="{% url 'discrepancies' %}"><span class="qa-ic">{% icon "alert" 22 %}</span><strong>{% trans "Differences" %}</strong><span class="d">{% trans "Investigate and resolve" %}</span></a>
+  <a class="qa" href="{% url 'txn_list' %}"><span class="qa-ic">{% icon "list" 22 %}</span><strong>{% trans "Transactions" %}</strong><span class="d">{% trans "Search, correct, transfer responsibility" %}</span></a>
+  <a class="qa" href="{% url 'customers' %}"><span class="qa-ic">{% icon "users" 22 %}</span><strong>{% trans "Agents & POS" %}</strong><span class="d">{% trans "Balances and statements" %}</span></a>
+  {% if user.is_superadmin %}<a class="qa" href="{% url 'opening_balances' %}"><span class="qa-ic">{% icon "key" 22 %}</span><strong>{% trans "Opening balances" %}</strong><span class="d">{% trans "Launch balances, once per account" %}</span></a>
+  <a class="qa" href="{% url 'admin:index' %}"><span class="qa-ic">{% icon "settings" 22 %}</span><strong>{% trans "Configuration" %}</strong><span class="d">{% trans "Zones, users, SIMs, drawers" %}</span></a>{% endif %}
 </div>
 <h2>{% trans "Company cash, wallets and banks (book balances)" %}</h2>
 <div class="tbl-wrap"><table class="t">

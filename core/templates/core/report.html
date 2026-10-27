@@ -1,5 +1,6 @@
 {% extends "core/base.html" %}{% load i18n cashier %}
 {% block title %}{{ rep.title }}{% endblock %}
+{% block topbar %}{{ rep.title }}{% endblock %}
 {% block content %}
 <h1>{{ rep.title }}</h1>
 {% if not user.is_agent %}{% include "core/inc/filters.html" with filters_text=rep.filters_text %}{% else %}

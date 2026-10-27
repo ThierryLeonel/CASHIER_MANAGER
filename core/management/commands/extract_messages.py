@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parents[2]
 PY_RE = re.compile(r"""(?<![\w.])(?:_|_l|gettext|gettext_lazy)\(\s*((?:"(?:[^"\\]|\\.)*"\s*|'(?:[^'\\]|\\.)*'\s*)+)""",
                    re.S)
 STR_RE = re.compile(r""""((?:[^"\\]|\\.)*)"|'((?:[^'\\]|\\.)*)'""")
-TRANS_RE = re.compile(r"""{%\s*trans\s+"((?:[^"\\]|\\.)*)"\s*%}""")
+TRANS_RE = re.compile(r"""{%\s*trans\s+(?:"((?:[^"\\]|\\.)*)"|'((?:[^'\\]|\\.)*)')\s*%}""")
 BLOCK_RE = re.compile(r"{%\s*blocktrans(?P<args>[^%]*)%}(?P<body>.*?)(?:{%\s*plural\s*%}(?P<plural>.*?))?{%\s*endblocktrans\s*%}",
                       re.S)
 VAR_RE = re.compile(r"{{\s*(\w+)\s*}}")
@@ -39,7 +39,7 @@ def extract():
     for path in (ROOT / "templates").rglob("*.html"):
         src = path.read_text(encoding="utf-8")
         for m in TRANS_RE.finditer(src):
-            singles.add(m.group(1))
+            singles.add(m.group(1) or m.group(2))
         for m in BLOCK_RE.finditer(src):
             body = _block_msg(m.group("body"))
             if m.group("plural"):

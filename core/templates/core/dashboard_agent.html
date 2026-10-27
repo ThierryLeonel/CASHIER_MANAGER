@@ -1,5 +1,6 @@
 {% extends "core/base.html" %}{% load i18n cashier %}
 {% block title %}{% trans "My account" %}{% endblock %}
+{% block topbar %}{% trans "My account" %}{% endblock %}
 {% block content %}
 <h1>{{ cp.name }}</h1>
 <p class="muted">{% trans "Business SIM" %} {{ cp.business_sim|sim }} · {% trans "read-only access" %}</p>

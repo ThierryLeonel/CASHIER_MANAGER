@@ -1,4 +1,5 @@
 {% extends "core/base.html" %}{% load i18n %}
+{% block topbar %}{{ title }}{% endblock %}
 {% block content %}
 <h1>{{ title }}</h1>
 {% if intro %}<p class="muted">{{ intro }}</p>{% endif %}
@@ -6,9 +7,11 @@
 <form method="post" class="entry" novalidate id="entry-form" data-rate="{{ rate|default:'' }}">{% csrf_token %}
   {% include "core/inc/fields.html" %}
   <div id="conv-preview" class="preview" hidden></div>
-  <p class="small muted">{% trans "Only record transactions that are completed and confirmed." %}</p>
-  <button type="submit" class="btn primary" id="submit-btn">{% trans "Record" %}</button>
-  <a class="btn" href="{% url 'dashboard' %}">{% trans "Cancel" %}</a>
+  <div class="form-foot">
+    <button type="submit" class="btn primary" id="submit-btn">{% trans "Record" %}</button>
+    <a class="btn" href="{% url 'dashboard' %}">{% trans "Cancel" %}</a>
+    <span class="small muted">{% trans "Only record transactions that are completed and confirmed." %}</span>
+  </div>
 </form>
 </div>
 {% endblock %}
