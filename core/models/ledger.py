@@ -80,6 +80,10 @@ class Account(models.Model):
         ]
 
     def __str__(self):
+        if self.kind in self.SYSTEM_KINDS:
+            return str(self.Kind(self.kind).label)
+        if self.kind == self.Kind.EXPENSE and self.expense_category_id:
+            return f"{self.Kind(self.kind).label} · {self.expense_category}"
         if self.sim_id:
             from core.simnumbers import display_sim
 
@@ -170,6 +174,9 @@ class Transaction(models.Model):
     business_date = models.DateField(db_index=True)
     posted_at = models.DateTimeField(default=timezone.now, db_index=True)
     entered_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name="entered_transactions")
+    # The cashier whose desk the transaction belongs to (the recording cashier).
+    cashier = models.ForeignKey(User, null=True, blank=True, on_delete=models.PROTECT, related_name="desk_transactions",
+                                db_index=True)
     cashier_day = models.ForeignKey(CashierDay, null=True, blank=True, on_delete=models.PROTECT,
                                     related_name="transactions")
     amount = models.DecimalField(**MONEY)

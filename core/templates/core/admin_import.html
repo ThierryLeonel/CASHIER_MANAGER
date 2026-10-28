@@ -1,0 +1,30 @@
+{% extends "core/base.html" %}{% load i18n cashier %}
+{% block title %}{% trans "Import CSV / Excel" %}{% endblock %}
+{% block topbar %}{% trans "Import CSV / Excel" %}{% endblock %}
+{% block content %}
+<div class="form-head"><span class="form-ic">{% icon "upload" 26 %}</span>
+<div><h1>{% trans "Import CSV / Excel" %}</h1>
+<p class="muted">{% trans "Step 1: download the template and fill it. Step 2: upload it to check every row. Step 3: confirm. If any row has an error, nothing is imported." %}</p></div></div>
+<div class="panel">
+  <strong>{% trans "Templates" %}</strong>
+  <div class="actions" style="margin-bottom:0">{% for k, label in kinds %}<a class="btn small" href="{% url 'import_template' k %}">{% icon "download" 16 %} {{ label }}</a>{% endfor %}</div>
+</div>
+{% if result %}
+<div class="panel">
+  <h2 style="margin-top:0">{% if result.ok %}{% trans "Check passed: ready to import" %}{% else %}{% trans "Some rows have errors: nothing was imported" %}{% endif %}</h2>
+  <p class="muted">{{ result.name }} · {{ result.results|length }} {% trans "rows" %}</p>
+  <div class="tbl-wrap"><table class="t"><thead><tr><th>{% trans "Row" %}</th><th>{% trans "Status" %}</th><th>{% trans "Details" %}</th></tr></thead>
+  <tbody>{% for n, ok, msg in result.results %}<tr><td>{{ n }}</td><td>{% if ok %}<span class="badge ok">OK</span>{% else %}<span class="badge bad">{% trans "Error" %}</span>{% endif %}</td><td>{{ msg }}</td></tr>{% endfor %}</tbody></table></div>
+  {% if result.ok %}<form method="post" class="form-foot">{% csrf_token %}<input type="hidden" name="action" value="confirm"><button class="btn primary">{% trans "Confirm import" %}</button><a class="btn" href="{% url 'import_data' %}">{% trans "Cancel" %}</a></form>{% endif %}
+</div>
+{% endif %}
+<div class="panel"><form method="post" enctype="multipart/form-data" class="entry" novalidate>{% csrf_token %}
+{% include "core/inc/fields.html" %}
+<div class="form-foot"><button class="btn primary" type="submit">{% trans "Upload and check" %}</button></div>
+</form></div>
+<div class="panel small">
+  <strong>{% trans "Column guide" %}</strong>
+  {% for k, spec in templates.items %}<p><code>{{ k }}</code>: {{ spec.0|join:", " }}</p>{% endfor %}
+  <p class="muted">{% trans "Transactions: type is SUPPLY_AGENT, SUPPLY_POS, PAYMENT or EXPENSE; cashier is the username or staff ID; account is the company SIM number or bank account number (leave empty to use the cashier's own drawer or wallet)." %}</p>
+</div>
+{% endblock %}

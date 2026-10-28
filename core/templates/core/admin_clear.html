@@ -1,0 +1,12 @@
+{% extends "core/base.html" %}{% load i18n cashier %}
+{% block title %}{% trans "Clear data" %}{% endblock %}
+{% block topbar %}{% trans "Clear data" %}{% endblock %}
+{% block content %}
+<div class="form-head"><span class="form-ic danger">{% icon "trash" 26 %}</span>
+<div><h1>{% trans "Clear data" %}</h1>
+<p class="muted">{% trans "Use this to remove test data before going live. Users, zones, SIMs, drawers, banks, expense categories and rates are always kept. This cannot be undone; make a database backup first." %}</p></div></div>
+<div class="panel"><form method="post" class="entry" novalidate autocomplete="off">{% csrf_token %}
+{% include "core/inc/fields.html" %}
+<div class="form-foot"><button class="btn danger" type="submit">{% trans "Clear the data" %}</button><a class="btn" href="{% url 'admin_home' %}">{% trans "Cancel" %}</a></div>
+</form></div>
+{% endblock %}

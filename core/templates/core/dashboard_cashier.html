@@ -11,6 +11,13 @@
   </div>
 </div>
 
+<div class="bal-row">
+{% for k, label, v in kind_totals %}
+  <div class="bal k-{{ k }}"><span class="bal-label">{{ label }}</span><span class="bal-value">{{ v|fcfa }}</span><span class="bal-unit">FCFA</span></div>
+{% endfor %}
+</div>
+<p class="small muted" style="margin-top:-4px">{% blocktrans with z=zone|default:"—" %}Balances of the drawers and SIM wallets you hold · master zone {{ z }}{% endblocktrans %}</p>
+
 {% if open_disc %}<div class="msg error">{% blocktrans count n=open_disc %}{{ n }} unresolved closing difference on your accounts.{% plural %}{{ n }} unresolved closing differences on your accounts.{% endblocktrans %} <a href="{% url 'discrepancies' %}">{% trans "View" %}</a></div>{% endif %}
 
 <h2>{% trans "What do you want to record?" %}</h2>

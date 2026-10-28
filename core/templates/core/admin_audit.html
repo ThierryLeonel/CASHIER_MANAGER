@@ -1,0 +1,12 @@
+{% extends "core/base.html" %}{% load i18n cashier %}
+{% block title %}{% trans "Audit log" %}{% endblock %}
+{% block topbar %}{% trans "Audit log" %}{% endblock %}
+{% block content %}
+<h1>{% trans "Audit log" %}</h1>
+<form class="panel filters" method="get"><div class="field"><label>{% trans "Action" %}</label><select name="action"><option value="">—</option>{% for a in actions %}<option value="{{ a }}" {% if a == action %}selected{% endif %}>{{ a }}</option>{% endfor %}</select></div><div class="field"><button class="btn primary">{% trans "Apply" %}</button></div></form>
+<div class="tbl-wrap"><table class="t"><thead><tr><th>{% trans "When" %}</th><th>{% trans "User" %}</th><th>{% trans "Action" %}</th><th>{% trans "Details" %}</th></tr></thead>
+<tbody>{% for e in page %}<tr><td>{{ e.at|date:"d/m/Y H:i:s" }}</td><td>{{ e.user.label_with_id|default:"—" }}</td><td><span class="badge">{{ e.action }}</span></td>
+<td><details><summary class="small">{% trans "Show" %}</summary><pre class="json">{{ e.detail|pretty_json }}</pre></details></td></tr>
+{% empty %}<tr><td colspan="4" class="muted">{% trans "Nothing here." %}</td></tr>{% endfor %}</tbody></table></div>
+<div class="pager">{% if page.has_previous %}<a class="btn small" href="?action={{ action }}&page={{ page.previous_page_number }}">←</a>{% endif %}<span class="muted small">{{ page.number }} / {{ page.paginator.num_pages }}</span>{% if page.has_next %}<a class="btn small" href="?action={{ action }}&page={{ page.next_page_number }}">→</a>{% endif %}</div>
+{% endblock %}

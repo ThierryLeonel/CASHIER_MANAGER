@@ -1,0 +1,23 @@
+{% extends "core/base.html" %}{% load i18n cashier %}
+{% block title %}{% trans "Administration" %}{% endblock %}
+{% block topbar %}{% trans "Administration" %}{% endblock %}
+{% block content %}
+<h1>{% trans "Administration" %}</h1>
+<p class="muted">{% trans "Full control of the application. Every change made here is recorded in the audit log." %}</p>
+<div class="grid" style="margin:12px 0">
+  <div class="tile"><div class="label">{% trans "Active users" %}</div><div class="value">{{ stats.users }}</div></div>
+  <div class="tile"><div class="label">{% trans "Agents & POS" %}</div><div class="value">{{ stats.customers }}</div></div>
+  <div class="tile"><div class="label">{% trans "Transactions" %}</div><div class="value">{{ stats.transactions }}</div></div>
+  <div class="tile"><div class="label">{% trans "Audit events" %}</div><div class="value">{{ stats.audit }}</div></div>
+</div>
+<div class="quick">
+  <a class="qa main" href="{% url 'act_as' %}"><span class="qa-ic">{% icon "users" 22 %}</span><strong>{% trans "Record as a cashier" %}</strong><span class="d">{% if acting %}{% blocktrans with c=acting %}Now recording for {{ c }}{% endblocktrans %}{% else %}{% trans "Enter supplies, payments and more for any cashier" %}{% endif %}</span></a>
+  <a class="qa" href="{% url 'import_data' %}"><span class="qa-ic">{% icon "upload" 22 %}</span><strong>{% trans "Import CSV / Excel" %}</strong><span class="d">{% trans "Agents, POS, opening balances, transactions" %}</span></a>
+  <a class="qa" href="{% url 'txn_list' %}"><span class="qa-ic">{% icon "list" 22 %}</span><strong>{% trans "Edit or delete rows" %}</strong><span class="d">{% trans "Open a transaction, then Edit or Delete" %}</span></a>
+  <a class="qa" href="{% url 'admin:index' %}"><span class="qa-ic">{% icon "settings" 22 %}</span><strong>{% trans "Configuration" %}</strong><span class="d">{% trans "Users, zones, SIMs, drawers, banks, categories" %}</span></a>
+  <a class="qa" href="{% url 'opening_balances' %}"><span class="qa-ic">{% icon "key" 22 %}</span><strong>{% trans "Opening balances" %}</strong><span class="d">{% trans "Launch balances, once per account" %}</span></a>
+  <a class="qa" href="{% url 'conversion_rate' %}"><span class="qa-ic">{% icon "percent" 22 %}</span><strong>{% trans "Conversion rate" %}</strong><span class="d">{% trans "UVE→ER uplift for future conversions" %}</span></a>
+  <a class="qa" href="{% url 'audit_log' %}"><span class="qa-ic">{% icon "statement" 22 %}</span><strong>{% trans "Audit log" %}</strong><span class="d">{% trans "Who changed what, and the deleted data" %}</span></a>
+  <a class="qa danger-tile" href="{% url 'clear_data' %}"><span class="qa-ic">{% icon "trash" 22 %}</span><strong>{% trans "Clear data" %}</strong><span class="d">{% trans "Remove all transactions, or everything" %}</span></a>
+</div>
+{% endblock %}

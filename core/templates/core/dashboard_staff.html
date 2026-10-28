@@ -18,11 +18,27 @@
   {% if user.is_superadmin %}<a class="qa" href="{% url 'opening_balances' %}"><span class="qa-ic">{% icon "key" 22 %}</span><strong>{% trans "Opening balances" %}</strong><span class="d">{% trans "Launch balances, once per account" %}</span></a>
   <a class="qa" href="{% url 'admin:index' %}"><span class="qa-ic">{% icon "settings" 22 %}</span><strong>{% trans "Configuration" %}</strong><span class="d">{% trans "Zones, users, SIMs, drawers" %}</span></a>{% endif %}
 </div>
-<h2>{% trans "Company cash, wallets and banks (book balances)" %}</h2>
-<div class="tbl-wrap"><table class="t">
-<thead><tr><th>{% trans "Account" %}</th><th>{% trans "Type" %}</th><th>{% trans "Custodian" %}</th><th class="money">{% trans "Balance" %}</th></tr></thead>
-<tbody>{% for a, bal in accounts %}<tr><td>{{ a }}</td><td>{{ a.get_kind_display }}</td><td>{{ a.custodian|default:"" }}</td><td class="money">{{ bal|fcfa }}</td></tr>{% endfor %}</tbody>
-</table></div>
+<h2>{% trans "Company cash, UVE, ER and MTN by zone and cashier" %}</h2>
+<div class="chips">
+  <a class="chip{% if not zone %} on{% endif %}" href="?">{% trans "All zones" %}</a>
+  {% for z in zones %}<a class="chip{% if zone and zone.pk == z.pk %} on{% endif %}" href="?zone={{ z.pk }}">{{ z }}</a>{% endfor %}
+</div>
+<div class="bal-row">
+{% for k, label, v in grand %}
+  <div class="bal k-{{ k }}"><span class="bal-label">{{ label }}</span><span class="bal-value">{{ v|fcfa }}</span><span class="bal-unit">FCFA{% if zone %} · {{ zone }}{% endif %}</span></div>
+{% endfor %}
+</div>
+<div class="tbl-wrap"><table class="t matrix">
+<thead><tr><th>{% trans "Zone / cashier" %}</th>{% for l in kind_labels %}<th class="money">{{ l }}</th>{% endfor %}</tr></thead>
+<tbody>
+{% for z in matrix %}
+<tr class="zone-row"><td><strong>{{ z.zone|default:"—" }}</strong></td>{% for v in z.totals %}<td class="money"><strong>{{ v|fcfa }}</strong></td>{% endfor %}</tr>
+{% for c in z.cashiers %}<tr><td class="indent">{% if c.cashier %}{{ c.cashier }} <span class="badge">{{ c.cashier.staff_code }}</span> <span class="muted small">{{ c.cashier.subzone|default:"" }}</span>{% else %}<span class="muted">{% trans "No custodian" %}</span>{% endif %}</td>{% for v in c.totals %}<td class="money">{{ v|fcfa }}</td>{% endfor %}</tr>{% endfor %}
+{% empty %}<tr><td colspan="5" class="muted">{% trans "No drawers or wallets configured yet." %}</td></tr>
+{% endfor %}
+</tbody></table></div>
+{% if banks %}<h2>{% trans "Bank accounts" %}</h2>
+<div class="grid">{% for a, v in banks %}<div class="tile"><div class="label">{% icon "bank" 16 %}{{ a.bank.bank_name }}</div><div class="value">{{ v|fcfa }}</div><div class="sub">{{ a.bank.label }} · {{ a.bank.account_number }}</div></div>{% endfor %}</div>{% endif %}
 <h2>{% trans "Open business days" %}</h2>
 <div class="tbl-wrap"><table class="t"><thead><tr><th>{% trans "Cashier" %}</th><th>{% trans "Subzone" %}</th><th>{% trans "Business date" %}</th></tr></thead>
 <tbody>{% for d in days %}<tr><td>{{ d.cashier }}</td><td>{{ d.cashier.subzone }}</td><td>{{ d.business_date|date:"d/m/Y" }}{% if d.business_date < today %} <span class="badge bad">{% trans "not closed" %}</span>{% endif %}</td></tr>{% endfor %}</tbody></table></div>

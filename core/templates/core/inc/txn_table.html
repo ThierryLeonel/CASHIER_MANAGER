@@ -1,5 +1,5 @@
 {% load i18n cashier %}<div class="tbl-wrap"><table class="t">
-<thead><tr><th>{% trans "Recorded at" %}</th><th>{% trans "Business date" %}</th><th>{% trans "Reference" %}</th><th>{% trans "Type" %}</th><th>{% trans "Customer" %}</th><th>{% trans "Account" %}</th><th>{% trans "Entered by" %}</th><th class="money">{% trans "Amount" %}</th></tr></thead>
+<thead><tr><th>{% trans "Recorded at" %}</th><th>{% trans "Business date" %}</th><th>{% trans "Reference" %}</th><th>{% trans "Type" %}</th><th>{% trans "Customer" %}</th><th>{% trans "Account" %}</th><th>{% trans "Cashier (ID)" %}</th><th class="money">{% trans "Amount" %}</th></tr></thead>
 <tbody>
 {% for t in txns %}
 <tr{% if t.is_corrected %} class="corrected"{% endif %}>
@@ -9,7 +9,7 @@
   <td>{{ t.display_type }}{% if t.product %} · {{ t.product }}{% endif %}{% if t.payment_method %} · {{ t.get_payment_method_display }}{% endif %}</td>
   <td>{% if t.counterparty %}{{ t.counterparty.business_sim|sim }} {{ t.counterparty.name }}{% endif %}{% if t.counterparty_2 %}<br><span class="muted small">{{ t.counterparty_2.business_sim|sim }} {{ t.counterparty_2.name }}</span>{% endif %}</td>
   <td class="small">{% if t.source_account %}↑ {{ t.source_account }}{% endif %}{% if t.dest_account %}<br>↓ {{ t.dest_account }}{% endif %}</td>
-  <td class="small">{{ t.entered_by }}</td>
+  <td class="small">{% with c=t.cashier|default:t.entered_by %}{{ c }}<br><span class="badge">{{ c.staff_code }}</span>{% endwith %}{% if t.cashier and t.entered_by_id != t.cashier_id %}<br><span class="muted">{% trans "by" %} {{ t.entered_by.staff_code }}</span>{% endif %}</td>
   <td class="money">{% if t.type == 'REVERSAL' %}<span class="neg">−{{ t.amount|fcfa }}</span>{% else %}{{ t.amount|fcfa }}{% endif %}</td>
 </tr>
 {% empty %}<tr><td colspan="8" class="muted">{% trans "No transactions." %}</td></tr>

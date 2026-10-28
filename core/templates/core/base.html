@@ -19,8 +19,9 @@
   <nav class="side-nav">
     <a href="{% url 'dashboard' %}" class="{% if u == 'dashboard' %}on{% endif %}">{% icon "home" %}<span>{% trans "Home" %}</span></a>
 
-    {% if user.is_cashier %}
+    {% if user.is_cashier or user.is_superadmin %}
     <div class="side-group">{% trans "Record" %}</div>
+    {% if user.is_superadmin %}<a href="{% url 'act_as' %}" class="acting{% if u == 'act_as' %} on{% endif %}">{% icon "users" %}<span>{% if acting_cashier %}{% blocktrans with c=acting_cashier %}For: {{ c }}{% endblocktrans %}{% else %}{% trans "Choose a cashier…" %}{% endif %}</span></a>{% endif %}
     <a href="{% url 'supply_agent' %}" class="{% if u == 'supply_agent' %}on{% endif %}">{% icon "supply" %}<span>{% trans "Supply to agent" %}</span></a>
     <a href="{% url 'supply_pos' %}" class="{% if u == 'supply_pos' %}on{% endif %}">{% icon "store" %}<span>{% trans "Supply to POS" %}</span></a>
     <a href="{% url 'collection_new' %}" class="{% if u == 'collection_new' %}on{% endif %}">{% icon "payment" %}<span>{% trans "Payment" %}</span></a>
@@ -47,9 +48,12 @@
 
     {% if user.is_superadmin %}
     <div class="side-group">{% trans "Administration" %}</div>
+    <a href="{% url 'admin_home' %}" class="{% if u == 'admin_home' %}on{% endif %}">{% icon "settings" %}<span>{% trans "Admin tools" %}</span></a>
+    <a href="{% url 'import_data' %}" class="{% if u == 'import_data' %}on{% endif %}">{% icon "upload" %}<span>{% trans "Import CSV / Excel" %}</span></a>
+    <a href="{% url 'audit_log' %}" class="{% if u == 'audit_log' %}on{% endif %}">{% icon "statement" %}<span>{% trans "Audit log" %}</span></a>
     <a href="{% url 'opening_balances' %}" class="{% if u == 'opening_balances' %}on{% endif %}">{% icon "key" %}<span>{% trans "Opening balances" %}</span></a>
     <a href="{% url 'conversion_rate' %}" class="{% if u == 'conversion_rate' %}on{% endif %}">{% icon "percent" %}<span>{% trans "Conversion rate" %}</span></a>
-    <a href="{% url 'admin:index' %}">{% icon "settings" %}<span>{% trans "Configuration" %}</span></a>
+    <a href="{% url 'admin:index' %}">{% icon "key" %}<span>{% trans "Configuration" %}</span></a>
     {% endif %}
   </nav>
 
@@ -59,7 +63,7 @@
       <span class="me-text"><strong>{{ user }}</strong><small>{{ user.get_role_display }}{% if user.subzone %} · {{ user.subzone }}{% endif %}</small></span>
     </div>
     <div class="side-actions">
-      <form action="{% url 'set_language' %}" method="post" class="lang">{% csrf_token %}
+      <form action="{% url 'set_lang' %}" method="post" class="lang">{% csrf_token %}
         <input name="next" type="hidden" value="{{ request.get_full_path }}">
         <button name="language" value="en" class="{% if LANG == 'en' %}on{% endif %}">EN</button>
         <button name="language" value="fr" class="{% if LANG == 'fr' %}on{% endif %}">FR</button>

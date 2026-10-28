@@ -1,0 +1,22 @@
+{% extends "core/base.html" %}{% load i18n cashier %}
+{% block title %}{% trans "Record as a cashier" %}{% endblock %}
+{% block topbar %}{% trans "Record as a cashier" %}{% endblock %}
+{% block content %}
+<div class="form-head"><span class="form-ic">{% icon "users" 26 %}</span>
+<div><h1>{% trans "Record as a cashier" %}</h1>
+<p class="muted">{% trans "Entries you record go to the chosen cashier's desk, accounts and business day. You remain recorded as the person who entered them." %}</p></div></div>
+<div class="panel">
+<form method="post">{% csrf_token %}<input type="hidden" name="next" value="{{ next }}">
+<div class="pick-list">
+{% for c in cashiers %}
+  <button class="pick-row{% if current and current.pk == c.pk %} on{% endif %}" name="cashier" value="{{ c.pk }}">
+    <span class="avatar soft">{{ c.username|slice:":1"|upper }}</span>
+    <span class="pick-txt"><strong>{{ c }}</strong><small>{{ c.staff_code }} · {{ c.subzone }}{% if c.subzone.parent %} · {{ c.subzone.parent }}{% endif %}</small></span>
+    {% if current and current.pk == c.pk %}<span class="badge acc">{% trans "Current" %}</span>{% endif %}
+  </button>
+{% empty %}<p class="muted">{% trans "No active cashier yet. Create cashiers in Configuration." %}</p>{% endfor %}
+</div>
+{% if current %}<div class="form-foot"><button class="btn" name="cashier" value="">{% trans "Stop recording for a cashier" %}</button></div>{% endif %}
+</form>
+</div>
+{% endblock %}

@@ -8,6 +8,7 @@ urlpatterns = [
     path("login/", v.login_view, name="login"),
     path("logout/", v.logout_view, name="logout"),
     path("i18n/", include("django.conf.urls.i18n")),
+    path("language/", v.set_lang, name="set_lang"),
     # entry
     path("supply/new/", v.supply_new, name="supply_new"),
     path("supply/agent/", v.supply_agent, name="supply_agent"),
@@ -42,5 +43,13 @@ urlpatterns = [
     path("setup/conversion-rate/", v.conversion_rate, name="conversion_rate"),
     path("reports/", v.reports_index, name="reports"),
     path("reports/<slug:key>/", v.report, name="report"),
+    path("act-as/", v.act_as, name="act_as"),
+    path("administration/", v.admin_home, name="admin_home"),
+    path("administration/import/", v.import_data, name="import_data"),
+    path("administration/import/template/<slug:kind>/", v.import_template, name="import_template"),
+    path("administration/clear/", v.clear_data, name="clear_data"),
+    path("administration/audit/", v.audit_log, name="audit_log"),
+    path("transactions/<int:pk>/edit/", v.txn_edit, name="txn_edit"),
+    path("transactions/<int:pk>/delete/", v.txn_delete, name="txn_delete"),
     path("admin/", admin.site.urls),
 ]

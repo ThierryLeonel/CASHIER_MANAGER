@@ -21,7 +21,7 @@ from core.simnumbers import display_sim
 
 from .base import R, STAFF, SUPERVISORS, can_view_txn, roles_required, run_service
 
-TX_RELATED = ["entered_by", "cashier_day__cashier__subzone", "counterparty", "counterparty_2", "source_account__sim",
+TX_RELATED = ["cashier__subzone", "entered_by", "cashier_day__cashier__subzone", "counterparty", "counterparty_2", "source_account__sim",
               "dest_account__sim", "expense_category", "cash_manager", "exchange", "reverses", "replaces",
               "related_supply"]
 
@@ -114,11 +114,12 @@ def receipt_rows(t):
     rows = [(_("Type"), t.display_type),
             (_("Recorded at (Africa/Douala)"), timezone.localtime(t.posted_at).strftime("%d/%m/%Y %H:%M:%S")),
             (_("Business date"), t.business_date.strftime("%d/%m/%Y"))]
-    cashier = t.cashier_day.cashier if t.cashier_day_id else t.entered_by
+    cashier = t.cashier or (t.cashier_day.cashier if t.cashier_day_id else t.entered_by)
     station = f" ({cashier.subzone})" if getattr(cashier, "subzone_id", None) else ""
     rows.append((_("Cashier"), f"{cashier}{station}"))
+    rows.append((_("Cashier ID"), cashier.staff_code or str(cashier.pk)))
     if t.entered_by_id != cashier.id:
-        rows.append((_("Entered by"), str(t.entered_by)))
+        rows.append((_("Entered by"), t.entered_by.label_with_id))
     if t.type in (T.SUPPLY,):
         rows.append((_("Product"), t.get_product_display()))
         rows.append((_("Responsible customer"), f"{t.counterparty.name} — {_('business SIM')} "
@@ -171,7 +172,10 @@ def txn_detail(request, pk):
            "current_responsible": ops.current_responsible(t) if t.type in ops.TRANSFERABLE_TYPES else None,
            "can_correct": request.user.role in SUPERVISORS and t.type not in corr.NOT_CORRECTABLE
            and not hasattr(t, "correction"),
-           "can_transfer": request.user.role in (R.CASHIER, R.MANAGER, R.FINANCE)
+           "can_admin": request.user.is_superadmin,
+           "can_edit": request.user.is_superadmin and t.type in corr.BUILDERS and t.type != TxType.REVERSAL
+           and not t.replaces_id and not hasattr(t, "correction"),
+           "can_transfer": request.user.role in (R.CASHIER, R.MANAGER, R.FINANCE, R.SUPERADMIN)
            and t.type in ops.TRANSFERABLE_TYPES and t.counterparty_id is not None
            and not hasattr(t, "correction") and not ops.active_transfer(t)}
     return render(request, "core/txn_detail.html", ctx)
@@ -198,7 +202,7 @@ def receipt_pdf_view(request, pk):
     return resp
 
 
-@roles_required(R.MANAGER, R.FINANCE)
+@roles_required(*SUPERVISORS)
 def txn_correct(request, pk):
     t = _get_visible_txn(request, pk)
     form = F.CorrectionForm(t, request.POST or None)
@@ -217,7 +221,7 @@ def txn_correct(request, pk):
                                                  "customers": Counterparty.objects.filter(active=True)})
 
 
-@roles_required(R.CASHIER, R.MANAGER, R.FINANCE)
+@roles_required(R.CASHIER, R.MANAGER, R.FINANCE, R.SUPERADMIN)
 def txn_transfer(request, pk):
     t = _get_visible_txn(request, pk)
     data = request.POST or None

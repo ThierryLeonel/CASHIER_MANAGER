@@ -11,4 +11,8 @@ def app_context(request):
 
         ctx["open_day"] = peek_open_day(user)
         ctx["today_douala"] = douala_today()
+    if user is not None and user.is_authenticated and user.is_superadmin:
+        from core.views.base import acting_cashier
+
+        ctx["acting_cashier"] = acting_cashier(request)
     return ctx

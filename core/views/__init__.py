@@ -11,3 +11,7 @@ from .records import (  # noqa: F401
     customer_detail, customer_edit, customer_search, customer_new, customers, receipt, receipt_pdf_view, txn_correct, txn_detail,
     txn_list, txn_transfer,
 )
+from .admin_tools import (  # noqa: F401,E402
+    admin_home, audit_log, clear_data, import_data, import_template, txn_delete, txn_edit,
+)
+from .base import act_as, set_lang  # noqa: F401,E402

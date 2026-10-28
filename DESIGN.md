@@ -111,18 +111,30 @@ Supplies are **not revenue**: they only move value from a company asset to a cus
 
 | Action | Super admin | Manager | Finance mgr | Cashier | Agent |
 |---|---|---|---|---|---|
-| Configure zones, SIMs, drawers, users, grants, categories | ✔ | | | | |
-| Change conversion rate | ✔ | | | | |
-| Opening balances | ✔ | | | | |
-| Supplies, destockage, collections, expenses, transfers, conversions, exchanges | | | | ✔ (own/granted accounts) | |
+| Configure zones, SIMs, drawers, users, grants, categories (add / edit / delete) | ✔ | | | | |
+| Change conversion rate, opening balances | ✔ | | | | |
+| Record supplies, destockage, payments, expenses, transfers, conversions, exchanges | ✔ (for a chosen cashier) | | | ✔ (own/granted accounts) | |
 | Register agent/POS | ✔ | ✔ | ✔ | ✔ | |
-| Responsibility transfer | | ✔ | ✔ | ✔ | |
-| Corrections | | ✔ | ✔ | | |
+| Responsibility transfer | ✔ | ✔ | ✔ | ✔ | |
+| Corrections (reverse + replace, keeps history) | ✔ | ✔ | ✔ | | |
+| **Hard edit in place / delete a transaction** | ✔ | | | | |
+| **Clear data** (transactions, or everything) | ✔ | | | | |
+| **Import CSV / Excel** (agents, POS, cash managers, opening balances, transactions) | ✔ | | | | |
+| Audit log | ✔ | | | | |
 | Close own day | | | | ✔ | |
-| Discrepancy notes | | ✔ | ✔ | ✔ (own accounts) | |
-| Resolve discrepancies | | ✔ | ✔ | | |
+| Resolve discrepancies | ✔ | ✔ | ✔ | | |
 | Reports | all zones | all zones | all zones | own desk + shared customer balances | own statement only |
-| Receipts | all | all | all | related transactions | own |
+
+### Super-administrator overrides (added at the owner's request)
+
+The ledger tables stay append-only for everyone. The only exception is the super-administrator service (`core/services/admin.py`), which opens the database lock with `SET LOCAL core.admin_override` for one database transaction. Even then:
+- a transaction is deleted or edited as a whole, so the ledger stays balanced;
+- drawers, wallets and banks cannot go negative;
+- the full before/after state is written to the audit log.
+
+Editing a transaction of a day that is already closed changes that day's book balance, so the stored closing comparison no longer matches. Use corrections whenever history must be preserved.
+
+Every transaction stores its **recording cashier** (`Transaction.cashier`), and every user has a **staff ID** (e.g. `CSH-0004`). Both are shown in lists, receipts, statements and exports. When the super admin records for a cashier, the cashier is the recording cashier and the super admin is kept as `entered_by`.
 
 ## 7. Closing rules
 

@@ -11,7 +11,7 @@
     <div class="field"><label for="p">{% trans "Password" %}</label><input id="p" type="password" name="password" autocomplete="current-password" required></div>
     <button class="btn primary" type="submit" style="width:100%;justify-content:center">{% trans "Sign in" %}</button>
   </form>
-  <form action="{% url 'set_language' %}" method="post" style="margin-top:14px;text-align:center">{% csrf_token %}
+  <form action="{% url 'set_lang' %}" method="post" style="margin-top:14px;text-align:center">{% csrf_token %}
     <input name="next" type="hidden" value="{{ request.get_full_path }}">
     <button class="btn small" name="language" value="en">English</button> <button class="btn small" name="language" value="fr">Français</button>
   </form>

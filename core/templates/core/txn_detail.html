@@ -7,7 +7,9 @@
   {% if t.receipt_no %}<a class="btn primary" href="{% url 'receipt' t.pk %}">{% trans "A4 receipt / print" %}</a>
   <a class="btn" href="{% url 'receipt_pdf' t.pk %}?download=1">{% trans "Download PDF" %}</a>{% endif %}
   {% if can_transfer %}<a class="btn" href="{% url 'txn_transfer' t.pk %}">{% trans "Transfer responsibility" %}</a>{% endif %}
-  {% if can_correct %}<a class="btn danger" href="{% url 'txn_correct' t.pk %}">{% trans "Correct" %}</a>{% endif %}
+  {% if can_correct %}<a class="btn" href="{% url 'txn_correct' t.pk %}">{% trans "Correct" %}</a>{% endif %}
+  {% if can_edit %}<a class="btn" href="{% url 'txn_edit' t.pk %}">{% icon "edit" 16 %} {% trans "Edit" %}</a>{% endif %}
+  {% if can_admin %}<a class="btn danger" href="{% url 'txn_delete' t.pk %}">{% icon "trash" 16 %} {% trans "Delete" %}</a>{% endif %}
 </div>
 {% if t.is_corrected %}
 <div class="msg error"><strong>{% trans "CORRECTED" %}</strong> — {{ t.correction.reason }}<br>

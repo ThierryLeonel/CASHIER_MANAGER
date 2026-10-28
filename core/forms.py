@@ -355,3 +355,43 @@ class ClosingForm(forms.Form):
 
 def user_choices():
     return User.objects.filter(role=User.Role.CASHIER).order_by("username")
+
+
+class AdminEditForm(CorrectionForm):
+    """Super-admin in-place edit. Same editable values as a correction, plus
+    the business date; no reversal is posted."""
+
+    business_date = forms.DateField(label=_("Business date"), required=False,
+                                    widget=forms.DateInput(attrs={"type": "date"}))
+
+    def __init__(self, txn, *args, **kwargs):
+        super().__init__(txn, *args, **kwargs)
+        del self.fields["kind"]
+        self.fields["reason"].label = _("Reason for the edit (kept in the audit log)")
+        if txn.type == TxType.OPENING_BALANCE:
+            self.fields.pop("account", None)
+
+    def new_values(self):
+        vals = super().new_values()
+        if self.cleaned_data.get("business_date"):
+            vals["business_date"] = self.cleaned_data["business_date"]
+        return vals
+
+
+class AdminDeleteForm(forms.Form):
+    reason = forms.CharField(label=_("Reason for deleting (kept in the audit log)"), max_length=255)
+
+
+class ClearDataForm(forms.Form):
+    SCOPES = [("transactions", _("All transactions, closings and differences (keep agents, POS and configuration)")),
+              ("everything", _("Everything above, plus agents, POS, agent logins and cash managers"))]
+    scope = forms.ChoiceField(label=_("What to clear"), choices=SCOPES, widget=forms.RadioSelect)
+    confirm_text = forms.CharField(label=_("Type DELETE to confirm"), max_length=20)
+    password = forms.CharField(label=_("Your password"), widget=forms.PasswordInput)
+
+
+class ImportForm(forms.Form):
+    KINDS = [("customers", _("Agents and POS")), ("cash_managers", _("Cash managers")),
+             ("opening", _("Opening balances")), ("transactions", _("Transactions (supplies, payments, expenses)"))]
+    kind = forms.ChoiceField(label=_("What are you importing?"), choices=KINDS)
+    file = forms.FileField(label=_("File (.xlsx or .csv)"))

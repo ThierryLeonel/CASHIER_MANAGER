@@ -37,7 +37,9 @@ class SuperAdminOnly(admin.ModelAdmin):
         return _is_superadmin(request)
 
     def has_delete_permission(self, request, obj=None):
-        return False
+        # Records still in use by the ledger are protected by the database
+        # (Django shows which rows block the deletion).
+        return _is_superadmin(request)
 
 
 @admin.register(Zone)

@@ -189,8 +189,6 @@ class PosAndResponsibility(OrgMixin, TestCase):
         self.assertEqual(t.counterparty_2, self.p2)
         with self.assertRaises(PermissionDenied):
             ops.transfer_responsibility(self.agent_user, supply=t, new_party=self.a1, reason="x")
-        with self.assertRaises(PermissionDenied):
-            ops.transfer_responsibility(self.admin, supply=t, new_party=self.a1, reason="x")
         ops.transfer_responsibility(self.finance, supply=t, new_party=self.a1, reason="Agent change")
         self.assertEqual(self.cbal(self.a1), D(40000))
 

@@ -48,7 +48,7 @@ Sample users: `admin`, `manager`, `finance`, `cashier.fako1`, `cashier.fako2`, `
 ## Tests
 
 ```bash
-python manage.py test core       # 57 tests, real PostgreSQL (triggers active)
+python manage.py test core       # 71 tests, real PostgreSQL (triggers active)
 python manage.py ledger_check    # SQL integrity check of a live database
 ```
 

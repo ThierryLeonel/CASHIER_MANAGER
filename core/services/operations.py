@@ -69,7 +69,15 @@ def _require_receive(ctx, account):
         raise PermissionDenied(_("You are not authorised to receive into %(acct)s.") % {"acct": account})
 
 
-def cashier_ctx(user):
+def cashier_ctx(user, acting_for=None):
+    """Entries belong to a cashier's desk. The super administrator may record
+    on behalf of a chosen cashier: the cashier's desk, accounts and business
+    day apply, and the super administrator is kept as `entered_by`."""
+    if acting_for is not None and user.is_authenticated and user.is_superadmin:
+        if not acting_for.is_cashier or not acting_for.is_active:
+            raise BusinessError(_("Choose an active cashier to record for."))
+        day = current_day(acting_for)
+        return Ctx(entered_by=user, cashier=acting_for, day=day, business_date=day.business_date)
     perm.require_role(user, perm.ENTRY_ROLES)
     day = current_day(user)
     return Ctx(entered_by=user, cashier=user, day=day, business_date=day.business_date)
@@ -110,8 +118,8 @@ def build_supply(ctx, *, product, customer, amount, source_account, recipient=No
     )
 
 
-def record_supply(user, idempotency_key=None, **params):
-    ctx = cashier_ctx(user)
+def record_supply(user, idempotency_key=None, acting_for=None, **params):
+    ctx = cashier_ctx(user, acting_for)
     return post([build_supply(ctx, **params)], ctx, idempotency_key)[0]
 
 
@@ -135,8 +143,8 @@ def build_destockage(ctx, *, pos, agent, amount, drawer, description=""):
     )
 
 
-def record_destockage(user, idempotency_key=None, **params):
-    ctx = cashier_ctx(user)
+def record_destockage(user, idempotency_key=None, acting_for=None, **params):
+    ctx = cashier_ctx(user, acting_for)
     return post([build_destockage(ctx, **params)], ctx, idempotency_key)[0]
 
 
@@ -176,8 +184,8 @@ def build_collection(ctx, *, payer, method, amount, account, bank_reference="", 
     )
 
 
-def record_collection(user, idempotency_key=None, **params):
-    ctx = cashier_ctx(user)
+def record_collection(user, idempotency_key=None, acting_for=None, **params):
+    ctx = cashier_ctx(user, acting_for)
     return post([build_collection(ctx, **params)], ctx, idempotency_key)[0]
 
 
@@ -198,8 +206,8 @@ def build_expense(ctx, *, category, amount, drawer, description):
     )
 
 
-def record_expense(user, idempotency_key=None, **params):
-    ctx = cashier_ctx(user)
+def record_expense(user, idempotency_key=None, acting_for=None, **params):
+    ctx = cashier_ctx(user, acting_for)
     return post([build_expense(ctx, **params)], ctx, idempotency_key)[0]
 
 
@@ -229,8 +237,8 @@ def build_internal_transfer(ctx, *, source, destination, amount, description="")
     )
 
 
-def record_internal_transfer(user, idempotency_key=None, **params):
-    ctx = cashier_ctx(user)
+def record_internal_transfer(user, idempotency_key=None, acting_for=None, **params):
+    ctx = cashier_ctx(user, acting_for)
     return post([build_internal_transfer(ctx, **params)], ctx, idempotency_key)[0]
 
 
@@ -260,14 +268,14 @@ def build_conversion(ctx, *, uve_account, amount, description=""):
     )
 
 
-def record_conversion(user, idempotency_key=None, **params):
-    ctx = cashier_ctx(user)
+def record_conversion(user, idempotency_key=None, acting_for=None, **params):
+    ctx = cashier_ctx(user, acting_for)
     return post([build_conversion(ctx, **params)], ctx, idempotency_key)[0]
 
 
 # ---------------------------------------------------------------- cash managers
-def create_exchange(user, *, cash_manager, direction, amount, note="", idempotency_key=None):
-    ctx = cashier_ctx(user)
+def create_exchange(user, *, cash_manager, direction, amount, note="", idempotency_key=None, acting_for=None):
+    ctx = cashier_ctx(user, acting_for)
     amount = _positive(amount)
     if not cash_manager.active:
         raise BusinessError(_("%(cp)s is inactive.") % {"cp": cash_manager})
@@ -314,8 +322,8 @@ def build_exchange_leg(ctx, *, exchange, side, amount, account, description=""):
                               description=description or "", **fields))
 
 
-def record_exchange_leg(user, idempotency_key=None, **params):
-    ctx = cashier_ctx(user)
+def record_exchange_leg(user, idempotency_key=None, acting_for=None, **params):
+    ctx = cashier_ctx(user, acting_for)
     with transaction.atomic():
         return post([build_exchange_leg(ctx, **params)], ctx, idempotency_key)[0]
 

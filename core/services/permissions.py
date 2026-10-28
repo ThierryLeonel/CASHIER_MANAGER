@@ -8,9 +8,9 @@ from .errors import PermissionDenied
 R = User.Role
 
 ENTRY_ROLES = (R.CASHIER,)
-TRANSFER_RESPONSIBILITY_ROLES = (R.CASHIER, R.MANAGER, R.FINANCE)
-CORRECTION_ROLES = (R.MANAGER, R.FINANCE)
-RESOLUTION_ROLES = (R.MANAGER, R.FINANCE)
+TRANSFER_RESPONSIBILITY_ROLES = (R.CASHIER, R.MANAGER, R.FINANCE, R.SUPERADMIN)
+CORRECTION_ROLES = (R.MANAGER, R.FINANCE, R.SUPERADMIN)
+RESOLUTION_ROLES = (R.MANAGER, R.FINANCE, R.SUPERADMIN)
 OPENING_ROLES = (R.SUPERADMIN,)
 CONFIG_ROLES = (R.SUPERADMIN,)
 REPORT_ROLES = (R.SUPERADMIN, R.MANAGER, R.FINANCE, R.CASHIER)
@@ -25,7 +25,7 @@ def _has_grant(user, account):
     return AccountAccess.objects.filter(user=user, account=account).exists()
 
 
-def can_send_from(user, account):
+def can_send_from(user, account):  # user = the desk cashier (also when the super admin acts for them)
     """Money/value may leave this company account on the user's entry."""
     return bool(
         user.is_cashier and account.active and account.is_asset

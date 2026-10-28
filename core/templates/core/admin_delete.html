@@ -1,0 +1,13 @@
+{% extends "core/base.html" %}{% load i18n cashier %}
+{% block title %}{% trans "Delete" %} {{ t.reference }}{% endblock %}
+{% block topbar %}{% trans "Delete" %} {{ t.reference }}{% endblock %}
+{% block content %}
+<div class="form-head"><span class="form-ic danger">{% icon "trash" 26 %}</span>
+<div><h1>{% trans "Delete" %} {{ t.display_type }} {{ t.reference }}</h1>
+<p class="muted">{% trans "The transaction and all its ledger lines are removed, and balances are recalculated. If it was corrected, its correction entries are removed too. A complete copy is saved in the audit log." %}</p></div></div>
+<div class="panel"><dl class="kv">{% for k, v in rows %}<dt>{{ k }}</dt><dd>{{ v }}</dd>{% endfor %}<dt>{% trans "Amount" %}</dt><dd><strong>{{ t.amount|fcfa }} FCFA</strong></dd></dl></div>
+<div class="panel"><form method="post" class="entry" novalidate>{% csrf_token %}
+{% include "core/inc/fields.html" %}
+<div class="form-foot"><button class="btn danger" type="submit">{% trans "Delete permanently" %}</button><a class="btn" href="{% url 'txn_detail' t.pk %}">{% trans "Cancel" %}</a></div>
+</form></div>
+{% endblock %}

@@ -1,0 +1,13 @@
+{% extends "core/base.html" %}{% load i18n cashier %}
+{% block title %}{% trans "Edit" %} {{ t.reference }}{% endblock %}
+{% block topbar %}{% trans "Edit" %} {{ t.reference }}{% endblock %}
+{% block content %}
+<div class="form-head"><span class="form-ic">{% icon "edit" 26 %}</span>
+<div><h1>{% trans "Edit" %} {{ t.display_type }} {{ t.reference }}</h1>
+<p class="muted">{% trans "The transaction is rewritten in place with the same reference and receipt number; balances are recalculated. The previous values are saved in the audit log. Fill only what changes." %}</p></div></div>
+<div class="panel"><dl class="kv">{% for k, v in rows %}<dt>{{ k }}</dt><dd>{{ v }}</dd>{% endfor %}<dt>{% trans "Amount" %}</dt><dd><strong>{{ t.amount|fcfa }} FCFA</strong></dd></dl></div>
+<div class="panel"><form method="post" class="entry" novalidate>{% csrf_token %}
+{% include "core/inc/fields.html" %}
+<div class="form-foot"><button class="btn primary" type="submit">{% trans "Save changes" %}</button><a class="btn" href="{% url 'txn_detail' t.pk %}">{% trans "Cancel" %}</a></div>
+</form></div>
+{% endblock %}

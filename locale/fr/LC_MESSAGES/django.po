@@ -30,6 +30,14 @@ msgid "%(label)s is required."
 msgstr "%(label)s est obligatoire."
 
 #, python-format
+msgid "%(label)s: invalid number %(v)s"
+msgstr "%(label)s : numéro invalide %(v)s"
+
+#, python-format
+msgid "%(n)s rows imported."
+msgstr "%(n)s lignes importées."
+
+#, python-format
 msgid ""
 "%(party)s currently owes %(owed)s FCFA, less than the %(amt)s FCFA of "
 "%(ref)s. Part of it is already settled, so the full supply cannot be "
@@ -48,6 +56,18 @@ msgstr "%(ref)s a déjà été corrigée."
 #, python-format
 msgid "%(ref)s marked CORRECTED."
 msgstr "%(ref)s marquée CORRIGÉE."
+
+#, python-format
+msgid ""
+"%(ref)s resolves a closing difference. Reopen or keep it; it cannot be "
+"deleted."
+msgstr "%(ref)s résout un écart de clôture ; elle ne peut pas être supprimée."
+
+#, python-format
+msgid "%(ref)s updated. The previous values are kept in the audit log."
+msgstr ""
+"%(ref)s modifiée. Les anciennes valeurs sont conservées dans le journal "
+"d'audit."
 
 #, python-format
 msgid "%(type)s %(ref)s recorded: %(amt)s FCFA."
@@ -124,6 +144,12 @@ msgstr "Compte"
 msgid "Account %(acct)s is inactive."
 msgstr "Le compte %(acct)s est inactif."
 
+msgid "Action"
+msgstr "Action"
+
+msgid "Active users"
+msgstr "Utilisateurs actifs"
+
 msgid "Actual"
 msgstr "Réel"
 
@@ -135,6 +161,9 @@ msgstr "Réel compté/lu"
 
 msgid "Add note"
 msgstr "Ajouter une note"
+
+msgid "Admin tools"
+msgstr "Outils d'administration"
 
 msgid "Administration"
 msgstr "Administration"
@@ -148,8 +177,14 @@ msgstr "Agent qui a reçu l'UVE et doit (SIM business)"
 msgid "Agents & POS"
 msgstr "Agents & PDV"
 
+msgid "Agents and POS"
+msgstr "Agents et PDV"
+
 msgid "Agents versus POS"
 msgstr "Agents ou PDV"
+
+msgid "Agents, POS, opening balances, transactions"
+msgstr "Agents, PDV, soldes d'ouverture, transactions"
 
 msgid "Agreed"
 msgstr "Convenu"
@@ -165,6 +200,16 @@ msgstr "Tout"
 
 msgid "All dates"
 msgstr "Toutes les dates"
+
+msgid ""
+"All transactions, closings and differences (keep agents, POS and "
+"configuration)"
+msgstr ""
+"Toutes les transactions, clôtures et écarts (garder agents, PDV et "
+"configuration)"
+
+msgid "All zones"
+msgstr "Toutes les zones"
 
 msgid "Amount"
 msgstr "Montant"
@@ -220,6 +265,12 @@ msgstr ""
 "Affectez le caissier à une sous-zone, pas à une zone principale qui a des "
 "sous-zones."
 
+msgid "Audit events"
+msgstr "Événements d'audit"
+
+msgid "Audit log"
+msgstr "Journal d'audit"
+
 msgid "Back"
 msgstr "Retour"
 
@@ -235,11 +286,20 @@ msgstr "Soldes"
 msgid "Balances and statements"
 msgstr "Soldes et relevés"
 
+#, python-format
+msgid "Balances of the drawers and SIM wallets you hold · master zone %(z)s"
+msgstr ""
+"Soldes des caisses et portefeuilles SIM que vous détenez · zone principale "
+"%(z)s"
+
 msgid "Bank"
 msgstr "Banque"
 
 msgid "Bank account"
 msgstr "Compte bancaire"
+
+msgid "Bank accounts"
+msgstr "Comptes bancaires"
 
 msgid "Bank deposit"
 msgstr "Versement bancaire"
@@ -372,6 +432,12 @@ msgstr "Échanges et positions des gestionnaires de cash"
 msgid "Cashier"
 msgstr "Caissier"
 
+msgid "Cashier (ID)"
+msgstr "Caissier (ID)"
+
+msgid "Cashier ID"
+msgstr "ID caissier"
+
 msgid "Cashier Manager"
 msgstr "Gestion de caisse"
 
@@ -393,11 +459,17 @@ msgstr "Modifications"
 msgid "Check"
 msgstr "Contrôle"
 
+msgid "Check passed: ready to import"
+msgstr "Contrôle réussi : prêt à importer"
+
 msgid "Choose UVE, ER or cash."
 msgstr "Choisissez UVE, ER ou espèces."
 
 msgid "Choose a UVE wallet to convert from."
 msgstr "Choisissez le portefeuille UVE à convertir."
+
+msgid "Choose a cashier…"
+msgstr "Choisir un caissier…"
 
 msgid "Choose a payment method."
 msgstr "Choisissez un mode de paiement."
@@ -405,8 +477,14 @@ msgstr "Choisissez un mode de paiement."
 msgid "Choose a resolution."
 msgstr "Choisissez une résolution."
 
+msgid "Choose an active cashier to record for."
+msgstr "Choisissez un caissier actif pour qui enregistrer."
+
 msgid "Choose an active expense category."
 msgstr "Choisissez une catégorie de dépense active."
+
+msgid "Choose the cashier you are recording for."
+msgstr "Choisissez le caissier pour qui vous enregistrez."
 
 msgid "Choose the correction type."
 msgstr "Choisissez le type de correction."
@@ -414,11 +492,23 @@ msgstr "Choisissez le type de correction."
 msgid "Choose the exchange direction."
 msgstr "Choisissez le sens de l'échange."
 
+msgid "Choose what to clear."
+msgstr "Choisissez ce qu'il faut effacer."
+
+msgid "Choose what you are importing."
+msgstr "Choisissez ce que vous importez."
+
 msgid "Choose which side of the exchange happened."
 msgstr "Choisissez le volet de l'échange qui a eu lieu."
 
 msgid "Choose…"
 msgstr "Choisir…"
+
+msgid "Clear data"
+msgstr "Effacer les données"
+
+msgid "Clear the data"
+msgstr "Effacer les données"
 
 msgid "Close business day"
 msgstr "Clôturer la journée"
@@ -471,6 +561,9 @@ msgstr "Encaissements"
 msgid "Collections by payment method"
 msgstr "Encaissements par mode de paiement"
 
+msgid "Column guide"
+msgstr "Guide des colonnes"
+
 msgid "Commercial agent"
 msgstr "Agent commercial"
 
@@ -483,6 +576,10 @@ msgstr "Agent commercial qui assume cette dette (facultatif)"
 msgid "Commercial agents and POS"
 msgstr "Agents commerciaux et PDV"
 
+#, python-format
+msgid "Company %(kind)s account not found: %(v)s"
+msgstr "Compte entreprise %(kind)s introuvable : %(v)s"
+
 msgid "Company account"
 msgstr "Compte de l'entreprise"
 
@@ -492,6 +589,9 @@ msgstr "Compte de l'entreprise émetteur"
 msgid "Company assets: opening + period movements = closing"
 msgstr ""
 "Actifs de l'entreprise : ouverture + mouvements de la période = clôture"
+
+msgid "Company cash, UVE, ER and MTN by zone and cashier"
+msgstr "Espèces, UVE, ER et MTN de l'entreprise par zone et caissier"
 
 msgid "Company cash, wallets and banks (book balances)"
 msgstr "Espèces, portefeuilles et banques de l'entreprise (soldes comptables)"
@@ -534,6 +634,9 @@ msgstr "Volets effectués"
 
 msgid "Configuration"
 msgstr "Configuration"
+
+msgid "Confirm import"
+msgstr "Confirmer l'importation"
 
 msgid "Conversion rate"
 msgstr "Taux de conversion"
@@ -712,8 +815,37 @@ msgstr "Clôtures journalières et écarts"
 msgid "Daily closings and unresolved differences"
 msgstr "Clôtures journalières et écarts non résolus"
 
+#, python-format
+msgid ""
+"Data cleared (%(n)s transactions removed). This action is recorded in the "
+"audit log."
+msgstr ""
+"Données effacées (%(n)s transactions supprimées). Cette action est "
+"enregistrée dans le journal d'audit."
+
 msgid "Debit (+)"
 msgstr "Débit (+)"
+
+msgid "Delete"
+msgstr "Supprimer"
+
+msgid "Delete permanently"
+msgstr "Supprimer définitivement"
+
+msgid "Delete the responsibility transfer of this entry before editing it."
+msgstr ""
+"Supprimez d'abord le transfert de responsabilité de cette écriture avant de "
+"la modifier."
+
+#, python-format
+msgid "Delete the responsibility transfer(s) %(refs)s first."
+msgstr "Supprimez d'abord le(s) transfert(s) de responsabilité %(refs)s."
+
+#, python-format
+msgid "Deleted: %(refs)s. A full copy is kept in the audit log."
+msgstr ""
+"Supprimé : %(refs)s. Une copie complète est conservée dans le journal "
+"d'audit."
 
 msgid "Describe the expense."
 msgstr "Décrivez la dépense."
@@ -786,6 +918,9 @@ msgstr ""
 msgid "Edit"
 msgstr "Modifier"
 
+msgid "Edit or delete rows"
+msgstr "Modifier ou supprimer des lignes"
+
 msgid "Effective from"
 msgstr "En vigueur depuis"
 
@@ -797,6 +932,10 @@ msgid ""
 msgstr ""
 "Saisissez un numéro mobile camerounais à 9 chiffres commençant par 6 (ex. "
 "699 12 34 56)"
+
+msgid "Enter supplies, payments and more for any cashier"
+msgstr ""
+"Saisir approvisionnements, paiements et plus pour n'importe quel caissier"
 
 #, python-format
 msgid "Enter the actual balance for %(acct)s."
@@ -812,6 +951,16 @@ msgid "Entered by"
 msgstr "Saisi par"
 
 msgid ""
+"Entries you record go to the chosen cashier's desk, accounts and business "
+"day. You remain recorded as the person who entered them."
+msgstr ""
+"Vos saisies vont au poste, aux comptes et à la journée du caissier choisi. "
+"Vous restez enregistré comme auteur de la saisie."
+
+msgid "Error"
+msgstr "Erreur"
+
+msgid ""
 "Every report has filters and Excel/PDF downloads that use exactly the same "
 "filters and permissions as the screen."
 msgstr ""
@@ -824,6 +973,10 @@ msgid ""
 msgstr ""
 "Chaque transaction est équilibrée (débits = crédits). Compte client : débit "
 "= doit plus ; crédit = a payé / doit moins."
+
+msgid "Everything above, plus agents, POS, agent logins and cash managers"
+msgstr ""
+"Tout ce qui précède, plus agents, PDV, accès agents et gestionnaires de cash"
 
 msgid "Exceptional direct POS transactions and outstanding amounts"
 msgstr "Transactions directes exceptionnelles avec les PDV et montants dus"
@@ -886,6 +1039,9 @@ msgstr "Expliquez la résolution."
 msgid "Explained by a transaction correction"
 msgstr "Expliqué par la correction d'une transaction"
 
+msgid "File (.xlsx or .csv)"
+msgstr "Fichier (.xlsx ou .csv)"
+
 msgid "Finance manager"
 msgstr "Responsable financier"
 
@@ -902,6 +1058,10 @@ msgstr ""
 "Pour un remplacement, ne remplissez que les valeurs qui changent ; les "
 "autres sont reprises de l'original et revalidées."
 
+#, python-format
+msgid "For: %(c)s"
+msgstr "Pour : %(c)s"
+
 msgid "From"
 msgstr "De"
 
@@ -911,11 +1071,24 @@ msgstr "Du (date comptable)"
 msgid "From (your account)"
 msgstr "De (votre compte)"
 
+msgid ""
+"Full control of the application. Every change made here is recorded in the "
+"audit log."
+msgstr ""
+"Contrôle total de l'application. Chaque modification faite ici est "
+"enregistrée dans le journal d'audit."
+
 msgid "Full statement"
 msgstr "Relevé complet"
 
 msgid "Generated"
 msgstr "Généré le"
+
+msgid "Give the reason for deleting."
+msgstr "Indiquez le motif de la suppression."
+
+msgid "Give the reason for the edit."
+msgstr "Indiquez le motif de la modification."
 
 msgid "Give the reason for the responsibility change."
 msgstr "Indiquez le motif du changement de responsabilité."
@@ -938,6 +1111,12 @@ msgid ""
 msgstr ""
 "Identifiés par le numéro de SIM business. Les soldes sont communs à tous les"
 " caissiers."
+
+msgid "Import CSV / Excel"
+msgstr "Importer CSV / Excel"
+
+msgid "Imported"
+msgstr "Importé"
 
 msgid "In"
 msgstr "Entrées"
@@ -963,6 +1142,10 @@ msgstr "Transferts internes"
 
 msgid "Invalid amount"
 msgstr "Montant invalide"
+
+#, python-format
+msgid "Invalid date %(v)s (use YYYY-MM-DD or DD/MM/YYYY)"
+msgstr "Date invalide %(v)s (utilisez AAAA-MM-JJ ou JJ/MM/AAAA)"
 
 msgid "Invalid username or password."
 msgstr "Identifiant ou mot de passe incorrect."
@@ -1102,6 +1285,9 @@ msgstr ""
 "Aucun taux de conversion UVE→ER n'est configuré. Contactez le super "
 "administrateur."
 
+msgid "No active cashier yet. Create cashiers in Configuration."
+msgstr "Aucun caissier actif. Créez des caissiers dans Configuration."
+
 msgid "No agent or POS found"
 msgstr "Aucun agent ni PDV trouvé"
 
@@ -1119,8 +1305,14 @@ msgstr "Aucune clôture pour l'instant."
 msgid "No correction found for %(ref)s."
 msgstr "Aucune correction trouvée pour %(ref)s."
 
+msgid "No custodian"
+msgstr "Aucun détenteur"
+
 msgid "No data for these filters."
 msgstr "Aucune donnée pour ces filtres."
+
+msgid "No drawers or wallets configured yet."
+msgstr "Aucune caisse ni portefeuille configuré."
 
 msgid "No exchanges yet."
 msgstr "Aucun échange pour l'instant."
@@ -1133,6 +1325,9 @@ msgstr "Aucune note pour l'instant."
 
 msgid "No transactions."
 msgstr "Aucune transaction."
+
+msgid "No value was changed."
+msgstr "Aucune valeur n'a été modifiée."
 
 msgid "No value was changed. Use 'Cancel' to reverse without replacement."
 msgstr ""
@@ -1167,6 +1362,10 @@ msgstr ""
 "CORRIGÉ ; une contre-passation (et, si vous le choisissez, un remplacement "
 "avec les valeurs corrigées) est passée sur la journée ouverte du caissier. "
 "Les journées clôturées ne sont pas réécrites."
+
+#, python-format
+msgid "Now recording for %(c)s"
+msgstr "Enregistrement en cours pour %(c)s"
 
 msgid "OK"
 msgstr "OK"
@@ -1203,6 +1402,9 @@ msgstr "Ouvrir"
 
 msgid "Open (unresolved) closing differences, all dates"
 msgstr "Écarts de clôture ouverts (non résolus), toutes dates"
+
+msgid "Open a transaction, then Edit or Delete"
+msgstr "Ouvrez une transaction, puis Modifier ou Supprimer"
 
 msgid "Open business days"
 msgstr "Journées ouvertes"
@@ -1407,6 +1609,12 @@ msgstr "Motif (affiché sur le tampon CORRIGÉ)"
 msgid "Reason / details"
 msgstr "Motif / détails"
 
+msgid "Reason for deleting (kept in the audit log)"
+msgstr "Motif de la suppression (conservé dans le journal d'audit)"
+
+msgid "Reason for the edit (kept in the audit log)"
+msgstr "Motif de la modification (conservé dans le journal d'audit)"
+
 msgid "Receipt"
 msgstr "Reçu"
 
@@ -1467,6 +1675,9 @@ msgstr ""
 msgid "Record an expense"
 msgstr "Enregistrer une dépense"
 
+msgid "Record as a cashier"
+msgstr "Enregistrer pour un caissier"
+
 msgid "Record opening balance"
 msgstr "Enregistrer le solde d'ouverture"
 
@@ -1496,6 +1707,9 @@ msgstr "Enregistrer agent/PDV"
 
 msgid "Register an agent or POS"
 msgstr "Enregistrer un agent ou un PDV"
+
+msgid "Remove all transactions, or everything"
+msgstr "Supprimer toutes les transactions, ou tout"
 
 msgid "Replacement"
 msgstr "Remplacement"
@@ -1569,6 +1783,9 @@ msgstr "Contre-passation de %(ref)s : %(reason)s"
 msgid "Reverse and replace with corrected values"
 msgstr "Contre-passer et remplacer par les valeurs corrigées"
 
+msgid "Row"
+msgstr "Ligne"
+
 msgid "SIM number"
 msgstr "Numéro de SIM"
 
@@ -1577,6 +1794,9 @@ msgstr "Enregistrer"
 
 msgid "Save as PDF"
 msgstr "Enregistrer en PDF"
+
+msgid "Save changes"
+msgstr "Enregistrer les modifications"
 
 msgid "Saved."
 msgstr "Enregistré."
@@ -1614,8 +1834,14 @@ msgstr "Définir le nouveau taux"
 msgid "Shortage"
 msgstr "Manquant"
 
+msgid "Show"
+msgstr "Afficher"
+
 msgid "Sign in"
 msgstr "Connexion"
+
+msgid "Some rows have errors: nothing was imported"
+msgstr "Certaines lignes contiennent des erreurs : rien n'a été importé"
 
 msgid "Source and destination must be different."
 msgstr "La source et la destination doivent être différentes."
@@ -1628,6 +1854,17 @@ msgstr "Relevés, approvisionnements, encaissements, exports"
 
 msgid "Status"
 msgstr "Statut"
+
+msgid ""
+"Step 1: download the template and fill it. Step 2: upload it to check every "
+"row. Step 3: confirm. If any row has an error, nothing is imported."
+msgstr ""
+"Étape 1 : téléchargez le modèle et remplissez-le. Étape 2 : chargez-le pour "
+"contrôler chaque ligne. Étape 3 : confirmez. Si une ligne contient une "
+"erreur, rien n'est importé."
+
+msgid "Stop recording for a cashier"
+msgstr "Arrêter d'enregistrer pour un caissier"
 
 msgid "Subzone"
 msgstr "Sous-zone"
@@ -1698,6 +1935,9 @@ msgstr "Approvisionnement agent"
 msgid "Surplus"
 msgstr "Excédent"
 
+msgid "Templates"
+msgstr "Modèles"
+
 msgid ""
 "The book (expected) balance carries forward to the next day. Unresolved "
 "differences remain open until a manager or finance manager resolves them."
@@ -1719,6 +1959,12 @@ msgstr "Le bénéficiaire des espèces d'un déstockage doit être un PDV."
 msgid "The custodian must be a cashier."
 msgstr "Le détenteur doit être un caissier."
 
+msgid "The file is empty."
+msgstr "Le fichier est vide."
+
+msgid "The file is too large (maximum 3 MB)."
+msgstr "Le fichier est trop volumineux (maximum 3 Mo)."
+
 msgid "The new responsible party must be different."
 msgstr "Le nouveau responsable doit être différent."
 
@@ -1735,8 +1981,29 @@ msgstr "Le responsable d'un déstockage doit être un agent commercial."
 msgid "The source account does not hold %(p)s."
 msgstr "Le compte source ne contient pas de %(p)s."
 
+msgid ""
+"The transaction and all its ledger lines are removed, and balances are "
+"recalculated. If it was corrected, its correction entries are removed too. A"
+" complete copy is saved in the audit log."
+msgstr ""
+"La transaction et toutes ses écritures sont supprimées et les soldes "
+"recalculés. Si elle a été corrigée, ses écritures de correction sont aussi "
+"supprimées. Une copie complète est enregistrée dans le journal d'audit."
+
+msgid ""
+"The transaction is rewritten in place with the same reference and receipt "
+"number; balances are recalculated. The previous values are saved in the "
+"audit log. Fill only what changes."
+msgstr ""
+"La transaction est réécrite avec la même référence et le même numéro de reçu"
+" ; les soldes sont recalculés. Les anciennes valeurs sont enregistrées dans "
+"le journal d'audit. Remplissez seulement ce qui change."
+
 msgid "The uplift must be between 0 and 100%."
 msgstr "Le bonus doit être compris entre 0 et 100 %."
+
+msgid "The uploaded file has expired. Upload it again."
+msgstr "Le fichier chargé a expiré. Chargez-le à nouveau."
 
 #, python-format
 msgid ""
@@ -1762,12 +2029,34 @@ msgstr ""
 msgid "This business day is already closed."
 msgstr "Cette journée est déjà clôturée."
 
+#, python-format
+msgid ""
+"This change would make %(acct)s negative (%(bal)s FCFA). Nothing was "
+"changed."
+msgstr ""
+"Cette modification rendrait %(acct)s négatif (%(bal)s FCFA). Rien n'a été "
+"modifié."
+
 msgid "This day is earlier than today: close it when you are ready."
 msgstr ""
 "Cette journée est antérieure à aujourd'hui : clôturez-la dès que possible."
 
 msgid "This discrepancy is already resolved."
 msgstr "Cet écart est déjà résolu."
+
+#, python-format
+msgid ""
+"This entry belongs to a correction of %(ref)s. Delete %(ref)s instead: its "
+"correction entries are removed with it."
+msgstr ""
+"Cette écriture fait partie d'une correction de %(ref)s. Supprimez plutôt "
+"%(ref)s : ses écritures de correction seront supprimées avec elle."
+
+msgid ""
+"This entry is part of a correction; delete it and record it again instead."
+msgstr ""
+"Cette écriture fait partie d'une correction ; supprimez-la puis "
+"ressaisissez-la."
 
 msgid "This entry reverses"
 msgstr "Cette écriture contre-passe"
@@ -1800,6 +2089,9 @@ msgstr "Cette transaction ne comporte aucune obligation client."
 msgid "This type of entry cannot be corrected directly."
 msgstr "Ce type d'écriture ne peut pas être corrigé directement."
 
+msgid "This type of entry cannot be edited."
+msgstr "Ce type d'écriture ne peut pas être modifié."
+
 msgid "Tick the confirmation box to close the day."
 msgstr "Cochez la case de confirmation pour clôturer la journée."
 
@@ -1814,6 +2106,10 @@ msgstr "Vers (compte de l'entreprise)"
 
 msgid "Too many failed attempts. Try again in 15 minutes."
 msgstr "Trop de tentatives échouées. Réessayez dans 15 minutes."
+
+#, python-format
+msgid "Too many rows (maximum %(n)s per file)."
+msgstr "Trop de lignes (maximum %(n)s par fichier)."
 
 msgid "Total"
 msgstr "Total"
@@ -1836,8 +2132,21 @@ msgstr "Type de transaction"
 msgid "Transactions"
 msgstr "Transactions"
 
+msgid "Transactions (supplies, payments, expenses)"
+msgstr "Transactions (approvisionnements, paiements, dépenses)"
+
 msgid "Transactions involving POS"
 msgstr "Transactions impliquant des PDV"
+
+msgid ""
+"Transactions: type is SUPPLY_AGENT, SUPPLY_POS, PAYMENT or EXPENSE; cashier "
+"is the username or staff ID; account is the company SIM number or bank "
+"account number (leave empty to use the cashier's own drawer or wallet)."
+msgstr ""
+"Transactions : type = SUPPLY_AGENT, SUPPLY_POS, PAYMENT ou EXPENSE ; cashier"
+" = identifiant ou ID du caissier ; account = numéro de SIM de l'entreprise "
+"ou numéro de compte bancaire (laissez vide pour utiliser la caisse ou le "
+"portefeuille du caissier)."
 
 msgid "Transfer"
 msgstr "Transfert"
@@ -1856,6 +2165,12 @@ msgstr "Transferts entre comptes de l'entreprise"
 
 msgid "Type"
 msgstr "Type"
+
+msgid "Type DELETE to confirm"
+msgstr "Tapez DELETE (ou SUPPRIMER) pour confirmer"
+
+msgid "Type DELETE to confirm."
+msgstr "Tapez DELETE (ou SUPPRIMER) pour confirmer."
 
 msgid "UVE amount (FCFA)"
 msgstr "Montant UVE (FCFA)"
@@ -1900,6 +2215,25 @@ msgstr "UVE→ER"
 msgid "UVE→ER uplift (%)"
 msgstr "Bonus UVE→ER (%)"
 
+msgid "UVE→ER uplift for future conversions"
+msgstr "Bonus UVE→ER pour les conversions futures"
+
+#, python-format
+msgid "Unknown cash manager %(v)s"
+msgstr "Gestionnaire de cash inconnu %(v)s"
+
+#, python-format
+msgid "Unknown cashier %(v)s (use the username or staff ID)"
+msgstr "Caissier inconnu %(v)s (utilisez l'identifiant ou l'ID)"
+
+#, python-format
+msgid "Unknown expense category %(v)s"
+msgstr "Catégorie de dépense inconnue %(v)s"
+
+#, python-format
+msgid "Unknown master zone %(v)s"
+msgstr "Zone principale inconnue %(v)s"
+
 msgid "Unresolved closing differences"
 msgstr "Écarts de clôture non résolus"
 
@@ -1918,8 +2252,30 @@ msgstr "Taux de bonus"
 msgid "Uplift rate used"
 msgstr "Taux de bonus utilisé"
 
+msgid "Upload an Excel (.xlsx) or CSV file."
+msgstr "Chargez un fichier Excel (.xlsx) ou CSV."
+
+msgid "Upload and check"
+msgstr "Charger et contrôler"
+
+msgid ""
+"Use this to remove test data before going live. Users, zones, SIMs, drawers,"
+" banks, expense categories and rates are always kept. This cannot be undone;"
+" make a database backup first."
+msgstr ""
+"Utilisez ceci pour supprimer les données de test avant le démarrage. "
+"Utilisateurs, zones, SIM, caisses, banques, catégories de dépenses et taux "
+"sont toujours conservés. Action irréversible : faites d'abord une sauvegarde"
+" de la base."
+
+msgid "User"
+msgstr "Utilisateur"
+
 msgid "Username"
 msgstr "Identifiant"
+
+msgid "Users, zones, SIMs, drawers, banks, categories"
+msgstr "Utilisateurs, zones, SIM, caisses, banques, catégories"
 
 msgid "View"
 msgstr "Voir"
@@ -1927,14 +2283,23 @@ msgstr "Voir"
 msgid "Weekly"
 msgstr "Hebdomadaire"
 
+msgid "What are you importing?"
+msgstr "Que voulez-vous importer ?"
+
 msgid "What do you want to record?"
 msgstr "Que voulez-vous enregistrer ?"
 
 msgid "What happened"
 msgstr "Ce qui a eu lieu"
 
+msgid "What to clear"
+msgstr "Ce qu'il faut effacer"
+
 msgid "When"
 msgstr "Quand"
+
+msgid "Who changed what, and the deleted data"
+msgstr "Qui a modifié quoi, et les données supprimées"
 
 msgid "Write the investigation note."
 msgstr "Rédigez la note d'enquête."
@@ -1972,6 +2337,15 @@ msgstr "Vos saisies sont enregistrées sur la journée du %(d)s."
 msgid "Your latest entries"
 msgstr "Vos dernières saisies"
 
+msgid "Your password"
+msgstr "Votre mot de passe"
+
+msgid "Your password is incorrect."
+msgstr "Votre mot de passe est incorrect."
+
+msgid "Zone / cashier"
+msgstr "Zone / caissier"
+
 msgid "Zones, users, SIMs, drawers"
 msgstr "Zones, utilisateurs, SIM, caisses"
 
@@ -2000,8 +2374,15 @@ msgstr "espèces au PDV %(pos)s"
 msgid "closing of"
 msgstr "clôture du"
 
+#, python-format
+msgid "created %(cp)s"
+msgstr "créé : %(cp)s"
+
 msgid "custodian cashier"
 msgstr "caissier détenteur"
+
+msgid "customer_sim"
+msgstr "customer_sim"
 
 msgid "due to customer"
 msgstr "dû au client"
@@ -2028,8 +2409,15 @@ msgstr "inactif"
 msgid "into %(acct)s"
 msgstr "vers %(acct)s"
 
+msgid "kind must be CUSTOMER, CASH_MANAGER, CASH_DRAWER, UVE, ER, MTN or BANK"
+msgstr ""
+"kind doit être CUSTOMER, CASH_MANAGER, CASH_DRAWER, UVE, ER, MTN ou BANK"
+
 msgid "label"
 msgstr "libellé"
+
+msgid "language"
+msgstr "langue"
 
 msgid "master SIM of the zone"
 msgstr "SIM maître de la zone"
@@ -2039,6 +2427,9 @@ msgstr "zone principale"
 
 msgid "name"
 msgstr "nom"
+
+msgid "name is required"
+msgstr "le nom est obligatoire"
 
 msgid "not closed"
 msgstr "non clôturée"
@@ -2055,8 +2446,17 @@ msgstr "dû à l'entreprise"
 msgid "owes"
 msgstr "doit"
 
+msgid "phone"
+msgstr "téléphone"
+
 msgid "phone / SIM"
 msgstr "téléphone / SIM"
+
+msgid "product_or_method must be CASH, UVE, MTN or BANK"
+msgstr "product_or_method doit être CASH, UVE, MTN ou BANK"
+
+msgid "product_or_method must be UVE, ER or CASH"
+msgstr "product_or_method doit être UVE, ER ou CASH"
 
 #, python-format
 msgid "rate +%(r)s%% → ER %(er)s"
@@ -2075,11 +2475,17 @@ msgstr "remplacement"
 msgid "role"
 msgstr "rôle"
 
+msgid "rows"
+msgstr "lignes"
+
 msgid "settled"
 msgstr "soldé"
 
 msgid "shared use"
 msgstr "usage partagé"
+
+msgid "staff ID"
+msgstr "ID employé"
 
 msgid "subzone"
 msgstr "sous-zone"
@@ -2092,6 +2498,17 @@ msgstr "approvisionnement dû au client"
 
 msgid "type"
 msgstr "type"
+
+msgid "type must be AGENT or POS"
+msgstr "type doit être AGENT ou POS"
+
+#, python-format
+msgid "type must be one of %(v)s"
+msgstr "type doit être l'un de %(v)s"
+
+#, python-format
+msgid "updated %(cp)s"
+msgstr "mis à jour : %(cp)s"
 
 msgid "uplift rate"
 msgstr "taux de bonus"

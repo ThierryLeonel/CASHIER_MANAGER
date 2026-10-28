@@ -163,17 +163,16 @@ class Filters:
         return q
 
     def station_q(self, prefix=""):
-        """Owning cashier of a transaction = cashier_day.cashier, or the
-        entering user when there is no cashier day (manager postings)."""
+        """The recording cashier of a transaction (Transaction.cashier), or the
+        entering user when there is no cashier (e.g. manager postings)."""
         p = prefix
         q = Q()
         if self.cashier:
-            q &= Q(**{f"{p}cashier_day__cashier": self.cashier}) | Q(
-                **{f"{p}cashier_day__isnull": True, f"{p}entered_by": self.cashier})
+            q &= Q(**{f"{p}cashier": self.cashier}) | Q(**{f"{p}cashier__isnull": True, f"{p}entered_by": self.cashier})
         if self.subzone:
-            q &= Q(**{f"{p}cashier_day__cashier__subzone": self.subzone})
+            q &= Q(**{f"{p}cashier__subzone": self.subzone})
         if self.master_zone:
-            q &= Q(**{f"{p}cashier_day__cashier__subzone__parent": self.master_zone})
+            q &= Q(**{f"{p}cashier__subzone__parent": self.master_zone})
         return q
 
     def txn_q(self, prefix=""):

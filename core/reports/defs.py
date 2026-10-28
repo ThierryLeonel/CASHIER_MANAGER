@@ -25,10 +25,17 @@ def money(v):
     return v if v is not None else Z
 
 
+def _desk_user(t):
+    return t.cashier or (t.cashier_day.cashier if t.cashier_day_id else t.entered_by)
+
+
 def station(t):
-    if t.cashier_day_id:
-        return str(t.cashier_day.cashier)
-    return str(t.entered_by)
+    return str(_desk_user(t))
+
+
+def station_id(t):
+    u = _desk_user(t)
+    return u.staff_code or str(u.pk)
 
 
 def signed(t):
@@ -77,14 +84,15 @@ def describe(t):
     return " · ".join(str(p) for p in parts if p)
 
 
-TX_RELATED = ["entered_by", "cashier_day__cashier", "counterparty", "counterparty_2", "source_account__sim",
+TX_RELATED = ["cashier", "entered_by", "cashier_day__cashier", "counterparty", "counterparty_2", "source_account__sim",
               "dest_account__sim", "reverses", "replaces", "expense_category", "related_supply", "correction",
               "cash_manager", "exchange"]
 
 TX_COLUMNS = [
-    Col("posted_at", _("Recorded at"), "datetime"), Col("business_date", _("Business date"), "date"),
-    Col("reference", _("Reference")), Col("type", _("Type")), Col("customer", _("Customer")),
-    Col("details", _("Details")), Col("cashier", _("Cashier")), Col("amount", _("Amount"), "money", True),
+    Col("posted_at", _l("Recorded at"), "datetime"), Col("business_date", _l("Business date"), "date"),
+    Col("reference", _l("Reference")), Col("type", _l("Type")), Col("customer", _l("Customer")),
+    Col("details", _l("Details")), Col("cashier", _l("Cashier")), Col("cashier_id", _l("Cashier ID")),
+    Col("amount", _l("Amount"), "money", True),
 ]
 
 
@@ -92,6 +100,7 @@ def txn_row(t):
     return dict(posted_at=t.posted_at, business_date=t.business_date, reference=t.reference,
                 receipt=t.receipt_no or "", type=str(t.display_type),
                 customer=str(t.counterparty) if t.counterparty_id else "", details=describe(t), cashier=station(t),
+                cashier_id=station_id(t),
                 amount=signed(t), corrected=hasattr(t, "correction"), _id=t.id)
 
 
@@ -163,7 +172,7 @@ def statement(f):
             by_method[t.payment_method] += sign * t.amount
         rows.append(dict(posted_at=t.posted_at, business_date=e.business_date, reference=t.reference,
                          receipt=t.receipt_no or "", type=str(t.display_type), details=describe(t),
-                         cashier=station(t), debit=e.amount if e.amount > 0 else Z,
+                         cashier=station(t), cashier_id=station_id(t), debit=e.amount if e.amount > 0 else Z,
                          credit=-e.amount if e.amount < 0 else Z, balance=running,
                          corrected=hasattr(t, "correction"), _id=t.id))
     current = ops.customer_balance(cp)
@@ -178,7 +187,7 @@ def statement(f):
     rep.tables.append(Table(_("Movements (positive = owed to company, negative balance = supply due to customer)"), [
         Col("posted_at", _("Recorded at"), "datetime"), Col("business_date", _("Business date"), "date"),
         Col("reference", _("Reference")), Col("receipt", _("Receipt")), Col("type", _("Type")),
-        Col("details", _("Details")), Col("cashier", _("Cashier")),
+        Col("details", _("Details")), Col("cashier", _("Cashier")), Col("cashier_id", _("Cashier ID")),
         Col("debit", _("Supplied / owed +"), "money", True), Col("credit", _("Paid / credited −"), "money", True),
         Col("balance", _("Balance"), "money"),
     ], rows))
@@ -220,12 +229,12 @@ def _customer_rows(f, kind=None, only=None):
 
 
 CUSTOMER_COLS = [
-    Col("sim", _("Business SIM")), Col("name", _("Name")), Col("kind", _("Type")),
-    Col("opening", _("Opening"), "money", True), Col("supplied", _("Supplied"), "money", True),
-    Col("paid", _("Paid"), "money", True), Col("transfers", _("Resp. transfers"), "money", True),
-    Col("other", _("Corrections / opening"), "money", True), Col("closing", _("Closing"), "money", True),
-    Col("owed", _("Owed to company"), "money", True), Col("due", _("Supply due to customer"), "money", True),
-    Col("current", _("Current"), "money", True),
+    Col("sim", _l("Business SIM")), Col("name", _l("Name")), Col("kind", _l("Type")),
+    Col("opening", _l("Opening"), "money", True), Col("supplied", _l("Supplied"), "money", True),
+    Col("paid", _l("Paid"), "money", True), Col("transfers", _l("Resp. transfers"), "money", True),
+    Col("other", _l("Corrections / opening"), "money", True), Col("closing", _l("Closing"), "money", True),
+    Col("owed", _l("Owed to company"), "money", True), Col("due", _l("Supply due to customer"), "money", True),
+    Col("current", _l("Current"), "money", True),
 ]
 
 

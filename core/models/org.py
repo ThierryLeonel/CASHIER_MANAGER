@@ -61,6 +61,9 @@ class User(AbstractUser):
         "Counterparty", null=True, blank=True, on_delete=models.PROTECT, related_name="login_user",
         help_text="Required for commercial-agent logins: the agent account they may view.",
     )
+    staff_code = models.CharField(_("staff ID"), max_length=20, unique=True, null=True, blank=True,
+                                  help_text="Shown on every transaction and receipt. Generated if left empty.")
+    language = models.CharField(_("language"), max_length=2, blank=True, choices=[("en", "English"), ("fr", "Français")])
 
     class Meta:
         constraints = [
@@ -76,6 +79,19 @@ class User(AbstractUser):
 
     def __str__(self):
         return self.get_full_name() or self.username
+
+    PREFIX = {"SUPERADMIN": "ADM", "MANAGER": "MGR", "FINANCE": "FIN", "CASHIER": "CSH", "AGENT": "AGT"}
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        if not self.staff_code:
+            code = f"{self.PREFIX.get(self.role, 'USR')}-{self.pk:04d}"
+            User.objects.filter(pk=self.pk).update(staff_code=code)
+            self.staff_code = code
+
+    @property
+    def label_with_id(self):
+        return f"{self} [{self.staff_code}]" if self.staff_code else str(self)
 
     # role helpers
     @property

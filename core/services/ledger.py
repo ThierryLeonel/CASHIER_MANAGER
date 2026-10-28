@@ -141,6 +141,7 @@ def _post_locked(specs, ctx, idempotency_key):
             business_date=ctx.business_date,
             posted_at=now,
             entered_by=ctx.entered_by,
+            cashier=ctx.day.cashier if ctx.day else (ctx.cashier if ctx.cashier and ctx.cashier.is_cashier else None),
             cashier_day=ctx.day,
             idempotency_key=idempotency_key if i == 0 else None,
             **fields,
