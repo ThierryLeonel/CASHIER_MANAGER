@@ -155,7 +155,10 @@ AGENT_REPORTS = ("statement",)
 def reports_index(request):
     if request.user.is_agent:
         return redirect("report", key="statement")
-    return render(request, "core/reports_index.html", {"reports": REPORTS.items()})
+    from core.reports.defs import REPORT_CARDS
+
+    cards = [(key, title, *REPORT_CARDS.get(key, ("chart", ""))) for key, (title, _fn) in REPORTS.items()]
+    return render(request, "core/reports_index.html", {"cards": cards})
 
 
 @roles_required(*STAFF, R.AGENT)

@@ -1,9 +1,16 @@
-{% extends "core/base.html" %}{% load i18n %}
+{% extends "core/base.html" %}{% load i18n cashier %}
 {% block title %}{% trans "Reports" %}{% endblock %}
+{% block topbar %}{% trans "Reports" %}{% endblock %}
 {% block content %}
 <h1>{% trans "Reports" %}</h1>
 <p class="muted">{% trans "Every report has filters and Excel/PDF downloads that use exactly the same filters and permissions as the screen." %}</p>
-<div class="grid">
-{% for key, item in reports %}<a class="tile" style="text-decoration:none;color:inherit" href="{% url 'report' key %}"><div class="value" style="font-size:1rem">{{ item.0 }}</div></a>{% endfor %}
+<div class="report-grid">
+{% for key, title, ic, desc in cards %}
+  <a class="report-card" href="{% url 'report' key %}">
+    <span class="qa-ic">{% icon ic 22 %}</span>
+    <span class="rc-text"><strong>{{ title }}</strong>{% if desc %}<span>{{ desc }}</span>{% endif %}</span>
+    <span class="rc-go">{% icon "chevron" 18 %}</span>
+  </a>
+{% endfor %}
 </div>
 {% endblock %}

@@ -4,6 +4,7 @@
 <div class="login panel">
   <div class="brand"><span class="logo">C</span><span><strong>{% trans "Cashier Manager" %}</strong><small>{{ COMPANY_NAME }}</small></span></div>
   <h1>{% trans "Sign in" %}</h1>
+  {% if idle %}<div class="msg info">{% blocktrans with m=idle_minutes %}You were signed out after {{ m }} minutes without activity. Sign in again to continue.{% endblocktrans %}</div>{% endif %}
   {% if error %}<div class="nonfield">{{ error }}</div>{% endif %}
   <form method="post">{% csrf_token %}
     <input type="hidden" name="next" value="{{ next }}">

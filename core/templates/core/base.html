@@ -101,5 +101,54 @@ document.addEventListener('keydown', function (e) { if (e.key === 'Escape') docu
   nocustomer: "{% trans 'No agent or POS found' %}", pos: "{% trans 'POS' %}", agent: "{% trans 'AG' %}",
   cash: "{% trans 'Cash' %}", bank: "{% trans 'Bank' %}"};</script>
 <script src="{% static 'core/ui.js' %}"></script>
+{% if user.is_authenticated %}
+<div class="idle" id="idle" hidden role="alertdialog" aria-modal="true" aria-labelledby="idle-title">
+  <div class="idle-box">
+    <span class="qa-ic">{% icon "clock" 26 %}</span>
+    <strong id="idle-title">{% trans "Are you still there?" %}</strong>
+    <p class="muted small">{% trans "For security, you will be signed out because of inactivity in:" %}</p>
+    <div class="idle-count" id="idle-count">2:00</div>
+    <button class="btn primary" type="button" id="idle-stay">{% trans "Stay signed in" %}</button>
+    <form method="post" action="{% url 'idle_logout' %}" id="idle-form">{% csrf_token %}<button class="btn" type="submit">{% trans "Log out now" %}</button></form>
+  </div>
+</div>
+<script>
+(function () {
+  /* Inactivity sign-out: warn 2 minutes before, sign out at the limit. Activity in
+     any open tab counts (shared through localStorage). The server enforces the
+     same limit, so a closed laptop is signed out too. */
+  var LIMIT = {{ IDLE_SECONDS }} * 1000, WARN = Math.min(120000, LIMIT / 3), KEY = 'cm-last-activity';
+  var dlg = document.getElementById('idle'), cnt = document.getElementById('idle-count');
+  var lastPing = Date.now(), csrf = document.querySelector('#idle-form [name=csrfmiddlewaretoken]').value;
+  function now() { return Date.now(); }
+  function getLast() { try { return parseInt(localStorage.getItem(KEY), 10) || now(); } catch (e) { return window.__cmLast || now(); } }
+  function setLast(t) { window.__cmLast = t; try { localStorage.setItem(KEY, String(t)); } catch (e) {} }
+  function ping() {
+    lastPing = now();
+    fetch('{% url "keepalive" %}', { method: 'POST', credentials: 'same-origin', headers: { 'X-CSRFToken': csrf } })
+      .then(function (r) { if (r.status === 401) location.href = '{% url "login" %}?idle=1'; }).catch(function () {});
+  }
+  function activity() {
+    if (!dlg.hidden) return;              // while warning, only the button counts
+    setLast(now());
+    if (now() - lastPing > 120000) ping(); // keep the server session alive while working
+  }
+  ['mousedown', 'keydown', 'touchstart', 'scroll', 'input'].forEach(function (ev) {
+    document.addEventListener(ev, activity, { passive: true, capture: true });
+  });
+  document.getElementById('idle-stay').addEventListener('click', function () { dlg.hidden = true; setLast(now()); ping(); });
+  setLast(now());
+  setInterval(function () {
+    var left = LIMIT - (now() - getLast());
+    if (left <= 0) { document.getElementById('idle-form').submit(); return; }
+    if (left <= WARN) {
+      dlg.hidden = false;
+      var s = Math.ceil(left / 1000);
+      cnt.textContent = Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+    } else if (!dlg.hidden) { dlg.hidden = true; }
+  }, 1000);
+})();
+</script>
+{% endif %}
 </body>
 </html>

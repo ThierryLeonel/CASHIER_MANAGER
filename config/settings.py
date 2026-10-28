@@ -147,7 +147,11 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Security
 SESSION_COOKIE_HTTPONLY = True
-SESSION_COOKIE_AGE = 60 * 60 * 10  # one working day
+# Automatic sign-out after inactivity (sliding window, enforced on the server;
+# the browser shows a countdown 2 minutes before). Default 15 minutes.
+SESSION_IDLE_MINUTES = int(env("SESSION_IDLE_MINUTES", "15"))
+SESSION_COOKIE_AGE = SESSION_IDLE_MINUTES * 60
+SESSION_SAVE_EVERY_REQUEST = True
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 CSRF_COOKIE_HTTPONLY = False
 X_FRAME_OPTIONS = "DENY"

@@ -217,3 +217,42 @@ class DashboardsAndLanguage(OrgMixin, TestCase):
         self.assertContains(c2.get("/"), "Vue d'ensemble")
         c2.post("/language/", {"language": "en", "next": "/"})
         self.assertContains(c2.get("/"), "Overview")
+
+
+class InactivitySignOut(OrgMixin, TestCase):
+    def setUp(self):
+        cache.clear()
+        self.make_org()
+
+    def test_session_expires_after_idle_limit_and_keepalive(self):
+        from django.conf import settings
+
+        self.assertEqual(settings.SESSION_COOKIE_AGE, 15 * 60)
+        self.assertTrue(settings.SESSION_SAVE_EVERY_REQUEST)
+        c = self.client_class()
+        c.login(username="cashier.fako1", password=PW)
+        r = c.get("/")
+        self.assertContains(r, 'id="idle"')
+        self.assertEqual(c.session.get_expiry_age(), 900)
+        self.assertEqual(c.post("/session/keepalive/").status_code, 200)
+        r = c.post("/session/idle-logout/")
+        self.assertEqual(r["Location"], "/login/?idle=1")
+        self.assertEqual(c.post("/session/keepalive/").status_code, 401)
+        self.assertEqual(c.get("/").status_code, 302)  # signed out
+        self.assertContains(self.client_class().get("/login/?idle=1"), "15 minutes without activity")
+        self.assertTrue(AuditEvent.objects.filter(action="auto_logout_idle").exists())
+
+    def test_expired_session_redirects_to_login(self):
+        c = self.client_class()
+        c.login(username="manager", password=PW)
+        s = c.session
+        s.set_expiry(-1)  # simulate 15 minutes passing
+        s.save()
+        self.assertEqual(c.get("/").status_code, 302)
+
+    def test_reports_page_cards(self):
+        c = self.client_class()
+        c.login(username="manager", password=PW)
+        r = c.get("/reports/")
+        self.assertContains(r, 'class="report-card"', count=15)
+        self.assertNotContains(r, "daily/weekly")

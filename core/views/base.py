@@ -137,7 +137,9 @@ def login_view(request):
                 if not url_has_allowed_host_and_scheme(nxt, {request.get_host()}, request.is_secure()):
                     nxt = ""
                 return HttpResponseRedirect(nxt or reverse("dashboard"))
-    return render(request, "core/login.html", {"error": error, "next": request.GET.get("next", "")})
+    idle = request.GET.get("idle") == "1"
+    return render(request, "core/login.html", {"error": error, "next": request.GET.get("next", ""), "idle": idle,
+                                               "idle_minutes": settings.SESSION_IDLE_MINUTES})
 
 
 @require_POST
@@ -260,3 +262,24 @@ def set_lang(request):
         if request.user.is_authenticated and request.user.language != lang:
             User.objects.filter(pk=request.user.pk).update(language=lang)
     return resp
+
+
+def keepalive(request):
+    """Called by the page while the user is active; refreshes the session
+    (SESSION_SAVE_EVERY_REQUEST) so typing in a long form never logs out."""
+    from django.http import JsonResponse
+
+    if not request.user.is_authenticated:
+        return JsonResponse({"ok": False}, status=401)
+    request.session["last_seen"] = __import__("time").time()
+    return JsonResponse({"ok": True})
+
+
+def idle_logout(request):
+    """Sign out after inactivity, then show the sign-in page with a note."""
+    if request.method == "POST" and request.user.is_authenticated:
+        from core.services.operations import log_event
+
+        log_event(request.user, "auto_logout_idle")
+        logout(request)
+    return redirect(reverse("login") + "?idle=1")

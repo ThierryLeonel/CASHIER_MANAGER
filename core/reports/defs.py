@@ -606,5 +606,25 @@ REPORTS = {
     "supply_due": (_l("Supply due to customers"), supply_due),
     "corrections": (_l("Corrections and responsibility transfers"), corrections),
     "closings": (_l("Daily closings and differences"), closings),
-    "reconciliation": (_l("Reconciliation (daily/weekly/monthly/custom/overall)"), reconciliation),
+    "reconciliation": (_l("Reconciliation"), reconciliation),
+}
+
+
+# Icon and one-line description for each report card on the reports page.
+REPORT_CARDS = {
+    "statement": ("statement", _l("Every supply and payment of one agent or POS, with running balance")),
+    "customers": ("users", _l("What each agent and POS owes, or is owed")),
+    "pos": ("store", _l("Direct POS supplies and their outstanding amounts")),
+    "supplies": ("supply", _l("UVE, ER and cash supplies, agents versus POS")),
+    "collections": ("payment", _l("Payments received: cash, UVE, MTN, bank")),
+    "destockage": ("destock", _l("Cash to POS, UVE to agents")),
+    "cash_managers": ("bank", _l("Exchanges and what is owed either way")),
+    "expenses": ("expense", _l("Spending by category")),
+    "accounts": ("wallet", _l("In and out of every drawer, SIM wallet and bank")),
+    "transfers": ("transfer", _l("Moves between company accounts")),
+    "conversions": ("convert", _l("UVE converted to ER and the rates used")),
+    "supply_due": ("percent", _l("Customers who paid in advance")),
+    "corrections": ("edit", _l("Corrected entries and changes of responsibility")),
+    "closings": ("lock", _l("Counted versus expected, and open differences")),
+    "reconciliation": ("chart", _l("Daily, weekly, monthly, custom or overall: opening + movements = closing")),
 }

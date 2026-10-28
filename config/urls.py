@@ -7,6 +7,8 @@ urlpatterns = [
     path("", v.dashboard, name="dashboard"),
     path("login/", v.login_view, name="login"),
     path("logout/", v.logout_view, name="logout"),
+    path("session/keepalive/", v.keepalive, name="keepalive"),
+    path("session/idle-logout/", v.idle_logout, name="idle_logout"),
     path("i18n/", include("django.conf.urls.i18n")),
     path("language/", v.set_lang, name="set_lang"),
     # entry

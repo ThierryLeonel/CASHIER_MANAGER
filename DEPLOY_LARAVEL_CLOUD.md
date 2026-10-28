@@ -38,6 +38,7 @@ gunicorn config.wsgi --bind [::]:$PORT --graceful-timeout 25
 |---|---|
 | `COMPANY_NAME` | Your company name (printed on receipts) |
 | `COMPANY_ADDRESS` | Address line for receipts |
+| `SESSION_IDLE_MINUTES` | Optional. Minutes without activity before automatic sign-out (default 15) |
 
 `SECRET_KEY`, `DEBUG=false`, hosts and the database URL are provided by Cloud; keep `DEBUG` false.
 

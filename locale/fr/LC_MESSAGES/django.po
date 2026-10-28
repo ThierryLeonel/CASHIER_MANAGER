@@ -254,6 +254,9 @@ msgstr "Analyse"
 msgid "Apply"
 msgstr "Appliquer"
 
+msgid "Are you still there?"
+msgstr "Êtes-vous toujours là ?"
+
 msgid "As of"
 msgstr "Au"
 
@@ -416,6 +419,9 @@ msgid "Cash paid out of your drawer. Expenses never reduce an agent's debt."
 msgstr ""
 "Espèces sorties de votre caisse. Les dépenses ne réduisent jamais la dette "
 "d'un agent."
+
+msgid "Cash to POS, UVE to agents"
+msgstr "Espèces aux PDV, UVE aux agents"
 
 msgid "Cash to a POS, UVE to an agent"
 msgstr "Espèces au PDV, UVE à l'agent"
@@ -680,6 +686,9 @@ msgstr "Compte de l'entreprise corrigé"
 msgid "Corrected customer (business SIM)"
 msgstr "Client corrigé (SIM business)"
 
+msgid "Corrected entries and changes of responsibility"
+msgstr "Écritures corrigées et changements de responsabilité"
+
 msgid "Corrected note/description"
 msgstr "Note/description corrigée"
 
@@ -724,6 +733,9 @@ msgstr ""
 "clôture (comptage à l'aveugle). Les écarts restent ouverts pour enquête ; "
 "ils ne sont jamais absorbés. Après la clôture, toutes les nouvelles saisies "
 "appartiennent à la journée suivante."
+
+msgid "Counted versus expected, and open differences"
+msgstr "Compté contre attendu, et écarts ouverts"
 
 msgid "Counting/reading error – no posting"
 msgstr "Erreur de comptage/lecture – aucune écriture"
@@ -803,6 +815,9 @@ msgstr "Les clients doivent à l'entreprise"
 msgid "Customers owe the company (end of period)"
 msgstr "Les clients doivent à l'entreprise (fin de période)"
 
+msgid "Customers who paid in advance"
+msgstr "Clients qui ont payé d'avance"
+
 msgid "Customers with supply due (as of end of period)"
 msgstr "Clients avec approvisionnement dû (fin de période)"
 
@@ -814,6 +829,12 @@ msgstr "Clôtures journalières et écarts"
 
 msgid "Daily closings and unresolved differences"
 msgstr "Clôtures journalières et écarts non résolus"
+
+msgid ""
+"Daily, weekly, monthly, custom or overall: opening + movements = closing"
+msgstr ""
+"Journalier, hebdomadaire, mensuel, personnalisé ou global : ouverture + "
+"mouvements = clôture"
 
 #, python-format
 msgid ""
@@ -877,6 +898,9 @@ msgstr "Écart"
 
 msgid "Differences"
 msgstr "Écarts"
+
+msgid "Direct POS supplies and their outstanding amounts"
+msgstr "Approvisionnements directs des PDV et montants dus"
 
 msgid "Direction"
 msgstr "Sens"
@@ -967,6 +991,10 @@ msgstr ""
 "Chaque rapport a des filtres et des téléchargements Excel/PDF qui utilisent "
 "exactement les mêmes filtres et droits que l'écran."
 
+msgid "Every supply and payment of one agent or POS, with running balance"
+msgstr ""
+"Chaque approvisionnement et paiement d'un agent ou PDV, avec solde courant"
+
 msgid ""
 "Every transaction is balanced (debits = credits). Customer account: debit = "
 "owes more; credit = paid / owes less."
@@ -1011,6 +1039,9 @@ msgstr "Échanger espèces et UVE"
 
 msgid "Exchanges"
 msgstr "Échanges"
+
+msgid "Exchanges and what is owed either way"
+msgstr "Échanges et ce qui est dû de part et d'autre"
 
 msgid "Expected"
 msgstr "Attendu"
@@ -1057,6 +1088,9 @@ msgid ""
 msgstr ""
 "Pour un remplacement, ne remplissez que les valeurs qui changent ; les "
 "autres sont reprises de l'original et revalidées."
+
+msgid "For security, you will be signed out because of inactivity in:"
+msgstr "Par sécurité, vous serez déconnecté pour inactivité dans :"
 
 #, python-format
 msgid "For: %(c)s"
@@ -1120,6 +1154,9 @@ msgstr "Importé"
 
 msgid "In"
 msgstr "Entrées"
+
+msgid "In and out of every drawer, SIM wallet and bank"
+msgstr "Entrées et sorties de chaque caisse, portefeuille SIM et banque"
 
 #, python-format
 msgid "Incompatible asset types: %(a)s cannot be transferred to %(b)s."
@@ -1199,6 +1236,9 @@ msgstr "Correction liée"
 msgid "Log out"
 msgstr "Déconnexion"
 
+msgid "Log out now"
+msgstr "Se déconnecter maintenant"
+
 msgid "MISMATCH"
 msgstr "ÉCART"
 
@@ -1238,6 +1278,9 @@ msgid ""
 msgstr ""
 "Mouvements (positif = dû à l'entreprise, solde négatif = approvisionnement "
 "dû au client)"
+
+msgid "Moves between company accounts"
+msgstr "Mouvements entre comptes de l'entreprise"
 
 msgid "My account"
 msgstr "Mon compte"
@@ -1558,6 +1601,9 @@ msgstr "Paiement"
 msgid "Payment method"
 msgstr "Mode de paiement"
 
+msgid "Payments received: cash, UVE, MTN, bank"
+msgstr "Paiements reçus : espèces, UVE, MTN, banque"
+
 msgid "Period"
 msgstr "Période"
 
@@ -1846,6 +1892,9 @@ msgstr "Certaines lignes contiennent des erreurs : rien n'a été importé"
 msgid "Source and destination must be different."
 msgstr "La source et la destination doivent être différentes."
 
+msgid "Spending by category"
+msgstr "Dépenses par catégorie"
+
 msgid "Statement"
 msgstr "Relevé"
 
@@ -1854,6 +1903,9 @@ msgstr "Relevés, approvisionnements, encaissements, exports"
 
 msgid "Status"
 msgstr "Statut"
+
+msgid "Stay signed in"
+msgstr "Rester connecté"
 
 msgid ""
 "Step 1: download the template and fill it. Step 2: upload it to check every "
@@ -2178,6 +2230,9 @@ msgstr "Montant UVE (FCFA)"
 msgid "UVE converted"
 msgstr "UVE convertie"
 
+msgid "UVE converted to ER and the rates used"
+msgstr "UVE convertie en ER et taux utilisés"
+
 msgid "UVE received by agent (owes)"
 msgstr "UVE reçue par l'agent (redevable)"
 
@@ -2195,6 +2250,9 @@ msgstr "Taux de conversion UVE → ER"
 
 msgid "UVE → ER conversions and rates used"
 msgstr "Conversions UVE → ER et taux utilisés"
+
+msgid "UVE, ER and cash supplies, agents versus POS"
+msgstr "Approvisionnements UVE, ER et espèces, agents ou PDV"
 
 msgid "UVE, ER or cash given to a commercial agent"
 msgstr "UVE, ER ou espèces remis à un agent commercial"
@@ -2289,6 +2347,9 @@ msgstr "Que voulez-vous importer ?"
 msgid "What do you want to record?"
 msgstr "Que voulez-vous enregistrer ?"
 
+msgid "What each agent and POS owes, or is owed"
+msgstr "Ce que chaque agent et PDV doit, ou ce qui lui est dû"
+
 msgid "What happened"
 msgstr "Ce qui a eu lieu"
 
@@ -2326,6 +2387,14 @@ msgstr ""
 "Vous avez remis des espèces à un PDV, et le PDV a envoyé la même valeur en "
 "UVE à un agent. L'agent doit à l'entreprise ; l'UVE de l'entreprise ne "
 "change pas ; le PDV ne doit rien."
+
+#, python-format
+msgid ""
+"You were signed out after %(m)s minutes without activity. Sign in again to "
+"continue."
+msgstr ""
+"Vous avez été déconnecté après %(m)s minutes sans activité. Reconnectez-vous"
+" pour continuer."
 
 msgid "Your drawers and wallets (book balances)"
 msgstr "Vos caisses et portefeuilles (soldes comptables)"
