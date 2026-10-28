@@ -153,5 +153,4 @@ def exchange_detail(request, pk):
     give, recv = ex.side_totals()
     legs = ex.legs.select_related("entered_by", "source_account__sim", "dest_account__sim").order_by("posted_at")
     return render(request, "core/exchange_detail.html", {"ex": ex, "form": form, "give": give, "recv": recv,
-                                                         "legs": legs, "give_kind": ex.give_kind(),
-                                                         "receive_kind": ex.receive_kind()})
+                                                         "legs": legs})

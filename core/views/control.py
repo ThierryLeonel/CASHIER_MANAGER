@@ -1,11 +1,17 @@
 """Closing, discrepancies, opening balances, conversion rate, reports."""
+import uuid
+from datetime import date
+from decimal import Decimal
+
 from django.contrib import messages
+from django.db import transaction as db_transaction
 from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.translation import gettext as _
 
 from core import forms as F
-from core.models import Closing, ConversionRate, Correction, Counterparty, Discrepancy, Transaction, TxType
+from core.models import Account, Closing, ConversionRate, Correction, Counterparty, Discrepancy, Transaction, TxType
+from core.money import fmt
 from core.pdf import report_pdf
 from core.reports.defs import REPORTS
 from core.reports.engine import FilterForm, Filters
@@ -13,7 +19,7 @@ from core.reports.xlsx import report_xlsx
 from core.services import closing as cl
 from core.services import operations as ops
 from core.services.days import douala_today, peek_open_day
-from core.services.errors import BusinessError
+from core.services.errors import BusinessError, DuplicateSubmission
 
 from .base import R, STAFF, SUPERVISORS, roles_required, run_service
 
@@ -125,10 +131,99 @@ def discrepancy_detail(request, pk):
 
 
 # ---------------------------------------------------------------- admin money settings
+OPENING_GRID_KINDS = (Account.Kind.CASH_DRAWER, Account.Kind.UVE, Account.Kind.ER)
+
+
+def opening_grid():
+    """Control accounts (cash, UVE, ER) by master zone -> subzone / master SIM line, with recorded openings."""
+    accts = list(Account.objects.filter(kind__in=OPENING_GRID_KINDS, active=True, zone__isnull=False)
+                 .select_related("zone__parent", "custodian", "sim").order_by("id"))
+    recorded = {}
+    for t in Transaction.objects.filter(type=TxType.OPENING_BALANCE, opening_for_account__in=accts,
+                                        correction__isnull=True):
+        recorded[t.opening_for_account_id] = t
+    masters, totals = {}, {k: Decimal(0) for k in OPENING_GRID_KINDS}
+    for a in accts:
+        m = a.zone.master
+        me = masters.setdefault(m.id, {"zone": m, "rows": {}, "totals": {k: Decimal(0) for k in OPENING_GRID_KINDS}})
+        if a.zone.is_master and (a.custodian_id or not m.subzones.exists()):
+            key = ("m", a.custodian_id)
+            label = _("Master SIM") + (f" · {a.custodian}" if a.custodian_id else "")
+        else:
+            key, label = ("s", a.zone_id), a.zone.name
+        row = me["rows"].setdefault(key, {"label": label, "master_level": key[0] == "m",
+                                          "cells": {k: [] for k in OPENING_GRID_KINDS}})
+        t = recorded.get(a.id)
+        row["cells"][a.kind].append({"account": a, "txn": t})
+        if t is not None:
+            me["totals"][a.kind] += t.amount
+            totals[a.kind] += t.amount
+    out = []
+    for m in sorted(masters.values(), key=lambda x: x["zone"].name):
+        rows = sorted(m["rows"].values(), key=lambda r: (r["master_level"], r["label"]))
+        out.append({"zone": m["zone"], "totals": [m["totals"][k] for k in OPENING_GRID_KINDS],
+                    "total": sum(m["totals"].values()),
+                    "rows": [dict(r, cells=[r["cells"][k] for k in OPENING_GRID_KINDS]) for r in rows]})
+    return out, [totals[k] for k in OPENING_GRID_KINDS], sum(totals.values()), accts, recorded
+
+
+def _save_grid(request, accts, recorded):
+    """Record every amount typed in the grid, all or nothing."""
+    from core.money import MoneyError, to_money
+
+    try:
+        batch = uuid.UUID(request.POST.get("batch", ""))
+    except ValueError:
+        batch = uuid.uuid4()
+    try:
+        bdate = date.fromisoformat(request.POST.get("business_date") or "")
+    except ValueError:
+        messages.error(request, _("Enter the go-live date."))
+        return None
+    note = (request.POST.get("note") or "").strip()[:255]
+    todo = []
+    for a in accts:
+        raw = (request.POST.get(f"acct_{a.id}") or "").strip()
+        if not raw or a.id in recorded:
+            continue
+        try:
+            amt = to_money(raw)
+        except MoneyError:
+            messages.error(request, _("%(acct)s: enter a whole FCFA amount.") % {"acct": a})
+            return None
+        if amt:
+            todo.append((a, amt))
+    if not todo:
+        messages.error(request, _("Type at least one opening amount."))
+        return None
+    try:
+        with db_transaction.atomic():
+            for a, amt in todo:
+                ops.record_opening_balance(request.user, account=a, amount=amt, business_date=bdate,
+                                           description=note, idempotency_key=uuid.uuid5(batch, str(a.id)))
+    except DuplicateSubmission:
+        messages.info(request, _("Already recorded."))
+        return redirect("opening_balances")
+    except BusinessError as exc:
+        messages.error(request, exc.message)
+        return None
+    total = sum(amt for _a, amt in todo)
+    messages.success(request, _("%(n)s opening balances recorded, total %(amt)s FCFA.") % {"n": len(todo),
+                                                                                         "amt": fmt(total)})
+    return redirect("opening_balances")
+
+
 @roles_required(R.SUPERADMIN)
 def opening_balances(request):
-    form = F.OpeningBalanceForm(request.POST or None, initial={"business_date": douala_today()})
-    if request.method == "POST" and form.is_valid():
+    grid, kind_totals, grand, accts, recorded = opening_grid()
+    if request.method == "POST" and request.POST.get("action") == "grid":
+        resp = _save_grid(request, accts, recorded)
+        if resp:
+            return resp
+    form = F.OpeningBalanceForm(request.POST if request.POST.get("action") == "single" else None,
+                                initial={"business_date": douala_today()})
+    form.fields["account"].queryset = form.fields["account"].queryset.exclude(kind__in=OPENING_GRID_KINDS)
+    if request.method == "POST" and request.POST.get("action") == "single" and form.is_valid():
         cd = form.cleaned_data
         resp = run_service(
             request, form,
@@ -142,7 +237,14 @@ def opening_balances(request):
             return resp
     done = Transaction.objects.filter(type=TxType.OPENING_BALANCE).select_related(
         "opening_for_account__sim", "entered_by", "correction").order_by("-posted_at")
-    return render(request, "core/opening.html", {"form": form, "done": done})
+    return render(request, "core/opening.html", {
+        "form": form, "done": done, "grid": grid, "kind_totals": kind_totals, "grand": grand,
+        "kinds": [Account.Kind(k).label for k in OPENING_GRID_KINDS], "batch": uuid.uuid4(),
+        "today": douala_today(), "posted_date": request.POST.get("business_date") or "",
+        "posted": ({a.id: request.POST.get(f"acct_{a.id}", "") for a in accts}
+                   if request.POST.get("action") == "grid" else {}),
+        "posted_note": request.POST.get("note", "") if request.POST.get("action") == "grid" else "",
+        "any_open": any(a.id not in recorded for a in accts)})
 
 
 @roles_required(R.SUPERADMIN)

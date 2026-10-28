@@ -115,3 +115,18 @@ def pretty_json(v):
     import json
 
     return json.dumps(v, ensure_ascii=False, indent=2, default=str)
+
+
+@register.filter
+def no_accounts(bound_field):
+    """True for an account dropdown that offers nothing (the subzone has no such account yet)."""
+    from django.forms import ModelChoiceField
+
+    from core.models import Account
+
+    from core.forms import BaseEntryForm
+
+    f = getattr(bound_field, "field", None)
+    if not isinstance(getattr(bound_field, "form", None), BaseEntryForm):  # entry forms only
+        return False
+    return isinstance(f, ModelChoiceField) and f.queryset.model is Account and not f.queryset.exists()

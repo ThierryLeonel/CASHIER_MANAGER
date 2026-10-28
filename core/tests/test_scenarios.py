@@ -210,7 +210,7 @@ class CashManagers(OrgMixin, TestCase):
         self.fund_all()
 
     def test_legs_at_different_times(self):
-        ex = ops.create_exchange(self.c_f1, cash_manager=self.cm1, direction="CASH_FOR_UVE", amount=D(200000))
+        ex = ops.create_exchange(self.c_f1, cash_manager=self.cm1, amount=D(200000))
         cm_acct = self.cm1.account
         self.assertEqual(self.bal(cm_acct), D(0))  # agreement alone moves nothing
         self.assertEqual(ex.status, "AGREED")
@@ -224,20 +224,24 @@ class CashManagers(OrgMixin, TestCase):
         with self.assertRaises(BusinessError):  # cannot exceed agreement
             ops.record_exchange_leg(self.c_f1, exchange=ex, side=TxType.CM_RECEIVE, amount=D(90000),
                                     account=self.uve_f1)
-        with self.assertRaises(BusinessError):  # wrong asset for this side
+        with self.assertRaises(BusinessError):  # only cash drawers and UVE wallets
             ops.record_exchange_leg(self.c_f1, exchange=ex, side=TxType.CM_RECEIVE, amount=D(1000),
-                                    account=self.d_f1)
-        ops.record_exchange_leg(self.c_f1, exchange=ex, side=TxType.CM_RECEIVE, amount=D(80000),
+                                    account=self.mtn_f1)
+        # no direction: the rest may come back as cash and UVE
+        ops.record_exchange_leg(self.c_f1, exchange=ex, side=TxType.CM_RECEIVE, amount=D(30000),
+                                account=self.d_f1)
+        ops.record_exchange_leg(self.c_f1, exchange=ex, side=TxType.CM_RECEIVE, amount=D(50000),
                                 account=self.uve_f1)
         self.assertEqual(self.bal(cm_acct), D(0))
         self.assertEqual(ex.status, "COMPLETE")
-        self.assertEqual(self.bal(self.uve_f1), D(1200000))
+        self.assertEqual(self.bal(self.uve_f1), D(1170000))
+        self.assertEqual(self.bal(self.d_f1), D(830000))
         # never revenue / expense / customer debt
         self.assertEqual(Entry.objects.filter(account__kind__in=[K.EXPENSE, K.CUSTOMER, K.CONVERSION_UPLIFT],
                                               transaction__exchange=ex).count(), 0)
 
     def test_receive_before_give(self):
-        ex = ops.create_exchange(self.c_f2, cash_manager=self.cm2, direction="UVE_FOR_CASH", amount=D(50000))
+        ex = ops.create_exchange(self.c_f2, cash_manager=self.cm2, amount=D(50000))
         ops.record_exchange_leg(self.c_f2, exchange=ex, side=TxType.CM_RECEIVE, amount=D(50000), account=self.d_f2)
         self.assertEqual(self.bal(self.cm2.account), D(-50000))  # company owes cash manager UVE
         ops.record_exchange_leg(self.c_f2, exchange=ex, side=TxType.CM_GIVE, amount=D(50000), account=self.uve_f2)
@@ -495,7 +499,7 @@ class Corrections(OrgMixin, TestCase):
         self.assertFalse(Correction.objects.exists())
 
     def test_cash_manager_leg_correction_respects_agreement(self):
-        ex = ops.create_exchange(self.c_f1, cash_manager=self.cm1, direction="CASH_FOR_UVE", amount=D(100000))
+        ex = ops.create_exchange(self.c_f1, cash_manager=self.cm1, amount=D(100000))
         leg = ops.record_exchange_leg(self.c_f1, exchange=ex, side=TxType.CM_GIVE, amount=D(60000), account=self.d_f1)
         corr.correct_transaction(self.manager, leg, kind="REPLACE", reason="Gave all", new_values={"amount": D(100000)})
         self.assertEqual(ex.side_totals(), (D(100000), 0))

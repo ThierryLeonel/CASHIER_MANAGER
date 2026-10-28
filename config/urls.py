@@ -53,6 +53,7 @@ urlpatterns = [
     path("administration/audit/", v.audit_log, name="audit_log"),
     path("administration/company/", v.company_profile, name="company_profile"),
     path("branding/logo.png", v.company_logo, name="company_logo"),
+    path("favicon.ico", v.favicon, name="favicon"),
     path("transactions/<int:pk>/edit/", v.txn_edit, name="txn_edit"),
     path("transactions/<int:pk>/delete/", v.txn_delete, name="txn_delete"),
     path("admin/", admin.site.urls),

@@ -399,3 +399,10 @@ details summary { cursor: pointer; color: var(--accent-strong); }
   place-items: center; background: #fff; overflow: hidden; }
 .co-logo-preview img { max-width: 110px; max-height: 70px; object-fit: contain; }
 input[type=file] { font: inherit; padding: 10px; border: 1px dashed var(--line); border-radius: 12px; background: var(--soft); width: 100%; max-width: 680px; }
+/* opening balances grid */
+.og-head { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 8px; }
+.t.og-t td, .t.og-t th { vertical-align: middle; }
+.og-t input.og-in { width: 100%; min-width: 120px; text-align: right; min-height: 40px; font-variant-numeric: tabular-nums; }
+.og-done { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.og-grand td { font-size: 1.02rem; font-weight: 800; }
+.og-label { min-width: 140px; }

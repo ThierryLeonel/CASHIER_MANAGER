@@ -207,7 +207,9 @@ class CompanySim(models.Model):
         except SimNumberError as e:
             raise ValidationError({"msisdn": str(e)})
         if self.master_zone_id and not self.master_zone.is_master:
-            raise ValidationError({"master_zone": _("Select a master zone.")})
+            raise ValidationError({"master_zone": _(
+                "%(z)s is a subzone of %(p)s. Select a master zone, or open Zones and clear the master zone "
+                "of %(z)s.") % {"z": self.master_zone.name, "p": self.master_zone.parent.name}})
         if self.custodian_id and self.custodian.role != User.Role.CASHIER:
             raise ValidationError({"custodian": _("The custodian must be a cashier.")})
         if self.subzone_id and self.master_zone_id and self.subzone.master.id != self.master_zone_id:

@@ -274,12 +274,12 @@ def record_conversion(user, idempotency_key=None, acting_for=None, **params):
 
 
 # ---------------------------------------------------------------- cash managers
-def create_exchange(user, *, cash_manager, direction, amount, note="", idempotency_key=None, acting_for=None):
+def create_exchange(user, *, cash_manager, amount, note="", idempotency_key=None, acting_for=None, direction=""):
     ctx = cashier_ctx(user, acting_for)
     amount = _positive(amount)
     if not cash_manager.active:
         raise BusinessError(_("%(cp)s is inactive.") % {"cp": cash_manager})
-    if direction not in CashManagerExchange.Direction.values:
+    if direction and direction not in CashManagerExchange.Direction.values:
         raise BusinessError(_("Choose the exchange direction."), "direction")
     if idempotency_key:
         existing = CashManagerExchange.objects.filter(idempotency_key=idempotency_key).first()
@@ -296,10 +296,8 @@ def build_exchange_leg(ctx, *, exchange, side, amount, account, description=""):
     exchange = CashManagerExchange.objects.select_for_update().get(pk=exchange.pk)
     if side not in (TxType.CM_GIVE, TxType.CM_RECEIVE):
         raise BusinessError(_("Choose which side of the exchange happened."), "side")
-    want_kind = exchange.give_kind() if side == TxType.CM_GIVE else exchange.receive_kind()
-    if account.kind != want_kind:
-        raise BusinessError(_("This side of the exchange must use a %(kind)s account.")
-                            % {"kind": Account.Kind(want_kind).label}, "account")
+    if account.kind not in CashManagerExchange.LEG_KINDS:  # any side may be cash or UVE
+        raise BusinessError(_("Cash-manager exchanges use a cash drawer or a UVE wallet."), "account")
     legs = exchange.legs.filter(type=side, correction__isnull=True)
     if ctx.exclude_txn_id:
         legs = legs.exclude(pk=ctx.exclude_txn_id)

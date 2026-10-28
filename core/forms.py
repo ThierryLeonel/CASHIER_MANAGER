@@ -210,14 +210,14 @@ class ConversionForm(BaseEntryForm):
 class ExchangeForm(BaseEntryForm):
     cash_manager = forms.ModelChoiceField(label=_("Cash manager / bank"),
                                           queryset=CashManager.objects.filter(active=True))
-    direction = forms.ChoiceField(label=_("Direction"), choices=CashManagerExchange.Direction.choices)
-    amount = MoneyField(label=_("Agreed amount (FCFA, 1:1)"))
+    amount = MoneyField(label=_("Agreed amount (FCFA, 1:1)"),
+                        help_text=_("The company may give cash or UVE and receive cash or UVE."))
     note = forms.CharField(label=_("Note"), required=False, max_length=255)
 
 
 class ExchangeLegForm(BaseEntryForm):
-    side = forms.ChoiceField(label=_("What happened"), choices=[(TxType.CM_GIVE, _("Company gave its side")),
-                                                                (TxType.CM_RECEIVE, _("Company received its side"))])
+    side = forms.ChoiceField(label=_("What happened"), choices=[(TxType.CM_GIVE, _("Company gave (cash or UVE)")),
+                                                                (TxType.CM_RECEIVE, _("Company received (cash or UVE)"))])
     amount = MoneyField(label=_("Amount (FCFA)"))
     account = AccountChoiceField(label=_("Company account"), queryset=Account.objects.none())
     description = forms.CharField(label=_("Note"), required=False, max_length=255)

@@ -1,10 +1,11 @@
-{% load i18n %}{% if form.non_field_errors %}<div class="nonfield">{% for e in form.non_field_errors %}<div>{{ e }}</div>{% endfor %}</div>{% endif %}
+{% load i18n cashier %}{% if form.non_field_errors %}<div class="nonfield">{% for e in form.non_field_errors %}<div>{{ e }}</div>{% endfor %}</div>{% endif %}
 {% for f in form.hidden_fields %}{{ f }}{% endfor %}
 {% for f in form.visible_fields %}
 <div class="field" id="fld-{{ f.name }}">
   <label for="{{ f.id_for_label }}">{{ f.label }}{% if f.field.required %} *{% endif %}</label>
   {{ f }}
   {% if f.help_text %}<div class="help">{{ f.help_text }}</div>{% endif %}
+  {% if f|no_accounts %}<div class="msg warning small">{% with z=acting_cashier.subzone|default:user.subzone %}{% if z %}{% blocktrans %}No account of this kind is set up for subzone {{ z }} yet.{% endblocktrans %}{% else %}{% trans "No account of this kind is available to you yet." %}{% endif %}{% endwith %} {% trans "The super administrator adds it in Configuration › Accounts (cash drawer, UVE wallet, MTN float wallet) or Company sims (the master SIM, for ER)." %}</div>{% endif %}
   {% if f.errors %}<ul class="err">{% for e in f.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
 </div>
 {% endfor %}

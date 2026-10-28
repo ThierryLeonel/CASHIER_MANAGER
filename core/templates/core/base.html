@@ -5,7 +5,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{% block title %}{{ title|default:"" }}{% endblock %} · {{ company.display_name }}</title>
-{% if company.has_logo %}<link rel="icon" type="image/png" href="{% url 'company_logo' %}?v={{ company.logo_updated|date:'U' }}">{% endif %}
+<link rel="icon" href="{% url 'favicon' %}?v={{ company.logo_updated|date:'U'|default:company.initial }}">
+<link rel="apple-touch-icon" href="{% url 'favicon' %}?v={{ company.logo_updated|date:'U'|default:company.initial }}">
 <link rel="stylesheet" href="{% static 'core/app.css' %}">
 </head>
 <body class="{% if user.is_authenticated %}has-side{% else %}no-side{% endif %}">

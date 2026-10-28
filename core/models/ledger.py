@@ -299,7 +299,9 @@ class CashManagerExchange(models.Model):
 
     reference = models.CharField(max_length=20, unique=True)
     cash_manager = models.ForeignKey(CashManager, on_delete=models.PROTECT, related_name="exchanges")
-    direction = models.CharField(max_length=14, choices=Direction.choices)
+    # Kept for exchanges recorded before 28/10/2026. New exchanges have no direction: the company may
+    # give cash or UVE and receive cash or UVE.
+    direction = models.CharField(max_length=14, choices=Direction.choices, blank=True, default="")
     amount = models.DecimalField(**MONEY)
     created_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name="+")
     created_at = models.DateTimeField(default=timezone.now)
@@ -314,11 +316,11 @@ class CashManagerExchange(models.Model):
     def __str__(self):
         return f"{self.reference} {self.cash_manager.name} {self.amount}"
 
-    def give_kind(self):
-        return Account.Kind.CASH_DRAWER if self.direction == self.Direction.CASH_FOR_UVE else Account.Kind.UVE
+    LEG_KINDS = (Account.Kind.CASH_DRAWER, Account.Kind.UVE)
 
-    def receive_kind(self):
-        return Account.Kind.UVE if self.direction == self.Direction.CASH_FOR_UVE else Account.Kind.CASH_DRAWER
+    @property
+    def direction_label(self):
+        return self.get_direction_display() if self.direction else _("Cash or UVE, both ways")
 
     def side_totals(self):
         """Net amounts delivered for each side, excluding corrected legs

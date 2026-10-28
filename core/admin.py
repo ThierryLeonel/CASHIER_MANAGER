@@ -99,8 +99,32 @@ class UserAdmin(BaseUserAdmin, SuperAdminOnly):
         super().save_model(request, obj, form, change)
 
 
+class CompanySimForm(forms.ModelForm):
+    class Meta:
+        model = CompanySim
+        fields = ["network", "msisdn", "label", "master_zone", "is_master", "subzone", "custodian", "active"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if "master_zone" in self.fields:
+            self.fields["master_zone"].queryset = Zone.objects.filter(parent__isnull=True)
+            self.fields["master_zone"].help_text = (
+                "Only master zones are listed. If your zone is missing, open Zones and clear its "
+                "'master zone' field (a master zone has none).")
+        if "subzone" in self.fields:
+            self.fields["subzone"].queryset = Zone.objects.filter(parent__isnull=False).select_related("parent")
+            self.fields["subzone"].label_from_instance = lambda z: f"{z.parent.name} › {z.name}"
+        if "custodian" in self.fields:
+            self.fields["custodian"].queryset = User.objects.filter(role=User.Role.CASHIER, is_active=True)
+        if "is_master" in self.fields:
+            self.fields["is_master"].help_text = (
+                "Tick for the zone's master SIM: it serves all the subzones of the master zone (e.g. Fako 1 and "
+                "Fako 2) and is operated by its cashier in charge. Leave the subzone empty.")
+
+
 @admin.register(CompanySim)
 class CompanySimAdmin(SuperAdminOnly):
+    form = CompanySimForm
     list_display = ("label", "network", "msisdn", "master_zone", "subzone", "is_master", "custodian", "active")
     list_filter = ("network", "master_zone", "is_master")
 
@@ -108,35 +132,54 @@ class CompanySimAdmin(SuperAdminOnly):
         return ("network", "msisdn") if obj else ()
 
 
+WALLET_NETWORK = {Account.Kind.UVE: CompanySim.Network.ORANGE, Account.Kind.MTN: CompanySim.Network.MTN}
+
+
 class AccountForm(forms.ModelForm):
+    sim_number = forms.CharField(label="SIM number", required=False, max_length=20,
+                                 help_text="UVE and MTN float accounts: the number of the SIM that holds the value.")
+
     class Meta:
         model = Account
         fields = ["kind", "name", "zone", "custodian", "active"]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        if not self.instance.pk:  # this page only adds cash drawers
-            self.fields["kind"].choices = [(Account.Kind.CASH_DRAWER, Account.Kind.CASH_DRAWER.label)]
+        if not self.instance.pk:  # cash drawers, UVE wallets and MTN float wallets are added here
+            self.fields["kind"].choices = [(k, Account.Kind(k).label) for k in
+                                           (Account.Kind.CASH_DRAWER, Account.Kind.UVE, Account.Kind.MTN)]
             self.fields["kind"].initial = Account.Kind.CASH_DRAWER
             self.fields["kind"].help_text = (
-                "Only cash drawers are added here. Other accounts are created automatically: "
-                "expense accounts → Expense categories › Add; UVE/ER/MTN wallets → Company sims › Add; "
-                "bank → Bank accounts › Add; agent/POS → Counterparties; cash managers → Cash managers.")
-            self.fields["zone"].help_text = "The subzone whose cashiers use this drawer."
+                "Cash drawer, UVE wallet (Orange SIM; its ER wallet is created with it) or MTN float wallet "
+                "(MTN SIM). The master SIM (ER) is added in Company sims. Expense accounts come from Expense "
+                "categories, banks from Bank accounts.")
+            self.fields["zone"].queryset = Zone.objects.filter(parent__isnull=False).select_related("parent")
+            self.fields["zone"].label_from_instance = lambda z: f"{z.parent.name} › {z.name}"
+            self.fields["zone"].help_text = "The subzone whose cashiers use this account."
             self.fields["zone"].required = True
-
-    def clean(self):
-        cd = super().clean()
-        if cd.get("kind") == Account.Kind.CASH_DRAWER and not cd.get("zone"):
-            raise forms.ValidationError("A cash drawer belongs to a zone: choose its subzone.")
-        return cd
 
     def clean_kind(self):
         kind = self.cleaned_data["kind"]
-        if not self.instance.pk and kind != Account.Kind.CASH_DRAWER:
-            raise forms.ValidationError("Only cash drawers are created here. To add an expense account, add an "
-                                        "Expense category; wallets come with Company sims, banks with Bank accounts.")
+        if not self.instance.pk and kind not in (Account.Kind.CASH_DRAWER, Account.Kind.UVE, Account.Kind.MTN):
+            raise forms.ValidationError("Only cash drawers, UVE wallets and MTN float wallets are added here.")
         return kind
+
+    def clean(self):
+        from core.simnumbers import SimNumberError, normalize_sim
+
+        cd = super().clean()
+        kind = cd.get("kind")
+        if not self.instance.pk and not cd.get("zone"):
+            self.add_error("zone", "Choose the subzone of this account.")
+        if not self.instance.pk and kind in WALLET_NETWORK:
+            try:
+                cd["sim_number"] = normalize_sim(cd.get("sim_number") or "")
+            except SimNumberError as e:
+                self.add_error("sim_number", str(e))
+            else:
+                if CompanySim.objects.filter(msisdn=cd["sim_number"]).exists():
+                    self.add_error("sim_number", "This SIM number is already registered (see Company sims).")
+        return cd
 
 
 @admin.register(Account)
@@ -151,8 +194,20 @@ class AccountAdmin(SuperAdminOnly):
         return ("kind",) if obj else ()
 
     def get_fields(self, request, obj=None):
-        # a new drawer belongs to a subzone; "cashier in charge" only applies to the master SIM
-        return ["kind", "name", "zone", "custodian", "active"] if obj else ["kind", "name", "zone", "active"]
+        # "cashier in charge" only applies to master-level accounts (the master SIM)
+        return ["kind", "name", "zone", "custodian", "active"] if obj else ["kind", "name", "zone", "sim_number",
+                                                                           "active"]
+
+    def save_model(self, request, obj, form, change):
+        if change or obj.kind not in WALLET_NETWORK:
+            return super().save_model(request, obj, form, change)
+        # a wallet is created through its SIM, which keeps the SIM/zone rules in one place
+        zone = form.cleaned_data["zone"]
+        sim = CompanySim.objects.create(network=WALLET_NETWORK[obj.kind], msisdn=form.cleaned_data["sim_number"],
+                                        label=obj.name, master_zone=zone.master, subzone=zone, active=obj.active)
+        acct = Account.objects.get(sim=sim, kind=obj.kind)
+        obj.pk = obj.id = acct.pk
+        obj.name, obj.sim, obj._state.adding = acct.name, sim, False
 
 
 @admin.register(AccountAccess)

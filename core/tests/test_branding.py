@@ -89,3 +89,57 @@ class Branding(OrgMixin, TestCase):
         m = self.client_class()
         m.login(username="manager", password=PW)
         self.assertEqual(m.get("/administration/company/").status_code, 403)
+
+
+class SetupScreens(OrgMixin, TestCase):
+    def setUp(self):
+        self.make_org()
+        self.c = self.client_class()
+        self.assertTrue(self.c.login(username="admin", password=PW))
+
+    def test_favicon_everywhere(self):
+        r = self.c.get("/favicon.ico")
+        self.assertEqual((r.status_code, r["Content-Type"]), (200, "image/svg+xml"))  # letter until a logo
+        self.assertContains(self.c.get("/"), 'rel="icon" href="/favicon.ico?v=')
+        self.assertContains(self.c.get("/admin/"), 'rel="icon" href="/favicon.ico?v=')
+        self.c.post("/administration/company/", {"name": "Acme", "logo_file": png()})
+        self.assertEqual(self.c.get("/favicon.ico")["Content-Type"], "image/png")
+
+    def test_add_uve_and_mtn_accounts_like_drawers(self):
+        from core.models import Account, CompanySim
+
+        z = self.zones["fako1"]
+        r = self.c.post("/admin/core/account/add/", {"kind": "UVE", "name": "UVE Fako 1 second", "zone": z.pk,
+                                                     "sim_number": "690111222", "active": "on"})
+        self.assertEqual(r.status_code, 302, r.content[:3000])
+        sim = CompanySim.objects.get(msisdn="690111222")
+        self.assertEqual((sim.network, sim.subzone, sim.master_zone), ("ORANGE", z, z.parent))
+        self.assertEqual(set(Account.objects.filter(sim=sim).values_list("kind", "zone")), {("UVE", z.pk), ("ER", z.pk)})
+        r = self.c.post("/admin/core/account/add/", {"kind": "MTN", "name": "MTN Fako 1 b", "zone": z.pk,
+                                                     "sim_number": "670111222", "active": "on"})
+        self.assertEqual(r.status_code, 302)
+        self.assertTrue(Account.objects.filter(kind="MTN", sim__msisdn="670111222", zone=z).exists())
+        r = self.c.post("/admin/core/account/add/", {"kind": "MTN", "name": "dup", "zone": z.pk,
+                                                     "sim_number": "670111222", "active": "on"})
+        self.assertContains(r, "already registered")
+
+    def test_master_sim_form_lists_only_master_zones(self):
+        r = self.c.get("/admin/core/companysim/add/")
+        opts = r.context["adminform"].form.fields["master_zone"].queryset
+        self.assertTrue(all(z.parent_id is None for z in opts))
+
+
+class EmptyAccountWarning(OrgMixin, TestCase):
+    def test_cashier_without_wallet_is_told_why(self):
+        from core.models import Account, User
+
+        self.make_org()
+        z = self.zones["fako1"].__class__.objects.create(code="fako-3", name="Fako 3", parent=self.zones["fako"])
+        u = User(username="cashier.fako3", role="CASHIER", subzone=z)
+        u.set_password(PW)
+        u.save()
+        c = self.client_class()
+        c.login(username="cashier.fako3", password=PW)
+        r = c.get("/supply/agent/")
+        self.assertContains(r, "No account of this kind is set up for subzone Fako 3 yet.")
+        self.assertFalse(Account.objects.filter(zone=z).exists())

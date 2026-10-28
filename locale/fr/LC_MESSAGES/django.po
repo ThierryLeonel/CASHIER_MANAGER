@@ -14,6 +14,10 @@ msgstr ""
 " le modifier."
 
 #, python-format
+msgid "%(acct)s: enter a whole FCFA amount."
+msgstr "%(acct)s : saisissez un montant entier en FCFA."
+
+#, python-format
 msgid "%(cp)s is inactive."
 msgstr "%(cp)s est inactif."
 
@@ -36,6 +40,10 @@ msgstr "%(label)s : numéro invalide %(v)s"
 #, python-format
 msgid "%(mz)s is already controlled by %(agent)s."
 msgstr "%(mz)s est déjà contrôlée par %(agent)s."
+
+#, python-format
+msgid "%(n)s opening balances recorded, total %(amt)s FCFA."
+msgstr "%(n)s soldes d'ouverture enregistrés, total %(amt)s FCFA."
 
 #, python-format
 msgid "%(n)s rows imported."
@@ -80,6 +88,14 @@ msgstr "%(type)s %(ref)s enregistré(e) : %(amt)s FCFA."
 #, python-format
 msgid "%(z)s desk · entries go to business day %(d)s"
 msgstr "Poste %(z)s · saisies sur la journée du %(d)s"
+
+#, python-format
+msgid ""
+"%(z)s is a subzone of %(p)s. Select a master zone, or open Zones and clear "
+"the master zone of %(z)s."
+msgstr ""
+"%(z)s est une sous-zone de %(p)s. Choisissez une zone master, ou ouvrez "
+"Zones et videz la zone master de %(z)s."
 
 msgid ""
 "(you already closed today; new entries belong to the next business day)"
@@ -215,6 +231,13 @@ msgstr "Agents & PDV"
 msgid "Agents and POS"
 msgstr "Agents et PDV"
 
+msgid ""
+"Agents and POS, cash managers, MTN float wallets and bank accounts: one at a"
+" time."
+msgstr ""
+"Agents et PDV, cash managers, portefeuilles float MTN et comptes bancaires :"
+" un à la fois."
+
 msgid "Agents versus POS"
 msgstr "Agents ou PDV"
 
@@ -233,6 +256,9 @@ msgstr "Montant convenu (FCFA, 1:1)"
 msgid "All"
 msgstr "Tout"
 
+msgid "All control accounts have their opening balance."
+msgstr "Tous les comptes de contrôle ont leur solde d'ouverture."
+
 msgid "All dates"
 msgstr "Toutes les dates"
 
@@ -245,6 +271,9 @@ msgstr ""
 
 msgid "All zones"
 msgstr "Toutes les zones"
+
+msgid "Already recorded."
+msgstr "Déjà enregistré."
 
 msgid "Amount"
 msgstr "Montant"
@@ -461,6 +490,9 @@ msgid "Cash managers net position (end of period, + = they owe)"
 msgstr ""
 "Position nette des gestionnaires de cash (fin de période, + = ils doivent)"
 
+msgid "Cash or UVE, both ways"
+msgstr "Espèces ou UVE, dans les deux sens"
+
 msgid "Cash paid out of your drawer"
 msgstr "Espèces sorties de votre caisse"
 
@@ -487,6 +519,11 @@ msgstr "Échanges gestionnaires de cash"
 
 msgid "Cash-manager exchanges and positions"
 msgstr "Échanges et positions des gestionnaires de cash"
+
+msgid "Cash-manager exchanges use a cash drawer or a UVE wallet."
+msgstr ""
+"Les échanges avec les cash managers utilisent une caisse ou un portefeuille "
+"UVE."
 
 msgid "Cashier"
 msgstr "Caissier"
@@ -546,6 +583,13 @@ msgid "Choose an existing microzone or type a new one, not both."
 msgstr ""
 "Choisissez une microzone existante ou saisissez-en une nouvelle, pas les "
 "deux."
+
+msgid ""
+"Choose the cash drawer or UVE wallet that actually gave or received the "
+"value."
+msgstr ""
+"Choisissez la caisse ou le portefeuille UVE qui a réellement donné ou reçu "
+"la valeur."
 
 msgid "Choose the cashier in charge of the master SIM."
 msgstr "Choisissez le caissier responsable de la SIM master."
@@ -678,6 +722,9 @@ msgstr "Espèces, portefeuilles et banques de l'entreprise (soldes comptables)"
 msgid "Company gave"
 msgstr "L'entreprise a donné"
 
+msgid "Company gave (cash or UVE)"
+msgstr "L'entreprise a donné (espèces ou UVE)"
+
 msgid "Company gave its side"
 msgstr "L'entreprise a donné sa part"
 
@@ -708,6 +755,9 @@ msgstr "Profil de l'entreprise enregistré."
 msgid "Company received"
 msgstr "L'entreprise a reçu"
 
+msgid "Company received (cash or UVE)"
+msgstr "L'entreprise a reçu (espèces ou UVE)"
+
 msgid "Company received its side"
 msgstr "L'entreprise a reçu sa part"
 
@@ -725,6 +775,9 @@ msgstr "Configuration"
 
 msgid "Confirm import"
 msgstr "Confirmer l'importation"
+
+msgid "Control accounts: cash, UVE and ER"
+msgstr "Comptes de contrôle : espèces, UVE et ER"
 
 msgid "Conversion rate"
 msgstr "Taux de conversion"
@@ -1055,6 +1108,9 @@ msgstr "Saisissez le solde réel de %(acct)s."
 
 msgid "Enter the bank deposit reference."
 msgstr "Saisissez la référence du versement bancaire."
+
+msgid "Enter the go-live date."
+msgstr "Saisissez la date de démarrage."
 
 msgid "Enter the uplift as a percentage, e.g. 4 or 4.5."
 msgstr "Saisissez le bonus en pourcentage, ex. 4 ou 4,5."
@@ -1450,6 +1506,14 @@ msgstr ""
 msgid "No account is waiting for an opening balance."
 msgstr "Aucun compte n'attend de solde d'ouverture."
 
+msgid "No account of this kind is available to you yet."
+msgstr "Aucun compte de ce type ne vous est encore disponible."
+
+#, python-format
+msgid "No account of this kind is set up for subzone %(z)s yet."
+msgstr ""
+"Aucun compte de ce type n'est encore configuré pour la sous-zone %(z)s."
+
 msgid "No active cashier yet. Create cashiers in Configuration."
 msgstr "Aucun caissier actif. Créez des caissiers dans Configuration."
 
@@ -1669,6 +1733,9 @@ msgstr "Date comptable d'origine"
 
 msgid "Original difference"
 msgstr "Écart d'origine"
+
+msgid "Other opening balances"
+msgstr "Autres soldes d'ouverture"
 
 msgid "Out"
 msgstr "Sorties"
@@ -1890,6 +1957,9 @@ msgstr "Enregistrer pour un caissier"
 
 msgid "Record opening balance"
 msgstr "Enregistrer le solde d'ouverture"
+
+msgid "Record opening balances"
+msgstr "Enregistrer les soldes d'ouverture"
 
 msgid "Recorded"
 msgstr "Enregistrés"
@@ -2177,6 +2247,9 @@ msgstr "Approvisionnement agent"
 msgid "Surplus"
 msgstr "Excédent"
 
+msgid "TOTAL OPENING"
+msgstr "TOTAL OUVERTURE"
+
 msgid "Templates"
 msgstr "Modèles"
 
@@ -2197,6 +2270,11 @@ msgstr ""
 
 msgid "The cash recipient of a destockage must be a POS."
 msgstr "Le bénéficiaire des espèces d'un déstockage doit être un PDV."
+
+msgid "The company may give cash or UVE and receive cash or UVE."
+msgstr ""
+"L'entreprise peut donner des espèces ou de l'UVE et recevoir des espèces ou "
+"de l'UVE."
 
 msgid "The custodian must be a cashier."
 msgstr "Le détenteur doit être un caissier."
@@ -2236,6 +2314,14 @@ msgstr "Le compte source ne contient pas de %(p)s."
 
 msgid "The subzone must belong to the selected master zone."
 msgstr "La sous-zone doit appartenir à la zone master sélectionnée."
+
+msgid ""
+"The super administrator adds it in Configuration › Accounts (cash drawer, "
+"UVE wallet, MTN float wallet) or Company sims (the master SIM, for ER)."
+msgstr ""
+"Le super administrateur l'ajoute dans Configuration › Comptes (caisse, "
+"portefeuille UVE, portefeuille float MTN) ou SIM de l'entreprise (la SIM "
+"master, pour l'ER)."
 
 msgid ""
 "The transaction and all its ledger lines are removed, and balances are "
@@ -2437,8 +2523,19 @@ msgstr "Tapez DELETE (ou SUPPRIMER) pour confirmer"
 msgid "Type DELETE to confirm."
 msgstr "Tapez DELETE (ou SUPPRIMER) pour confirmer."
 
+msgid "Type at least one opening amount."
+msgstr "Saisissez au moins un montant d'ouverture."
+
 msgid "Type its name if the microzone is not in the list yet."
 msgstr "Saisissez son nom si la microzone n'est pas encore dans la liste."
+
+msgid ""
+"Type the counted amount for each account. Accounts already initialised show "
+"their recorded amount. All typed amounts are recorded together."
+msgstr ""
+"Saisissez le montant compté pour chaque compte. Les comptes déjà initialisés"
+" affichent leur montant enregistré. Tous les montants saisis sont "
+"enregistrés ensemble."
 
 msgid "UVE amount (FCFA)"
 msgstr "Montant UVE (FCFA)"

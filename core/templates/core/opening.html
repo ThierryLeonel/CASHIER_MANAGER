@@ -15,9 +15,72 @@
   <p class="small muted">{% trans "Accounts that already have an opening balance are listed under Recorded below." %}</p>
 </div>
 {% endif %}
-<div class="panel"><form method="post" class="entry" novalidate>{% csrf_token %}{% include "core/inc/fields.html" %}<button class="btn primary" type="submit">{% trans "Record opening balance" %}</button></form></div>
+<h2>{% trans "Control accounts: cash, UVE and ER" %}</h2>
+{% if grid %}
+<form method="post" class="panel og" novalidate>{% csrf_token %}
+  <input type="hidden" name="action" value="grid"><input type="hidden" name="batch" value="{{ batch }}">
+  <div class="og-head">
+    <div class="field"><label for="og-date">{% trans "Balance as of (go-live date)" %} *</label><input id="og-date" type="date" name="business_date" value="{{ posted_date|default:today|date:'Y-m-d'|default:posted_date }}" required></div>
+    <div class="field"><label for="og-note">{% trans "Note" %}</label><input id="og-note" type="text" name="note" maxlength="255" value="{{ posted_note }}"></div>
+  </div>
+  <div class="tbl-wrap"><table class="t og-t">
+    <thead><tr><th>{% trans "Master zone / subzone" %}</th>{% for k in kinds %}<th class="money">{{ k }}</th>{% endfor %}<th class="money">{% trans "Total" %}</th></tr></thead>
+    <tbody>
+    {% for m in grid %}
+      <tr class="total"><td>{{ m.zone }}</td>{% for v in m.totals %}<td class="money" data-zone-total="{{ m.zone.pk }}-{{ forloop.counter0 }}">{{ v|fcfa }}</td>{% endfor %}<td class="money" data-zone-total="{{ m.zone.pk }}-all">{{ m.total|fcfa }}</td></tr>
+      {% for r in m.rows %}
+      <tr data-row>
+        <td class="og-label">{% if r.master_level %}<strong>{{ r.label }}</strong>{% else %}{{ r.label }}{% endif %}</td>
+        {% for cell in r.cells %}
+        <td class="money og-cell">{% for c in cell %}
+          {% if c.txn %}<div class="og-done" data-kind="{{ forloop.parentloop.counter0 }}" data-zone="{{ m.zone.pk }}" data-value="{{ c.txn.amount }}" title="{{ c.account }}">{{ c.txn.amount|fcfa }} <a class="small" href="{% url 'txn_detail' c.txn.pk %}">{{ c.txn.reference }}</a></div>
+          {% else %}<input class="money og-in" type="text" inputmode="numeric" autocomplete="off" name="acct_{{ c.account.pk }}" data-kind="{{ forloop.parentloop.counter0 }}" data-zone="{{ m.zone.pk }}" value="{{ posted|get:c.account.pk|default:'' }}" placeholder="0" title="{{ c.account }}" aria-label="{{ c.account }}">{% endif %}
+          {% if cell|length > 1 %}<div class="muted small">{{ c.account.sim.label|default:c.account.name }}</div>{% endif %}
+        {% empty %}<span class="muted">—</span>{% endfor %}</td>
+        {% endfor %}
+        <td class="money og-rowtotal" data-row-total>0</td>
+      </tr>
+      {% endfor %}
+    {% endfor %}
+    </tbody>
+    <tfoot><tr class="total og-grand"><td>{% trans "TOTAL OPENING" %}</td>{% for v in kind_totals %}<td class="money" data-grand="{{ forloop.counter0 }}">{{ v|fcfa }}</td>{% endfor %}<td class="money" data-grand="all">{{ grand|fcfa }}</td></tr></tfoot>
+  </table></div>
+  <p class="small muted">{% trans "Type the counted amount for each account. Accounts already initialised show their recorded amount. All typed amounts are recorded together." %}</p>
+  {% if any_open %}<button class="btn primary" type="submit">{% trans "Record opening balances" %}</button>{% else %}<p class="msg ok">{% trans "All control accounts have their opening balance." %}</p>{% endif %}
+</form>
+{% endif %}
+
+<h2>{% trans "Other opening balances" %}</h2>
+<p class="muted small">{% trans "Agents and POS, cash managers, MTN float wallets and bank accounts: one at a time." %}</p>
+<div class="panel"><form method="post" class="entry" novalidate>{% csrf_token %}<input type="hidden" name="action" value="single">{% include "core/inc/fields.html" %}<button class="btn primary" type="submit">{% trans "Record opening balance" %}</button></form></div>
 <h2>{% trans "Recorded" %}</h2>
 <div class="tbl-wrap"><table class="t"><thead><tr><th>{% trans "Reference" %}</th><th>{% trans "As of" %}</th><th>{% trans "Account" %}</th><th class="money">{% trans "Amount" %}</th><th>{% trans "By" %}</th></tr></thead>
 <tbody>{% for t in done %}<tr{% if t.is_corrected %} class="corrected"{% endif %}><td class="keep"><a href="{% url 'txn_detail' t.pk %}">{{ t.reference }}</a>{% if t.is_corrected %} <span class="badge bad">{% trans "CORRECTED" %}</span>{% endif %}</td><td>{{ t.business_date|date:"d/m/Y" }}</td><td>{{ t.opening_for_account|default:t.dest_account|default:t.counterparty|default:"" }}</td><td class="money">{{ t.amount|fcfa }}</td><td>{{ t.entered_by }}</td></tr>
 {% empty %}<tr><td colspan="5" class="muted">{% trans "None yet." %}</td></tr>{% endfor %}</tbody></table></div>
 {% endblock %}
+{% block scripts %}<script>
+(function () {
+  var form = document.querySelector('form.og'); if (!form) return;
+  function num(v) { var n = parseInt(String(v || '').replace(/[^\d-]/g, ''), 10); return isNaN(n) ? 0 : n; }
+  function f(n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ' '); }
+  function sum() {
+    var grand = [0, 0, 0], zones = {};
+    form.querySelectorAll('tr[data-row]').forEach(function (tr) {
+      var t = 0;
+      tr.querySelectorAll('[data-kind]').forEach(function (el) {
+        var v = el.classList.contains('og-in') ? num(el.value) : num(el.dataset.value), k = +el.dataset.kind, z = el.dataset.zone;
+        t += v; grand[k] += v; zones[z] = zones[z] || [0, 0, 0]; zones[z][k] += v;
+      });
+      tr.querySelector('[data-row-total]').textContent = f(t);
+    });
+    Object.keys(zones).forEach(function (z) {
+      var all = 0;
+      zones[z].forEach(function (v, k) { all += v; var c = form.querySelector('[data-zone-total="' + z + '-' + k + '"]'); if (c) c.textContent = f(v); });
+      var c = form.querySelector('[data-zone-total="' + z + '-all"]'); if (c) c.textContent = f(all);
+    });
+    grand.forEach(function (v, k) { form.querySelector('[data-grand="' + k + '"]').textContent = f(v); });
+    form.querySelector('[data-grand="all"]').textContent = f(grand[0] + grand[1] + grand[2]);
+  }
+  form.addEventListener('input', sum); sum();
+})();
+</script>{% endblock %}

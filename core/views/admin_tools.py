@@ -171,3 +171,23 @@ def company_logo(request):
     resp["Cache-Control"] = "public, max-age=31536000, immutable" if request.GET.get("v") else "no-cache"
     resp["X-Content-Type-Options"] = "nosniff"
     return resp
+
+
+def favicon(request):
+    """Browser icon: the company logo, or the first letter of the company name until a logo is uploaded."""
+    from django.utils.html import escape
+
+    from core.services import branding
+
+    data = branding.logo_bytes()
+    if data:
+        resp = HttpResponse(data, content_type="image/png")
+    else:
+        letter = escape(branding.company().initial)
+        svg = ('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" '
+               'fill="#ef7d12"/><text x="32" y="44" font-family="Arial,Helvetica,sans-serif" font-size="36" '
+               f'font-weight="700" fill="#fff" text-anchor="middle">{letter}</text></svg>')
+        resp = HttpResponse(svg, content_type="image/svg+xml")
+    resp["Cache-Control"] = "public, max-age=31536000, immutable" if request.GET.get("v") else "public, max-age=300"
+    resp["X-Content-Type-Options"] = "nosniff"
+    return resp
