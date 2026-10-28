@@ -2,7 +2,6 @@
 used for computation; values are written from Decimal as integers)."""
 import io
 
-from django.conf import settings
 from django.utils import timezone
 from django.utils.translation import gettext as _
 from openpyxl import Workbook
@@ -29,7 +28,9 @@ def report_xlsx(report, generated_by):
     wb = Workbook()
     ws = wb.active
     ws.title = report.key[:31]
-    ws.append([f"{settings.COMPANY_NAME} — {report.title}"])
+    from core.services.branding import company
+
+    ws.append([f"{company().display_name} — {report.title}"])
     ws["A1"].font = Font(bold=True, size=13)
     ws.append([report.filters_text])
     ws.append([f"{_('Generated')} {timezone.localtime().strftime('%d/%m/%Y %H:%M')} · {generated_by}"])

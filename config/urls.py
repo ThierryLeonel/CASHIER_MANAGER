@@ -51,6 +51,8 @@ urlpatterns = [
     path("administration/import/template/<slug:kind>/", v.import_template, name="import_template"),
     path("administration/clear/", v.clear_data, name="clear_data"),
     path("administration/audit/", v.audit_log, name="audit_log"),
+    path("administration/company/", v.company_profile, name="company_profile"),
+    path("branding/logo.png", v.company_logo, name="company_logo"),
     path("transactions/<int:pk>/edit/", v.txn_edit, name="txn_edit"),
     path("transactions/<int:pk>/delete/", v.txn_delete, name="txn_delete"),
     path("admin/", admin.site.urls),

@@ -699,6 +699,12 @@ msgstr "L'entreprise a reçu"
 msgid "Company owes"
 msgstr "L'entreprise doit"
 
+msgid "Company profile"
+msgstr "Profil de l'entreprise"
+
+msgid "Company profile saved."
+msgstr "Profil de l'entreprise enregistré."
+
 msgid "Company received"
 msgstr "L'entreprise a reçu"
 
@@ -827,6 +833,9 @@ msgstr "Solde actuel"
 
 msgid "Current balance (now)"
 msgstr "Solde actuel (maintenant)"
+
+msgid "Current logo"
+msgstr "Logo actuel"
 
 #, python-format
 msgid ""
@@ -1331,6 +1340,9 @@ msgstr "Déconnexion"
 msgid "Log out now"
 msgstr "Se déconnecter maintenant"
 
+msgid "Logo"
+msgstr "Logo"
+
 msgid "MISMATCH"
 msgstr "ÉCART"
 
@@ -1397,6 +1409,9 @@ msgstr "NON"
 
 msgid "Name"
 msgstr "Nom"
+
+msgid "Name, logo, address, NIU and RCCM on receipts and reports"
+msgstr "Nom, logo, adresse, NIU et RCCM sur les reçus et rapports"
 
 msgid "Net amount"
 msgstr "Montant net"
@@ -1466,6 +1481,9 @@ msgstr "Aucune caisse ni portefeuille configuré."
 
 msgid "No exchanges yet."
 msgstr "Aucun échange pour l'instant."
+
+msgid "No logo"
+msgstr "Aucun logo"
 
 msgid "No match"
 msgstr "Aucun résultat"
@@ -1674,6 +1692,13 @@ msgstr "Dû à l'entreprise"
 msgid "Owes company"
 msgstr "Doit à l'entreprise"
 
+msgid ""
+"PNG, JPEG or WEBP, up to 3 MB. A square or wide logo on a transparent or "
+"white background looks best."
+msgstr ""
+"PNG, JPEG ou WEBP, 3 Mo maximum. Un logo carré ou large sur fond transparent"
+" ou blanc rend le mieux."
+
 msgid "POS"
 msgstr "PDV"
 
@@ -1766,6 +1791,9 @@ msgstr "Imprimer (A4)"
 #, python-format
 msgid "Printed %(when)s"
 msgstr "Imprimé le %(when)s"
+
+msgid "Printed at the bottom of every receipt, e.g. thanks or terms."
+msgstr "Imprimé en bas de chaque reçu, par ex. remerciements ou conditions."
 
 msgid "Product"
 msgstr "Produit"
@@ -1892,6 +1920,9 @@ msgstr "Enregistrer un agent ou un PDV"
 
 msgid "Remove all transactions, or everything"
 msgstr "Supprimer toutes les transactions, ou tout"
+
+msgid "Remove the current logo"
+msgstr "Supprimer le logo actuel"
 
 msgid "Replacement"
 msgstr "Remplacement"
@@ -2022,11 +2053,19 @@ msgstr "Défini par"
 msgid "Set new rate"
 msgstr "Définir le nouveau taux"
 
+msgid "Short line under the name in the menu. Leave empty for none."
+msgstr "Courte ligne sous le nom dans le menu. Laissez vide pour aucune."
+
 msgid "Shortage"
 msgstr "Manquant"
 
 msgid "Show"
 msgstr "Afficher"
+
+msgid "Shown in the menu, on the login page, receipts and every report."
+msgstr ""
+"Affiché dans le menu, sur la page de connexion, les reçus et tous les "
+"rapports."
 
 msgid "Sign in"
 msgstr "Connexion"
@@ -2162,8 +2201,19 @@ msgstr "Le bénéficiaire des espèces d'un déstockage doit être un PDV."
 msgid "The custodian must be a cashier."
 msgstr "Le détenteur doit être un caissier."
 
+msgid ""
+"The distribution partner using this application. The name and logo appear in"
+" the menu, on the login page, receipts, PDF and Excel reports."
+msgstr ""
+"Le partenaire de distribution qui utilise cette application. Le nom et le "
+"logo apparaissent dans le menu, sur la page de connexion, les reçus et les "
+"rapports PDF et Excel."
+
 msgid "The file is empty."
 msgstr "Le fichier est vide."
+
+msgid "The file is larger than 3 MB."
+msgstr "Le fichier dépasse 3 Mo."
 
 msgid "The file is too large (maximum 3 MB)."
 msgstr "Le fichier est trop volumineux (maximum 3 Mo)."
@@ -2471,6 +2521,12 @@ msgstr "Écarts non résolus"
 msgid "Unresolved differences (all dates)"
 msgstr "Écarts non résolus (toutes dates)"
 
+msgid ""
+"Until a logo is uploaded, the first letter of the company name is shown."
+msgstr ""
+"Tant qu'aucun logo n'est chargé, la première lettre du nom de l'entreprise "
+"est affichée."
+
 msgid "Uplift"
 msgstr "Bonus"
 
@@ -2479,6 +2535,9 @@ msgstr "Taux de bonus"
 
 msgid "Uplift rate used"
 msgstr "Taux de bonus utilisé"
+
+msgid "Upload a PNG, JPEG or WEBP image."
+msgstr "Chargez une image PNG, JPEG ou WEBP."
 
 msgid "Upload an Excel (.xlsx) or CSV file."
 msgstr "Chargez un fichier Excel (.xlsx) ou CSV."
@@ -2607,6 +2666,9 @@ msgstr ""
 msgid "account number"
 msgstr "numéro de compte"
 
+msgid "address"
+msgstr "adresse"
+
 msgid "agents and POS"
 msgstr "agents et PDV"
 
@@ -2635,6 +2697,9 @@ msgstr "espèces au PDV %(pos)s"
 msgid "cashier in charge"
 msgstr "caissier responsable"
 
+msgid "city"
+msgstr "ville"
+
 msgid "closing"
 msgstr "clôture"
 
@@ -2643,6 +2708,9 @@ msgstr "clôture du"
 
 msgid "commercial agent in charge"
 msgstr "agent commercial responsable"
+
+msgid "company name"
+msgstr "nom de l'entreprise"
 
 #, python-format
 msgid "created %(cp)s"
@@ -2663,6 +2731,9 @@ msgstr "customer_sim"
 
 msgid "due to customer"
 msgstr "dû au client"
+
+msgid "email"
+msgstr "e-mail"
 
 #, python-format
 msgid "for %(ref)s"
@@ -2754,6 +2825,9 @@ msgstr "taux +%(r)s %% → ER %(er)s"
 msgid "read-only access"
 msgstr "accès en lecture seule"
 
+msgid "receipt footer"
+msgstr "pied de reçu"
+
 #, python-format
 msgid "received by POS %(pos)s"
 msgstr "reçu par le PDV %(pos)s"
@@ -2784,6 +2858,15 @@ msgstr "approvisionnement dû"
 
 msgid "supply due to customer"
 msgstr "approvisionnement dû au client"
+
+msgid "tagline (optional)"
+msgstr "slogan (facultatif)"
+
+msgid "taxpayer number (NIU)"
+msgstr "numéro de contribuable (NIU)"
+
+msgid "trade register (RCCM)"
+msgstr "registre du commerce (RCCM)"
 
 msgid "type"
 msgstr "type"

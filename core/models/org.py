@@ -427,3 +427,58 @@ class ConversionRate(models.Model):
     @property
     def percent(self):
         return (self.uplift_rate * 100).normalize()
+
+
+class CompanyProfile(models.Model):
+    """The distribution partner using this installation (one row). Edited by the super administrator.
+
+    The logo is stored in the database (not on disk) so it survives redeploys on hosts with an
+    ephemeral filesystem such as Laravel Cloud."""
+
+    name = models.CharField(_("company name"), max_length=120, blank=True)
+    tagline = models.CharField(_("tagline (optional)"), max_length=120, blank=True)
+    address = models.CharField(_("address"), max_length=255, blank=True)
+    city = models.CharField(_("city"), max_length=80, blank=True)
+    phone = models.CharField(_("phone"), max_length=60, blank=True)
+    email = models.EmailField(_("email"), blank=True)
+    tax_id = models.CharField(_("taxpayer number (NIU)"), max_length=40, blank=True)
+    trade_register = models.CharField(_("trade register (RCCM)"), max_length=60, blank=True)
+    receipt_footer = models.CharField(_("receipt footer"), max_length=255, blank=True)
+    logo = models.BinaryField(null=True, blank=True, editable=False)
+    logo_updated = models.DateTimeField(null=True, blank=True, editable=False)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "company profile"
+
+    def __str__(self):
+        return self.display_name
+
+    @property
+    def display_name(self):
+        return self.name or _("Cashier Manager")
+
+    @property
+    def initial(self):
+        return (self.name or "C").strip()[:1].upper()
+
+    @property
+    def has_logo(self):
+        return self.logo_updated is not None
+
+    @property
+    def contact_line(self):
+        return " · ".join(x for x in (self.phone, self.email) if x)
+
+    @property
+    def legal_line(self):
+        parts = []
+        if self.tax_id:
+            parts.append(f"NIU {self.tax_id}")
+        if self.trade_register:
+            parts.append(f"RCCM {self.trade_register}")
+        return " · ".join(parts)
+
+    @property
+    def address_line(self):
+        return ", ".join(x for x in (self.address, self.city) if x)

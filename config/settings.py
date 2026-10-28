@@ -48,8 +48,10 @@ ALLOWED_HOSTS = [h.strip() for h in (env("ALLOWED_HOSTS") or env("DJANGO_ALLOWED
 CSRF_TRUSTED_ORIGINS = [o.strip() for o in (env("CSRF_TRUSTED_ORIGINS") or env("DJANGO_CSRF_TRUSTED_ORIGINS", ""))
                         .split(",") if o.strip()]
 
-COMPANY_NAME = env("COMPANY_NAME", "Orange Distribution Partner")
-COMPANY_ADDRESS = env("COMPANY_ADDRESS", "Cameroon")
+# Only used to pre-fill the company profile on a new installation; edit it later in
+# Administration › Company profile (name, logo, address, NIU, RCCM...).
+COMPANY_NAME = env("COMPANY_NAME", "")
+COMPANY_ADDRESS = env("COMPANY_ADDRESS", "")
 
 INSTALLED_APPS = [
     "django.contrib.admin",

@@ -4,7 +4,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{% block title %}{{ title|default:"" }}{% endblock %} · {% trans "Cashier Manager" %}</title>
+<title>{% block title %}{{ title|default:"" }}{% endblock %} · {{ company.display_name }}</title>
+{% if company.has_logo %}<link rel="icon" type="image/png" href="{% url 'company_logo' %}?v={{ company.logo_updated|date:'U' }}">{% endif %}
 <link rel="stylesheet" href="{% static 'core/app.css' %}">
 </head>
 <body class="{% if user.is_authenticated %}has-side{% else %}no-side{% endif %}">
@@ -12,7 +13,7 @@
 {% with u=request.resolver_match.url_name %}
 <aside class="side" id="side" aria-label="{% trans 'Main menu' %}">
   <div class="side-head">
-    <a class="brand" href="{% url 'dashboard' %}"><span class="logo">C</span><span><strong>{% trans "Cashier Manager" %}</strong><small>{{ COMPANY_NAME }}</small></span></a>
+    <a class="brand" href="{% url 'dashboard' %}">{% include "core/inc/brand.html" %}</a>
     <button class="icon-btn side-close" type="button" data-toggle-side aria-label="{% trans 'Close menu' %}">{% icon "close" %}</button>
   </div>
 
@@ -50,6 +51,7 @@
     <div class="side-group">{% trans "Administration" %}</div>
     <a href="{% url 'admin_home' %}" class="{% if u == 'admin_home' %}on{% endif %}">{% icon "settings" %}<span>{% trans "Admin tools" %}</span></a>
     <a href="{% url 'import_data' %}" class="{% if u == 'import_data' %}on{% endif %}">{% icon "upload" %}<span>{% trans "Import CSV / Excel" %}</span></a>
+    <a href="{% url 'company_profile' %}" class="{% if u == 'company_profile' %}on{% endif %}">{% icon "settings" %}<span>{% trans "Company profile" %}</span></a>
     <a href="{% url 'audit_log' %}" class="{% if u == 'audit_log' %}on{% endif %}">{% icon "statement" %}<span>{% trans "Audit log" %}</span></a>
     <a href="{% url 'opening_balances' %}" class="{% if u == 'opening_balances' %}on{% endif %}">{% icon "key" %}<span>{% trans "Opening balances" %}</span></a>
     <a href="{% url 'conversion_rate' %}" class="{% if u == 'conversion_rate' %}on{% endif %}">{% icon "percent" %}<span>{% trans "Conversion rate" %}</span></a>
@@ -81,7 +83,7 @@
   <header class="topbar">
     <button class="icon-btn menu-btn" type="button" data-toggle-side aria-label="{% trans 'Open menu' %}">{% icon "menu" 22 %}</button>
     {% if request.resolver_match.url_name != 'dashboard' %}<a class="back-btn" href="{% block back_url %}{% url 'dashboard' %}{% endblock %}" data-back title="{% trans 'Return to the previous step' %}">{% icon "back" 18 %}<span>{% trans "Return" %}</span></a>{% endif %}
-    <span class="topbar-title">{% block topbar %}{% trans "Cashier Manager" %}{% endblock %}</span>
+    <span class="topbar-title">{% block topbar %}{{ company.display_name }}{% endblock %}</span>
     {% if open_day %}<span class="day-chip{% if open_day.business_date < today_douala %} warn{% endif %}" title="{% trans 'Business date of your entries' %}">{% icon "calendar" 16 %} {{ open_day.business_date|date:"d/m/Y" }}</span>{% endif %}
   </header>
   {% endif %}

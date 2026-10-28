@@ -2,7 +2,10 @@ from django.conf import settings
 
 
 def app_context(request):
-    ctx = {"COMPANY_NAME": settings.COMPANY_NAME, "company_address": settings.COMPANY_ADDRESS,
+    from core.services.branding import company
+
+    co = company()
+    ctx = {"company": co, "COMPANY_NAME": co.display_name, "company_address": co.address_line,
            "IDLE_SECONDS": settings.SESSION_IDLE_MINUTES * 60}
     user = getattr(request, "user", None)
     if user is not None and user.is_authenticated and user.is_cashier:

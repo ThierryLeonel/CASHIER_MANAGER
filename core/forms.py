@@ -461,3 +461,34 @@ class ImportForm(forms.Form):
              ("opening", _("Opening balances")), ("transactions", _("Transactions (supplies, payments, expenses)"))]
     kind = forms.ChoiceField(label=_("What are you importing?"), choices=KINDS)
     file = forms.FileField(label=_("File (.xlsx or .csv)"))
+
+
+class CompanyProfileForm(forms.ModelForm):
+    logo_file = forms.ImageField(label=_("Logo"), required=False,
+                                 help_text=_("PNG, JPEG or WEBP, up to 3 MB. A square or wide logo on a transparent "
+                                             "or white background looks best."))
+    remove_logo = forms.BooleanField(label=_("Remove the current logo"), required=False)
+
+    class Meta:
+        from core.models import CompanyProfile
+
+        model = CompanyProfile
+        fields = ["name", "tagline", "address", "city", "phone", "email", "tax_id", "trade_register",
+                  "receipt_footer"]
+        help_texts = {
+            "name": _("Shown in the menu, on the login page, receipts and every report."),
+            "tagline": _("Short line under the name in the menu. Leave empty for none."),
+            "receipt_footer": _("Printed at the bottom of every receipt, e.g. thanks or terms."),
+        }
+
+    def clean_logo_file(self):
+        from core.services.branding import LogoError, normalise_logo
+
+        f = self.cleaned_data.get("logo_file")
+        if not f:
+            return None
+        try:
+            return normalise_logo(f)
+        except LogoError as e:
+            raise forms.ValidationError(_("The file is larger than 3 MB.") if str(e) == "too_big"
+                                        else _("Upload a PNG, JPEG or WEBP image."))

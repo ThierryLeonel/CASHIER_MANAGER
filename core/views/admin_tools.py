@@ -12,6 +12,7 @@ from core.models import AuditEvent, Counterparty, Transaction, User
 from core.services import admin as adm
 from core.services import corrections as corr
 from core.services import importer
+from core.services import operations as ops
 from core.services.errors import BusinessError
 
 from .base import R, acting_cashier, roles_required
@@ -133,3 +134,40 @@ def audit_log(request):
     page = Paginator(qs, 50).get_page(request.GET.get("page"))
     actions = AuditEvent.objects.values_list("action", flat=True).distinct().order_by("action")
     return render(request, "core/admin_audit.html", {"page": page, "actions": actions, "action": action})
+
+
+@roles_required(*ADMIN)
+def company_profile(request):
+    from core.services import branding
+
+    prof = branding.company()
+    form = F.CompanyProfileForm(request.POST or None, request.FILES or None, instance=prof)
+    if request.method == "POST" and form.is_valid():
+        prof = form.save(commit=False)
+        logo = form.cleaned_data.get("logo_file")
+        fields = list(form.Meta.fields) + ["updated_at"]
+        if logo:
+            branding.save_logo(prof, logo)
+            fields += ["logo", "logo_updated"]
+        elif form.cleaned_data.get("remove_logo"):
+            branding.save_logo(prof, None)
+            fields += ["logo", "logo_updated"]
+        prof.save(update_fields=fields)
+        ops.log_event(request.user, "company_profile_changed", changed=form.changed_data
+                      + (["logo"] if logo or form.cleaned_data.get("remove_logo") else []))
+        messages.success(request, _("Company profile saved."))
+        return redirect("company_profile")
+    return render(request, "core/company_profile.html", {"form": form, "prof": prof})
+
+
+def company_logo(request):
+    """The logo image. Public (shown on the login page); cached by the browser, the URL changes with each upload."""
+    from core.services import branding
+
+    data = branding.logo_bytes()
+    if not data:
+        raise Http404
+    resp = HttpResponse(data, content_type="image/png")
+    resp["Cache-Control"] = "public, max-age=31536000, immutable" if request.GET.get("v") else "no-cache"
+    resp["X-Content-Type-Options"] = "nosniff"
+    return resp

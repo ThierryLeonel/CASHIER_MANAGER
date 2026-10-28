@@ -3,7 +3,6 @@ import io
 from decimal import Decimal
 from pathlib import Path
 
-from django.conf import settings
 from django.utils import timezone
 from django.utils.translation import gettext as _
 from reportlab.lib import colors
@@ -12,7 +11,7 @@ from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.units import mm
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
-from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+from reportlab.platypus import Image, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
 from core.money import fmt
 
@@ -47,18 +46,50 @@ def _local(dt):
 
 
 # ------------------------------------------------------------------ receipts
+def _company_header(st, width, title=None):
+    """Logo (if any) next to the company name and details."""
+    from core.services.branding import company, logo_bytes
+
+    co = company()
+    name = co.display_name
+    lines = [Paragraph(f"{name}" + (f" — {title}" if title else ""), st["title"])]
+    for extra in (co.address_line, co.contact_line, co.legal_line):
+        if extra:
+            lines.append(Paragraph(extra, st["s"] if title else st["n"]))
+    data = logo_bytes()
+    if not data:
+        return lines
+    from PIL import Image as PILImage
+
+    iw, ih = PILImage.open(io.BytesIO(data)).size
+    h = (14 if title else 20) * mm
+    w = min(h * iw / ih, 50 * mm)
+    h = w * ih / iw
+    img = Image(io.BytesIO(data), width=w, height=h)
+    t = Table([[img, lines]], colWidths=[w + 4 * mm, width - w - 4 * mm], hAlign="LEFT")
+    t.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "MIDDLE"), ("LEFTPADDING", (0, 0), (-1, -1), 0)]))
+    return [t]
+
+
+def _company_name():
+    from core.services.branding import company
+
+    return str(company().display_name)
+
+
 def receipt_pdf(txn, rows, balance_after=None):
     """rows: [(label, value)] already localised."""
     _fonts()
     st = _styles()
     buf = io.BytesIO()
     corrected = getattr(txn, "correction", None) if hasattr(txn, "correction") else None
+    co_name = _company_name()
 
     def stamp(canvas, doc):
         canvas.saveState()
         canvas.setFont("DV", 7)
         canvas.setFillColor(colors.grey)
-        canvas.drawString(18 * mm, 10 * mm, f"{settings.COMPANY_NAME} · {txn.reference} · "
+        canvas.drawString(18 * mm, 10 * mm, f"{co_name} · {txn.reference} · "
                                             + _("Printed %(when)s") % {"when": _local(timezone.now())})
         if corrected:
             canvas.translate(105 * mm, 150 * mm)
@@ -76,10 +107,8 @@ def receipt_pdf(txn, rows, balance_after=None):
 
     doc = SimpleDocTemplate(buf, pagesize=A4, leftMargin=18 * mm, rightMargin=18 * mm, topMargin=16 * mm,
                             bottomMargin=16 * mm, title=f"{_('Receipt')} {txn.receipt_no or txn.reference}",
-                            author=settings.COMPANY_NAME)
-    story = [
-        Paragraph(settings.COMPANY_NAME, st["title"]),
-        Paragraph(settings.COMPANY_ADDRESS, st["n"]),
+                            author=co_name)
+    story = _company_header(st, 174 * mm) + [
         Spacer(1, 6 * mm),
         Paragraph(f"{_('RECEIPT')} / {str(txn.display_type).upper()}", st["h"]),
         Paragraph(f"{_('Receipt no.')} <b>{txn.receipt_no or '—'}</b> &nbsp;&nbsp; {_('Reference')} "
@@ -105,8 +134,13 @@ def receipt_pdf(txn, rows, balance_after=None):
     sig = Table([[Paragraph(_("Cashier signature"), st["n"]), Paragraph(_("Customer signature"), st["n"])],
                  ["", ""]], colWidths=[87 * mm, 87 * mm], rowHeights=[6 * mm, 22 * mm])
     sig.setStyle(TableStyle([("BOX", (0, 1), (0, 1), 0.4, colors.grey), ("BOX", (1, 1), (1, 1), 0.4, colors.grey)]))
-    story += [sig, Spacer(1, 6 * mm),
-              Paragraph(_("This receipt confirms a completed transaction recorded in the company ledger. "
+    from core.services.branding import company
+
+    footer_txt = company().receipt_footer
+    story += [sig, Spacer(1, 6 * mm)]
+    if footer_txt:
+        story += [Paragraph(footer_txt, st["n"]), Spacer(1, 3 * mm)]
+    story += [Paragraph(_("This receipt confirms a completed transaction recorded in the company ledger. "
                           "Amounts in FCFA (XAF)."), st["s"])]
     doc.build(story, onFirstPage=stamp, onLaterPages=stamp)
     return buf.getvalue()
@@ -133,20 +167,21 @@ def report_pdf(report, generated_by):
     buf = io.BytesIO()
     page = landscape(A4)
     doc = SimpleDocTemplate(buf, pagesize=page, leftMargin=10 * mm, rightMargin=10 * mm, topMargin=12 * mm,
-                            bottomMargin=12 * mm, title=str(report.title), author=settings.COMPANY_NAME)
+                            bottomMargin=12 * mm, title=str(report.title), author=_company_name())
     width = page[0] - 20 * mm
+    co_name = _company_name()
 
     def footer(canvas, doc):
         canvas.saveState()
         canvas.setFont("DVC", 7)
         canvas.setFillColor(colors.grey)
-        canvas.drawString(10 * mm, 6 * mm, f"{settings.COMPANY_NAME} · {report.title} · "
+        canvas.drawString(10 * mm, 6 * mm, f"{co_name} · {report.title} · "
                                            f"{_('Generated')} {_local(timezone.now())} · {generated_by}")
         canvas.drawRightString(page[0] - 10 * mm, 6 * mm, f"{_('Page')} {doc.page}")
         canvas.restoreState()
 
-    story = [Paragraph(f"{settings.COMPANY_NAME} — {report.title}", st["title"]),
-             Paragraph(report.filters_text, st["n"]), Spacer(1, 3 * mm)]
+    story = _company_header(st, width, title=str(report.title)) + [
+        Paragraph(report.filters_text, st["n"]), Spacer(1, 3 * mm)]
     if report.summary:
         data = [[Paragraph(str(lbl), st["s"]), Paragraph(cell_text(v, k), st["sb"])] for lbl, v, k in report.summary]
         t = Table(data, colWidths=[90 * mm, 70 * mm], hAlign="LEFT")

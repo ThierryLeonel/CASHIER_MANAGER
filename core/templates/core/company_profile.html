@@ -1,0 +1,17 @@
+{% extends "core/base.html" %}{% load i18n %}
+{% block title %}{% trans "Company profile" %}{% endblock %}
+{% block topbar %}{% trans "Company profile" %}{% endblock %}
+{% block content %}
+<h1>{% trans "Company profile" %}</h1>
+<p class="muted">{% trans "The distribution partner using this application. The name and logo appear in the menu, on the login page, receipts, PDF and Excel reports." %}</p>
+<div class="panel">
+<form method="post" enctype="multipart/form-data" class="entry" novalidate>{% csrf_token %}
+  <div class="co-logo-preview">
+    <div class="box">{% if prof.has_logo %}<img src="{% url 'company_logo' %}?v={{ prof.logo_updated|date:'U' }}" alt="{% trans 'Current logo' %}">{% else %}<span class="muted small">{% trans "No logo" %}</span>{% endif %}</div>
+    <span class="muted small">{% if prof.has_logo %}{% trans "Current logo" %}{% else %}{% trans "Until a logo is uploaded, the first letter of the company name is shown." %}{% endif %}</span>
+  </div>
+  {% include "core/inc/fields.html" %}
+  <button type="submit" class="btn primary">{% trans "Save" %}</button>
+</form>
+</div>
+{% endblock %}

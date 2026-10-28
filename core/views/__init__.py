@@ -12,6 +12,6 @@ from .records import (  # noqa: F401
     txn_list, txn_transfer,
 )
 from .admin_tools import (  # noqa: F401,E402
-    admin_home, audit_log, clear_data, import_data, import_template, txn_delete, txn_edit,
+    admin_home, audit_log, clear_data, company_logo, company_profile, import_data, import_template, txn_delete, txn_edit,
 )
 from .base import act_as, idle_logout, keepalive, set_lang  # noqa: F401,E402

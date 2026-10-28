@@ -12,6 +12,7 @@
 </div>
 <div class="quick">
   <a class="qa main" href="{% url 'act_as' %}"><span class="qa-ic">{% icon "users" 22 %}</span><strong>{% trans "Record as a cashier" %}</strong><span class="d">{% if acting %}{% blocktrans with c=acting %}Now recording for {{ c }}{% endblocktrans %}{% else %}{% trans "Enter supplies, payments and more for any cashier" %}{% endif %}</span></a>
+  <a class="qa" href="{% url 'company_profile' %}"><span class="qa-ic">{% icon "settings" 22 %}</span><strong>{% trans "Company profile" %}</strong><span class="d">{% trans "Name, logo, address, NIU and RCCM on receipts and reports" %}</span></a>
   <a class="qa" href="{% url 'import_data' %}"><span class="qa-ic">{% icon "upload" 22 %}</span><strong>{% trans "Import CSV / Excel" %}</strong><span class="d">{% trans "Agents, POS, opening balances, transactions" %}</span></a>
   <a class="qa" href="{% url 'txn_list' %}"><span class="qa-ic">{% icon "list" 22 %}</span><strong>{% trans "Edit or delete rows" %}</strong><span class="d">{% trans "Open a transaction, then Edit or Delete" %}</span></a>
   <a class="qa" href="{% url 'admin:index' %}"><span class="qa-ic">{% icon "settings" 22 %}</span><strong>{% trans "Configuration" %}</strong><span class="d">{% trans "Users, zones, SIMs, drawers, banks, categories" %}</span></a>
