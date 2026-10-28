@@ -3,7 +3,7 @@
 {% block content %}
 {% with cd=d.closing_line.closing.cashier_day %}
 <h1>{{ d.kind_label }} {{ d.amount|absval|fcfa }} FCFA — {{ d.account }}</h1>
-<p class="muted">{{ cd.cashier }} · {% trans "closing of" %} {{ cd.business_date|date:"d/m/Y" }} · <span class="badge {% if d.status == 'OPEN' %}bad{% else %}ok{% endif %}">{{ d.get_status_display }}</span></p>
+<p class="muted">{{ cd.zone }} · {% trans "closing of" %} {{ cd.business_date|date:"d/m/Y" }} · <span class="badge {% if d.status == 'OPEN' %}bad{% else %}ok{% endif %}">{{ d.get_status_display }}</span></p>
 <div class="panel"><dl class="kv">
   <dt>{% trans "Expected (book)" %}</dt><dd>{{ d.closing_line.expected|fcfa }}</dd>
   <dt>{% trans "Actual counted/read" %}</dt><dd>{{ d.closing_line.actual|fcfa }}</dd>

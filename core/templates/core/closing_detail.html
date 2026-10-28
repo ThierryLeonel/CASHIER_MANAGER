@@ -1,7 +1,7 @@
 {% extends "core/base.html" %}{% load i18n cashier %}
 {% block title %}{% trans "Closing" %}{% endblock %}
 {% block content %}
-<h1>{% trans "Closing" %} — {{ c.cashier_day.cashier }} · {{ c.cashier_day.business_date|date:"d/m/Y" }}</h1>
+<h1>{% trans "Closing" %} — {{ c.cashier_day.zone }} · {{ c.cashier_day.business_date|date:"d/m/Y" }}</h1>
 <p class="muted">{% trans "Closed at" %} {{ c.closed_at|date:"d/m/Y H:i:s" }} {% trans "by" %} {{ c.closed_by }}{% if c.notes %} · {{ c.notes }}{% endif %}</p>
 <div class="tbl-wrap"><table class="t">
 <thead><tr><th>{% trans "Account" %}</th><th class="money">{% trans "Opening (book)" %}</th><th class="money">{% trans "Movements" %}</th><th class="money">{% trans "Expected" %}</th><th class="money">{% trans "Actual" %}</th><th class="money">{% trans "Difference" %}</th><th class="money">{% trans "Carried unresolved" %}</th><th class="money">{% trans "New difference" %}</th><th></th></tr></thead>

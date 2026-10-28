@@ -391,6 +391,7 @@ def transfer_responsibility(user, *, supply, new_party, reason, idempotency_key=
         raise BusinessError(_("Give the reason for the responsibility change."), "reason")
     with transaction.atomic():
         supply = Transaction.objects.select_for_update().get(pk=supply.pk)
+        perm.require_zone(user, supply.zone)
         if supply.type not in TRANSFERABLE_TYPES:
             raise BusinessError(_("Only supplies, destockages and opening debts can change responsibility."))
         if supply.is_corrected:

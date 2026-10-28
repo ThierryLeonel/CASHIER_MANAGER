@@ -230,11 +230,11 @@ class ReconciliationColumns(WebBase):
         from core.services.days import douala_today
 
         today = douala_today()
-        rows = {r["account"]: r for r in reconciliation(Filters(None, None, user=self.manager)).tables[0].rows}
+        rows = {r["account"]: r for r in reconciliation(Filters(None, None, user=self.manager)).tables[1].rows}
         r = rows[str(self.d_f1)]
         self.assertEqual((r["opening"], r["launch"], r["closing"]), (D(0), D(1000000), D(1000000)))
         nxt = today + timedelta(days=1)
-        rows = {r["account"]: r for r in reconciliation(Filters(nxt, nxt, user=self.manager)).tables[0].rows}
+        rows = {r["account"]: r for r in reconciliation(Filters(nxt, nxt, user=self.manager)).tables[1].rows}
         r = rows[str(self.d_f1)]
         self.assertEqual((r["opening"], r["launch"], r["closing"], r["check"]), (D(1000000), D(0), D(1000000), "OK"))
 

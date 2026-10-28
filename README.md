@@ -43,7 +43,7 @@ python manage.py load_sample_data --activity     # password for all users: Sampl
 
 Run locally with `python manage.py runserver` and `DJANGO_DEBUG=1`. In production run `gunicorn config.wsgi` behind HTTPS (nginx or similar). Set `DJANGO_DEBUG=0`, `DJANGO_ALLOWED_HOSTS` and `DJANGO_CSRF_TRUSTED_ORIGINS`. Session and CSRF cookies are secure-only when DEBUG is off.
 
-Sample users: `admin`, `manager`, `finance`, `cashier.fako1`, `cashier.fako2`, `cashier.meme`, `agent.ndive`, `agent.ekane`.
+Sample users: `admin`, `manager` (senior), `junior.fako` (junior manager, Fako only), `finance`, `cashier.fako1`, `cashier.fako2`, `cashier.meme`, `agent.ndive`, `agent.ekane`.
 
 ## Tests
 

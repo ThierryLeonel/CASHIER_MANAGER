@@ -37,7 +37,7 @@ def roles_required(*roles):
     return deco
 
 
-STAFF = (R.SUPERADMIN, R.MANAGER, R.FINANCE, R.CASHIER)
+STAFF = (R.SUPERADMIN, R.MANAGER, R.JUNIOR, R.FINANCE, R.CASHIER)
 
 
 def acting_cashier(request):
@@ -71,7 +71,7 @@ def act_as(request):
         "subzone__parent__name", "subzone__name", "username")
     return render(request, "core/act_as.html", {"cashiers": cashiers, "next": nxt,
                                                 "current": acting_cashier(request)})
-SUPERVISORS = (R.MANAGER, R.FINANCE, R.SUPERADMIN)
+SUPERVISORS = (R.MANAGER, R.JUNIOR, R.FINANCE, R.SUPERADMIN)
 
 
 def run_service(request, form, fn, *, success, on_success):
@@ -96,12 +96,17 @@ def can_view_txn(user, t):
         return True
     if user.is_agent:
         return Entry.objects.filter(transaction=t, account__counterparty=user.counterparty).exists()
+    if user.is_junior:
+        ids = user.zone_ids_in_scope()
+        if t.zone_id in ids:
+            return True
+        return Entry.objects.filter(transaction=t, account__zone_id__in=ids).exists()
     if user.is_cashier:
-        if t.entered_by_id == user.id or (t.cashier_day_id and t.cashier_day.cashier_id == user.id):
+        if t.entered_by_id == user.id or t.cashier_id == user.id or (t.zone_id and t.zone_id == user.subzone_id):
             return True
         if t.counterparty_id or t.counterparty_2_id:
             return True  # customer accounts are shared across cashiers
-        held = Account.objects.filter(Q(custodian=user) | Q(grants__user=user)).values("id")
+        held = Account.objects.filter(perm.zone_accounts_q(user)).values("id")
         return Entry.objects.filter(transaction=t, account_id__in=held).exists()
     return False
 
@@ -168,31 +173,36 @@ def kind_totals(accounts, bals):
 
 
 def zone_matrix(zone=None):
-    """Cash/UVE/ER/MTN balances per cashier, grouped by master zone."""
+    """Cash/UVE/ER/MTN balances by zone: master zone -> its subzones, plus the
+    master-level accounts (master SIM, with its cashier in charge).
+    `zone` may be a master zone or a subzone (limits the table)."""
     from core.models import Zone
 
-    accts = list(Account.objects.filter(kind__in=KIND_ORDER, active=True)
-                 .select_related("custodian__subzone__parent", "zone", "sim"))
+    accts = list(Account.objects.filter(kind__in=KIND_ORDER, active=True, zone__isnull=False)
+                 .select_related("zone__parent", "custodian", "sim"))
     if zone is not None:
-        accts = [a for a in accts if (a.zone_id == zone.id) or
-                 (a.custodian and a.custodian.subzone and a.custodian.subzone.master.id == zone.id)]
+        if zone.is_master:
+            accts = [a for a in accts if a.zone.master.id == zone.id]
+        else:
+            accts = [a for a in accts if a.zone_id == zone.id or (a.custodian and a.custodian.subzone_id == zone.id)]
     bals = asset_balances(accts)
-    zones = {}
+    masters = {}
     for a in accts:
-        z = a.zone or (a.custodian.subzone.master if a.custodian and a.custodian.subzone_id else None)
-        zkey = z.id if z else 0
-        zentry = zones.setdefault(zkey, {"zone": z, "cashiers": {}, "totals": {k: 0 for k in KIND_ORDER}})
-        ckey = a.custodian_id or 0
-        c = zentry["cashiers"].setdefault(ckey, {"cashier": a.custodian, "totals": {k: 0 for k in KIND_ORDER}})
-        c["totals"][a.kind] += bals[a.id]
-        zentry["totals"][a.kind] += bals[a.id]
+        m = a.zone.master
+        me = masters.setdefault(m.id, {"zone": m, "rows": {}, "totals": {k: 0 for k in KIND_ORDER}})
+        if a.zone.is_master and (a.custodian_id or not m.subzones.exists()):
+            key, label, sub = ("m", a.custodian_id), None, None
+        else:
+            key, label, sub = ("s", a.zone_id), a.zone.name, a.zone
+        r = me["rows"].setdefault(key, {"label": label, "subzone": sub, "master_level": key[0] == "m",
+                                        "incharge": a.custodian, "totals": {k: 0 for k in KIND_ORDER}})
+        r["totals"][a.kind] += bals[a.id]
+        me["totals"][a.kind] += bals[a.id]
     out = []
-    for z in sorted(zones.values(), key=lambda x: (x["zone"].name if x["zone"] else "~")):
-        cashiers = sorted(z["cashiers"].values(), key=lambda c: (str(c["cashier"].subzone) if c["cashier"] and
-                                                                 c["cashier"].subzone else "~", str(c["cashier"])))
-        out.append({"zone": z["zone"], "totals": [z["totals"][k] for k in KIND_ORDER],
-                    "cashiers": [{"cashier": c["cashier"], "totals": [c["totals"][k] for k in KIND_ORDER]}
-                                 for c in cashiers]})
+    for m in sorted(masters.values(), key=lambda x: x["zone"].name):
+        rows = sorted(m["rows"].values(), key=lambda r: (r["master_level"], r["label"] or ""))
+        out.append({"zone": m["zone"], "totals": [m["totals"][k] for k in KIND_ORDER],
+                    "rows": [dict(r, totals=[r["totals"][k] for k in KIND_ORDER]) for r in rows]})
     grand = [sum(z["totals"][i] for z in out) for i in range(len(KIND_ORDER))]
     return out, grand, Zone.objects.filter(parent__isnull=True)
 
@@ -209,24 +219,31 @@ def dashboard(request):
             "entered_by", "counterparty", "counterparty_2").order_by("-posted_at")[:15]
         return render(request, "core/dashboard_agent.html", ctx)
     if user.is_cashier:
+        from core.services.closing import zone_closing_accounts
+
         accts = list(perm.usable_accounts(user, Account.ASSET_KINDS).order_by("kind", "id"))
-        bals = asset_balances(accts)
-        ctx["accounts"] = [(a, bals[a.id], a.custodian_id == user.id) for a in accts]
-        mine = [a for a in accts if a.custodian_id == user.id]
-        ctx["kind_totals"] = kind_totals(mine, bals)
-        ctx["zone"] = user.master_zone
+        zone_accts = zone_closing_accounts(user.subzone)
+        bals = asset_balances(list({a.id: a for a in accts + zone_accts}.values()))
+        ctx["accounts"] = [(a, bals[a.id], not a.custodian_id or a.custodian_id == user.id) for a in accts]
+        ctx["kind_totals"] = kind_totals(zone_accts, bals)
+        ctx["zone"] = user.subzone
         ctx["day"] = peek_open_day(user)
-        ctx["recent"] = Transaction.objects.filter(entered_by=user).select_related(
-            "counterparty", "counterparty_2", "source_account__sim", "dest_account__sim").order_by("-posted_at")[:15]
-        ctx["open_disc"] = Discrepancy.objects.filter(status="OPEN", account__custodian=user).count()
+        ctx["recent"] = Transaction.objects.filter(Q(zone=user.subzone) | Q(entered_by=user)).select_related(
+            "cashier", "entered_by", "counterparty", "counterparty_2", "source_account__sim",
+            "dest_account__sim").order_by("-posted_at")[:15]
+        ctx["open_disc"] = Discrepancy.objects.filter(
+            status="OPEN", account__in=[a.id for a in zone_accts]).count()
         return render(request, "core/dashboard_cashier.html", ctx)
     # supervisors / admin
     from core.models import Zone
 
     zone = Zone.objects.filter(pk=request.GET.get("zone"), parent__isnull=True).first() \
         if (request.GET.get("zone") or "").isdigit() else None
+    if user.is_junior:
+        zone = user.scope_zone  # junior managers see their zone only
     ctx["matrix"], grand, ctx["zones"] = zone_matrix(zone)
     ctx["zone"] = zone
+    ctx["junior"] = user.is_junior
     ctx["grand"] = [(k, Account.Kind(k).label, v) for k, v in zip(KIND_ORDER, grand)]
     ctx["kind_labels"] = [Account.Kind(k).label for k in KIND_ORDER]
     banks = list(Account.objects.filter(kind=Account.Kind.BANK, active=True).select_related("bank"))
@@ -235,12 +252,20 @@ def dashboard(request):
     cust = Entry.objects.filter(account__kind=Account.Kind.CUSTOMER).values("account_id").annotate(s=Sum("amount"))
     ctx["owed"] = sum((r["s"] for r in cust if r["s"] > 0), 0)
     ctx["due"] = -sum((r["s"] for r in cust if r["s"] < 0), 0)
-    ctx["open_disc"] = Discrepancy.objects.filter(status="OPEN").select_related(
-        "account__sim", "closing_line__closing__cashier_day__cashier")[:20]
-    ctx["recent"] = Transaction.objects.select_related("entered_by", "counterparty").order_by("-posted_at")[:15]
     from core.models import CashierDay
 
-    ctx["days"] = CashierDay.objects.filter(status="OPEN").select_related("cashier__subzone")
+    disc = Discrepancy.objects.filter(status="OPEN").select_related(
+        "account__sim", "closing_line__closing__cashier_day__zone")
+    recent = Transaction.objects.select_related("cashier", "entered_by", "counterparty", "zone")
+    days = CashierDay.objects.filter(status="OPEN", zone__isnull=False).select_related("zone__parent")
+    ids = user.zone_ids_in_scope()
+    if ids is not None:
+        disc = disc.filter(closing_line__closing__cashier_day__zone_id__in=ids)
+        recent = recent.filter(zone_id__in=ids)
+        days = days.filter(zone_id__in=ids)
+    ctx["open_disc"] = disc[:20]
+    ctx["recent"] = recent.order_by("-posted_at")[:15]
+    ctx["days"] = days.order_by("zone__parent__name", "zone__name")
     return render(request, "core/dashboard_staff.html", ctx)
 
 

@@ -31,7 +31,7 @@ Orange Cameroon distribution partner · FCFA (XAF) · Africa/Douala business dat
 |---|---|---|---|
 | 1 | Responsibility transfer after part of a POS's debt was paid | Always moves the **full supply amount**; **refused** if the current party owes less than that amount, so settled debt never moves. | `operations.transfer_responsibility` |
 | 2 | Carry-forward when closing shows a difference | **Book (expected) balance carries forward.** Difference becomes an open Discrepancy; later closings show it as "carried unresolved" and only a *change* creates a new discrepancy. | `services/closing.py` |
-| 3 | Shared master wallet reconciliation | Each SIM has **one custodian** cashier who counts it; other cashiers need an explicit grant. Custodian's expected balance includes other cashiers' postings up to the closing moment. Sample: Fako 1 = custodian of Fako master. | `AccountAccess`, `closing_accounts` |
+| 3 | Shared master wallet reconciliation | **Confirmed by the owner:** the master SIM is assigned to one **cashier in charge**; only that cashier uses it and it is counted in that cashier's subzone closing. All other accounts belong to a zone, not to a cashier. | `CompanySim.custodian`, `zone_closing_accounts` |
 | 4 | "Corresponding master zone" for ER | Master zone of the **cashier entering** the supply. | `build_supply` |
 | 5 | UVE→ER conversion destination | **Same Orange SIM**. ER = UVE × (1 + rate), **ROUND_HALF_UP to whole FCFA** (12 345 → 12 839). ER can then be moved inside the zone by internal transfer. | `build_conversion`, `money.py` |
 | 6 | Who enters what | Cashiers enter all operations; managers/finance correct, resolve, transfer responsibility; only the super admin enters opening balances and rates. | `services/permissions.py` |
@@ -109,21 +109,21 @@ Supplies are **not revenue**: they only move value from a company asset to a cus
 
 ## 6. Role matrix (enforced server-side in services *and* views)
 
-| Action | Super admin | Manager | Finance mgr | Cashier | Agent |
-|---|---|---|---|---|---|
-| Configure zones, SIMs, drawers, users, grants, categories (add / edit / delete) | ✔ | | | | |
-| Change conversion rate, opening balances | ✔ | | | | |
-| Record supplies, destockage, payments, expenses, transfers, conversions, exchanges | ✔ (for a chosen cashier) | | | ✔ (own/granted accounts) | |
-| Register agent/POS | ✔ | ✔ | ✔ | ✔ | |
-| Responsibility transfer | ✔ | ✔ | ✔ | ✔ | |
-| Corrections (reverse + replace, keeps history) | ✔ | ✔ | ✔ | | |
-| **Hard edit in place / delete a transaction** | ✔ | | | | |
-| **Clear data** (transactions, or everything) | ✔ | | | | |
-| **Import CSV / Excel** (agents, POS, cash managers, opening balances, transactions) | ✔ | | | | |
-| Audit log | ✔ | | | | |
-| Close own day | | | | ✔ | |
-| Resolve discrepancies | ✔ | ✔ | ✔ | | |
-| Reports | all zones | all zones | all zones | own desk + shared customer balances | own statement only |
+| Action | Super admin | Senior manager | Junior manager (own master zone only) | Finance mgr | Cashier | Agent |
+|---|---|---|---|---|---|---|
+| Configure zones, SIMs, drawers, users, grants, categories (add / edit / delete) | ✔ | |  | | | |
+| Change conversion rate, opening balances | ✔ | |  | | | |
+| Record supplies, destockage, payments, expenses, transfers, conversions, exchanges | ✔ (for a chosen cashier) | |  | | ✔ (accounts of own subzone; master SIM only if in charge) | |
+| Register agent/POS | ✔ | ✔ | ✔ | ✔ | ✔ | |
+| Responsibility transfer | ✔ | ✔ | ✔ (own zone) | ✔ | ✔ | |
+| Corrections (reverse + replace, keeps history) | ✔ | ✔ | ✔ (own zone) | ✔ | | |
+| **Hard edit in place / delete a transaction** | ✔ | |  | | | |
+| **Clear data** (transactions, or everything) | ✔ | |  | | | |
+| **Import CSV / Excel** (agents, POS, cash managers, opening balances, transactions) | ✔ | |  | | | |
+| Audit log | ✔ | |  | | | |
+| Close the subzone day | | |  | | ✔ | |
+| Resolve discrepancies | ✔ | ✔ | ✔ (own zone) | ✔ | | |
+| Reports | all zones | all zones | own zone, no company total | all zones + company reconciliation | own subzone + shared customer balances | own statement only |
 
 ### Super-administrator overrides (added at the owner's request)
 
@@ -136,10 +136,18 @@ Editing a transaction of a day that is already closed changes that day's book ba
 
 Every transaction stores its **recording cashier** (`Transaction.cashier`), and every user has a **staff ID** (e.g. `CSH-0004`). Both are shown in lists, receipts, statements and exports. When the super admin records for a cashier, the cashier is the recording cashier and the super admin is kept as `entered_by`.
 
+### Zones (owner's rules)
+
+- A **master zone** (e.g. Fako) groups **subzones** (Fako 1, Fako 2). Subzones depend on their master: reports, dashboards and reconciliation roll subzones up into the master, and the master into the company.
+- **Accounts are general, not a cashier's**: drawers and SIM wallets belong to a zone (`Account.zone`). Every cashier of a subzone uses that subzone's accounts. The only exception is the **master SIM**, which is assigned to its **cashier in charge**.
+- **Entries are separated by zone**: every transaction stores its subzone (`Transaction.zone`) and its recording cashier.
+- **Senior manager** sees everything. **Junior manager** is assigned one master zone and sees, corrects and resolves only inside it (dashboard, transactions, closings, differences, reports); other zones return 404.
+- **Finance manager** sees the reconciliation for each zone and the global **company** reconciliation (zone table with COMPANY TOTAL, then company assets).
+
 ## 7. Closing rules
 
-1. Every entry belongs to the entering cashier's single OPEN business day (`posted_at` keeps the real timestamp).
-2. Closing locks the cashier's custody accounts, computes expected = ledger balance, records actual, difference, carried-unresolved and new difference, closes the day and immediately opens the next business date (`max(today, previous + 1)`).
+1. Every entry belongs to its subzone's single OPEN business day, shared by all cashiers of the subzone (`posted_at` keeps the real timestamp).
+2. Closing is done **per subzone** by any of its cashiers: it locks the subzone's accounts plus the master SIM of a cashier in charge in that subzone, computes expected = ledger balance, records actual, difference, carried-unresolved and new difference, closes the day and immediately opens the next business date (`max(today, previous + 1)`).
 3. Closing is a blind count: expected values are shown after submission.
 4. No movement is invented. Only a manager/finance manager resolution can post a reconciliation adjustment, linked to the discrepancy with notes, user and date. Alternatives: link a correction, or record a counting error (no posting).
 5. Weekly/monthly/custom/overall reports are views over the same ledger; nothing needs approval.

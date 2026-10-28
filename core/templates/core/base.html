@@ -80,6 +80,7 @@
   {% if user.is_authenticated %}
   <header class="topbar">
     <button class="icon-btn menu-btn" type="button" data-toggle-side aria-label="{% trans 'Open menu' %}">{% icon "menu" 22 %}</button>
+    {% if request.resolver_match.url_name != 'dashboard' %}<a class="back-btn" href="{% block back_url %}{% url 'dashboard' %}{% endblock %}" data-back title="{% trans 'Return to the previous step' %}">{% icon "back" 18 %}<span>{% trans "Return" %}</span></a>{% endif %}
     <span class="topbar-title">{% block topbar %}{% trans "Cashier Manager" %}{% endblock %}</span>
     {% if open_day %}<span class="day-chip{% if open_day.business_date < today_douala %} warn{% endif %}" title="{% trans 'Business date of your entries' %}">{% icon "calendar" 16 %} {{ open_day.business_date|date:"d/m/Y" }}</span>{% endif %}
   </header>
@@ -95,6 +96,15 @@ document.querySelectorAll('[data-toggle-side]').forEach(function (b) {
   b.addEventListener('click', function () { document.body.classList.toggle('side-open'); });
 });
 document.addEventListener('keydown', function (e) { if (e.key === 'Escape') document.body.classList.remove('side-open'); });
+/* Return: go back one step in this app; if there is no previous page here
+   (opened from a link or bookmark), go to the page's parent instead. */
+document.querySelectorAll('[data-back]').forEach(function (a) {
+  a.addEventListener('click', function (e) {
+    var ref = document.referrer;
+    if (ref && ref.indexOf(location.origin + '/') === 0 && ref !== location.href && history.length > 1
+        && ref.indexOf('/login/') < 0) { e.preventDefault(); history.back(); }
+  });
+});
 </script>
 {% block scripts %}{% endblock %}
 <script>window.CM_I18N = {search: "{% trans 'Search…' %}", choose: "{% trans 'Choose…' %}", noresult: "{% trans 'No match' %}",

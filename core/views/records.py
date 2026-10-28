@@ -21,7 +21,7 @@ from core.simnumbers import display_sim
 
 from .base import R, STAFF, SUPERVISORS, can_view_txn, roles_required, run_service
 
-TX_RELATED = ["cashier__subzone", "entered_by", "cashier_day__cashier__subzone", "counterparty", "counterparty_2", "source_account__sim",
+TX_RELATED = ["cashier__subzone", "zone__parent", "entered_by", "cashier_day__zone", "counterparty", "counterparty_2", "source_account__sim",
               "dest_account__sim", "expense_category", "cash_manager", "exchange", "reverses", "replaces",
               "related_supply"]
 
@@ -221,7 +221,7 @@ def txn_correct(request, pk):
                                                  "customers": Counterparty.objects.filter(active=True)})
 
 
-@roles_required(R.CASHIER, R.MANAGER, R.FINANCE, R.SUPERADMIN)
+@roles_required(R.CASHIER, R.MANAGER, R.JUNIOR, R.FINANCE, R.SUPERADMIN)
 def txn_transfer(request, pk):
     t = _get_visible_txn(request, pk)
     data = request.POST or None

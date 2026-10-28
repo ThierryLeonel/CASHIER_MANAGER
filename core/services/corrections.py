@@ -106,9 +106,12 @@ def correct_transaction(user, original, *, kind, reason, new_values=None, idempo
             raise BusinessError(_("Cancel the responsibility transfer of %(ref)s before correcting it.")
                                 % {"ref": original.reference})
 
-        owner = original.cashier_day.cashier if original.cashier_day_id else None
-        if owner is not None:
-            day = current_day(owner)
+        owner = original.cashier or (original.cashier_day.cashier if original.cashier_day_id else None)
+        if owner is not None and owner.is_cashier and owner.subzone_id:
+            from .days import zone_day
+
+            # posted in the open day of the zone the original belongs to
+            day = zone_day(original.zone or owner.subzone, opened_by=owner)
             ctx = Ctx(entered_by=user, cashier=owner, day=day, business_date=day.business_date,
                       exclude_txn_id=original.pk, rate_override=original.rate_used)
         else:

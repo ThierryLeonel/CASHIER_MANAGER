@@ -16,7 +16,7 @@
   <div class="bal k-{{ k }}"><span class="bal-label">{{ label }}</span><span class="bal-value">{{ v|fcfa }}</span><span class="bal-unit">FCFA</span></div>
 {% endfor %}
 </div>
-<p class="small muted" style="margin-top:-4px">{% blocktrans with z=zone|default:"—" %}Balances of the drawers and SIM wallets you hold · master zone {{ z }}{% endblocktrans %}</p>
+<p class="small muted" style="margin-top:-4px">{% blocktrans with z=zone|default:"—" %}Balances of zone {{ z }}: its drawers and SIM wallets, including the master SIM if a cashier of this zone is in charge of it{% endblocktrans %}</p>
 
 {% if open_disc %}<div class="msg error">{% blocktrans count n=open_disc %}{{ n }} unresolved closing difference on your accounts.{% plural %}{{ n }} unresolved closing differences on your accounts.{% endblocktrans %} <a href="{% url 'discrepancies' %}">{% trans "View" %}</a></div>{% endif %}
 
@@ -34,13 +34,13 @@
   <a class="qa" href="{% url 'close_day' %}"><span class="qa-ic">{% icon "lock" 22 %}</span><strong>{% trans "Close day" %}</strong><span class="d">{% trans "Count cash and wallets" %}</span></a>
 </div>
 
-<h2>{% trans "Your drawers and wallets (book balances)" %}</h2>
+<h2>{% trans "Drawers and wallets you can use (book balances)" %}</h2>
 <div class="grid">
 {% for a, bal, mine in accounts %}
-  <div class="tile"><div class="label">{% icon "wallet" 16 %}{{ a.get_kind_display }}{% if not mine %} · {% trans "shared use" %}{% endif %}</div>
+  <div class="tile"><div class="label">{% icon "wallet" 16 %}{{ a.get_kind_display }}{% if a.custodian %} · {% trans "in charge" %}: {{ a.custodian }}{% elif a.zone %} · {{ a.zone }}{% endif %}</div>
   <div class="value">{{ bal|fcfa }}</div><div class="sub">{{ a }}</div></div>
 {% endfor %}
 </div>
-<h2>{% trans "Your latest entries" %}</h2>
+<h2>{% trans "Latest entries of your zone" %}</h2>
 {% include "core/inc/txn_table.html" with txns=recent %}
 {% endblock %}

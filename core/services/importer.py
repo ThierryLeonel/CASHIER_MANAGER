@@ -175,14 +175,16 @@ def _asset_account(kind, ident, cashier=None):
         a = qs.filter(bank__account_number__iexact=ident).first() if ident else qs.first() if qs.count() == 1 else None
     elif kind == K.CASH_DRAWER:
         if ident:
-            a = qs.filter(custodian__username__iexact=ident).first() or qs.filter(name__iexact=ident).first()
+            u = User.objects.filter(username__iexact=ident).first()
+            a = (qs.filter(perm.zone_accounts_q(u)).first() if u and u.is_cashier else None) or \
+                qs.filter(name__iexact=ident).first() or qs.filter(zone__name__iexact=ident).first()
         else:
-            a = qs.filter(custodian=cashier).first() if cashier else None
+            a = qs.filter(perm.zone_accounts_q(cashier)).first() if cashier else None
     else:
         if ident:
             a = qs.filter(sim__msisdn=_sim(ident, kind)).first()
         else:
-            mine = list(qs.filter(custodian=cashier)) if cashier else []
+            mine = list(qs.filter(perm.zone_accounts_q(cashier)).distinct()) if cashier else []
             a = mine[0] if len(mine) == 1 else None
     if not a:
         raise BusinessError(_("Company %(kind)s account not found: %(v)s") % {"kind": Account.Kind(kind).label,

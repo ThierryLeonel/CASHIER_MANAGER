@@ -38,9 +38,24 @@ def close_day(request):
     return render(request, "core/close_day.html", {"form": form, "day": day, "accounts": accounts})
 
 
+def _zone_ok(user, zone):
+    """Cashiers see their own subzone; junior managers their zone tree."""
+    if user.is_cashier:
+        return zone is not None and zone.id == user.subzone_id
+    ids = user.zone_ids_in_scope()
+    return ids is None or (zone is not None and zone.id in ids)
+
+
+def _zone_filter(user, qs, field):
+    if user.is_cashier:
+        return qs.filter(**{field: user.subzone_id})
+    ids = user.zone_ids_in_scope()
+    return qs if ids is None else qs.filter(**{f"{field}__in": ids})
+
+
 def _visible_closing(request, pk):
-    c = get_object_or_404(Closing.objects.select_related("cashier_day__cashier", "closed_by"), pk=pk)
-    if request.user.is_cashier and c.cashier_day.cashier_id != request.user.id:
+    c = get_object_or_404(Closing.objects.select_related("cashier_day__zone__parent", "closed_by"), pk=pk)
+    if not _zone_ok(request.user, c.cashier_day.zone):
         raise Http404
     return c
 
@@ -50,7 +65,7 @@ def closing_detail(request, pk):
     c = _visible_closing(request, pk)
     lines = c.lines.select_related("account__sim", "discrepancy")
     later_corrections = Transaction.objects.filter(type=TxType.REVERSAL, original_business_date=c.cashier_day.business_date,
-                                                   reverses__cashier_day__cashier=c.cashier_day.cashier) \
+                                                   reverses__zone=c.cashier_day.zone) \
         .select_related("reverses")
     return render(request, "core/closing_detail.html", {"c": c, "lines": lines,
                                                         "later_corrections": later_corrections})
@@ -58,19 +73,17 @@ def closing_detail(request, pk):
 
 @roles_required(*STAFF)
 def closings(request):
-    qs = Closing.objects.select_related("cashier_day__cashier", "closed_by").order_by("-closed_at")
-    if request.user.is_cashier:
-        qs = qs.filter(cashier_day__cashier=request.user)
+    qs = Closing.objects.select_related("cashier_day__zone__parent", "closed_by").order_by("-closed_at")
+    qs = _zone_filter(request.user, qs, "cashier_day__zone_id")
     return render(request, "core/closings.html", {"closings": qs[:200]})
 
 
 # ---------------------------------------------------------------- discrepancies
 @roles_required(*STAFF)
 def discrepancies(request):
-    qs = Discrepancy.objects.select_related("account__sim", "closing_line__closing__cashier_day__cashier",
+    qs = Discrepancy.objects.select_related("account__sim", "closing_line__closing__cashier_day__zone",
                                             "resolved_by")
-    if request.user.is_cashier:
-        qs = qs.filter(account__custodian=request.user)
+    qs = _zone_filter(request.user, qs, "closing_line__closing__cashier_day__zone_id")
     status = request.GET.get("status", "OPEN")
     if status in ("OPEN", "RESOLVED"):
         qs = qs.filter(status=status)
@@ -79,10 +92,10 @@ def discrepancies(request):
 
 @roles_required(*STAFF)
 def discrepancy_detail(request, pk):
-    d = get_object_or_404(Discrepancy.objects.select_related("account__sim", "closing_line__closing__cashier_day__cashier",
+    d = get_object_or_404(Discrepancy.objects.select_related("account__sim", "closing_line__closing__cashier_day__zone",
                                                              "adjustment_txn", "correction__original"), pk=pk)
     user = request.user
-    if user.is_cashier and d.account.custodian_id != user.id:
+    if not _zone_ok(user, d.closing_line.closing.cashier_day.zone):
         raise Http404
     note_form = F.NoteForm(request.POST if request.POST.get("action") == "note" else None)
     resolve_form = F.ResolveForm(request.POST if request.POST.get("action") == "resolve" else None) \

@@ -1,5 +1,6 @@
 """Cashier data-entry screens. Every POST is idempotent via a per-form UUID."""
 
+from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.translation import gettext as _
 
@@ -99,12 +100,16 @@ def conversion_new(request):
 
 
 # ---------------------------------------------------------------- cash managers
-@roles_required(R.CASHIER, R.MANAGER, R.FINANCE, R.SUPERADMIN)
+@roles_required(R.CASHIER, R.MANAGER, R.JUNIOR, R.FINANCE, R.SUPERADMIN)
 def exchanges(request):
     from core.services.ledger import balance
 
     cms = [(c, balance(c.account)) for c in CashManager.objects.all()]
-    exs = CashManagerExchange.objects.select_related("cash_manager", "created_by")[:200]
+    exs = CashManagerExchange.objects.select_related("cash_manager", "created_by")
+    zids = request.user.zone_ids_in_scope()
+    if zids is not None:  # junior manager: exchanges started in his zone
+        exs = exs.filter(created_by__subzone__in=zids)
+    exs = exs[:200]
     return render(request, "core/exchanges.html", {"cms": cms, "exchanges": exs})
 
 
@@ -128,9 +133,12 @@ def exchange_new(request):
         "intro": _("An agreement moves no money. Company balances change only when you record each completed side.")})
 
 
-@roles_required(R.CASHIER, R.MANAGER, R.FINANCE, R.SUPERADMIN)
+@roles_required(R.CASHIER, R.MANAGER, R.JUNIOR, R.FINANCE, R.SUPERADMIN)
 def exchange_detail(request, pk):
-    ex = get_object_or_404(CashManagerExchange.objects.select_related("cash_manager"), pk=pk)
+    ex = get_object_or_404(CashManagerExchange.objects.select_related("cash_manager", "created_by"), pk=pk)
+    zids = request.user.zone_ids_in_scope()
+    if zids is not None and ex.created_by.subzone_id not in zids:
+        raise Http404
     desk, acting = _desk(request) if request.user.role in DESK else (None, None)
     form = F.ExchangeLegForm(desk, request.POST or None) if desk is not None else None
     if form is not None and request.method == "POST" and form.is_valid():

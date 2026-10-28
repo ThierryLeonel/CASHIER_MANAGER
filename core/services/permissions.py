@@ -8,12 +8,12 @@ from .errors import PermissionDenied
 R = User.Role
 
 ENTRY_ROLES = (R.CASHIER,)
-TRANSFER_RESPONSIBILITY_ROLES = (R.CASHIER, R.MANAGER, R.FINANCE, R.SUPERADMIN)
-CORRECTION_ROLES = (R.MANAGER, R.FINANCE, R.SUPERADMIN)
-RESOLUTION_ROLES = (R.MANAGER, R.FINANCE, R.SUPERADMIN)
+TRANSFER_RESPONSIBILITY_ROLES = (R.CASHIER, R.MANAGER, R.JUNIOR, R.FINANCE, R.SUPERADMIN)
+CORRECTION_ROLES = (R.MANAGER, R.JUNIOR, R.FINANCE, R.SUPERADMIN)
+RESOLUTION_ROLES = (R.MANAGER, R.JUNIOR, R.FINANCE, R.SUPERADMIN)
 OPENING_ROLES = (R.SUPERADMIN,)
 CONFIG_ROLES = (R.SUPERADMIN,)
-REPORT_ROLES = (R.SUPERADMIN, R.MANAGER, R.FINANCE, R.CASHIER)
+REPORT_ROLES = (R.SUPERADMIN, R.MANAGER, R.JUNIOR, R.FINANCE, R.CASHIER)
 
 
 def require_role(user, roles, action=""):
@@ -25,11 +25,22 @@ def _has_grant(user, account):
     return AccountAccess.objects.filter(user=user, account=account).exists()
 
 
+def _zone_rule(user, account):
+    """Accounts belong to zones, not to cashiers:
+    * an account of the cashier's own subzone is shared by all its cashiers;
+    * an account held at master-zone level (e.g. the master SIM) is used only
+      by its cashier in charge (Account.custodian);
+    * explicit grants (configuration) add access to other accounts."""
+    if account.custodian_id:
+        return account.custodian_id == user.id
+    return account.zone_id is not None and account.zone_id == user.subzone_id
+
+
 def can_send_from(user, account):  # user = the desk cashier (also when the super admin acts for them)
     """Money/value may leave this company account on the user's entry."""
     return bool(
         user.is_cashier and account.active and account.is_asset
-        and (account.custodian_id == user.id or _has_grant(user, account))
+        and (_zone_rule(user, account) or _has_grant(user, account))
     )
 
 
@@ -40,19 +51,33 @@ def can_receive_into(user, account):
         return False
     if account.kind == Account.Kind.BANK:
         return True
-    return account.custodian_id == user.id or _has_grant(user, account)
+    return _zone_rule(user, account) or _has_grant(user, account)
+
+
+def zone_accounts_q(user):
+    from django.db.models import Q
+
+    return Q(custodian=user) | Q(custodian__isnull=True, zone_id=user.subzone_id) | Q(grants__user=user)
 
 
 def usable_accounts(user, kinds, receiving=False):
-    qs = Account.objects.filter(kind__in=kinds, active=True).select_related("sim", "custodian")
-    if not user.is_cashier:
+    qs = Account.objects.filter(kind__in=kinds, active=True).select_related("sim", "custodian", "zone")
+    if not user or not user.is_cashier:
         return qs.none()
     from django.db.models import Q
 
-    q = Q(custodian=user) | Q(grants__user=user)
+    q = zone_accounts_q(user)
     if receiving:
         q |= Q(kind=Account.Kind.BANK)
     return qs.filter(q).distinct()
+
+
+def zone_closing_accounts_q(zone):
+    """Accounts a subzone counts at closing: its own accounts plus master-level
+    accounts whose cashier in charge works in this subzone."""
+    from django.db.models import Q
+
+    return Q(custodian__isnull=True, zone=zone) | Q(custodian__subzone=zone)
 
 
 def visible_cashier_ids(user):
@@ -62,3 +87,17 @@ def visible_cashier_ids(user):
     if user.is_cashier:
         return [user.id]
     return []
+
+
+def in_scope(user, zone):
+    """Can this user see data of `zone`? (junior managers: own zone tree)."""
+    ids = user.zone_ids_in_scope() if user.is_authenticated else []
+    if ids is None:
+        return True
+    return zone is not None and zone.id in ids
+
+
+def require_zone(user, zone):
+    """Junior managers act only inside their zone."""
+    if user.is_authenticated and user.is_junior and not in_scope(user, zone):
+        raise PermissionDenied(_("This belongs to another zone."))

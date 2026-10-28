@@ -46,8 +46,10 @@ class Account(models.Model):
     name = models.CharField(_("name"), max_length=150)
     zone = models.ForeignKey(Zone, null=True, blank=True, on_delete=models.PROTECT, related_name="accounts")
     custodian = models.ForeignKey(User, null=True, blank=True, on_delete=models.PROTECT,
-                                  related_name="custody_accounts",
-                                  help_text="Cashier who holds this drawer/wallet and counts it at closing.")
+                                  related_name="custody_accounts", verbose_name=_("cashier in charge"),
+                                  help_text="Only for accounts held at master-zone level (e.g. the master SIM): the "
+                                            "single cashier who uses it. Subzone accounts are shared by all the "
+                                            "subzone's cashiers.")
     sim = models.ForeignKey(CompanySim, null=True, blank=True, on_delete=models.PROTECT, related_name="accounts")
     counterparty = models.OneToOneField(Counterparty, null=True, blank=True, on_delete=models.PROTECT,
                                         related_name="ledger_account")
@@ -68,8 +70,8 @@ class Account(models.Model):
                                     name="singleton_system_accounts"),
             models.CheckConstraint(name="wallet_has_sim",
                                    condition=~Q(kind__in=["UVE", "ER", "MTN"]) | Q(sim__isnull=False)),
-            models.CheckConstraint(name="drawer_has_custodian",
-                                   condition=~Q(kind="CASH_DRAWER") | Q(custodian__isnull=False)),
+            models.CheckConstraint(name="drawer_has_zone",
+                                   condition=~Q(kind="CASH_DRAWER") | Q(zone__isnull=False)),
             models.CheckConstraint(name="customer_has_counterparty",
                                    condition=~Q(kind="CUSTOMER") | Q(counterparty__isnull=False)),
             models.CheckConstraint(name="cm_has_cash_manager",
@@ -118,11 +120,16 @@ class AccountAccess(models.Model):
 
 
 class CashierDay(models.Model):
+    """A business day of a subzone (desk). Every cashier of the subzone works
+    in the same open day; the subzone closes once."""
+
     class Status(models.TextChoices):
         OPEN = "OPEN", _("Open")
         CLOSED = "CLOSED", _("Closed")
 
-    cashier = models.ForeignKey(User, on_delete=models.PROTECT, related_name="days")
+    zone = models.ForeignKey(Zone, null=True, blank=True, on_delete=models.PROTECT, related_name="days")
+    cashier = models.ForeignKey(User, null=True, blank=True, on_delete=models.PROTECT, related_name="days",
+                                help_text="Cashier who opened the day.")
     business_date = models.DateField()
     status = models.CharField(max_length=6, choices=Status.choices, default=Status.OPEN)
     opened_at = models.DateTimeField(default=timezone.now)
@@ -131,12 +138,12 @@ class CashierDay(models.Model):
     class Meta:
         ordering = ["-business_date"]
         constraints = [
-            models.UniqueConstraint(fields=["cashier", "business_date"], name="one_day_per_cashier_date"),
-            models.UniqueConstraint(fields=["cashier"], condition=Q(status="OPEN"), name="one_open_day_per_cashier"),
+            models.UniqueConstraint(fields=["zone", "business_date"], name="one_day_per_zone_date"),
+            models.UniqueConstraint(fields=["zone"], condition=Q(status="OPEN"), name="one_open_day_per_zone"),
         ]
 
     def __str__(self):
-        return f"{self.cashier} {self.business_date} ({self.status})"
+        return f"{self.zone} {self.business_date} ({self.status})"
 
 
 class TxType(models.TextChoices):
@@ -177,6 +184,9 @@ class Transaction(models.Model):
     # The cashier whose desk the transaction belongs to (the recording cashier).
     cashier = models.ForeignKey(User, null=True, blank=True, on_delete=models.PROTECT, related_name="desk_transactions",
                                 db_index=True)
+    # The subzone the entry belongs to (snapshot at posting time).
+    zone = models.ForeignKey(Zone, null=True, blank=True, on_delete=models.PROTECT, related_name="transactions",
+                             db_index=True)
     cashier_day = models.ForeignKey(CashierDay, null=True, blank=True, on_delete=models.PROTECT,
                                     related_name="transactions")
     amount = models.DecimalField(**MONEY)

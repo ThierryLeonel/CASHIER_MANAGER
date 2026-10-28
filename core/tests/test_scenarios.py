@@ -292,11 +292,13 @@ class ErMasterSim(OrgMixin, TestCase):
     def test_er_must_come_from_zone_master(self):
         with self.assertRaises(BusinessError):  # Fako 2's own SIM is not the master
             ops.record_supply(self.c_f2, product="ER", customer=self.a1, amount=D(1000), source_account=self.er_f2)
-        ops.record_supply(self.c_f2, product="ER", customer=self.a1, amount=D(1000), source_account=self.er_f1)
-        with self.assertRaises(BusinessError):  # Meme cashier cannot use the Fako master
+        with self.assertRaises(PermissionDenied):  # the master SIM is used only by its cashier in charge
+            ops.record_supply(self.c_f2, product="ER", customer=self.a1, amount=D(1000), source_account=self.er_f1)
+        ops.record_supply(self.c_f1, product="ER", customer=self.a1, amount=D(1000), source_account=self.er_f1)
+        with self.assertRaises((BusinessError, PermissionDenied)):  # Meme cashier cannot use the Fako master
             ops.record_supply(self.c_me, product="ER", customer=self.a3, amount=D(1000), source_account=self.er_f1)
         ops.record_supply(self.c_me, product="ER", customer=self.a3, amount=D(1000), source_account=self.er_me)
-        # UVE may go from any Orange SIM the cashier holds, but not from others' SIMs
+        # UVE may go from the subzone's Orange SIM, but not from another zone's SIM
         ops.record_supply(self.c_f2, product="UVE", customer=self.a1, amount=D(1000), source_account=self.uve_f2)
         with self.assertRaises(PermissionDenied):
             ops.record_supply(self.c_f2, product="UVE", customer=self.a1, amount=D(1000), source_account=self.uve_f1)
@@ -365,17 +367,26 @@ class ClosingAndDiscrepancies(OrgMixin, TestCase):
         t2 = ops.record_collection(self.c_f1, payer=self.a1, method="CASH", amount=D(5000), account=self.d_f1)
         self.assertEqual(t2.business_date, day1 + timedelta(days=1))  # next business day
         self.assertGreaterEqual(t2.posted_at, t1.posted_at)  # actual timestamp kept separately
-        # Fako 2 posts ER on the shared Fako master SIM; it shows in Fako 1's next closing
-        ops.record_supply(self.c_f2, product="ER", customer=self.a2, amount=D(7000), source_account=self.er_f1)
-        closing2 = cl.close_day(self.c_f1, actuals=self.actuals(self.c_f1))
-        l2 = closing2.lines.get(account=self.er_f1)
-        self.assertEqual(l2.opening_book, closing.lines.get(account=self.er_f1).expected)
-        self.assertEqual(l2.movements, D(-7000))
-        self.assertEqual(CashierDay.objects.filter(cashier=self.c_f1, status="CLOSED").count(), 2)
-        self.assertEqual(CashierDay.objects.get(cashier=self.c_f1, status="OPEN").business_date,
-                         day1 + timedelta(days=2))
-        # other cashiers are unaffected
-        self.assertEqual(CashierDay.objects.filter(cashier=self.c_me).count(), 0)
+        # a second cashier of the same subzone uses the shared drawer and the same business day
+        from core.models import User
+
+        c_f1b = User(username="cashier.fako1b", role="CASHIER", subzone=self.c_f1.subzone)
+        c_f1b.set_password("x")
+        c_f1b.save()
+        t3 = ops.record_expense(c_f1b, category=ExpenseCategory.objects.get(code="fuel"), amount=D(7000),
+                                drawer=self.d_f1, description="shared drawer")
+        self.assertEqual(t3.cashier_day, t2.cashier_day)
+        self.assertEqual((t3.zone, t3.cashier), (self.c_f1.subzone, c_f1b))
+        closing2 = cl.close_day(c_f1b, actuals=self.actuals(c_f1b))  # either cashier closes the subzone
+        l2 = closing2.lines.get(account=self.d_f1)
+        self.assertEqual(l2.opening_book, closing.lines.get(account=self.d_f1).expected)
+        self.assertEqual(l2.movements, D(-2000))  # +5,000 payment, -7,000 expense
+        self.assertEqual(closing2.lines.count(), 4)
+        zone = self.c_f1.subzone
+        self.assertEqual(CashierDay.objects.filter(zone=zone, status="CLOSED").count(), 2)
+        self.assertEqual(CashierDay.objects.get(zone=zone, status="OPEN").business_date, day1 + timedelta(days=2))
+        # other subzones are unaffected
+        self.assertEqual(CashierDay.objects.filter(zone=self.c_me.subzone).count(), 0)
         # the agent account is cumulative across closings
         self.assertEqual(self.cbal(self.a1), D(95000))
 

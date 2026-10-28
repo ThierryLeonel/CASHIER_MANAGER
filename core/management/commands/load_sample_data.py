@@ -29,7 +29,7 @@ class Command(BaseCommand):
             raise CommandError("Zones already exist. Sample data is only loaded into an empty database.")
         o = build_sample_org(opts["password"])
         self.stdout.write(self.style.SUCCESS("Sample organisation created. Users (password: %s):" % opts["password"]))
-        for u in ("admin", "manager", "finance", "cashier.fako1", "cashier.fako2", "cashier.meme", "agent.ndive",
+        for u in ("admin", "manager", "junior.fako", "finance", "cashier.fako1", "cashier.fako2", "cashier.meme", "agent.ndive",
                   "agent.ekane"):
             self.stdout.write(f"  {u}")
         if opts["activity"]:
@@ -50,7 +50,7 @@ class Command(BaseCommand):
                                    description="[SAMPLE] company owed cash manager at launch")
         ops.record_supply(f1, product="UVE", customer=a1, amount=D(500_000), source_account=o["uve_f1"])
         ops.record_supply(f1, product="ER", customer=a1, amount=D(120_000), source_account=o["er_f1"])
-        ops.record_supply(f2, product="ER", customer=a2, amount=D(80_000), source_account=o["er_f1"])
+        ops.record_supply(f1, product="ER", customer=a2, amount=D(80_000), source_account=o["er_f1"])
         ops.record_supply(f2, product="CASH", customer=a2, amount=D(100_000), source_account=d2)
         ops.record_collection(f1, payer=a1, method="CASH", amount=D(300_000), account=d1)
         ops.record_collection(f2, payer=a1, method="MTN", amount=D(150_000), account=o["mtn_f2"])

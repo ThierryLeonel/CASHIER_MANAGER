@@ -93,6 +93,7 @@ _ICONS = {
     "edit": '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="m13 7 4 4"/>',
     "chevron": '<path d="m9 6 6 6-6 6"/>',
     "clock": '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+    "back": '<path d="M19 12H5"/><path d="m12 19-7-7 7-7"/>',
     "wallet": '<rect x="3" y="6" width="18" height="14" rx="2"/><path d="M3 10h18"/><circle cx="16.5" cy="15" r="1.2"/>',
 }
 

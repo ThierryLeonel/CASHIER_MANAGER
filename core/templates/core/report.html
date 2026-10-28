@@ -21,7 +21,7 @@
 <div class="tbl-wrap"><table class="t">
 <thead><tr>{% for c in table.columns %}<th class="{% if c.kind == 'money' or c.kind == 'int' or c.kind == 'rate' %}money{% endif %}">{{ c.label }}</th>{% endfor %}</tr></thead>
 <tbody>
-{% for r in table.rows %}<tr{% if r.corrected %} class="corrected"{% endif %}>
+{% for r in table.rows %}<tr class="{% if r.corrected %}corrected{% endif %}{% if r|get:'_bold' %} total{% endif %}">
 {% for c in table.columns %}<td class="{% if c.kind == 'money' or c.kind == 'int' or c.kind == 'rate' %}money{% endif %}{% if c.key == 'reference' %} keep{% endif %}">{% if c.key == 'reference' and r|get:'_id' %}<a href="{% url 'txn_detail' r|get:'_id' %}">{{ r|cell:c }}</a>{% if r.corrected %} <span class="badge bad">{% trans "CORRECTED" %}</span>{% endif %}{% elif c.key == 'account' and r|get:'_disc' %}<a href="{% url 'discrepancy_detail' r|get:'_disc' %}">{{ r|cell:c }}</a>{% else %}<span class="{% if c.kind == 'money' and r|get:c.key|negative %}neg{% endif %}">{{ r|cell:c }}</span>{% endif %}</td>{% endfor %}
 </tr>{% empty %}<tr><td colspan="{{ table.columns|length }}" class="muted">{% trans "No data for these filters." %}</td></tr>{% endfor %}
 {% with tot=table.totals %}{% if tot and table.rows %}<tr class="total">{% for c in table.columns %}<td class="{% if c.kind == 'money' or c.kind == 'int' %}money{% endif %}">{% if c.key in tot %}{{ tot|get:c.key|fcfa }}{% elif forloop.first %}{% trans "Total" %}{% endif %}</td>{% endfor %}</tr>{% endif %}{% endwith %}

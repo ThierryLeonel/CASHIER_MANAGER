@@ -75,7 +75,12 @@ class FilterForm(forms.Form):
     def __init__(self, user, *args, **kwargs):
         self.user = user
         super().__init__(*args, **kwargs)
-        if not user.sees_all_zones:
+        if user.is_junior:
+            ids = user.zone_ids_in_scope()
+            self.fields.pop("master_zone")
+            self.fields["subzone"].queryset = Zone.objects.filter(id__in=ids, parent__isnull=False)
+            self.fields["cashier"].queryset = User.objects.filter(role=User.Role.CASHIER, subzone_id__in=ids)
+        elif not user.sees_all_zones:
             for f in ("master_zone", "subzone", "cashier"):
                 self.fields.pop(f)
 
@@ -135,6 +140,17 @@ class Filters:
                 tx_type=cd.get("tx_type") or "", method=cd.get("method") or "", user=user, preset=preset)
         if user.is_cashier:
             f.cashier, f.master_zone, f.subzone, f.cashier_forced = user, None, None, True
+        if user.is_junior:  # a junior manager sees only the zone they supervise
+            z = user.scope_zone
+            ids = user.zone_ids_in_scope()
+            if f.subzone is not None and f.subzone.id not in ids:
+                f.subzone = None
+            if f.cashier is not None and f.cashier.subzone_id not in ids:
+                f.cashier = None
+            if z.is_master:
+                f.master_zone = z
+            else:
+                f.master_zone, f.subzone = None, z
         return f
 
     def text(self):
@@ -170,9 +186,20 @@ class Filters:
         if self.cashier:
             q &= Q(**{f"{p}cashier": self.cashier}) | Q(**{f"{p}cashier__isnull": True, f"{p}entered_by": self.cashier})
         if self.subzone:
-            q &= Q(**{f"{p}cashier__subzone": self.subzone})
+            q &= Q(**{f"{p}zone": self.subzone})
         if self.master_zone:
-            q &= Q(**{f"{p}cashier__subzone__parent": self.master_zone})
+            q &= Q(**{f"{p}zone": self.master_zone}) | Q(**{f"{p}zone__parent": self.master_zone})
+        return q
+
+    def day_zone_q(self, day_field):
+        """Same zone scope for objects attached to a business day."""
+        q = Q()
+        if self.subzone:
+            q &= Q(**{f"{day_field}__zone": self.subzone})
+        if self.master_zone:
+            q &= Q(**{f"{day_field}__zone": self.master_zone}) | Q(**{f"{day_field}__zone__parent": self.master_zone})
+        if self.cashier:
+            q &= Q(**{f"{day_field}__zone": self.cashier.subzone})
         return q
 
     def txn_q(self, prefix=""):

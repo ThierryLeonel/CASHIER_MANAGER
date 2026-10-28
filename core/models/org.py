@@ -47,7 +47,8 @@ class Zone(models.Model):
 class User(AbstractUser):
     class Role(models.TextChoices):
         SUPERADMIN = "SUPERADMIN", _("Super administrator")
-        MANAGER = "MANAGER", _("Manager")
+        MANAGER = "MANAGER", _("Senior manager")
+        JUNIOR = "JUNIOR", _("Junior manager")
         FINANCE = "FINANCE", _("Finance manager")
         CASHIER = "CASHIER", _("Cashier")
         AGENT = "AGENT", _("Commercial agent")
@@ -55,7 +56,9 @@ class User(AbstractUser):
     role = models.CharField(_("role"), max_length=12, choices=Role.choices, default=Role.CASHIER)
     subzone = models.ForeignKey(
         Zone, null=True, blank=True, on_delete=models.PROTECT, related_name="cashiers",
-        verbose_name=_("subzone"), help_text="Required for cashiers: the subzone (station) they work in.",
+        verbose_name=_("zone"),
+        help_text="Cashiers: the subzone they work in. Junior managers: the zone they supervise (a master zone covers "
+                  "all its subzones).",
     )
     counterparty = models.OneToOneField(
         "Counterparty", null=True, blank=True, on_delete=models.PROTECT, related_name="login_user",
@@ -75,12 +78,17 @@ class User(AbstractUser):
                 name="cashier_has_subzone",
                 condition=~Q(role="CASHIER") | Q(subzone__isnull=False),
             ),
+            models.CheckConstraint(
+                name="junior_has_zone",
+                condition=~Q(role="JUNIOR") | Q(subzone__isnull=False),
+            ),
         ]
 
     def __str__(self):
         return self.get_full_name() or self.username
 
-    PREFIX = {"SUPERADMIN": "ADM", "MANAGER": "MGR", "FINANCE": "FIN", "CASHIER": "CSH", "AGENT": "AGT"}
+    PREFIX = {"SUPERADMIN": "ADM", "MANAGER": "MGR", "JUNIOR": "JMG", "FINANCE": "FIN", "CASHIER": "CSH",
+              "AGENT": "AGT"}
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
@@ -108,12 +116,28 @@ class User(AbstractUser):
 
     @property
     def is_supervisor(self):
-        """Manager or finance manager."""
-        return self.role in (self.Role.MANAGER, self.Role.FINANCE)
+        """Senior, junior or finance manager."""
+        return self.role in (self.Role.MANAGER, self.Role.JUNIOR, self.Role.FINANCE)
+
+    @property
+    def is_junior(self):
+        return self.role == self.Role.JUNIOR
 
     @property
     def sees_all_zones(self):
         return self.role in (self.Role.MANAGER, self.Role.FINANCE, self.Role.SUPERADMIN)
+
+    @property
+    def scope_zone(self):
+        """Zone a junior manager supervises (None = everything)."""
+        return self.subzone if self.is_junior else None
+
+    def zone_ids_in_scope(self):
+        """Ids of the zones (master + subzones) a junior manager may see."""
+        z = self.scope_zone
+        if z is None:
+            return None
+        return [z.id] + list(z.subzones.values_list("id", flat=True))
 
     @property
     def master_zone(self):
@@ -125,6 +149,8 @@ class User(AbstractUser):
                 raise ValidationError(_("An agent login must be linked to an agent account."))
             if self.counterparty.kind != Counterparty.Kind.AGENT:
                 raise ValidationError(_("Only commercial agents (not POS) may have a login."))
+        if self.role == self.Role.JUNIOR and not self.subzone_id:
+            raise ValidationError(_("A junior manager must be assigned the zone they supervise."))
         if self.role == self.Role.CASHIER:
             if not self.subzone_id:
                 raise ValidationError(_("A cashier must belong to a subzone."))
@@ -143,10 +169,15 @@ class CompanySim(models.Model):
     master_zone = models.ForeignKey(Zone, on_delete=models.PROTECT, related_name="sims",
                                     verbose_name=_("master zone"))
     is_master = models.BooleanField(_("master SIM of the zone"), default=False)
+    subzone = models.ForeignKey(Zone, null=True, blank=True, on_delete=models.PROTECT, related_name="subzone_sims",
+                                verbose_name=_("subzone"),
+                                help_text="Ordinary SIMs: the subzone that uses it (all its cashiers). "
+                                          "Leave empty for the master SIM.")
     custodian = models.ForeignKey(
         User, null=True, blank=True, on_delete=models.PROTECT, related_name="custody_sims",
-        verbose_name=_("custodian cashier"),
-        help_text="The cashier who holds this SIM and counts its wallets at closing.",
+        verbose_name=_("cashier in charge"),
+        help_text="Required for the master SIM: the only cashier who may use it. It is counted in that "
+                  "cashier's subzone closing.",
     )
     active = models.BooleanField(default=True)
 
@@ -171,6 +202,17 @@ class CompanySim(models.Model):
             raise ValidationError({"master_zone": _("Select a master zone.")})
         if self.custodian_id and self.custodian.role != User.Role.CASHIER:
             raise ValidationError({"custodian": _("The custodian must be a cashier.")})
+        if self.subzone_id and self.master_zone_id and self.subzone.master.id != self.master_zone_id:
+            raise ValidationError({"subzone": _("The subzone must belong to the selected master zone.")})
+        if self.is_master and not self.custodian_id:
+            raise ValidationError({"custodian": _("Choose the cashier in charge of the master SIM.")})
+        if not self.is_master and not self.subzone_id and not self.custodian_id:
+            raise ValidationError({"subzone": _("Choose the subzone that uses this SIM.")})
+
+    @property
+    def owner_zone(self):
+        """Zone the SIM's wallets belong to: its subzone, else the master zone."""
+        return self.subzone if self.subzone_id else self.master_zone
 
     def save(self, *args, **kwargs):
         self.msisdn = normalize_sim(self.msisdn)
@@ -179,13 +221,13 @@ class CompanySim(models.Model):
 
         kinds = [Account.Kind.UVE, Account.Kind.ER] if self.network == self.Network.ORANGE else [Account.Kind.MTN]
         for kind in kinds:
+            zone = self.owner_zone
+            custodian = None if self.subzone_id else self.custodian
             acct, created = Account.objects.get_or_create(
-                kind=kind, sim=self,
-                defaults=dict(name=f"{kind} {self.label}", zone=self.master_zone, custodian=self.custodian),
+                kind=kind, sim=self, defaults=dict(name=f"{kind} {self.label}", zone=zone, custodian=custodian),
             )
-            if not created and (acct.custodian_id != self.custodian_id or acct.active != self.active):
-                Account.objects.filter(pk=acct.pk).update(custodian=self.custodian, active=self.active,
-                                                          zone=self.master_zone)
+            if not created:
+                Account.objects.filter(pk=acct.pk).update(custodian=custodian, active=self.active, zone=zone)
 
 
 class Counterparty(models.Model):

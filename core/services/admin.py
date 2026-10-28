@@ -146,6 +146,8 @@ def edit_transaction(user, t, *, new_values, reason):
         if not changes:
             raise BusinessError(_("No value was changed."))
         owner = t.cashier or (t.cashier_day.cashier if t.cashier_day_id else None)
+        if owner is not None and not owner.is_cashier:
+            owner = None
         ctx = Ctx(entered_by=t.entered_by, cashier=owner, day=t.cashier_day, business_date=new_date,
                   exclude_txn_id=t.pk, rate_override=t.rate_used)
         spec = corr.BUILDERS[t.type](ctx, **params)

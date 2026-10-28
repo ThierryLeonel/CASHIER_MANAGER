@@ -84,7 +84,7 @@ def describe(t):
     return " · ".join(str(p) for p in parts if p)
 
 
-TX_RELATED = ["cashier", "entered_by", "cashier_day__cashier", "counterparty", "counterparty_2", "source_account__sim",
+TX_RELATED = ["cashier", "zone", "entered_by", "cashier_day__zone", "counterparty", "counterparty_2", "source_account__sim",
               "dest_account__sim", "reverses", "replaces", "expense_category", "related_supply", "correction",
               "cash_manager", "exchange"]
 
@@ -117,14 +117,19 @@ def txns(f, types, extra_q=Q()):
 
 
 def scoped_asset_accounts(f, kinds=Account.ASSET_KINDS):
-    qs = Account.objects.filter(kind__in=kinds).select_related("sim", "custodian", "bank")
+    """Company accounts in the filter scope. Accounts belong to zones; a
+    master-level account (master SIM) counts in its master zone and in the
+    subzone of its cashier in charge."""
+    from core.services import permissions as perm
+
+    qs = Account.objects.filter(kind__in=kinds).select_related("sim", "custodian", "bank", "zone__parent")
     if f.cashier:
-        qs = qs.filter(Q(custodian=f.cashier) | Q(grants__user=f.cashier)).distinct()
+        qs = qs.filter(perm.zone_accounts_q(f.cashier))
     if f.subzone:
-        qs = qs.filter(custodian__subzone=f.subzone)
+        qs = qs.filter(perm.zone_closing_accounts_q(f.subzone))
     if f.master_zone:
-        qs = qs.filter(Q(zone=f.master_zone) | Q(custodian__subzone__parent=f.master_zone))
-    return qs.order_by("kind", "id")
+        qs = qs.filter(Q(zone=f.master_zone) | Q(zone__parent=f.master_zone))
+    return qs.distinct().order_by("kind", "id")
 
 
 def balances_by_account(accounts, f):
@@ -404,10 +409,11 @@ def accounts(f):
     rows = []
     for a in accs:
         o, dr, cr, cl, cur = bals[a.id]
-        rows.append(dict(account=str(a), kind=a.get_kind_display(), custodian=str(a.custodian or ""), opening=o,
+        rows.append(dict(account=str(a), kind=a.get_kind_display(),
+                         custodian=(f"{a.zone} · {a.custodian}" if a.custodian_id else str(a.zone or "")), opening=o,
                          inflow=dr, outflow=cr, closing=cl, current=cur))
     rep.tables.append(Table(_("Balances"), [
-        Col("account", _("Account")), Col("kind", _("Type")), Col("custodian", _("Custodian")),
+        Col("account", _("Account")), Col("kind", _("Type")), Col("custodian", _("Zone / in charge")),
         Col("opening", _("Opening balance"), "money", True), Col("inflow", _("In"), "money", True),
         Col("outflow", _("Out"), "money", True), Col("closing", _("Closing balance"), "money", True),
         Col("current", _("Current balance"), "money", True)], rows))
@@ -437,11 +443,11 @@ def corrections(f):
     if f.date_to:
         cq &= Q(reversal_txn__business_date__lte=f.date_to)
     if f.cashier:
-        cq &= Q(original__cashier_day__cashier=f.cashier) | Q(original__entered_by=f.cashier)
+        cq &= Q(original__cashier=f.cashier) | Q(original__cashier__isnull=True, original__entered_by=f.cashier)
     if f.subzone:
-        cq &= Q(original__cashier_day__cashier__subzone=f.subzone)
+        cq &= Q(original__zone=f.subzone)
     if f.master_zone:
-        cq &= Q(original__cashier_day__cashier__subzone__parent=f.master_zone)
+        cq &= Q(original__zone=f.master_zone) | Q(original__zone__parent=f.master_zone)
     if f.customer:
         cq &= Q(original__counterparty=f.customer) | Q(original__counterparty_2=f.customer)
     rows = []
@@ -484,41 +490,33 @@ def closings(f):
         lq &= Q(closing__cashier_day__business_date__gte=f.date_from)
     if f.date_to:
         lq &= Q(closing__cashier_day__business_date__lte=f.date_to)
-    if f.cashier:
-        lq &= Q(closing__cashier_day__cashier=f.cashier)
-    if f.subzone:
-        lq &= Q(closing__cashier_day__cashier__subzone=f.subzone)
-    if f.master_zone:
-        lq &= Q(closing__cashier_day__cashier__subzone__parent=f.master_zone)
+    lq &= f.day_zone_q("closing__cashier_day")
     rows = []
-    for ln in ClosingLine.objects.filter(lq).select_related("closing__cashier_day__cashier", "account__sim") \
-            .order_by("closing__cashier_day__business_date", "closing__cashier_day__cashier", "account__kind"):
+    for ln in ClosingLine.objects.filter(lq).select_related("closing__cashier_day__zone", "closing__closed_by",
+                                                            "account__sim") \
+            .order_by("closing__cashier_day__business_date", "closing__cashier_day__zone__name", "account__kind"):
         rows.append(dict(business_date=ln.closing.cashier_day.business_date,
-                         cashier=str(ln.closing.cashier_day.cashier), closed_at=ln.closing.closed_at,
+                         cashier=f"{ln.closing.cashier_day.zone or '—'} · {ln.closing.closed_by}",
+                         closed_at=ln.closing.closed_at,
                          account=str(ln.account), opening=ln.opening_book, movements=ln.movements,
                          expected=ln.expected, actual=ln.actual, difference=ln.difference,
                          carried=ln.carried_unresolved, new=ln.new_difference))
     rep.tables.append(Table(_("Closing lines (book balance carries forward)"), [
-        Col("business_date", _("Business date"), "date"), Col("cashier", _("Cashier")),
+        Col("business_date", _("Business date"), "date"), Col("cashier", _("Subzone · closed by")),
         Col("closed_at", _("Closed at"), "datetime"), Col("account", _("Account")),
         Col("opening", _("Opening (book)"), "money"), Col("movements", _("Movements"), "money"),
         Col("expected", _("Expected"), "money"), Col("actual", _("Actual"), "money"),
         Col("difference", _("Difference"), "money", True), Col("carried", _("Carried unresolved"), "money"),
         Col("new", _("New difference"), "money", True)], rows))
     dq = Q(status=Discrepancy.Status.OPEN)
-    if f.cashier:
-        dq &= Q(closing_line__closing__cashier_day__cashier=f.cashier)
-    if f.subzone:
-        dq &= Q(closing_line__closing__cashier_day__cashier__subzone=f.subzone)
-    if f.master_zone:
-        dq &= Q(closing_line__closing__cashier_day__cashier__subzone__parent=f.master_zone)
+    dq &= f.day_zone_q("closing_line__closing__cashier_day")
     drows = [dict(date=d.closing_line.closing.cashier_day.business_date,
-                  cashier=str(d.closing_line.closing.cashier_day.cashier), account=str(d.account),
+                  cashier=str(d.closing_line.closing.cashier_day.zone or "—"), account=str(d.account),
                   kind=str(d.kind_label), amount=d.amount, notes=d.notes.count(), _disc=d.id)
-             for d in Discrepancy.objects.filter(dq).select_related("closing_line__closing__cashier_day__cashier",
+             for d in Discrepancy.objects.filter(dq).select_related("closing_line__closing__cashier_day__zone",
                                                                      "account__sim")]
     rep.tables.append(Table(_("Unresolved differences (all dates)"), [
-        Col("date", _("Business date"), "date"), Col("cashier", _("Cashier")), Col("account", _("Account")),
+        Col("date", _("Business date"), "date"), Col("cashier", _("Subzone")), Col("account", _("Account")),
         Col("kind", _("Type")), Col("amount", _("Amount"), "money", True),
         Col("notes", _("Investigation notes"), "int")], drows))
     return rep
@@ -536,6 +534,49 @@ RECON_GROUPS = [
     ("adjust", _l("Reconciliation adj."), [TxType.RECON_ADJUSTMENT]),
     ("reversal", _l("Correction reversals"), [TxType.REVERSAL]),
 ]
+
+
+def _zone_summary(f):
+    """Per zone: opening and closing Cash/UVE/ER/MTN, subzones under their
+    master zone, master-level accounts (master SIM) on their own line, and
+    the company total. Respects the zone scope of the filters."""
+    from core.services import permissions as perm
+
+    kinds = [K.CASH_DRAWER, K.UVE, K.ER, K.MTN]
+    accts = list(scoped_asset_accounts(f, kinds).filter(zone__isnull=False))
+    bals = balances_by_account(accts, f)
+    groups = {}
+    for a in accts:
+        m = a.zone.master
+        if a.zone.is_master and (a.custodian_id or not m.subzones.exists()):
+            sub_key, label = ("m", a.custodian_id), (_("Master SIM") + (f" · {a.custodian}" if a.custodian_id else ""))
+            level = _("Master SIM")
+        else:
+            sub_key, label, level = ("s", a.zone_id), str(a.zone), _("Subzone")
+        g = groups.setdefault(m.id, {"name": str(m), "lines": {}, "tot": defaultdict(Decimal)})
+        line = g["lines"].setdefault(sub_key, {"name": label, "level": level, "tot": defaultdict(Decimal)})
+        o, _dr, _cr, cl, _cur = bals[a.id]
+        for tgt in (line["tot"], g["tot"]):
+            tgt[f"{a.kind}_o"] += o
+            tgt[f"{a.kind}_c"] += cl
+    rows, company = [], defaultdict(Decimal)
+    for g in sorted(groups.values(), key=lambda x: x["name"]):
+        rows.append(dict(zone=g["name"], level=_("Master zone"), **{k: g["tot"][k] for k in g["tot"]}, _bold=True))
+        for ln in sorted(g["lines"].values(), key=lambda x: (x["level"] != _("Subzone"), x["name"])):
+            rows.append(dict(zone="   " + ln["name"], level=ln["level"], **{k: ln["tot"][k] for k in ln["tot"]}))
+        for k, v in g["tot"].items():
+            company[k] += v
+    if f.master_zone is None and f.subzone is None and f.cashier is None:
+        rows.append(dict(zone=_("COMPANY TOTAL"), level=_("Company"), **company, _bold=True))
+    cols = [Col("zone", _("Zone")), Col("level", _("Level"))]
+    for k in kinds:
+        lbl = Account.Kind(k).label
+        cols += [Col(f"{k}_o", f"{lbl} · " + str(_l("opening")), "money"),
+                 Col(f"{k}_c", f"{lbl} · " + str(_l("closing")), "money")]
+    for r in rows:
+        for c in cols[2:]:
+            r.setdefault(c.key, Z)
+    return Table(_("Reconciliation by zone (opening and closing balances of the period)"), cols, rows)
 
 
 def reconciliation(f):
@@ -563,6 +604,7 @@ def reconciliation(f):
     cols += [Col(k, lbl, "money", True) for k, lbl, _t in RECON_GROUPS]
     cols += [Col("closing", _("Closing balance"), "money", True), Col("current", _("Current balance"), "money", True),
              Col("check", _("Check"))]
+    rep.tables.append(_zone_summary(f))
     rep.tables.append(Table(_("Company assets: opening + period movements = closing"), cols, rows))
 
     # Whole-ledger position (all zones for supervisors; cashiers see shared customer totals too)

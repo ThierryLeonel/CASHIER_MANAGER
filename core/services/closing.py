@@ -1,9 +1,10 @@
 """Daily closing and discrepancy handling.
 
 Rules (decision #2 default):
-* Each cashier closes independently. Closing counts every active drawer and
-  wallet the cashier is custodian of. Expected = ledger (book) balance at the
-  moment of closing, including postings by other cashiers on shared wallets.
+* Each subzone closes independently (any of its cashiers may close it).
+  Closing counts the subzone's drawers and wallets plus master-level
+  accounts (master SIM) whose cashier in charge works in the subzone.
+  Expected = ledger (book) balance at the moment of closing.
 * Book balances carry forward. The ledger is never adjusted automatically.
 * difference = actual - expected. Open differences from earlier closings of
   the same account are shown as "carried unresolved"; only the change
@@ -29,9 +30,23 @@ from .errors import BusinessError, PermissionDenied
 from .ledger import Ctx, TxSpec, balance, lock_accounts, post
 
 
+def zone_closing_accounts(zone):
+    if zone is None:
+        return []
+    return list(Account.objects.filter(perm.zone_closing_accounts_q(zone), kind__in=Account.CLOSING_KINDS,
+                                       active=True).select_related("sim", "zone").distinct().order_by("kind", "id"))
+
+
 def closing_accounts(cashier):
-    return list(Account.objects.filter(custodian=cashier, kind__in=Account.CLOSING_KINDS, active=True)
-                .select_related("sim").order_by("kind", "id"))
+    """Accounts counted at the closing of the cashier's subzone."""
+    return zone_closing_accounts(getattr(cashier, "subzone", None))
+
+
+def account_closing_zone(account):
+    """The subzone that counts this account at closing."""
+    if account.custodian_id:
+        return account.custodian.subzone
+    return account.zone
 
 
 def _opening_book(account):
@@ -91,7 +106,8 @@ def close_day(user, *, actuals, notes=""):
 
 
 def add_discrepancy_note(user, discrepancy, text):
-    if not (user.is_supervisor or (user.is_cashier and discrepancy.account.custodian_id == user.id)):
+    in_zone = user.is_cashier and account_closing_zone(discrepancy.account) == user.subzone
+    if not (user.is_supervisor or user.is_superadmin or in_zone):
         raise PermissionDenied(_("You are not allowed to perform this action."))
     if not (text or "").strip():
         raise BusinessError(_("Write the investigation note."))
@@ -115,10 +131,12 @@ def resolve_discrepancy(user, discrepancy, *, resolution, notes, correction=None
                 lines = [(recon, amt), (acct, -amt)]
             else:  # surplus: book increased
                 lines = [(acct, amt), (recon, -amt)]
-            custodian = acct.custodian
-            if custodian and custodian.is_cashier:
-                day = current_day(custodian)
-                ctx = Ctx(entered_by=user, cashier=custodian, day=day, business_date=day.business_date)
+            zone = account_closing_zone(acct)
+            if zone is not None:
+                from .days import zone_day
+
+                day = zone_day(zone)
+                ctx = Ctx(entered_by=user, cashier=None, day=day, business_date=day.business_date)
             else:
                 ctx = Ctx(entered_by=user, business_date=douala_today())
             adj = post([TxSpec(

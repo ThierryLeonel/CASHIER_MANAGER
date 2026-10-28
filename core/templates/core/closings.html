@@ -2,7 +2,7 @@
 {% block title %}{% trans "Closings" %}{% endblock %}
 {% block content %}
 <h1>{% trans "Closings" %}</h1>
-<div class="tbl-wrap"><table class="t"><thead><tr><th>{% trans "Business date" %}</th><th>{% trans "Cashier" %}</th><th>{% trans "Closed at" %}</th><th>{% trans "Closed by" %}</th><th></th></tr></thead>
-<tbody>{% for c in closings %}<tr><td>{{ c.cashier_day.business_date|date:"d/m/Y" }}</td><td>{{ c.cashier_day.cashier }}</td><td>{{ c.closed_at|date:"d/m/Y H:i" }}</td><td>{{ c.closed_by }}</td><td><a href="{% url 'closing_detail' c.pk %}">{% trans "Open" %}</a></td></tr>
+<div class="tbl-wrap"><table class="t"><thead><tr><th>{% trans "Business date" %}</th><th>{% trans "Subzone" %}</th><th>{% trans "Closed at" %}</th><th>{% trans "Closed by" %}</th><th></th></tr></thead>
+<tbody>{% for c in closings %}<tr><td>{{ c.cashier_day.business_date|date:"d/m/Y" }}</td><td>{{ c.cashier_day.zone|default:"—" }}</td><td>{{ c.closed_at|date:"d/m/Y H:i" }}</td><td>{{ c.closed_by }}</td><td><a href="{% url 'closing_detail' c.pk %}">{% trans "Open" %}</a></td></tr>
 {% empty %}<tr><td colspan="5" class="muted">{% trans "No closings yet." %}</td></tr>{% endfor %}</tbody></table></div>
 {% endblock %}

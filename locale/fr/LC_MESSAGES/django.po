@@ -124,6 +124,9 @@ msgstr ""
 "Un autre responsable n'est permis que si un PDV reçoit l'approvisionnement "
 "et qu'il est explicitement attribué à un agent commercial."
 
+msgid "A junior manager must be assigned the zone they supervise."
+msgstr "Un manager junior doit être affecté à la zone qu'il supervise."
+
 msgid "A responsibility transfer can only be cancelled, then recorded again."
 msgstr ""
 "Un transfert de responsabilité peut seulement être annulé, puis ressaisi."
@@ -295,6 +298,14 @@ msgstr ""
 "Soldes des caisses et portefeuilles SIM que vous détenez · zone principale "
 "%(z)s"
 
+#, python-format
+msgid ""
+"Balances of zone %(z)s: its drawers and SIM wallets, including the master "
+"SIM if a cashier of this zone is in charge of it"
+msgstr ""
+"Soldes de la zone %(z)s : ses caisses et portefeuilles SIM, y compris la SIM"
+" master si un caissier de cette zone en a la charge"
+
 msgid "Bank"
 msgstr "Banque"
 
@@ -353,6 +364,9 @@ msgstr "Par"
 
 msgid "CANCELLED"
 msgstr "ANNULÉ"
+
+msgid "COMPANY TOTAL"
+msgstr "TOTAL ENTREPRISE"
 
 msgid "CORRECTED"
 msgstr "CORRIGÉ"
@@ -426,6 +440,10 @@ msgstr "Espèces aux PDV, UVE aux agents"
 msgid "Cash to a POS, UVE to an agent"
 msgstr "Espèces au PDV, UVE à l'agent"
 
+#, python-format
+msgid "Cash, UVE, ER and MTN · zone %(z)s"
+msgstr "Espèces, UVE, ER et MTN · zone %(z)s"
+
 msgid "Cash-manager exchange"
 msgstr "Échange gestionnaire de cash"
 
@@ -489,6 +507,9 @@ msgstr "Choisissez un caissier actif pour qui enregistrer."
 msgid "Choose an active expense category."
 msgstr "Choisissez une catégorie de dépense active."
 
+msgid "Choose the cashier in charge of the master SIM."
+msgstr "Choisissez le caissier responsable de la SIM master."
+
 msgid "Choose the cashier you are recording for."
 msgstr "Choisissez le caissier pour qui vous enregistrez."
 
@@ -497,6 +518,9 @@ msgstr "Choisissez le type de correction."
 
 msgid "Choose the exchange direction."
 msgstr "Choisissez le sens de l'échange."
+
+msgid "Choose the subzone that uses this SIM."
+msgstr "Choisissez la sous-zone qui utilise cette SIM."
 
 msgid "Choose what to clear."
 msgstr "Choisissez ce qu'il faut effacer."
@@ -582,6 +606,9 @@ msgstr "Agent commercial qui assume cette dette (facultatif)"
 msgid "Commercial agents and POS"
 msgstr "Agents commerciaux et PDV"
 
+msgid "Company"
+msgstr "Entreprise"
+
 #, python-format
 msgid "Company %(kind)s account not found: %(v)s"
 msgstr "Compte entreprise %(kind)s introuvable : %(v)s"
@@ -595,6 +622,9 @@ msgstr "Compte de l'entreprise émetteur"
 msgid "Company assets: opening + period movements = closing"
 msgstr ""
 "Actifs de l'entreprise : ouverture + mouvements de la période = clôture"
+
+msgid "Company cash, UVE, ER and MTN by zone"
+msgstr "Espèces, UVE, ER et MTN de l'entreprise par zone"
 
 msgid "Company cash, UVE, ER and MTN by zone and cashier"
 msgstr "Espèces, UVE, ER et MTN de l'entreprise par zone et caissier"
@@ -914,6 +944,9 @@ msgstr "Télécharger le PDF"
 msgid "Drawer and SIM wallet movements"
 msgstr "Mouvements des caisses et portefeuilles SIM"
 
+msgid "Drawers and wallets you can use (book balances)"
+msgstr "Caisses et portefeuilles utilisables (soldes comptables)"
+
 msgid "ER can only be transferred between SIMs of the same master zone."
 msgstr "L'ER ne peut être transféré qu'entre SIM d'une même zone principale."
 
@@ -1199,6 +1232,12 @@ msgstr "Note d'enquête"
 msgid "Investigation notes"
 msgstr "Notes d'enquête"
 
+msgid "Junior manager"
+msgstr "Manager junior"
+
+msgid "Latest entries of your zone"
+msgstr "Dernières écritures de votre zone"
+
 msgid "Latest movements"
 msgstr "Derniers mouvements"
 
@@ -1226,6 +1265,9 @@ msgstr "Écritures comptables"
 
 msgid "Legs"
 msgstr "Volets"
+
+msgid "Level"
+msgstr "Niveau"
 
 msgid "Linked adjustment"
 msgstr "Ajustement lié"
@@ -1257,8 +1299,14 @@ msgstr "Menu principal"
 msgid "Manager"
 msgstr "Responsable"
 
+msgid "Master SIM"
+msgstr "SIM master"
+
 msgid "Master zone"
 msgstr "Zone principale"
+
+msgid "Master zone / subzone"
+msgstr "Zone master / sous-zone"
 
 msgid "Method"
 msgstr "Mode"
@@ -1539,6 +1587,10 @@ msgstr "Global (depuis le démarrage)"
 msgid "Overview — all zones"
 msgstr "Vue d'ensemble — toutes zones"
 
+#, python-format
+msgid "Overview — zone %(z)s"
+msgstr "Vue d’ensemble — zone %(z)s"
+
 msgid "Owed to company"
 msgstr "Dû à l'entreprise"
 
@@ -1698,6 +1750,10 @@ msgid "Reconciliation adjustments in period (+ = shortage written off)"
 msgstr ""
 "Ajustements de rapprochement de la période (+ = manquant passé en perte)"
 
+msgid "Reconciliation by zone (opening and closing balances of the period)"
+msgstr ""
+"Rapprochement par zone (soldes d'ouverture et de clôture de la période)"
+
 msgid "Record"
 msgstr "Enregistrer"
 
@@ -1815,6 +1871,12 @@ msgstr "Client responsable"
 msgid "Responsible customer (business SIM)"
 msgstr "Client responsable (SIM business)"
 
+msgid "Return"
+msgstr "Retour"
+
+msgid "Return to the previous step"
+msgstr "Revenir à l'étape précédente"
+
 msgid "Reversal"
 msgstr "Contre-passation"
 
@@ -1868,6 +1930,9 @@ msgstr "Choisissez une zone principale."
 msgid "Select the correction that explains this difference."
 msgstr "Choisissez la correction qui explique cet écart."
 
+msgid "Senior manager"
+msgstr "Manager senior"
+
 msgid "Sent from company account"
 msgstr "Envoyé depuis le compte de l'entreprise"
 
@@ -1920,6 +1985,9 @@ msgstr "Arrêter d'enregistrer pour un caissier"
 
 msgid "Subzone"
 msgstr "Sous-zone"
+
+msgid "Subzone · closed by"
+msgstr "Sous-zone · clôturée par"
 
 msgid "Super administrator"
 msgstr "Super administrateur"
@@ -2033,6 +2101,9 @@ msgstr "Le responsable d'un déstockage doit être un agent commercial."
 msgid "The source account does not hold %(p)s."
 msgstr "Le compte source ne contient pas de %(p)s."
 
+msgid "The subzone must belong to the selected master zone."
+msgstr "La sous-zone doit appartenir à la zone master sélectionnée."
+
 msgid ""
 "The transaction and all its ledger lines are removed, and balances are "
 "recalculated. If it was corrected, its correction entries are removed too. A"
@@ -2077,6 +2148,9 @@ msgid ""
 msgstr ""
 "Elles ont été passées sur une journée ouverte ultérieure ; cette clôture n'a"
 " pas été réécrite."
+
+msgid "This belongs to another zone."
+msgstr "Ceci appartient à une autre zone."
 
 msgid "This business day is already closed."
 msgstr "Cette journée est déjà clôturée."
@@ -2412,8 +2486,14 @@ msgstr "Votre mot de passe"
 msgid "Your password is incorrect."
 msgstr "Votre mot de passe est incorrect."
 
+msgid "Zone"
+msgstr "Zone"
+
 msgid "Zone / cashier"
 msgstr "Zone / caissier"
+
+msgid "Zone / in charge"
+msgstr "Zone / responsable"
 
 msgid "Zones, users, SIMs, drawers"
 msgstr "Zones, utilisateurs, SIM, caisses"
@@ -2439,6 +2519,12 @@ msgstr "par"
 #, python-format
 msgid "cash to POS %(pos)s"
 msgstr "espèces au PDV %(pos)s"
+
+msgid "cashier in charge"
+msgstr "caissier responsable"
+
+msgid "closing"
+msgstr "clôture"
 
 msgid "closing of"
 msgstr "clôture du"
@@ -2470,6 +2556,9 @@ msgstr "depuis %(acct)s"
 
 msgid "has login"
 msgstr "a un accès"
+
+msgid "in charge"
+msgstr "responsable"
 
 msgid "inactive"
 msgstr "inactif"
@@ -2505,6 +2594,9 @@ msgstr "non clôturée"
 
 msgid "notes"
 msgstr "notes"
+
+msgid "opening"
+msgstr "ouverture"
 
 msgid "other phone"
 msgstr "autre téléphone"
@@ -2587,6 +2679,9 @@ msgstr "zone principale habituelle"
 
 msgid "yes"
 msgstr "oui"
+
+msgid "zone"
+msgstr "zone"
 
 msgid ""
 "ⓒ = transaction later corrected (see corrections report). Amounts in FCFA."

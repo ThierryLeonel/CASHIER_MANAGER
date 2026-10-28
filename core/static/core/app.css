@@ -80,10 +80,11 @@ main { max-width: 1200px; margin: 0 auto; padding: 26px 28px 70px; }
 
 @media (min-width: 961px) {
   /* desktop: show the business day at the top right of the content */
-  body.has-side .topbar { display: flex; justify-content: flex-end; max-width: 1200px; margin: 0 auto;
+  body.has-side .topbar { display: flex; align-items: center; gap: 12px; max-width: 1200px; margin: 0 auto;
     padding: 16px 28px 0; }
-  body.has-side .topbar .menu-btn, body.has-side .topbar .topbar-title { display: none; }
-  body.has-side .topbar:not(:has(.day-chip)) { display: none; }
+  body.has-side .topbar .menu-btn { display: none; }
+  body.has-side .topbar .topbar-title { visibility: hidden; flex: 1; }
+  body.has-side .topbar:not(:has(.day-chip)):not(:has(.back-btn)) { display: none; }
   body.has-side main { padding-top: 14px; }
 }
 @media (max-width: 960px) {
@@ -373,3 +374,13 @@ details summary { cursor: pointer; color: var(--accent-strong); }
   background: var(--accent-soft); color: var(--accent-strong); }
 .idle-count { font-size: 2rem; font-weight: 800; font-variant-numeric: tabular-nums; margin: 6px 0 14px; }
 .idle-box .btn { width: 100%; justify-content: center; margin-top: 8px; }
+
+/* ---------- Return button ---------- */
+.back-btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px 7px 10px; border-radius: 99px; text-decoration: none;
+  font-weight: 600; font-size: .9rem; color: var(--ink); background: var(--panel); border: 1px solid var(--line); box-shadow: var(--shadow);
+  white-space: nowrap; transition: border-color .15s, transform .15s; }
+.back-btn:hover { border-color: var(--accent); color: var(--accent-strong); transform: translateX(-2px); }
+@media (max-width: 960px) {
+  .topbar .back-btn { background: #2e2e35; color: #fff; border-color: transparent; box-shadow: none; padding: 6px 10px; }
+  .topbar .back-btn span { display: none; }
+}

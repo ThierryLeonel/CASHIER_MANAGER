@@ -67,7 +67,7 @@ class UserAdmin(BaseUserAdmin, SuperAdminOnly):
 
 @admin.register(CompanySim)
 class CompanySimAdmin(SuperAdminOnly):
-    list_display = ("label", "network", "msisdn", "master_zone", "is_master", "custodian", "active")
+    list_display = ("label", "network", "msisdn", "master_zone", "subzone", "is_master", "custodian", "active")
     list_filter = ("network", "master_zone", "is_master")
 
     def get_readonly_fields(self, request, obj=None):
@@ -78,6 +78,12 @@ class AccountForm(forms.ModelForm):
     class Meta:
         model = Account
         fields = ["kind", "name", "zone", "custodian", "active"]
+
+    def clean(self):
+        cd = super().clean()
+        if cd.get("kind") == Account.Kind.CASH_DRAWER and not cd.get("zone"):
+            raise forms.ValidationError("A cash drawer belongs to a zone: choose its subzone.")
+        return cd
 
     def clean_kind(self):
         kind = self.cleaned_data["kind"]
@@ -91,6 +97,7 @@ class AccountForm(forms.ModelForm):
 class AccountAdmin(SuperAdminOnly):
     form = AccountForm
     list_display = ("name", "kind", "zone", "custodian", "sim", "active")
+    list_select_related = ("zone", "custodian", "sim")
     list_filter = ("kind", "zone", "active")
     search_fields = ("name", "sim__msisdn", "counterparty__business_sim")
 
