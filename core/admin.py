@@ -8,8 +8,8 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
 from core.models import (
-    Account, AccountAccess, AuditEvent, BankAccount, CashManager, CompanySim, Counterparty, ExpenseCategory, User,
-    Zone,
+    Account, AccountAccess, AuditEvent, BankAccount, CashManager, CompanySim, Counterparty, ExpenseCategory, MicroZone,
+    User, Zone,
 )
 
 
@@ -42,9 +42,43 @@ class SuperAdminOnly(admin.ModelAdmin):
         return _is_superadmin(request)
 
 
+class ZoneForm(forms.ModelForm):
+    class Meta:
+        model = Zone
+        fields = ["code", "name", "parent", "active"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        qs = Zone.objects.filter(parent__isnull=True)
+        if self.instance.pk:
+            qs = qs.exclude(pk=self.instance.pk)
+        self.fields["parent"].queryset = qs
+        self.fields["parent"].help_text = (
+            "Leave EMPTY to create a master zone (e.g. Fako). Choose a master zone to create one of its "
+            "subzones (e.g. Fako 1 → master zone Fako). Microzones are added under Microzones.")
+
+
 @admin.register(Zone)
 class ZoneAdmin(SuperAdminOnly):
-    list_display = ("code", "name", "parent", "active")
+    form = ZoneForm
+    list_display = ("name", "code", "level", "parent", "active")
+    list_filter = ("parent",)
+    ordering = ("parent__name", "name")
+
+    @admin.display(description="level")
+    def level(self, obj):
+        return "Master zone" if obj.parent_id is None else "Subzone"
+
+
+@admin.register(MicroZone)
+class MicroZoneAdmin(SuperAdminOnly):
+    list_display = ("name", "subzone", "agent", "active")
+    list_filter = ("subzone",)
+    search_fields = ("name", "agent__name", "agent__business_sim")
+    autocomplete_fields = ("agent",)
+
+    def has_delete_permission(self, request, obj=None):
+        return _is_superadmin(request) and (obj is None or not obj.members.exists())
 
 
 @admin.register(User)
@@ -136,12 +170,13 @@ class AccountAccessAdmin(SuperAdminOnly):
 
 @admin.register(Counterparty)
 class CounterpartyAdmin(SuperAdminOnly):
-    list_display = ("business_sim", "name", "kind", "master_zone", "active")
-    list_filter = ("kind", "active", "master_zone")
+    list_display = ("business_sim", "name", "kind", "microzone", "master_zone", "active")
+    list_filter = ("kind", "active", "master_zone", "microzone")
     search_fields = ("business_sim", "name")
 
     def get_readonly_fields(self, request, obj=None):
-        return ("kind", "business_sim", "created_by", "created_at") if obj else ("created_by", "created_at")
+        return ("kind", "business_sim", "master_zone", "created_by", "created_at") if obj \
+            else ("master_zone", "created_by", "created_at")
 
 
 @admin.register(CashManager)

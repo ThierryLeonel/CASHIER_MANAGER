@@ -12,7 +12,7 @@ from decimal import Decimal
 from django.db import transaction
 
 from core.models import (
-    Account, BankAccount, CashManager, CompanySim, ConversionRate, Counterparty, User, Zone,
+    Account, BankAccount, CashManager, CompanySim, ConversionRate, Counterparty, MicroZone, User, Zone,
 )
 
 S = "[SAMPLE] "
@@ -73,11 +73,19 @@ def build_sample_org(password="Sample-Pass-2026!"):
         "a3": Counterparty.objects.create(kind="AGENT", business_sim="691000003", name=S + "Agent Mbah",
                                           master_zone=meme, created_by=admin),
     }
+    mzs = {
+        "molyko": MicroZone.objects.create(subzone=fako1, name="Molyko", agent=agents["a1"]),
+        "bonduma": MicroZone.objects.create(subzone=fako2, name="Bonduma", agent=agents["a2"]),
+        "kumba": MicroZone.objects.create(subzone=meme_sub, name="Kumba town", agent=agents["a3"]),
+    }
+    for key, mz in (("a1", "molyko"), ("a2", "bonduma"), ("a3", "kumba")):
+        agents[key].microzone = mzs[mz]
+        agents[key].save()
     pos = {
         "p1": Counterparty.objects.create(kind="POS", business_sim="692000001", name=S + "POS Molyko",
-                                          created_by=admin),
+                                          microzone=mzs["molyko"], created_by=admin),
         "p2": Counterparty.objects.create(kind="POS", business_sim="692000002", name=S + "POS Kumba market",
-                                          created_by=admin),
+                                          microzone=mzs["bonduma"], created_by=admin),
     }
     agent_user = _user("agent.ndive", User.Role.AGENT, password, first_name=S + "Agent Ndive",
                        counterparty=agents["a1"])
@@ -89,6 +97,7 @@ def build_sample_org(password="Sample-Pass-2026!"):
         return Account.objects.get(kind=kind, sim=sims[sim_key])
 
     return dict(
+        microzones=mzs,
         zones=dict(fako=fako, fako1=fako1, fako2=fako2, meme=meme, meme_sub=meme_sub),
         admin=admin, manager=manager, finance=finance, junior=junior, c_f1=c_f1, c_f2=c_f2, c_me=c_me,
         agent_user=agent_user, agent_user2=agent_user2, sims=sims, drawers=drawers, bank=bank.ledger_account,

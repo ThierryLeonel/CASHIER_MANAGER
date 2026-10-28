@@ -11,3 +11,12 @@
 </form>
 </div>
 {% endblock %}
+{% block scripts %}{% if agent_form %}<script>
+(function () {
+  var name = document.querySelector('[name=new_microzone]'), sub = document.querySelector('[name=new_microzone_subzone]');
+  if (!name || !sub) return;
+  var box = sub.closest('.field');
+  function sync() { if (box) box.style.display = name.value.trim() ? '' : 'none'; }
+  name.addEventListener('input', sync); sync();
+})();
+</script>{% endif %}{% endblock %}

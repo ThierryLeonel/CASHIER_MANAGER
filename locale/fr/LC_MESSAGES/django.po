@@ -34,6 +34,10 @@ msgid "%(label)s: invalid number %(v)s"
 msgstr "%(label)s : numéro invalide %(v)s"
 
 #, python-format
+msgid "%(mz)s is already controlled by %(agent)s."
+msgstr "%(mz)s est déjà contrôlée par %(agent)s."
+
+#, python-format
 msgid "%(n)s rows imported."
 msgstr "%(n)s lignes importées."
 
@@ -92,6 +96,9 @@ msgstr ""
 "Échanges 1:1 d'espèces et d'UVE, sans frais. Jamais des ventes, recettes ou "
 "dépenses."
 
+msgid "A POS belongs to a microzone: choose it or create it."
+msgstr "Un PDV appartient à une microzone : choisissez-la ou créez-la."
+
 msgid "A cashier must belong to a subzone."
 msgstr "Un caissier doit appartenir à une sous-zone."
 
@@ -127,12 +134,18 @@ msgstr ""
 msgid "A junior manager must be assigned the zone they supervise."
 msgstr "Un manager junior doit être affecté à la zone qu'il supervise."
 
+msgid "A microzone belongs to a subzone, not to a master zone."
+msgstr "Une microzone appartient à une sous-zone, pas à une zone master."
+
 msgid "A responsibility transfer can only be cancelled, then recorded again."
 msgstr ""
 "Un transfert de responsabilité peut seulement être annulé, puis ressaisi."
 
 msgid "A subzone's parent must be a master zone."
 msgstr "Le parent d'une sous-zone doit être une zone principale."
+
+msgid "A zone cannot be its own master zone."
+msgstr "Une zone ne peut pas être sa propre zone master."
 
 msgid "A4 receipt / print"
 msgstr "Reçu A4 / imprimer"
@@ -146,6 +159,22 @@ msgstr "Compte"
 #, python-format
 msgid "Account %(acct)s is inactive."
 msgstr "Le compte %(acct)s est inactif."
+
+msgid ""
+"Accounts appear here once they exist. Create them first in Configuration:"
+msgstr ""
+"Les comptes apparaissent ici dès qu'ils existent. Créez-les d'abord dans la "
+"Configuration :"
+
+msgid ""
+"Accounts that already have an opening balance are listed under Recorded "
+"below."
+msgstr ""
+"Les comptes qui ont déjà un solde d'ouverture sont listés ci-dessous sous "
+"Enregistrés."
+
+msgid "Accounts › Add"
+msgstr "Comptes › Ajouter"
 
 msgid "Action"
 msgstr "Action"
@@ -173,6 +202,9 @@ msgstr "Administration"
 
 msgid "Agent (owes)"
 msgstr "Agent (redevable)"
+
+msgid "Agent in charge"
+msgstr "Agent responsable"
 
 msgid "Agent who received the UVE and owes (business SIM)"
 msgstr "Agent qui a reçu l'UVE et doit (SIM business)"
@@ -314,6 +346,9 @@ msgstr "Compte bancaire"
 
 msgid "Bank accounts"
 msgstr "Comptes bancaires"
+
+msgid "Bank accounts › Add"
+msgstr "Comptes bancaires › Ajouter"
 
 msgid "Bank deposit"
 msgstr "Versement bancaire"
@@ -507,6 +542,11 @@ msgstr "Choisissez un caissier actif pour qui enregistrer."
 msgid "Choose an active expense category."
 msgstr "Choisissez une catégorie de dépense active."
 
+msgid "Choose an existing microzone or type a new one, not both."
+msgstr ""
+"Choisissez une microzone existante ou saisissez-en une nouvelle, pas les "
+"deux."
+
 msgid "Choose the cashier in charge of the master SIM."
 msgstr "Choisissez le caissier responsable de la SIM master."
 
@@ -518,6 +558,9 @@ msgstr "Choisissez le type de correction."
 
 msgid "Choose the exchange direction."
 msgstr "Choisissez le sens de l'échange."
+
+msgid "Choose the subzone of the new microzone."
+msgstr "Choisissez la sous-zone de la nouvelle microzone."
 
 msgid "Choose the subzone that uses this SIM."
 msgstr "Choisissez la sous-zone qui utilise cette SIM."
@@ -664,6 +707,9 @@ msgstr "L'entreprise a reçu sa part"
 
 msgid "Company receives"
 msgstr "L'entreprise reçoit"
+
+msgid "Company sims › Add"
+msgstr "SIM de l'entreprise › Ajouter"
 
 msgid "Completed legs"
 msgstr "Volets effectués"
@@ -1161,6 +1207,10 @@ msgid "Give the reason for the responsibility change."
 msgstr "Indiquez le motif du changement de responsabilité."
 
 #, python-format
+msgid "Give the subzone of microzone %(v)s"
+msgstr "Indiquez la sous-zone de la microzone %(v)s"
+
+#, python-format
 msgid "Hello, %(name)s"
 msgstr "Bonjour, %(name)s"
 
@@ -1311,6 +1361,12 @@ msgstr "Zone master / sous-zone"
 msgid "Method"
 msgstr "Mode"
 
+msgid "Microzone"
+msgstr "Microzone"
+
+msgid "Microzone · agent in charge"
+msgstr "Microzone · agent responsable"
+
 msgid "Money received from an agent or POS"
 msgstr "Argent reçu d'un agent ou d'un PDV"
 
@@ -1376,6 +1432,9 @@ msgstr ""
 "Aucun taux de conversion UVE→ER n'est configuré. Contactez le super "
 "administrateur."
 
+msgid "No account is waiting for an opening balance."
+msgstr "Aucun compte n'attend de solde d'ouverture."
+
 msgid "No active cashier yet. Create cashiers in Configuration."
 msgstr "Aucun caissier actif. Créez des caissiers dans Configuration."
 
@@ -1411,8 +1470,20 @@ msgstr "Aucun échange pour l'instant."
 msgid "No match"
 msgstr "Aucun résultat"
 
+msgid "No microzone yet: type a name below to create the first one."
+msgstr ""
+"Aucune microzone pour le moment : saisissez un nom ci-dessous pour créer la "
+"première."
+
 msgid "No notes yet."
 msgstr "Aucune note pour l'instant."
+
+msgid ""
+"No subzone exists yet. The super administrator creates zones in "
+"Configuration › Zones (a master zone first, then its subzones)."
+msgstr ""
+"Aucune sous-zone n'existe encore. Le super administrateur crée les zones "
+"dans Configuration › Zones (d'abord une zone master, puis ses sous-zones)."
 
 msgid "No transactions."
 msgstr "Aucune transaction."
@@ -1466,6 +1537,9 @@ msgid ""
 "Only %(rem)s FCFA remain to be delivered on this side of exchange %(ref)s."
 msgstr ""
 "Il ne reste que %(rem)s FCFA à livrer sur ce volet de l'échange %(ref)s."
+
+msgid "Only a commercial agent can be in charge of a microzone."
+msgstr "Seul un agent commercial peut être responsable d'une microzone."
 
 msgid "Only an opening amount owed by the customer can be transferred."
 msgstr "Seul un montant d'ouverture dû par le client peut être transféré."
@@ -1560,6 +1634,9 @@ msgstr ""
 "Les rapports opérationnels sont limités à votre poste ; les soldes clients "
 "sont communs."
 
+msgid "Or create a new microzone"
+msgstr "Ou créer une nouvelle microzone"
+
 msgid "Orange SIM"
 msgstr "SIM Orange"
 
@@ -1611,6 +1688,9 @@ msgstr "PDV qui a reçu les espèces (SIM business)"
 
 msgid "POS transactions and outstanding"
 msgstr "Transactions PDV et montants dus"
+
+msgid "POS: the microzone where it sells. Agent: the microzone he controls."
+msgstr "PDV : la microzone où il vend. Agent : la microzone qu'il contrôle."
 
 msgid "Page"
 msgstr "Page"
@@ -1986,6 +2066,9 @@ msgstr "Arrêter d'enregistrer pour un caissier"
 msgid "Subzone"
 msgstr "Sous-zone"
 
+msgid "Subzone of the new microzone"
+msgstr "Sous-zone de la nouvelle microzone"
+
 msgid "Subzone · closed by"
 msgstr "Sous-zone · clôturée par"
 
@@ -2187,6 +2270,9 @@ msgstr ""
 msgid "This entry reverses"
 msgstr "Cette écriture contre-passe"
 
+msgid "This microzone already exists: choose it in the list."
+msgstr "Cette microzone existe déjà : choisissez-la dans la liste."
+
 msgid ""
 "This receipt confirms a completed transaction recorded in the company "
 "ledger. Amounts in FCFA (XAF)."
@@ -2217,6 +2303,9 @@ msgstr "Ce type d'écriture ne peut pas être corrigé directement."
 
 msgid "This type of entry cannot be edited."
 msgstr "Ce type d'écriture ne peut pas être modifié."
+
+msgid "This zone has subzones, so it must stay a master zone."
+msgstr "Cette zone a des sous-zones, elle doit donc rester une zone master."
 
 msgid "Tick the confirmation box to close the day."
 msgstr "Cochez la case de confirmation pour clôturer la journée."
@@ -2298,6 +2387,9 @@ msgstr "Tapez DELETE (ou SUPPRIMER) pour confirmer"
 msgid "Type DELETE to confirm."
 msgstr "Tapez DELETE (ou SUPPRIMER) pour confirmer."
 
+msgid "Type its name if the microzone is not in the list yet."
+msgstr "Saisissez son nom si la microzone n'est pas encore dans la liste."
+
 msgid "UVE amount (FCFA)"
 msgstr "Montant UVE (FCFA)"
 
@@ -2365,6 +2457,10 @@ msgstr "Catégorie de dépense inconnue %(v)s"
 #, python-format
 msgid "Unknown master zone %(v)s"
 msgstr "Zone principale inconnue %(v)s"
+
+#, python-format
+msgid "Unknown subzone %(v)s"
+msgstr "Sous-zone inconnue %(v)s"
 
 msgid "Unresolved closing differences"
 msgstr "Écarts de clôture non résolus"
@@ -2495,11 +2591,24 @@ msgstr "Zone / caissier"
 msgid "Zone / in charge"
 msgstr "Zone / responsable"
 
+msgid "Zones"
+msgstr "Zones"
+
 msgid "Zones, users, SIMs, drawers"
 msgstr "Zones, utilisateurs, SIM, caisses"
 
+msgid ""
+"a master zone first, then its subzones (each subzone's master zone = the "
+"master)."
+msgstr ""
+"d'abord une zone master, puis ses sous-zones (la zone master de chaque sous-"
+"zone = la master)."
+
 msgid "account number"
 msgstr "numéro de compte"
+
+msgid "agents and POS"
+msgstr "agents et PDV"
 
 msgid "bank"
 msgstr "banque"
@@ -2516,6 +2625,9 @@ msgstr "date comptable"
 msgid "by"
 msgstr "par"
 
+msgid "cash managers"
+msgstr "cash managers"
+
 #, python-format
 msgid "cash to POS %(pos)s"
 msgstr "espèces au PDV %(pos)s"
@@ -2529,9 +2641,19 @@ msgstr "clôture"
 msgid "closing of"
 msgstr "clôture du"
 
+msgid "commercial agent in charge"
+msgstr "agent commercial responsable"
+
 #, python-format
 msgid "created %(cp)s"
 msgstr "créé : %(cp)s"
+
+msgid ""
+"creates the UVE / ER / MTN wallets (the master SIM with its cashier in "
+"charge)."
+msgstr ""
+"crée les portefeuilles UVE / ER / MTN (la SIM master avec son caissier "
+"responsable)."
 
 msgid "custodian cashier"
 msgstr "caissier détenteur"
@@ -2583,6 +2705,9 @@ msgstr "SIM maître de la zone"
 msgid "master zone"
 msgstr "zone principale"
 
+msgid "microzone"
+msgstr "microzone"
+
 msgid "name"
 msgstr "nom"
 
@@ -2594,6 +2719,9 @@ msgstr "non clôturée"
 
 msgid "notes"
 msgstr "notes"
+
+msgid "one cash drawer per subzone."
+msgstr "une caisse par sous-zone."
 
 msgid "opening"
 msgstr "ouverture"

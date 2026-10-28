@@ -6,15 +6,17 @@
 <form class="filters panel" method="get">
   <div class="field"><label>{% trans "Search (SIM or name)" %}</label><input type="text" name="q" value="{{ q }}"></div>
   <div class="field"><label>{% trans "Type" %}</label><select name="kind"><option value="">—</option>{% for v, l in kinds %}<option value="{{ v }}" {% if v == kind %}selected{% endif %}>{{ l }}</option>{% endfor %}</select></div>
+  <div class="field"><label>{% trans "Microzone" %}</label><select name="mz"><option value="">—</option>{% for m in microzones %}<option value="{{ m.pk }}" {% if m.pk|stringformat:"s" == mz %}selected{% endif %}>{{ m }}</option>{% endfor %}</select></div>
   <div class="field"><button class="btn" type="submit">{% trans "Search" %}</button> <a class="btn primary" href="{% url 'customer_new' %}">+ {% trans "Register" %}</a></div>
 </form>
 <div class="tbl-wrap"><table class="t">
-<thead><tr><th>{% trans "Business SIM" %}</th><th>{% trans "Name" %}</th><th>{% trans "Type" %}</th><th class="money">{% trans "Balance" %}</th><th>{% trans "Status" %}</th><th></th></tr></thead>
+<thead><tr><th>{% trans "Business SIM" %}</th><th>{% trans "Name" %}</th><th>{% trans "Type" %}</th><th>{% trans "Microzone · agent in charge" %}</th><th class="money">{% trans "Balance" %}</th><th>{% trans "Status" %}</th><th></th></tr></thead>
 <tbody>{% for c, bal in rows %}
 <tr><td><strong>{{ c.business_sim|sim }}</strong></td><td>{{ c.name }}</td><td>{{ c.get_kind_display }}</td>
+<td>{% if c.microzone %}{{ c.microzone.subzone.name }} › {{ c.microzone.name }}{% if c.microzone.agent and c.microzone.agent_id != c.pk %}<br><span class="muted small">{{ c.microzone.agent.name }}</span>{% elif c.microzone.agent_id == c.pk %} <span class="badge acc">{% trans "in charge" %}</span>{% endif %}{% else %}<span class="muted">—</span>{% endif %}</td>
 <td class="money">{% if bal|negative %}<span class="pos">{{ bal|absval|fcfa }} {% trans "due to customer" %}</span>{% else %}{{ bal|fcfa }}{% endif %}</td>
 <td>{% if not c.active %}<span class="badge">{% trans "inactive" %}</span>{% endif %}{% if c.login_user %}<span class="badge acc">{% trans "has login" %}</span>{% endif %}</td>
-<td><a href="{% url 'customer_detail' c.pk %}">{% trans "Statement" %}</a>{% if user.sees_all_zones %} · <a href="{% url 'customer_edit' c.pk %}">{% trans "Edit" %}</a>{% endif %}</td></tr>
-{% empty %}<tr><td colspan="6" class="muted">{% trans "Nothing found." %}</td></tr>{% endfor %}</tbody></table></div>
-<div class="pager">{% if page.has_previous %}<a class="btn small" href="?q={{ q|urlencode }}&kind={{ kind }}&page={{ page.previous_page_number }}">←</a>{% endif %}<span class="muted small">{{ page.number }} / {{ page.paginator.num_pages }}</span>{% if page.has_next %}<a class="btn small" href="?q={{ q|urlencode }}&kind={{ kind }}&page={{ page.next_page_number }}">→</a>{% endif %}</div>
+<td><a href="{% url 'customer_detail' c.pk %}">{% trans "Statement" %}</a>{% if user.sees_all_zones or user.is_junior %} · <a href="{% url 'customer_edit' c.pk %}">{% trans "Edit" %}</a>{% endif %}</td></tr>
+{% empty %}<tr><td colspan="7" class="muted">{% trans "Nothing found." %}</td></tr>{% endfor %}</tbody></table></div>
+<div class="pager">{% if page.has_previous %}<a class="btn small" href="?q={{ q|urlencode }}&kind={{ kind }}&mz={{ mz }}&page={{ page.previous_page_number }}">←</a>{% endif %}<span class="muted small">{{ page.number }} / {{ page.paginator.num_pages }}</span>{% if page.has_next %}<a class="btn small" href="?q={{ q|urlencode }}&kind={{ kind }}&mz={{ mz }}&page={{ page.next_page_number }}">→</a>{% endif %}</div>
 {% endblock %}

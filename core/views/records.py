@@ -10,7 +10,7 @@ from django.utils import timezone
 from django.utils.translation import gettext as _
 
 from core import forms as F
-from core.models import Correction, Counterparty, Entry, Transaction, TxType
+from core.models import Correction, Counterparty, Entry, MicroZone, Transaction, TxType
 from core.money import fmt
 from core.pdf import receipt_pdf
 from core.reports.engine import FilterForm, Filters
@@ -31,7 +31,13 @@ TX_RELATED = ["cashier__subzone", "zone__parent", "entered_by", "cashier_day__zo
 def customers(request):
     q = (request.GET.get("q") or "").strip()
     kind = request.GET.get("kind") or ""
-    qs = Counterparty.objects.all()
+    mz = request.GET.get("mz") or ""
+    qs = Counterparty.objects.select_related("microzone__subzone", "microzone__agent")
+    microzones = MicroZone.objects.select_related("subzone", "agent")
+    if request.user.scope_zone is not None:  # junior manager: his zone only
+        microzones = microzones.filter(subzone__parent=request.user.scope_zone)
+    if mz.isdigit():
+        qs = qs.filter(Q(microzone_id=mz) | Q(controlled_microzones=mz)).distinct()
     if q:
         digits = "".join(ch for ch in q if ch.isdigit())
         cond = Q(name__icontains=q)
@@ -45,34 +51,35 @@ def customers(request):
     page = Paginator(qs.order_by("kind", "business_sim"), 50).get_page(request.GET.get("page"))
     rows = [(c, bals.get(c.id, 0)) for c in page]
     return render(request, "core/customers.html", {"rows": rows, "page": page, "q": q, "kind": kind,
-                                                   "kinds": Counterparty.Kind.choices})
+                                                   "kinds": Counterparty.Kind.choices, "mz": mz,
+                                                   "microzones": microzones})
 
 
 @roles_required(*STAFF)
 def customer_new(request):
-    form = F.CounterpartyForm(request.POST or None)
+    form = F.CounterpartyForm(request.POST or None, user=request.user)
     if request.method == "POST" and form.is_valid():
-        cp = form.save(commit=False)
-        cp.created_by = request.user
-        cp.save()
+        form.instance.created_by = request.user
+        cp = form.save()
         ops.log_event(request.user, "counterparty_created", id=cp.id, sim=cp.business_sim, kind=cp.kind)
         messages.success(request, _("%(cp)s registered.") % {"cp": cp})
         return redirect("customer_detail", pk=cp.pk)
     return render(request, "core/simple_form.html", {"form": form, "title": _("Register an agent or POS"),
+                                                     "agent_form": True,
                                                      "intro": _("The business SIM number is the unique identifier "
                                                                 "and cannot be changed later.")})
 
 
-@roles_required(R.SUPERADMIN, R.MANAGER, R.FINANCE)
+@roles_required(R.SUPERADMIN, R.MANAGER, R.JUNIOR, R.FINANCE)
 def customer_edit(request, pk):
     cp = get_object_or_404(Counterparty, pk=pk)
-    form = F.CounterpartyEditForm(request.POST or None, instance=cp)
+    form = F.CounterpartyEditForm(request.POST or None, instance=cp, user=request.user)
     if request.method == "POST" and form.is_valid():
         form.save()
         ops.log_event(request.user, "counterparty_edited", id=cp.id, changed=form.changed_data)
         messages.success(request, _("Saved."))
         return redirect("customer_detail", pk=cp.pk)
-    return render(request, "core/simple_form.html", {"form": form, "title": str(cp)})
+    return render(request, "core/simple_form.html", {"form": form, "title": str(cp), "agent_form": True})
 
 
 @roles_required(*STAFF)

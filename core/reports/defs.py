@@ -200,7 +200,7 @@ def statement(f):
 
 
 def _customer_rows(f, kind=None, only=None):
-    cps = Counterparty.objects.all().order_by("kind", "business_sim")
+    cps = Counterparty.objects.select_related("microzone__subzone", "microzone__agent").order_by("kind", "business_sim")
     if kind:
         cps = cps.filter(kind=kind)
     if f.customer:
@@ -221,7 +221,10 @@ def _customer_rows(f, kind=None, only=None):
     for aid, cp in accts.items():
         r = data.get(aid, {})
         closing = money(r.get("upto"))
-        row = dict(sim=cp.sim_display, name=cp.name, kind=cp.get_kind_display(), opening=money(r.get("opening")),
+        mz = cp.microzone
+        row = dict(sim=cp.sim_display, name=cp.name, kind=cp.get_kind_display(),
+                   microzone=f"{mz.subzone.name} › {mz.name}" if mz else "",
+                   agent=(mz.agent.name if mz and mz.agent_id else ""), opening=money(r.get("opening")),
                    supplied=money(r.get("supplied")), paid=-money(r.get("paid")),
                    transfers=money(r.get("transfers")), other=money(r.get("other")),
                    closing=closing, owed=max(closing, Z), due=max(-closing, Z), current=money(r.get("cur")))
@@ -235,6 +238,7 @@ def _customer_rows(f, kind=None, only=None):
 
 CUSTOMER_COLS = [
     Col("sim", _l("Business SIM")), Col("name", _l("Name")), Col("kind", _l("Type")),
+    Col("microzone", _l("Microzone")), Col("agent", _l("Agent in charge")),
     Col("opening", _l("Opening"), "money", True), Col("supplied", _l("Supplied"), "money", True),
     Col("paid", _l("Paid"), "money", True), Col("transfers", _l("Resp. transfers"), "money", True),
     Col("other", _l("Corrections / opening"), "money", True), Col("closing", _l("Closing"), "money", True),

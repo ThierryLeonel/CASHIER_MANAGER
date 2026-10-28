@@ -16,7 +16,7 @@ from django.db import connection, transaction
 from django.utils.translation import gettext as _
 
 from core.models import (
-    Account, AuditEvent, CashierDay, CashManager, CashManagerExchange, Closing, ClosingLine, Correction,
+    Account, AuditEvent, CashierDay, CashManager, CashManagerExchange, Closing, ClosingLine, Correction, MicroZone,
     Counterparty, Discrepancy, DiscrepancyNote, Entry, Transaction, TxType, User,
 )
 from core.money import fmt
@@ -201,6 +201,8 @@ def clear_data(user, *, scope, password, confirm_text):
             AuditEvent.objects.filter(user__role=User.Role.AGENT).update(user=None)
             User.objects.filter(role=User.Role.AGENT).delete()
             Account.objects.filter(kind__in=[Account.Kind.CUSTOMER, Account.Kind.CASH_MANAGER]).delete()
+            Counterparty.objects.update(microzone=None)
+            MicroZone.objects.all().delete()  # microzones are defined with their agents
             Counterparty.objects.all().delete()
             CashManager.objects.all().delete()
         AuditEvent.objects.create(user=user, action="data_cleared", detail={"scope": scope, **counts})

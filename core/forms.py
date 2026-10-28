@@ -1,11 +1,13 @@
 import uuid
 
+from django.db import transaction
+
 from django import forms
 from django.utils.translation import gettext_lazy as _
 
 from core.models import (
     Account, CashManager, CashManagerExchange, Correction, Counterparty, Discrepancy, ExpenseCategory, PaymentMethod,
-    Product, TxType, User, Zone,
+    MicroZone, Product, TxType, User, Zone,
 )
 from core.money import MoneyError, to_money
 from core.services import permissions as perm
@@ -226,13 +228,45 @@ class ExchangeLegForm(BaseEntryForm):
 
 
 class CounterpartyForm(forms.ModelForm):
+    """Agent or POS. A POS belongs to a microzone; an agent is put in charge of his microzone."""
+
+    new_microzone = forms.CharField(label=_("Or create a new microzone"), required=False, max_length=100,
+                                    help_text=_("Type its name if the microzone is not in the list yet."))
+    new_microzone_subzone = forms.ModelChoiceField(label=_("Subzone of the new microzone"), required=False,
+                                                   queryset=Zone.objects.none())
+
+    field_order = ["kind", "business_sim", "name", "microzone", "new_microzone", "new_microzone_subzone",
+                   "other_phone", "notes", "active"]
+
     class Meta:
         model = Counterparty
-        fields = ["kind", "business_sim", "name", "master_zone", "other_phone", "notes"]
+        fields = ["kind", "business_sim", "name", "microzone", "other_phone", "notes"]
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, user=None, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["master_zone"].queryset = Zone.objects.filter(parent__isnull=True)
+        self.user = user
+        self._old_mz = self.instance.microzone_id
+        mz = MicroZone.objects.filter(active=True).select_related("subzone", "agent")
+        subs = Zone.objects.filter(parent__isnull=False, active=True)
+        if user is not None and user.role == User.Role.CASHIER and user.subzone_id:
+            mz = mz.filter(subzone__parent=user.subzone.master)
+            subs = subs.filter(pk=user.subzone_id)
+        elif user is not None and getattr(user, "scope_zone", None) is not None:
+            mz = mz.filter(subzone__parent=user.scope_zone)
+            subs = subs.filter(parent=user.scope_zone)
+        f = self.fields["microzone"]
+        f.queryset = mz
+        f.label = _("Microzone")
+        f.help_text = _("POS: the microzone where it sells. Agent: the microzone he controls.")
+        if not mz.exists():
+            f.help_text = _("No microzone yet: type a name below to create the first one.")
+        self.fields["new_microzone_subzone"].queryset = subs
+        if subs.count() == 1:
+            self.fields["new_microzone_subzone"].initial = subs.first().pk
+        if not subs.exists():
+            self.fields["new_microzone_subzone"].help_text = _(
+                "No subzone exists yet. The super administrator creates zones in Configuration › Zones "
+                "(a master zone first, then its subzones).")
 
     def clean_business_sim(self):
         try:
@@ -247,12 +281,44 @@ class CounterpartyForm(forms.ModelForm):
                                         % {"sim": sim, "cp": qs.first()})
         return sim
 
+    def clean(self):
+        cd = super().clean()
+        kind = cd.get("kind") or self.instance.kind
+        mz, new = cd.get("microzone"), (cd.get("new_microzone") or "").strip()
+        if mz and new:
+            self.add_error("new_microzone", _("Choose an existing microzone or type a new one, not both."))
+        if new:
+            sub = cd.get("new_microzone_subzone")
+            if sub is None:
+                self.add_error("new_microzone_subzone", _("Choose the subzone of the new microzone."))
+            elif MicroZone.objects.filter(subzone=sub, name__iexact=new).exists():
+                self.add_error("new_microzone", _("This microzone already exists: choose it in the list."))
+        if kind == Counterparty.Kind.POS and not mz and not new:
+            self.add_error("microzone", _("A POS belongs to a microzone: choose it or create it."))
+        if kind == Counterparty.Kind.AGENT and mz and mz.agent_id and mz.agent_id != self.instance.pk:
+            self.add_error("microzone", _("%(mz)s is already controlled by %(agent)s.")
+                           % {"mz": mz.name, "agent": mz.agent.name})
+        return cd
+
+    @transaction.atomic
+    def save(self, commit=True):
+        cd = self.cleaned_data
+        new = (cd.get("new_microzone") or "").strip()
+        if new:
+            self.instance.microzone = MicroZone.objects.create(subzone=cd["new_microzone_subzone"], name=new)
+        cp = super().save(commit=True)
+        if cp.kind == Counterparty.Kind.AGENT and self._old_mz and self._old_mz != cp.microzone_id:
+            MicroZone.objects.filter(pk=self._old_mz, agent=cp).update(agent=None)  # he left it
+        if cp.kind == Counterparty.Kind.AGENT and cp.microzone_id and cp.microzone.agent_id is None:
+            MicroZone.objects.filter(pk=cp.microzone_id).update(agent=cp)
+        return cp
+
 
 class CounterpartyEditForm(CounterpartyForm):
     """The business SIM and type are the identity: not editable after creation."""
 
     class Meta(CounterpartyForm.Meta):
-        fields = ["name", "master_zone", "other_phone", "notes", "active"]
+        fields = ["name", "microzone", "other_phone", "notes", "active"]
 
 
 class ResponsibilityTransferForm(forms.Form):

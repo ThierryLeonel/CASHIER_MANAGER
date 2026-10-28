@@ -3,6 +3,18 @@
 {% block content %}
 <h1>{% trans "Opening balances (launch)" %}</h1>
 <p class="muted">{% trans "Each account can be initialised once, through an auditable ledger entry against opening equity. To change one later, a manager or finance manager corrects it." %}</p>
+{% if not form.fields.account.queryset.exists %}
+<div class="panel notice">
+  <p><strong>{% trans "No account is waiting for an opening balance." %}</strong> {% trans "Accounts appear here once they exist. Create them first in Configuration:" %}</p>
+  <ul>
+    <li><a href="/admin/core/zone/">{% trans "Zones" %}</a> — {% trans "a master zone first, then its subzones (each subzone's master zone = the master)." %}</li>
+    <li><a href="/admin/core/account/add/">{% trans "Accounts › Add" %}</a> — {% trans "one cash drawer per subzone." %}</li>
+    <li><a href="/admin/core/companysim/add/">{% trans "Company sims › Add" %}</a> — {% trans "creates the UVE / ER / MTN wallets (the master SIM with its cashier in charge)." %}</li>
+    <li><a href="/admin/core/bankaccount/add/">{% trans "Bank accounts › Add" %}</a>, <a href="{% url 'customer_new' %}">{% trans "agents and POS" %}</a>, <a href="/admin/core/cashmanager/add/">{% trans "cash managers" %}</a>.</li>
+  </ul>
+  <p class="small muted">{% trans "Accounts that already have an opening balance are listed under Recorded below." %}</p>
+</div>
+{% endif %}
 <div class="panel"><form method="post" class="entry" novalidate>{% csrf_token %}{% include "core/inc/fields.html" %}<button class="btn primary" type="submit">{% trans "Record opening balance" %}</button></form></div>
 <h2>{% trans "Recorded" %}</h2>
 <div class="tbl-wrap"><table class="t"><thead><tr><th>{% trans "Reference" %}</th><th>{% trans "As of" %}</th><th>{% trans "Account" %}</th><th class="money">{% trans "Amount" %}</th><th>{% trans "By" %}</th></tr></thead>

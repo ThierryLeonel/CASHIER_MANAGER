@@ -40,8 +40,16 @@ class Zone(models.Model):
         return self if self.parent_id is None else self.parent
 
     def clean(self):
+        if self.parent_id and self.pk and self.parent_id == self.pk:
+            raise ValidationError({"parent": _("A zone cannot be its own master zone.")})
         if self.parent_id and self.parent.parent_id:
-            raise ValidationError(_("A subzone's parent must be a master zone."))
+            raise ValidationError({"parent": _("A subzone's parent must be a master zone.")})
+        if self.parent_id and self.pk and self.subzones.exists():
+            raise ValidationError({"parent": _("This zone has subzones, so it must stay a master zone.")})
+
+    @property
+    def level_label(self):
+        return _("Master zone") if self.parent_id is None else _("Subzone")
 
 
 class User(AbstractUser):
@@ -242,7 +250,9 @@ class Counterparty(models.Model):
     name = models.CharField(_("name"), max_length=120)
     master_zone = models.ForeignKey(Zone, null=True, blank=True, on_delete=models.PROTECT,
                                     verbose_name=_("usual master zone"),
-                                    help_text="Informational only; does not create route liability.")
+                                    help_text="Filled automatically from the microzone.")
+    microzone = models.ForeignKey("MicroZone", null=True, blank=True, on_delete=models.PROTECT,
+                                  related_name="members", verbose_name=_("microzone"))
     other_phone = models.CharField(_("other phone"), max_length=30, blank=True)
     notes = models.CharField(_("notes"), max_length=255, blank=True)
     active = models.BooleanField(default=True)
@@ -266,8 +276,17 @@ class Counterparty(models.Model):
         except SimNumberError as e:
             raise ValidationError({"business_sim": str(e)})
 
+    @property
+    def agent_in_charge(self):
+        """POS: the commercial agent controlling its microzone. Agent: himself."""
+        if self.kind == self.Kind.AGENT:
+            return self
+        return self.microzone.agent if self.microzone_id else None
+
     def save(self, *args, **kwargs):
         self.business_sim = normalize_sim(self.business_sim)
+        if self.microzone_id:
+            self.master_zone = self.microzone.subzone.master
         super().save(*args, **kwargs)
         from .ledger import Account
 
@@ -281,6 +300,33 @@ class Counterparty(models.Model):
         from .ledger import Account
 
         return Account.objects.get(kind=Account.Kind.CUSTOMER, counterparty=self)
+
+
+class MicroZone(models.Model):
+    """Area inside a subzone, controlled by one commercial agent. POS belong to a microzone."""
+
+    subzone = models.ForeignKey(Zone, on_delete=models.PROTECT, related_name="microzones",
+                                limit_choices_to={"parent__isnull": False}, verbose_name=_("subzone"))
+    name = models.CharField(_("name"), max_length=100)
+    agent = models.ForeignKey(Counterparty, null=True, blank=True, on_delete=models.PROTECT,
+                              related_name="controlled_microzones", limit_choices_to={"kind": "AGENT"},
+                              verbose_name=_("commercial agent in charge"))
+    active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["subzone__name", "name"]
+        constraints = [models.UniqueConstraint(fields=["subzone", "name"], name="microzone_unique_name")]
+        verbose_name = "microzone"
+
+    def __str__(self):
+        agent = f" · {self.agent.name}" if self.agent_id else ""
+        return f"{self.subzone.name} › {self.name}{agent}"
+
+    def clean(self):
+        if self.subzone_id and self.subzone.parent_id is None:
+            raise ValidationError({"subzone": _("A microzone belongs to a subzone, not to a master zone.")})
+        if self.agent_id and self.agent.kind != Counterparty.Kind.AGENT:
+            raise ValidationError({"agent": _("Only a commercial agent can be in charge of a microzone.")})
 
 
 class CashManager(models.Model):

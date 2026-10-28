@@ -10,12 +10,13 @@ import io
 from datetime import date, datetime
 
 from django.db import transaction
+from django.db.models import Q
 from django.utils.translation import gettext as _
 from openpyxl import Workbook, load_workbook
 from openpyxl.styles import Font
 
 from core.models import (
-    Account, BankAccount, CashManager, Counterparty, ExpenseCategory, PaymentMethod, Product, User, Zone,
+    Account, BankAccount, CashManager, Counterparty, ExpenseCategory, MicroZone, PaymentMethod, Product, User, Zone,
 )
 from core.money import MoneyError, to_money
 from core.simnumbers import SimNumberError, normalize_sim
@@ -27,11 +28,12 @@ from .ledger import Ctx, post
 
 MAX_ROWS = 5000
 K = Account.Kind
+K_AGENT = Counterparty.Kind.AGENT
 
 TEMPLATES = {
-    "customers": (["type", "business_sim", "name", "master_zone", "other_phone", "notes"],
-                  [["AGENT", "691234567", "Agent Ndive", "fako", "", ""],
-                   ["POS", "692345678", "POS Molyko", "", "677000000", ""]]),
+    "customers": (["type", "business_sim", "name", "subzone", "microzone", "master_zone", "other_phone", "notes"],
+                  [["AGENT", "691234567", "Agent Ndive", "fako-1", "Molyko", "", "", ""],
+                   ["POS", "692345678", "POS Molyko", "fako-1", "Molyko", "", "677000000", ""]]),
     "cash_managers": (["name", "phone", "notes"], [["Cash manager Buea", "650123456", ""]]),
     "opening": (["kind", "identifier", "amount", "date", "note"],
                 [["CUSTOMER", "691234567", "150000", "2026-11-01", "owed at launch"],
@@ -134,6 +136,22 @@ def _date(v):
     raise BusinessError(_("Invalid date %(v)s (use YYYY-MM-DD or DD/MM/YYYY)") % {"v": t})
 
 
+def _microzone(sub, name):
+    """Microzone by subzone (code or name) and microzone name; created if it does not exist yet."""
+    name, sub = _s(name), _s(sub)
+    if not name:
+        return None
+    if not sub:
+        mz = MicroZone.objects.filter(name__iexact=name)
+        if mz.count() == 1:
+            return mz.first()
+        raise BusinessError(_("Give the subzone of microzone %(v)s") % {"v": name})
+    z = Zone.objects.filter(parent__isnull=False).filter(Q(code__iexact=sub) | Q(name__iexact=sub)).first()
+    if not z:
+        raise BusinessError(_("Unknown subzone %(v)s") % {"v": sub})
+    return MicroZone.objects.filter(subzone=z, name__iexact=name).first() or MicroZone.objects.create(subzone=z, name=name)
+
+
 def _zone(v):
     t = _s(v)
     if not t:
@@ -205,15 +223,26 @@ def _row_customer(user, r):
     if cp and cp.kind != kind:
         raise BusinessError(_("Business SIM %(sim)s is already registered to %(cp)s.") % {"sim": sim, "cp": cp})
     zone = _zone(r.get("master_zone"))
+    mz = _microzone(r.get("subzone"), r.get("microzone"))
+    if mz and kind == K_AGENT and mz.agent_id and mz.agent.business_sim != sim:
+        raise BusinessError(_("%(mz)s is already controlled by %(agent)s.") % {"mz": mz.name, "agent": mz.agent.name})
     if cp:
         cp.name, cp.master_zone = name, zone or cp.master_zone
+        cp.microzone = mz or cp.microzone
         cp.other_phone = _s(r.get("other_phone")) or cp.other_phone
         cp.notes = _s(r.get("notes")) or cp.notes
         cp.save()
+        _take_charge(cp)
         return _("updated %(cp)s") % {"cp": cp}
-    cp = Counterparty.objects.create(kind=kind, business_sim=sim, name=name, master_zone=zone,
+    cp = Counterparty.objects.create(kind=kind, business_sim=sim, name=name, master_zone=zone, microzone=mz,
                                      other_phone=_s(r.get("other_phone")), notes=_s(r.get("notes")), created_by=user)
+    _take_charge(cp)
     return _("created %(cp)s") % {"cp": cp}
+
+
+def _take_charge(cp):
+    if cp.kind == K_AGENT and cp.microzone_id and cp.microzone.agent_id is None:
+        MicroZone.objects.filter(pk=cp.microzone_id).update(agent=cp)
 
 
 def _row_cash_manager(user, r):
