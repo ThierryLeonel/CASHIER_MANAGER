@@ -79,6 +79,18 @@ class AccountForm(forms.ModelForm):
         model = Account
         fields = ["kind", "name", "zone", "custodian", "active"]
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if not self.instance.pk:  # this page only adds cash drawers
+            self.fields["kind"].choices = [(Account.Kind.CASH_DRAWER, Account.Kind.CASH_DRAWER.label)]
+            self.fields["kind"].initial = Account.Kind.CASH_DRAWER
+            self.fields["kind"].help_text = (
+                "Only cash drawers are added here. Other accounts are created automatically: "
+                "expense accounts → Expense categories › Add; UVE/ER/MTN wallets → Company sims › Add; "
+                "bank → Bank accounts › Add; agent/POS → Counterparties; cash managers → Cash managers.")
+            self.fields["zone"].help_text = "The subzone whose cashiers use this drawer."
+            self.fields["zone"].required = True
+
     def clean(self):
         cd = super().clean()
         if cd.get("kind") == Account.Kind.CASH_DRAWER and not cd.get("zone"):
@@ -88,8 +100,8 @@ class AccountForm(forms.ModelForm):
     def clean_kind(self):
         kind = self.cleaned_data["kind"]
         if not self.instance.pk and kind != Account.Kind.CASH_DRAWER:
-            raise forms.ValidationError("Only cash drawers are created here. Wallets, customer, bank, cash-manager "
-                                        "and expense accounts are created automatically with their SIM/party.")
+            raise forms.ValidationError("Only cash drawers are created here. To add an expense account, add an "
+                                        "Expense category; wallets come with Company sims, banks with Bank accounts.")
         return kind
 
 
@@ -103,6 +115,10 @@ class AccountAdmin(SuperAdminOnly):
 
     def get_readonly_fields(self, request, obj=None):
         return ("kind",) if obj else ()
+
+    def get_fields(self, request, obj=None):
+        # a new drawer belongs to a subzone; "cashier in charge" only applies to the master SIM
+        return ["kind", "name", "zone", "custodian", "active"] if obj else ["kind", "name", "zone", "active"]
 
 
 @admin.register(AccountAccess)

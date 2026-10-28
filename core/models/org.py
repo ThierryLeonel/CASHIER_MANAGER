@@ -334,9 +334,10 @@ class BankAccount(models.Model):
 
 
 class ExpenseCategory(models.Model):
-    code = models.SlugField(max_length=30, unique=True)
-    name_en = models.CharField(max_length=80)
-    name_fr = models.CharField(max_length=80)
+    code = models.SlugField(max_length=30, unique=True,
+                            help_text="Short code without spaces, e.g. bhb. Saving creates the expense account.")
+    name_en = models.CharField("name (English)", max_length=80)
+    name_fr = models.CharField("name (French)", max_length=80)
     active = models.BooleanField(default=True)
 
     class Meta:
