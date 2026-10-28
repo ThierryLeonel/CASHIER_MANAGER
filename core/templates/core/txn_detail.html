@@ -1,7 +1,7 @@
 {% extends "core/base.html" %}{% load i18n cashier %}
 {% block title %}{{ t.reference }}{% endblock %}
 {% block content %}
-<h1>{{ t.get_type_display }} {{ t.reference }} {% if t.is_corrected %}<span class="stamp">{% trans "CORRECTED" %}</span>{% endif %}</h1>
+<h1>{{ t.display_type }} {{ t.reference }} {% if t.is_corrected %}<span class="stamp">{% trans "CORRECTED" %}</span>{% endif %}</h1>
 <p class="muted">{{ t.amount|fcfa }} FCFA{% if t.receipt_no %} · {% trans "Receipt" %} {{ t.receipt_no }}{% endif %}</p>
 <div class="actions">
   {% if t.receipt_no %}<a class="btn primary" href="{% url 'receipt' t.pk %}">{% trans "A4 receipt / print" %}</a>

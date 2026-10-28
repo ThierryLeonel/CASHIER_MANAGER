@@ -4,10 +4,10 @@ from .control import (  # noqa: F401
     reports_index,
 )
 from .entry import (  # noqa: F401
-    collection_new, conversion_new, destockage_new, exchange_detail, exchange_new, exchanges, expense_new, supply_new,
+    collection_new, conversion_new, supply_agent, supply_pos, destockage_new, exchange_detail, exchange_new, exchanges, expense_new, supply_new,
     transfer_new,
 )
 from .records import (  # noqa: F401
-    customer_detail, customer_edit, customer_new, customers, receipt, receipt_pdf_view, txn_correct, txn_detail,
+    customer_detail, customer_edit, customer_search, customer_new, customers, receipt, receipt_pdf_view, txn_correct, txn_detail,
     txn_list, txn_transfer,
 )

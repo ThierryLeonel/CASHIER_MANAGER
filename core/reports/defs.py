@@ -90,7 +90,7 @@ TX_COLUMNS = [
 
 def txn_row(t):
     return dict(posted_at=t.posted_at, business_date=t.business_date, reference=t.reference,
-                receipt=t.receipt_no or "", type=t.get_type_display(),
+                receipt=t.receipt_no or "", type=str(t.display_type),
                 customer=str(t.counterparty) if t.counterparty_id else "", details=describe(t), cashier=station(t),
                 amount=signed(t), corrected=hasattr(t, "correction"), _id=t.id)
 
@@ -162,7 +162,7 @@ def statement(f):
         elif et == TxType.COLLECTION:
             by_method[t.payment_method] += sign * t.amount
         rows.append(dict(posted_at=t.posted_at, business_date=e.business_date, reference=t.reference,
-                         receipt=t.receipt_no or "", type=t.get_type_display(), details=describe(t),
+                         receipt=t.receipt_no or "", type=str(t.display_type), details=describe(t),
                          cashier=station(t), debit=e.amount if e.amount > 0 else Z,
                          credit=-e.amount if e.amount < 0 else Z, balance=running,
                          corrected=hasattr(t, "correction"), _id=t.id))
@@ -268,6 +268,13 @@ def supplies(f):
                and (p == "DESTOCKAGE" or t.product == p)]
         groups[label] = (sum(1 for t in sel if t.type != TxType.REVERSAL), sum(signed(t) for t in sel))
     rep.tables.append(_summary_table(_("Totals by product"), _("Product"), groups))
+    channels = {}
+    for ch, label in [("AGENT", _("Supplies to commercial agents")), ("POS", _("Supplies to points of sale (POS)"))]:
+        for p, plabel in [("UVE", "UVE"), ("ER", "ER"), ("CASH", _("Cash"))]:
+            sel = [t for t in qs if effective_type(t) == TxType.SUPPLY and t.supply_channel == ch and t.product == p]
+            channels[f"{label} · {plabel}"] = (sum(1 for t in sel if t.type != TxType.REVERSAL),
+                                               sum(signed(t) for t in sel))
+    rep.tables.append(_summary_table(_("Agents versus POS"), _("Supply"), channels))
     rep.tables.append(Table(_("Detail"), TX_COLUMNS, [txn_row(t) for t in qs]))
     return rep
 
@@ -325,7 +332,7 @@ def conversions(f):
         s = -1 if t.type == TxType.REVERSAL else 1
         src = t.reverses if t.type == TxType.REVERSAL else t
         rows.append(dict(posted_at=t.posted_at, business_date=t.business_date, reference=t.reference,
-                         type=t.get_type_display(), sim=str(src.source_account.sim), cashier=station(t),
+                         type=str(t.display_type), sim=str(src.source_account.sim), cashier=station(t),
                          rate=src.rate_used, uve=s * src.amount, er=s * src.amount_received,
                          uplift=s * (src.amount_received - src.amount), corrected=hasattr(t, "correction"),
                          _id=t.id))
@@ -401,7 +408,7 @@ def accounts(f):
     if f.tx_type:
         ent = ent.filter(transaction__type=f.tx_type)
     erows = [dict(account=str(e.account), business_date=e.business_date, posted_at=e.transaction.posted_at,
-                  reference=e.transaction.reference, type=e.transaction.get_type_display(),
+                  reference=e.transaction.reference, type=str(e.transaction.display_type),
                   details=describe(e.transaction), cashier=station(e.transaction),
                   inflow=e.amount if e.amount > 0 else Z, outflow=-e.amount if e.amount < 0 else Z,
                   corrected=hasattr(e.transaction, "correction"), _id=e.transaction_id) for e in ent]

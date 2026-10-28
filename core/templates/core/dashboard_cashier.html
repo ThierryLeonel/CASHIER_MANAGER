@@ -15,8 +15,9 @@
 
 <h2>{% trans "What do you want to record?" %}</h2>
 <div class="quick">
-  <a class="qa main" href="{% url 'supply_new' %}"><span class="qa-ic">{% icon "supply" 22 %}</span><strong>{% trans "Supply" %}</strong><span class="d">{% trans "UVE, ER or cash given to an agent or POS" %}</span></a>
+  <a class="qa main" href="{% url 'supply_agent' %}"><span class="qa-ic">{% icon "supply" 22 %}</span><strong>{% trans "Supply to agent" %}</strong><span class="d">{% trans "UVE, ER or cash given to a commercial agent" %}</span></a>
   <a class="qa main" href="{% url 'collection_new' %}"><span class="qa-ic">{% icon "payment" 22 %}</span><strong>{% trans "Payment" %}</strong><span class="d">{% trans "Money received from an agent or POS" %}</span></a>
+  <a class="qa pos" href="{% url 'supply_pos' %}"><span class="qa-ic">{% icon "store" 22 %}</span><strong>{% trans "Supply to POS" %}</strong><span class="d">{% trans "Exceptional direct supply to a point of sale" %}</span></a>
   <a class="qa" href="{% url 'destockage_new' %}"><span class="qa-ic">{% icon "destock" 22 %}</span><strong>{% trans "Destockage" %}</strong><span class="d">{% trans "Cash to a POS, UVE to an agent" %}</span></a>
   <a class="qa" href="{% url 'expense_new' %}"><span class="qa-ic">{% icon "expense" 22 %}</span><strong>{% trans "Expense" %}</strong><span class="d">{% trans "Cash paid out of your drawer" %}</span></a>
   <a class="qa" href="{% url 'transfer_new' %}"><span class="qa-ic">{% icon "transfer" 22 %}</span><strong>{% trans "Transfer" %}</strong><span class="d">{% trans "Between company drawers and wallets" %}</span></a>

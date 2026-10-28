@@ -18,7 +18,7 @@ def _entry(request, form_class, op, title, intro="", template="core/entry_form.h
         resp = run_service(
             request, form, lambda: op(request.user, idempotency_key=form.cleaned_data["idem"], **params),
             success=lambda t: _("%(type)s %(ref)s recorded: %(amt)s FCFA.") % {
-                "type": t.get_type_display(), "ref": t.reference, "amt": fmt(t.amount)},
+                "type": t.display_type, "ref": t.reference, "amt": fmt(t.amount)},
             on_success=lambda t: redirect("txn_detail", pk=t.pk),
         )
         if resp:
@@ -30,33 +30,46 @@ def _entry(request, form_class, op, title, intro="", template="core/entry_form.h
 
 @roles_required(R.CASHIER)
 def supply_new(request):
-    return _entry(request, F.SupplyForm, ops.record_supply, _("New supply"),
-                  _("Record a completed UVE, ER or cash supply. ER must come from your master zone's master SIM."))
+    return redirect("supply_agent")
+
+
+@roles_required(R.CASHIER)
+def supply_agent(request):
+    return _entry(request, F.AgentSupplyForm, ops.record_supply, _("Supply to a commercial agent"),
+                  _("UVE, ER or cash given to a commercial agent. The agent's balance increases. ER must come from "
+                    "your master zone's master SIM."), extra={"icon": "supply"})
+
+
+@roles_required(R.CASHIER)
+def supply_pos(request):
+    return _entry(request, F.PosSupplyForm, ops.record_supply, _("Supply to a point of sale (POS)"),
+                  _("Exceptional direct supply to a POS. The POS owes the company, unless you name an agent who "
+                    "explicitly assumes the debt."), extra={"icon": "store"})
 
 
 @roles_required(R.CASHIER)
 def destockage_new(request):
     return _entry(request, F.DestockageForm, ops.record_destockage, _("Destockage"),
                   _("You gave cash to a POS, and the POS sent the same value in UVE to an agent. The agent owes the "
-                    "company; company UVE does not change; the POS owes nothing."))
+                    "company; company UVE does not change; the POS owes nothing."), extra={"icon": "destock"})
 
 
 @roles_required(R.CASHIER)
 def collection_new(request):
     return _entry(request, F.CollectionForm, ops.record_collection, _("Collect a payment"),
-                  _("Record a confirmed payment. It reduces the customer's single combined balance."))
+                  _("Record a confirmed payment. It reduces the customer's single combined balance."), extra={"icon": "payment"})
 
 
 @roles_required(R.CASHIER)
 def expense_new(request):
     return _entry(request, F.ExpenseForm, ops.record_expense, _("Record an expense"),
-                  _("Cash paid out of your drawer. Expenses never reduce an agent's debt."))
+                  _("Cash paid out of your drawer. Expenses never reduce an agent's debt."), extra={"icon": "expense"})
 
 
 @roles_required(R.CASHIER)
 def transfer_new(request):
     return _entry(request, F.InternalTransferForm, ops.record_internal_transfer, _("Internal transfer"),
-                  _("A completed move of cash or electronic value between company accounts. No customer is affected."))
+                  _("A completed move of cash or electronic value between company accounts. No customer is affected."), extra={"icon": "transfer"})
 
 
 @roles_required(R.CASHIER)
@@ -65,7 +78,7 @@ def conversion_new(request):
     intro = _("Current uplift: +%(pct)s%% (rate stored on each conversion; ER rounded half-up to whole FCFA).") % {
         "pct": rate.percent if rate else "?"}
     return _entry(request, F.ConversionForm, ops.record_conversion, _("Convert UVE to ER"), intro,
-                  extra={"rate": rate.uplift_rate if rate else None})
+                  extra={"rate": rate.uplift_rate if rate else None, "icon": "convert"})
 
 
 # ---------------------------------------------------------------- cash managers
@@ -104,7 +117,7 @@ def exchange_detail(request, pk):
             request, form, lambda: ops.record_exchange_leg(request.user, exchange=ex,
                                                            idempotency_key=form.cleaned_data["idem"], **form.params()),
             success=lambda t: _("%(type)s %(ref)s recorded: %(amt)s FCFA.") % {
-                "type": t.get_type_display(), "ref": t.reference, "amt": fmt(t.amount)},
+                "type": t.display_type, "ref": t.reference, "amt": fmt(t.amount)},
             on_success=lambda t: redirect("exchange_detail", pk=ex.pk))
         if resp:
             return resp

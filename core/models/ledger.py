@@ -234,6 +234,22 @@ class Transaction(models.Model):
         return hasattr(self, "correction")
 
     @property
+    def supply_channel(self):
+        """'POS' for a direct supply to a point of sale, 'AGENT' otherwise."""
+        src = self.reverses if self.type == TxType.REVERSAL and self.reverses_id else self
+        if src.type != TxType.SUPPLY:
+            return ""
+        if src.counterparty_2_id or (src.counterparty_id and src.counterparty.kind == "POS"):
+            return "POS"
+        return "AGENT"
+
+    @property
+    def display_type(self):
+        if self.type == TxType.SUPPLY:
+            return _("Supply to POS") if self.supply_channel == "POS" else _("Supply to agent")
+        return self.get_type_display()
+
+    @property
     def has_receipt(self):
         return bool(self.receipt_no)
 

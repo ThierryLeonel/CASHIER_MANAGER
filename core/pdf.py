@@ -81,7 +81,7 @@ def receipt_pdf(txn, rows, balance_after=None):
         Paragraph(settings.COMPANY_NAME, st["title"]),
         Paragraph(settings.COMPANY_ADDRESS, st["n"]),
         Spacer(1, 6 * mm),
-        Paragraph(f"{_('RECEIPT')} / {txn.get_type_display().upper()}", st["h"]),
+        Paragraph(f"{_('RECEIPT')} / {str(txn.display_type).upper()}", st["h"]),
         Paragraph(f"{_('Receipt no.')} <b>{txn.receipt_no or '—'}</b> &nbsp;&nbsp; {_('Reference')} "
                   f"<b>{txn.reference}</b>", st["n"]),
         Spacer(1, 4 * mm),

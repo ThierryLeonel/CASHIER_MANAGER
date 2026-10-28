@@ -10,6 +10,9 @@ urlpatterns = [
     path("i18n/", include("django.conf.urls.i18n")),
     # entry
     path("supply/new/", v.supply_new, name="supply_new"),
+    path("supply/agent/", v.supply_agent, name="supply_agent"),
+    path("supply/pos/", v.supply_pos, name="supply_pos"),
+    path("api/customers/", v.customer_search, name="customer_search"),
     path("destockage/new/", v.destockage_new, name="destockage_new"),
     path("collection/new/", v.collection_new, name="collection_new"),
     path("expense/new/", v.expense_new, name="expense_new"),

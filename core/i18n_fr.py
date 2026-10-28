@@ -690,6 +690,35 @@ FR = {
     "UVE, ER or cash given to an agent or POS": "UVE, ER ou espèces remis à un agent ou PDV",
     "What do you want to record?": "Que voulez-vous enregistrer ?",
     "Zones, users, SIMs, drawers": "Zones, utilisateurs, SIM, caisses",
+    "AG": "AG",
+    "Agents versus POS": "Agents ou PDV",
+    "Bank": "Banque",
+    "Choose…": "Choisir…",
+    "Commercial agent (business SIM)": "Agent commercial (SIM business)",
+    "Commercial agent who assumes this debt (optional)": "Agent commercial qui assume cette dette (facultatif)",
+    "Exceptional direct supply to a POS. The POS owes the company, unless you name an agent who explicitly assumes the debt.":
+        "Approvisionnement direct exceptionnel d'un PDV. Le PDV doit à l'entreprise, sauf si vous indiquez un agent qui "
+        "assume explicitement la dette.",
+    "Exceptional direct supply to a point of sale": "Approvisionnement direct exceptionnel d'un point de vente",
+    "Leave empty: the POS owes. Fill only if an agent explicitly takes responsibility now.":
+        "Laissez vide : le PDV doit. Remplissez seulement si un agent prend explicitement la responsabilité maintenant.",
+    "No agent or POS found": "Aucun agent ni PDV trouvé",
+    "No match": "Aucun résultat",
+    "Point of sale (business SIM)": "Point de vente (SIM business)",
+    "Search…": "Rechercher…",
+    "Supplies to commercial agents": "Approvisionnements des agents commerciaux",
+    "Supplies to points of sale (POS)": "Approvisionnements des points de vente (PDV)",
+    "Supply to POS": "Approvisionnement PDV",
+    "Supply to a commercial agent": "Approvisionner un agent commercial",
+    "Supply to a point of sale (POS)": "Approvisionner un point de vente (PDV)",
+    "Supply to agent": "Approvisionnement agent",
+    "UVE, ER or cash given to a commercial agent": "UVE, ER ou espèces remis à un agent commercial",
+    "UVE, ER or cash given to a commercial agent. The agent's balance increases. ER must come from your master zone's master SIM.":
+        "UVE, ER ou espèces remis à un agent commercial. Le solde de l'agent augmente. L'ER doit partir de la SIM maître "
+        "de votre zone principale.",
+    "owes": "doit",
+    "settled": "soldé",
+    "supply due": "approvisionnement dû",
 }
 
 FR_PLURAL = {

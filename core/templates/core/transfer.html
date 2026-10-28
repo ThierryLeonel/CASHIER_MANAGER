@@ -4,7 +4,7 @@
 <h1>{% trans "Transfer responsibility" %} — {{ t.reference }}</h1>
 <p class="muted">{% blocktrans with amt=t.amount|fcfa %}The whole obligation of {{ amt }} FCFA moves to the new party. Partial transfers are not allowed. Company cash and wallets do not change; the original supply is kept.{% endblocktrans %}</p>
 <div class="panel"><dl class="kv">
-  <dt>{% trans "Transaction" %}</dt><dd>{{ t.get_type_display }} · {{ t.business_date|date:"d/m/Y" }} · {{ t.amount|fcfa }} FCFA</dd>
+  <dt>{% trans "Transaction" %}</dt><dd>{{ t.display_type }} · {{ t.business_date|date:"d/m/Y" }} · {{ t.amount|fcfa }} FCFA</dd>
   <dt>{% trans "Currently responsible" %}</dt><dd>{{ current }}</dd>
   <dt>{% trans "Their current balance" %}</dt><dd>{{ current_balance|fcfa }} FCFA</dd>
 </dl>

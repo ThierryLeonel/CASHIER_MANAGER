@@ -114,6 +114,9 @@ msgstr "Le parent d'une sous-zone doit être une zone principale."
 msgid "A4 receipt / print"
 msgstr "Reçu A4 / imprimer"
 
+msgid "AG"
+msgstr "AG"
+
 msgid "Account"
 msgstr "Compte"
 
@@ -144,6 +147,9 @@ msgstr "Agent qui a reçu l'UVE et doit (SIM business)"
 
 msgid "Agents & POS"
 msgstr "Agents & PDV"
+
+msgid "Agents versus POS"
+msgstr "Agents ou PDV"
 
 msgid "Agreed"
 msgstr "Convenu"
@@ -228,6 +234,9 @@ msgstr "Soldes"
 
 msgid "Balances and statements"
 msgstr "Soldes et relevés"
+
+msgid "Bank"
+msgstr "Banque"
 
 msgid "Bank account"
 msgstr "Compte bancaire"
@@ -408,6 +417,9 @@ msgstr "Choisissez le sens de l'échange."
 msgid "Choose which side of the exchange happened."
 msgstr "Choisissez le volet de l'échange qui a eu lieu."
 
+msgid "Choose…"
+msgstr "Choisir…"
+
 msgid "Close business day"
 msgstr "Clôturer la journée"
 
@@ -461,6 +473,12 @@ msgstr "Encaissements par mode de paiement"
 
 msgid "Commercial agent"
 msgstr "Agent commercial"
+
+msgid "Commercial agent (business SIM)"
+msgstr "Agent commercial (SIM business)"
+
+msgid "Commercial agent who assumes this debt (optional)"
+msgstr "Agent commercial qui assume cette dette (facultatif)"
 
 msgid "Commercial agents and POS"
 msgstr "Agents commerciaux et PDV"
@@ -810,6 +828,16 @@ msgstr ""
 msgid "Exceptional direct POS transactions and outstanding amounts"
 msgstr "Transactions directes exceptionnelles avec les PDV et montants dus"
 
+msgid ""
+"Exceptional direct supply to a POS. The POS owes the company, unless you "
+"name an agent who explicitly assumes the debt."
+msgstr ""
+"Approvisionnement direct exceptionnel d'un PDV. Le PDV doit à l'entreprise, "
+"sauf si vous indiquez un agent qui assume explicitement la dette."
+
+msgid "Exceptional direct supply to a point of sale"
+msgstr "Approvisionnement direct exceptionnel d'un point de vente"
+
 msgid "Exchange"
 msgstr "Échange"
 
@@ -963,6 +991,13 @@ msgstr "Soldes de démarrage, une fois par compte"
 msgid "Launch opening"
 msgstr "Ouverture au démarrage"
 
+msgid ""
+"Leave empty: the POS owes. Fill only if an agent explicitly takes "
+"responsibility now."
+msgstr ""
+"Laissez vide : le PDV doit. Remplissez seulement si un agent prend "
+"explicitement la responsabilité maintenant."
+
 msgid "Ledger balanced in period (debits = credits)"
 msgstr "Grand livre équilibré sur la période (débits = crédits)"
 
@@ -1067,6 +1102,9 @@ msgstr ""
 "Aucun taux de conversion UVE→ER n'est configuré. Contactez le super "
 "administrateur."
 
+msgid "No agent or POS found"
+msgstr "Aucun agent ni PDV trouvé"
+
 #, python-format
 msgid ""
 "No agent or POS is registered with business SIM %(sim)s. Register it first."
@@ -1086,6 +1124,9 @@ msgstr "Aucune donnée pour ces filtres."
 
 msgid "No exchanges yet."
 msgstr "Aucun échange pour l'instant."
+
+msgid "No match"
+msgstr "Aucun résultat"
 
 msgid "No notes yet."
 msgstr "Aucune note pour l'instant."
@@ -1321,6 +1362,9 @@ msgstr "Période"
 msgid "Point of sale (POS)"
 msgstr "Point de vente (PDV)"
 
+msgid "Point of sale (business SIM)"
+msgstr "Point de vente (SIM business)"
+
 msgid "Positions"
 msgstr "Positions"
 
@@ -1546,6 +1590,9 @@ msgstr "Recherche (SIM ou nom)"
 msgid "Search, correct, transfer responsibility"
 msgstr "Rechercher, corriger, transférer la responsabilité"
 
+msgid "Search…"
+msgstr "Rechercher…"
+
 msgid "Select a customer business SIM to see the statement."
 msgstr "Choisissez la SIM business d'un client pour voir le relevé."
 
@@ -1609,6 +1656,12 @@ msgstr "Approvisionnements"
 msgid "Supplies (UVE, ER, cash)"
 msgstr "Approvisionnements (UVE, ER, espèces)"
 
+msgid "Supplies to commercial agents"
+msgstr "Approvisionnements des agents commerciaux"
+
+msgid "Supplies to points of sale (POS)"
+msgstr "Approvisionnements des points de vente (PDV)"
+
 msgid "Supplies: UVE, ER and cash (and destockage)"
 msgstr "Approvisionnements : UVE, ER et espèces (et déstockage)"
 
@@ -1629,6 +1682,18 @@ msgstr "Approvisionnements dus aux clients (soldes prépayés / trop-perçus)"
 
 msgid "Supply due to you"
 msgstr "Approvisionnement qui vous est dû"
+
+msgid "Supply to POS"
+msgstr "Approvisionnement PDV"
+
+msgid "Supply to a commercial agent"
+msgstr "Approvisionner un agent commercial"
+
+msgid "Supply to a point of sale (POS)"
+msgstr "Approvisionner un point de vente (PDV)"
+
+msgid "Supply to agent"
+msgstr "Approvisionnement agent"
 
 msgid "Surplus"
 msgstr "Excédent"
@@ -1816,6 +1881,16 @@ msgstr "Taux de conversion UVE → ER"
 msgid "UVE → ER conversions and rates used"
 msgstr "Conversions UVE → ER et taux utilisés"
 
+msgid "UVE, ER or cash given to a commercial agent"
+msgstr "UVE, ER ou espèces remis à un agent commercial"
+
+msgid ""
+"UVE, ER or cash given to a commercial agent. The agent's balance increases. "
+"ER must come from your master zone's master SIM."
+msgstr ""
+"UVE, ER ou espèces remis à un agent commercial. Le solde de l'agent "
+"augmente. L'ER doit partir de la SIM maître de votre zone principale."
+
 msgid "UVE, ER or cash given to an agent or POS"
 msgstr "UVE, ER ou espèces remis à un agent ou PDV"
 
@@ -1977,6 +2052,9 @@ msgstr "autre téléphone"
 msgid "owed to the company"
 msgstr "dû à l'entreprise"
 
+msgid "owes"
+msgstr "doit"
+
 msgid "phone / SIM"
 msgstr "téléphone / SIM"
 
@@ -1997,11 +2075,17 @@ msgstr "remplacement"
 msgid "role"
 msgstr "rôle"
 
+msgid "settled"
+msgstr "soldé"
+
 msgid "shared use"
 msgstr "usage partagé"
 
 msgid "subzone"
 msgstr "sous-zone"
+
+msgid "supply due"
+msgstr "approvisionnement dû"
 
 msgid "supply due to customer"
 msgstr "approvisionnement dû au client"

@@ -12,6 +12,6 @@
 <h2>{% trans "Latest movements" %}</h2>
 <div class="tbl-wrap"><table class="t">
 <thead><tr><th>{% trans "Recorded at" %}</th><th>{% trans "Reference" %}</th><th>{% trans "Type" %}</th><th class="money">{% trans "Amount" %}</th></tr></thead>
-<tbody>{% for t in recent %}<tr{% if t.is_corrected %} class="corrected"{% endif %}><td>{{ t.posted_at|date:"d/m/Y H:i" }}</td><td class="keep"><a href="{% url 'txn_detail' t.pk %}">{{ t.reference }}</a>{% if t.is_corrected %} <span class="badge bad">{% trans "CORRECTED" %}</span>{% endif %}</td><td>{{ t.get_type_display }}{% if t.product %} · {{ t.product }}{% endif %}{% if t.payment_method %} · {{ t.get_payment_method_display }}{% endif %}</td><td class="money">{{ t.amount|fcfa }}</td></tr>
+<tbody>{% for t in recent %}<tr{% if t.is_corrected %} class="corrected"{% endif %}><td>{{ t.posted_at|date:"d/m/Y H:i" }}</td><td class="keep"><a href="{% url 'txn_detail' t.pk %}">{{ t.reference }}</a>{% if t.is_corrected %} <span class="badge bad">{% trans "CORRECTED" %}</span>{% endif %}</td><td>{{ t.display_type }}{% if t.product %} · {{ t.product }}{% endif %}{% if t.payment_method %} · {{ t.get_payment_method_display }}{% endif %}</td><td class="money">{{ t.amount|fcfa }}</td></tr>
 {% empty %}<tr><td colspan="4" class="muted">{% trans "No transactions." %}</td></tr>{% endfor %}</tbody></table></div>
 {% endblock %}

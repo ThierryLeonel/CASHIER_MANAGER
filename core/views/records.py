@@ -111,7 +111,7 @@ def _customer_balance_after(t):
 
 def receipt_rows(t):
     T = TxType
-    rows = [(_("Type"), t.get_type_display()),
+    rows = [(_("Type"), t.display_type),
             (_("Recorded at (Africa/Douala)"), timezone.localtime(t.posted_at).strftime("%d/%m/%Y %H:%M:%S")),
             (_("Business date"), t.business_date.strftime("%d/%m/%Y"))]
     cashier = t.cashier_day.cashier if t.cashier_day_id else t.entered_by
@@ -237,3 +237,32 @@ def txn_transfer(request, pk):
     return render(request, "core/transfer.html", {
         "t": t, "form": form, "current": cur, "current_balance": balance(cur.account) if cur else None,
         "customers": Counterparty.objects.filter(active=True)})
+
+
+@roles_required(*STAFF)
+def customer_search(request):
+    """Live search for the customer pickers: business SIM digits or name."""
+    from django.http import JsonResponse
+
+    q = (request.GET.get("q") or "").strip()
+    kind = request.GET.get("kind") or ""
+    qs = Counterparty.objects.filter(active=True)
+    if kind in Counterparty.Kind.values:
+        qs = qs.filter(kind=kind)
+    if q:
+        digits = "".join(ch for ch in q if ch.isdigit())
+        cond = Q(name__icontains=q)
+        if digits:
+            cond |= Q(business_sim__contains=digits[-9:] if len(digits) > 9 else digits)
+        qs = qs.filter(cond)
+    qs = list(qs.order_by("kind", "name")[:15])
+    bals = dict(Entry.objects.filter(account__counterparty__in=qs).values_list("account__counterparty")
+                .annotate(s=Sum("amount")))
+    out = []
+    for c in qs:
+        bal = bals.get(c.id) or 0
+        out.append({"sim": c.business_sim, "sim_display": display_sim(c.business_sim), "name": c.name,
+                    "kind": c.kind, "kind_label": str(c.get_kind_display()), "balance": int(bal),
+                    "balance_display": fmt(abs(bal)),
+                    "balance_label": str(_("owes") if bal > 0 else _("supply due") if bal < 0 else _("settled"))})
+    return JsonResponse({"results": out})

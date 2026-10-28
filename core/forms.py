@@ -43,6 +43,7 @@ class CustomerField(forms.CharField):
                                                            "inputmode": "tel", "placeholder": "6XX XX XX XX"}))
         kwargs.setdefault("help_text", _("Business SIM number"))
         super().__init__(*args, **kwargs)
+        self.widget.attrs["data-customer-search"] = kind or ""
 
     def clean(self, value):
         value = super().clean(value)
@@ -99,12 +100,11 @@ class BaseEntryForm(forms.Form):
         return d
 
 
-class SupplyForm(BaseEntryForm):
+class AgentSupplyForm(BaseEntryForm):
+    """Supply to a commercial agent (the normal case)."""
+
     product = forms.ChoiceField(label=_("Product"), choices=Product.choices)
-    customer = CustomerField(label=_("Responsible customer (business SIM)"))
-    recipient = CustomerField(label=_("Receiving POS, if assigned to the agent above"), required=False,
-                              kind=Counterparty.Kind.POS,
-                              help_text=_("Only when a POS receives the supply and an agent explicitly assumes it."))
+    agent = CustomerField(label=_("Commercial agent (business SIM)"), kind=Counterparty.Kind.AGENT)
     amount = MoneyField(label=_("Amount (FCFA)"))
     source_account = AccountChoiceField(label=_("Company account sending"), queryset=Account.objects.none())
     description = forms.CharField(label=_("Note"), required=False, max_length=255)
@@ -112,6 +112,36 @@ class SupplyForm(BaseEntryForm):
     def __init__(self, user, *args, **kwargs):
         super().__init__(user, *args, **kwargs)
         self.fields["source_account"].queryset = self.accounts([K.UVE, K.ER, K.CASH_DRAWER])
+
+    def params(self):
+        d = super().params()
+        d["customer"] = d.pop("agent")
+        return d
+
+
+class PosSupplyForm(BaseEntryForm):
+    """Exceptional direct supply to a point of sale. The POS owes, unless an
+    agent explicitly assumes the obligation at entry."""
+
+    product = forms.ChoiceField(label=_("Product"), choices=Product.choices)
+    pos = CustomerField(label=_("Point of sale (business SIM)"), kind=Counterparty.Kind.POS)
+    assign_agent = CustomerField(label=_("Commercial agent who assumes this debt (optional)"), required=False,
+                                 kind=Counterparty.Kind.AGENT,
+                                 help_text=_("Leave empty: the POS owes. Fill only if an agent explicitly takes "
+                                             "responsibility now."))
+    amount = MoneyField(label=_("Amount (FCFA)"))
+    source_account = AccountChoiceField(label=_("Company account sending"), queryset=Account.objects.none())
+    description = forms.CharField(label=_("Note"), required=False, max_length=255)
+
+    def __init__(self, user, *args, **kwargs):
+        super().__init__(user, *args, **kwargs)
+        self.fields["source_account"].queryset = self.accounts([K.UVE, K.ER, K.CASH_DRAWER])
+
+    def params(self):
+        d = super().params()
+        pos, agent = d.pop("pos"), d.pop("assign_agent")
+        d["customer"], d["recipient"] = (agent, pos) if agent else (pos, None)
+        return d
 
 
 class DestockageForm(BaseEntryForm):

@@ -1,8 +1,10 @@
-{% extends "core/base.html" %}{% load i18n %}
+{% extends "core/base.html" %}{% load i18n cashier %}
 {% block topbar %}{{ title }}{% endblock %}
 {% block content %}
-<h1>{{ title }}</h1>
-{% if intro %}<p class="muted">{{ intro }}</p>{% endif %}
+<div class="form-head">
+  {% if icon %}<span class="form-ic">{% icon icon 26 %}</span>{% endif %}
+  <div><h1>{{ title }}</h1>{% if intro %}<p class="muted">{{ intro }}</p>{% endif %}</div>
+</div>
 <div class="panel">
 <form method="post" class="entry" novalidate id="entry-form" data-rate="{{ rate|default:'' }}">{% csrf_token %}
   {% include "core/inc/fields.html" %}

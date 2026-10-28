@@ -10,7 +10,7 @@
   {% if t.is_corrected %}<div class="wm">{% trans "CORRECTED" %}<small>{% trans "Reason" %}: {{ t.correction.reason }}</small></div>{% endif %}
   <div style="font-size:16pt;font-weight:800">{{ COMPANY_NAME }}</div>
   <div style="font-size:10pt;color:#555">{{ company_address }}</div>
-  <div style="margin-top:8mm;font-weight:700;font-size:12pt">{% trans "RECEIPT" %} / {{ t.get_type_display|upper }}</div>
+  <div style="margin-top:8mm;font-weight:700;font-size:12pt">{% trans "RECEIPT" %} / {{ t.display_type|upper }}</div>
   <div>{% trans "Receipt no." %} <strong>{{ t.receipt_no }}</strong> &nbsp; {% trans "Reference" %} <strong>{{ t.reference }}</strong></div>
   <div class="amount">{{ t.amount|fcfa }} FCFA</div>
   <table>

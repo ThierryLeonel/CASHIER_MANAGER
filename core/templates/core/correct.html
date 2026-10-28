@@ -1,7 +1,7 @@
 {% extends "core/base.html" %}{% load i18n cashier %}
 {% block title %}{% trans "Correct" %} {{ t.reference }}{% endblock %}
 {% block content %}
-<h1>{% trans "Correct" %} {{ t.get_type_display }} {{ t.reference }}</h1>
+<h1>{% trans "Correct" %} {{ t.display_type }} {{ t.reference }}</h1>
 <p class="muted">{% blocktrans %}Nothing is overwritten or deleted. The original stays on record with a CORRECTED stamp; a reversal (and, if you choose, a replacement with the corrected values) is posted on the cashier's current open business day. Closed days are not rewritten.{% endblocktrans %}</p>
 <div class="panel"><dl class="kv">{% for k, v in rows %}<dt>{{ k }}</dt><dd>{{ v }}</dd>{% endfor %}<dt>{% trans "Amount" %}</dt><dd>{{ t.amount|fcfa }} FCFA</dd></dl></div>
 <div class="panel">
