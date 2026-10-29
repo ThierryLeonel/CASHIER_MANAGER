@@ -153,8 +153,32 @@ METHOD_ACCOUNT_KIND = {PaymentMethod.CASH: K.CASH_DRAWER, PaymentMethod.UVE: K.U
                        PaymentMethod.MTN: K.MTN, PaymentMethod.BANK: K.BANK}
 
 
-def build_collection(ctx, *, payer, method, amount, account, bank_reference="", description=""):
+def clean_split(split, total, *, allow_negative=False):
+    """{"UVE": 1000, "CASH": 0, "ER": 500} -> {"UVE": 1000, "ER": 500} (sum must equal total), or None."""
+    if not split:
+        return None
+    out = {}
+    for k, v in split.items():
+        if k not in Product.values:
+            raise BusinessError(_("Unknown product %(p)s.") % {"p": k})
+        if v in (None, ""):
+            continue
+        v = _money(v)
+        if v < 0 and not allow_negative:
+            raise BusinessError(_("Product amounts cannot be negative."), "amount")
+        if v:
+            out[k] = int(v)
+    if not out:
+        return None
+    if sum(out.values()) != total:
+        raise BusinessError(_("UVE + Cash + ER (%(sum)s FCFA) must equal the amount (%(amt)s FCFA).")
+                            % {"sum": fmt(sum(out.values())), "amt": fmt(total)}, "amount")
+    return out
+
+
+def build_collection(ctx, *, payer, method, amount, account, bank_reference="", description="", split=None):
     amount = _positive(amount)
+    split = clean_split(split, amount)
     _active_party(payer, _("Paying customer"))
     if method not in METHOD_ACCOUNT_KIND:
         raise BusinessError(_("Choose a payment method."), "method")
@@ -179,7 +203,7 @@ def build_collection(ctx, *, payer, method, amount, account, bank_reference="", 
         type=TxType.COLLECTION,
         lines=[(account, amount), (payer.account, -amount)],
         fields=dict(amount=amount, payment_method=method, counterparty=payer, dest_account=account,
-                    bank_reference=bank_reference, description=description or ""),
+                    bank_reference=bank_reference, description=description or "", product_split=split),
         receipt=True,
     )
 
@@ -330,7 +354,7 @@ def record_exchange_leg(user, idempotency_key=None, acting_for=None, **params):
 OPENING_KINDS = Account.ASSET_KINDS + (K.CUSTOMER, K.CASH_MANAGER)
 
 
-def build_opening(ctx, *, account, amount, description=""):
+def build_opening(ctx, *, account, amount, description="", split=None):
     """amount is signed: for customers + = owes company, - = supply due to
     customer; for cash managers + = owes company, - = company owes them;
     for company assets it must be >= 0."""
@@ -345,8 +369,11 @@ def build_opening(ctx, *, account, amount, description=""):
     if ctx.exclude_txn_id is None and existing.exists():
         raise BusinessError(_("%(acct)s already has an opening balance (%(ref)s). Use a correction to change it.")
                             % {"acct": account, "ref": existing.first().reference})
+    split = clean_split(split, amount, allow_negative=True)
+    if split and account.kind != K.CUSTOMER:
+        raise BusinessError(_("Only agents and POS openings are split by product."), "account")
     equity = Account.system(K.OPENING_EQUITY)
-    fields = dict(amount=abs(amount), description=description or "",
+    fields = dict(amount=abs(amount), description=description or "", product_split=split,
                   counterparty=account.counterparty if account.kind == K.CUSTOMER else None,
                   cash_manager=account.cash_manager if account.kind == K.CASH_MANAGER else None,
                   dest_account=account if account.is_asset else None)
@@ -355,12 +382,13 @@ def build_opening(ctx, *, account, amount, description=""):
     return TxSpec(type=TxType.OPENING_BALANCE, lines=[(account, amount), (equity, -amount)], fields=fields)
 
 
-def record_opening_balance(user, *, account, amount, business_date=None, description="", idempotency_key=None):
+def record_opening_balance(user, *, account, amount, business_date=None, description="", idempotency_key=None,
+                          split=None):
     perm.require_role(user, perm.OPENING_ROLES)
     ctx = Ctx(entered_by=user, cashier=None, day=None, business_date=business_date or douala_today())
     with transaction.atomic():
         lock_accounts([account.id])  # serialise duplicate initialisation attempts
-        spec = build_opening(ctx, account=account, amount=amount, description=description)
+        spec = build_opening(ctx, account=account, amount=amount, description=description, split=split)
         return post([spec], ctx, idempotency_key)[0]
 
 

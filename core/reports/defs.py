@@ -11,7 +11,7 @@ from django.utils.translation import gettext_lazy as _l
 
 from core.models import (
     Account, CashManager, CashManagerExchange, ClosingLine, ConversionRate, Correction, Counterparty, Discrepancy,
-    Entry, ExpenseCategory, PaymentMethod, Transaction, TxType,
+    Entry, ExpenseCategory, PaymentMethod, Product, Transaction, TxType,
 )
 from core.services import operations as ops
 
@@ -189,6 +189,10 @@ def statement(f):
         (_("Supplied UVE"), by_product["UVE"], "money"), (_("Supplied ER"), by_product["ER"], "money"),
         (_("Supplied cash"), by_product["CASH"], "money"), (_("Destockage"), by_product["DESTOCKAGE"], "money"),
     ] + [(_("Paid by %(m)s") % {"m": PaymentMethod(m).label}, v, "money") for m, v in sorted(by_method.items())]
+    pb = product_balances([cp], f.date_to)[cp.id]
+    rep.summary += [(_("Owed in %(p)s (end of period)") % {"p": Product(k).label}, pb[k], "money") for k in SPLIT_KEYS]
+    if pb["unsplit"]:
+        rep.summary.append((_("Not split by product"), pb["unsplit"], "money"))
     rep.tables.append(Table(_("Movements (positive = owed to company, negative balance = supply due to customer)"), [
         Col("posted_at", _("Recorded at"), "datetime"), Col("business_date", _("Business date"), "date"),
         Col("reference", _("Reference")), Col("receipt", _("Receipt")), Col("type", _("Type")),
@@ -637,9 +641,93 @@ def reconciliation(f):
     return rep
 
 
+# ---------------------------------------------------------------- debt by product
+SPLIT_KEYS = (Product.UVE, Product.CASH, Product.ER)
+
+
+def _attribution(t, amount, memo):
+    """How one customer entry (signed amount) splits over UVE / CASH / ER. Unknown parts are left out."""
+    key = (t.pk, amount)
+    if key in memo:
+        return memo[key]
+    out = {}
+    if t.type in (TxType.SUPPLY, TxType.DESTOCKAGE) and t.product:
+        out = {t.product: amount}
+    elif t.type in (TxType.OPENING_BALANCE, TxType.COLLECTION) and t.product_split:
+        sign = 1 if amount > 0 else -1
+        total = sum(abs(v) for v in t.product_split.values())
+        if t.type == TxType.OPENING_BALANCE:  # parts are signed and add up to the entry
+            out = {k: Decimal(v) for k, v in t.product_split.items()} if sum(t.product_split.values()) == amount \
+                else {}
+        elif total == abs(amount):
+            out = {k: sign * Decimal(abs(v)) for k, v in t.product_split.items()}
+    elif t.type == TxType.RESPONSIBILITY_TRANSFER and t.related_supply_id:
+        src = _attribution(t.related_supply, abs(amount), memo)
+        if sum(src.values()) == abs(amount):
+            out = {k: (v if amount > 0 else -v) for k, v in src.items()}
+    elif t.type == TxType.REVERSAL and t.reverses_id:
+        src = _attribution(t.reverses, -amount, memo)
+        out = {k: -v for k, v in src.items()}
+    memo[key] = out
+    return out
+
+
+def product_balances(cps, date_to=None):
+    """{counterparty_id: {"UVE":, "CASH":, "ER":, "unsplit":, "total":}} up to date_to."""
+    acct_cp = {c.account.id: c.id for c in cps}
+    res = {cid: {k: Z for k in SPLIT_KEYS} | {"unsplit": Z, "total": Z} for cid in acct_cp.values()}
+    ents = Entry.objects.filter(account_id__in=acct_cp.keys()).select_related(
+        "transaction__related_supply", "transaction__reverses__related_supply")
+    if date_to:
+        ents = ents.filter(business_date__lte=date_to)
+    memo = {}
+    for e in ents:
+        r = res[acct_cp[e.account_id]]
+        r["total"] += e.amount
+        for k, v in _attribution(e.transaction, e.amount, memo).items():
+            r[k] += v
+    for r in res.values():
+        r["unsplit"] = r["total"] - sum(r[k] for k in SPLIT_KEYS)
+    return res
+
+
+def debt_by_product(f):
+    rep = Report("debt_by_product", _("Agent and POS debt by product (UVE, Cash, ER)"), f.text())
+    cps = Counterparty.objects.select_related("microzone__subzone").order_by(
+        "microzone__subzone__name", "microzone__name", "name")
+    if f.customer:
+        cps = cps.filter(pk=f.customer.pk)
+    if f.subzone:
+        cps = cps.filter(microzone__subzone=f.subzone)
+    elif f.master_zone:
+        cps = cps.filter(microzone__subzone__parent=f.master_zone)
+    cps = list(cps)
+    bals = product_balances(cps, f.date_to)
+    rows, tot = [], {k: Z for k in (*SPLIT_KEYS, "unsplit", "total")}
+    for cp in cps:
+        b = bals[cp.id]
+        if not any(b.values()):
+            continue
+        mz = cp.microzone
+        rows.append(dict(microzone=f"{mz.subzone.name} › {mz.name}" if mz else "", name=cp.name,
+                         sim=cp.sim_display, kind=cp.get_kind_display(), **b))
+        for k in tot:
+            tot[k] += b[k]
+    if rows:
+        rows.append(dict(microzone=_("TOTAL"), name="", sim="", kind="", **tot, _bold=True))
+    cols = [Col("microzone", _("Microzone")), Col("name", _("Name")), Col("sim", _("Business SIM")),
+            Col("kind", _("Type"))] + [Col(k, Product(k).label, "money", True) for k in SPLIT_KEYS] + [
+        Col("unsplit", _("Not split"), "money", True), Col("total", _("Balance"), "money", True)]
+    rep.summary = [(Product(k).label, tot[k], "money") for k in SPLIT_KEYS] + [(_("Balance"), tot["total"], "money")]
+    rep.tables.append(Table(_("Positive = owed to the company; negative = supply due to the customer. \"Not split\" "
+                              "= openings, payments or corrections recorded without product parts."), cols, rows))
+    return rep
+
+
 REPORTS = {
     "statement": (_l("Customer account statement"), statement),
     "customers": (_l("Customer balances"), customers),
+    "debt_by_product": (_l("Debt by product (UVE, Cash, ER)"), debt_by_product),
     "pos": (_l("POS transactions and outstanding"), pos),
     "supplies": (_l("Supplies (UVE, ER, cash)"), supplies),
     "collections": (_l("Collections by payment method"), collections),
@@ -660,6 +748,7 @@ REPORTS = {
 REPORT_CARDS = {
     "statement": ("statement", _l("Every supply and payment of one agent or POS, with running balance")),
     "customers": ("users", _l("What each agent and POS owes, or is owed")),
+    "debt_by_product": ("chart", _l("What each agent owes in UVE, cash and ER, by microzone")),
     "pos": ("store", _l("Direct POS supplies and their outstanding amounts")),
     "supplies": ("supply", _l("UVE, ER and cash supplies, agents versus POS")),
     "collections": ("payment", _l("Payments received: cash, UVE, MTN, bank")),

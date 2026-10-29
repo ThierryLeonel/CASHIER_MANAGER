@@ -408,3 +408,10 @@ input[type=file] { font: inherit; padding: 10px; border: 1px dashed var(--line);
 .og-label { min-width: 140px; }
 .cs-mz { display: inline-block; font-weight: 700; color: var(--accent-strong); background: var(--accent-soft);
   border-radius: 6px; padding: 0 6px; margin-right: 4px; font-size: .86em; }
+/* UVE / Cash / ER parts side by side */
+.split-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.split-row .field { margin-bottom: 4px; }
+.split-row .help { display: none; }
+.help.split-help { margin: 0 0 14px; font-size: .78rem; color: var(--muted); line-height: 1.4; }
+@media (max-width: 560px) { .split-row { grid-template-columns: 1fr; } }
+input.auto { background: var(--soft); font-weight: 700; }

@@ -221,6 +221,8 @@ class Transaction(models.Model):
     opening_for_account = models.ForeignKey(Account, null=True, blank=True, on_delete=models.PROTECT,
                                             related_name="opening_transactions")
     original_business_date = models.DateField(null=True, blank=True)
+    # Customer openings and payments: how the amount splits over the products, e.g. {"UVE": 300000, "ER": 100000}
+    product_split = models.JSONField(null=True, blank=True)
 
     class Meta:
         ordering = ["-posted_at", "-id"]

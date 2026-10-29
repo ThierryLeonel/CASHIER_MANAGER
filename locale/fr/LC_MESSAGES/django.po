@@ -219,6 +219,9 @@ msgstr "Administration"
 msgid "Agent (owes)"
 msgstr "Agent (redevable)"
 
+msgid "Agent and POS debt by product (UVE, Cash, ER)"
+msgstr "Dette des agents et PDV par produit (UVE, espèces, ER)"
+
 msgid "Agent in charge"
 msgstr "Agent responsable"
 
@@ -237,6 +240,13 @@ msgid ""
 msgstr ""
 "Agents et PDV, cash managers, portefeuilles float MTN et comptes bancaires :"
 " un à la fois."
+
+msgid ""
+"Agents and POS: what they owe in UVE, Cash and ER. The total adds up by "
+"itself (a negative part = supply due to them)."
+msgstr ""
+"Agents et PDV : ce qu'ils doivent en UVE, espèces et ER. Le total se calcule"
+" tout seul (une part négative = approvisionnement dû à eux)."
 
 msgid "Agents versus POS"
 msgstr "Agents ou PDV"
@@ -985,6 +995,9 @@ msgstr ""
 msgid "Debit (+)"
 msgstr "Débit (+)"
 
+msgid "Debt by product (UVE, Cash, ER)"
+msgstr "Dette par produit (UVE, espèces, ER)"
+
 msgid "Delete"
 msgstr "Supprimer"
 
@@ -1112,6 +1125,9 @@ msgstr "Saisissez la référence du versement bancaire."
 msgid "Enter the go-live date."
 msgstr "Saisissez la date de démarrage."
 
+msgid "Enter the total, or the UVE, Cash and ER parts."
+msgstr "Saisissez le total, ou les parts UVE, espèces et ER."
+
 msgid "Enter the uplift as a percentage, e.g. 4 or 4.5."
 msgstr "Saisissez le bonus en pourcentage, ex. 4 ou 4,5."
 
@@ -1222,6 +1238,9 @@ msgstr "Expliqué par la correction d'une transaction"
 
 msgid "File (.xlsx or .csv)"
 msgstr "Fichier (.xlsx ou .csv)"
+
+msgid "Filled automatically from the parts above."
+msgstr "Rempli automatiquement à partir des parts ci-dessus."
 
 msgid "Finance manager"
 msgstr "Responsable financier"
@@ -1590,6 +1609,12 @@ msgstr ""
 msgid "None yet."
 msgstr "Aucun pour l'instant."
 
+msgid "Not split"
+msgstr "Non réparti"
+
+msgid "Not split by product"
+msgstr "Non réparti par produit"
+
 msgid "Note"
 msgstr "Note"
 
@@ -1631,6 +1656,14 @@ msgstr ""
 
 msgid "Only a commercial agent can be in charge of a microzone."
 msgstr "Seul un agent commercial peut être responsable d'une microzone."
+
+msgid "Only agents and POS openings are split by product."
+msgstr "Seules les ouvertures des agents et PDV sont réparties par produit."
+
+msgid "Only agents and POS openings are split by product. Use the total."
+msgstr ""
+"Seules les ouvertures des agents et PDV sont réparties par produit. Utilisez"
+" le total."
 
 msgid "Only an opening amount owed by the customer can be transferred."
 msgstr "Seul un montant d'ouverture dû par le client peut être transféré."
@@ -1762,6 +1795,10 @@ msgstr "Vue d'ensemble — toutes zones"
 msgid "Overview — zone %(z)s"
 msgstr "Vue d’ensemble — zone %(z)s"
 
+#, python-format
+msgid "Owed in %(p)s (end of period)"
+msgstr "Dû en %(p)s (fin de période)"
+
 msgid "Owed to company"
 msgstr "Dû à l'entreprise"
 
@@ -1865,6 +1902,14 @@ msgstr "Positions"
 msgid "Positions (positive = cash manager owes the company)"
 msgstr "Positions (positif = le gestionnaire de cash doit à l'entreprise)"
 
+msgid ""
+"Positive = owed to the company; negative = supply due to the customer. \"Not"
+" split\" = openings, payments or corrections recorded without product parts."
+msgstr ""
+"Positif = dû à l'entreprise ; négatif = approvisionnement dû au client. « "
+"Non réparti » = ouvertures, paiements ou corrections enregistrés sans parts "
+"par produit."
+
 msgid "Post correction"
 msgstr "Passer la correction"
 
@@ -1886,6 +1931,9 @@ msgstr "Imprimé en bas de chaque reçu, par ex. remerciements ou conditions."
 
 msgid "Product"
 msgstr "Produit"
+
+msgid "Product amounts cannot be negative."
+msgstr "Les montants par produit ne peuvent pas être négatifs."
 
 msgid "RECEIPT"
 msgstr "REÇU"
@@ -2269,6 +2317,9 @@ msgstr "Approvisionnement agent"
 msgid "Surplus"
 msgstr "Excédent"
 
+msgid "TOTAL"
+msgstr "TOTAL"
+
 msgid "TOTAL OPENING"
 msgstr "TOTAL OUVERTURE"
 
@@ -2487,6 +2538,9 @@ msgstr "Trop de lignes (maximum %(n)s par fichier)."
 msgid "Total"
 msgstr "Total"
 
+msgid "Total (FCFA)"
+msgstr "Total (FCFA)"
+
 msgid "Totals by category"
 msgstr "Totaux par catégorie"
 
@@ -2563,6 +2617,11 @@ msgid "Type the microzone, the name or the business SIM number, then pick."
 msgstr ""
 "Saisissez la microzone, le nom ou le numéro SIM commercial, puis choisissez."
 
+#, python-format
+msgid "UVE + Cash + ER (%(sum)s FCFA) must equal the amount (%(amt)s FCFA)."
+msgstr ""
+"UVE + espèces + ER (%(sum)s FCFA) doit être égal au montant (%(amt)s FCFA)."
+
 msgid "UVE amount (FCFA)"
 msgstr "Montant UVE (FCFA)"
 
@@ -2630,6 +2689,10 @@ msgstr "Catégorie de dépense inconnue %(v)s"
 #, python-format
 msgid "Unknown master zone %(v)s"
 msgstr "Zone principale inconnue %(v)s"
+
+#, python-format
+msgid "Unknown product %(p)s."
+msgstr "Produit inconnu %(p)s."
 
 #, python-format
 msgid "Unknown subzone %(v)s"
@@ -2702,6 +2765,9 @@ msgstr "Que voulez-vous enregistrer ?"
 msgid "What each agent and POS owes, or is owed"
 msgstr "Ce que chaque agent et PDV doit, ou ce qui lui est dû"
 
+msgid "What each agent owes in UVE, cash and ER, by microzone"
+msgstr "Ce que chaque agent doit en UVE, espèces et ER, par microzone"
+
 msgid "What happened"
 msgstr "Ce qui a eu lieu"
 
@@ -2710,6 +2776,13 @@ msgstr "Ce qu'il faut effacer"
 
 msgid "When"
 msgstr "Quand"
+
+msgid ""
+"Which debt this payment settles: UVE, Cash and/or ER. The parts add up to "
+"the amount received. Leave empty if not known."
+msgstr ""
+"Quelle dette ce paiement règle : UVE, espèces et/ou ER. Les parts "
+"s'additionnent pour donner le montant reçu. Laissez vide si inconnu."
 
 msgid "Who changed what, and the deleted data"
 msgstr "Qui a modifié quoi, et les données supprimées"

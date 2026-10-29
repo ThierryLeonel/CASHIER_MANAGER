@@ -43,6 +43,7 @@ Orange Cameroon distribution partner · FCFA (XAF) · Africa/Douala business dat
 - **Opening balances** are entered on a grid of the control accounts — cash, UVE and ER — by master zone and subzone/master SIM, with totals per column, per zone and the **total opening**. All typed amounts are posted together (all or nothing, idempotent). Agents/POS, cash managers, MTN float and banks are still entered one at a time below the grid.
 - **Expenses** can be settled from a cash drawer, a UVE wallet or an MTN float wallet.
 - **Agent/POS pickers** (supply, payment, destockage, responsibility transfer) lead with the **microzone**, then the name, SIM and subzone, and search by microzone, name or SIM — agents can be moved, the microzone stays.
+- **Debt by product**: agent/POS openings can be split into UVE, Cash and ER (the total is their sum), and a payment can say which debt it settles (UVE / Cash / ER parts adding up to the amount). Supplies carry their product; responsibility transfers and corrections follow the original. The "Debt by product" report and each statement show what is owed per product; anything recorded without parts appears as "Not split", so the columns always add up to the single combined balance.
 - Entry forms say when a subzone has no account of the needed kind yet, and who adds it.
 
 ### Company profile (multi-partner installations)
