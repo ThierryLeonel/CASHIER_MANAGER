@@ -1,0 +1,23 @@
+{% extends "core/base.html" %}{% load i18n %}
+{% block title %}{% trans "Users & passwords" %}{% endblock %}
+{% block topbar %}{% trans "Users & passwords" %}{% endblock %}
+{% block content %}
+<h1>{% trans "Users & passwords" %}</h1>
+<p class="muted">{% trans "Passwords are stored encrypted: nobody can read them, not even the administrator. Open a user to give them a new password, or to deactivate or reactivate their account." %}</p>
+<form class="filters panel" method="get">
+  <div class="field"><label>{% trans "Search (name, username, staff ID)" %}</label><input type="text" name="q" value="{{ q }}"></div>
+  <div class="field"><label>{% trans "Status" %}</label><select name="status"><option value="">—</option><option value="active" {% if status == 'active' %}selected{% endif %}>{% trans "Active" %}</option><option value="inactive" {% if status == 'inactive' %}selected{% endif %}>{% trans "Deactivated" %}</option></select></div>
+  <div class="field"><button class="btn" type="submit">{% trans "Search" %}</button> <a class="btn primary" href="{% url 'admin:core_user_add' %}">+ {% trans "New user" %}</a></div>
+</form>
+<div class="tbl-wrap"><table class="t">
+<thead><tr><th>{% trans "Name" %}</th><th>{% trans "Username" %}</th><th>{% trans "Staff ID" %}</th><th>{% trans "Role" %}</th><th>{% trans "Zone" %}</th><th>{% trans "Last sign-in" %}</th><th>{% trans "Status" %}</th><th></th></tr></thead>
+<tbody>{% for u in page %}
+<tr{% if not u.is_active %} class="muted"{% endif %}>
+  <td><strong>{{ u.get_full_name|default:u.username }}</strong></td><td>{{ u.username }}</td><td>{{ u.staff_code|default:"—" }}</td>
+  <td>{{ u.get_role_display }}</td><td>{{ u.subzone|default:"—" }}</td>
+  <td>{{ u.last_login|date:"d/m/Y H:i"|default:"—" }}</td>
+  <td>{% if u.is_active %}<span class="badge ok">{% trans "Active" %}</span>{% else %}<span class="badge bad">{% trans "Deactivated" %}</span>{% endif %}{% if u.must_change_password %} <span class="badge acc">{% trans "must change password" %}</span>{% endif %}</td>
+  <td class="keep"><a class="btn small" href="{% url 'user_detail' u.pk %}">{% trans "Password / status" %}</a></td>
+</tr>{% empty %}<tr><td colspan="8" class="muted">{% trans "Nothing found." %}</td></tr>{% endfor %}</tbody></table></div>
+<div class="pager">{% if page.has_previous %}<a class="btn small" href="?q={{ q|urlencode }}&status={{ status }}&page={{ page.previous_page_number }}">←</a>{% endif %}<span class="muted small">{{ page.number }} / {{ page.paginator.num_pages }}</span>{% if page.has_next %}<a class="btn small" href="?q={{ q|urlencode }}&status={{ status }}&page={{ page.next_page_number }}">→</a>{% endif %}</div>
+{% endblock %}

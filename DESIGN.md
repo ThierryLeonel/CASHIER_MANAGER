@@ -50,6 +50,11 @@ Orange Cameroon distribution partner · FCFA (XAF) · Africa/Douala business dat
 - **Internal transfers** are only between MTN float, UVE or bank accounts, and only between two accounts of the same kind (MTN→MTN, UVE→UVE, bank→bank). Cash drawers and ER wallets are not transferred internally. The destination list follows the source's kind.
 - Entry forms say when a subzone has no account of the needed kind yet, and who adds it.
 
+### Users & passwords
+
+- Passwords are stored hashed: nobody — not even the super administrator — can read them. The super administrator's **Users & passwords** page (Administration) lists every user with role, zone, staff ID, last sign-in and status, and lets them **reset** a password (a strong one generated and shown once, or one they type, checked against the password rules), optionally forcing the user to choose their own at next sign-in, and **deactivate / activate** accounts (deactivation signs the user out at once; you cannot deactivate yourself or the last active super administrator). Every action is in the audit log.
+- Every user can change their own password from **My password** (under their name in the menu); the current password is required.
+
 ### Company profile (multi-partner installations)
 
 The application is not tied to one distribution partner. Each installation has one **company profile** (Administration › Company profile, super administrator only): name, optional tagline, address, city, phone, email, NIU, RCCM, receipt footer and logo. The logo is validated (PNG/JPEG/WEBP/GIF, ≤ 3 MB), trimmed, resized to ≤ 600 px and stored as PNG **in the database**, so it survives redeploys on hosts with an ephemeral disk. It appears in the menu, login page, browser tab, HTML/PDF receipts and PDF/Excel reports. The optional `COMPANY_NAME` / `COMPANY_ADDRESS` settings only pre-fill a new installation.

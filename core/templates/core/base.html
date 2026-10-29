@@ -52,6 +52,7 @@
     <div class="side-group">{% trans "Administration" %}</div>
     <a href="{% url 'admin_home' %}" class="{% if u == 'admin_home' %}on{% endif %}">{% icon "settings" %}<span>{% trans "Admin tools" %}</span></a>
     <a href="{% url 'import_data' %}" class="{% if u == 'import_data' %}on{% endif %}">{% icon "upload" %}<span>{% trans "Import CSV / Excel" %}</span></a>
+    <a href="{% url 'users' %}" class="{% if u == 'users' or u == 'user_detail' %}on{% endif %}">{% icon "users" %}<span>{% trans "Users & passwords" %}</span></a>
     <a href="{% url 'company_profile' %}" class="{% if u == 'company_profile' %}on{% endif %}">{% icon "settings" %}<span>{% trans "Company profile" %}</span></a>
     <a href="{% url 'audit_log' %}" class="{% if u == 'audit_log' %}on{% endif %}">{% icon "statement" %}<span>{% trans "Audit log" %}</span></a>
     <a href="{% url 'opening_balances' %}" class="{% if u == 'opening_balances' %}on{% endif %}">{% icon "key" %}<span>{% trans "Opening balances" %}</span></a>
@@ -63,7 +64,7 @@
   <div class="side-foot">
     <div class="me">
       <span class="avatar">{{ user.first_name|default:user.username|slice:":1"|upper }}</span>
-      <span class="me-text"><strong>{{ user }}</strong><small>{{ user.get_role_display }}{% if user.subzone %} · {{ user.subzone }}{% endif %}</small></span>
+      <span class="me-text"><strong>{{ user }}</strong><small>{{ user.get_role_display }}{% if user.subzone %} · {{ user.subzone }}{% endif %}</small><a class="mypw" href="{% url 'my_password' %}">{% icon "key" 13 %} {% trans "My password" %}</a></span>
     </div>
     <div class="side-actions">
       <form action="{% url 'set_lang' %}" method="post" class="lang">{% csrf_token %}

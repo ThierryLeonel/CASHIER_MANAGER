@@ -1,0 +1,47 @@
+{% extends "core/base.html" %}{% load i18n %}
+{% block title %}{{ u.username }}{% endblock %}
+{% block topbar %}{% trans "Users & passwords" %}{% endblock %}
+{% block back_url %}{% url 'users' %}{% endblock %}
+{% block content %}
+<h1>{{ u.get_full_name|default:u.username }} {% if u.is_active %}<span class="badge ok">{% trans "Active" %}</span>{% else %}<span class="badge bad">{% trans "Deactivated" %}</span>{% endif %}</h1>
+<div class="panel"><dl class="kv">
+  <dt>{% trans "Username" %}</dt><dd>{{ u.username }}</dd>
+  <dt>{% trans "Staff ID" %}</dt><dd>{{ u.staff_code|default:"—" }}</dd>
+  <dt>{% trans "Role" %}</dt><dd>{{ u.get_role_display }}{% if u.subzone %} · {{ u.subzone }}{% endif %}</dd>
+  <dt>{% trans "Last sign-in" %}</dt><dd>{{ u.last_login|date:"d/m/Y H:i"|default:"—" }}</dd>
+  <dt>{% trans "Password" %}</dt><dd>{% if u.has_usable_password %}•••••••• <span class="muted small">{% trans "(stored encrypted, cannot be shown)" %}</span>{% else %}{% trans "No password set" %}{% endif %}{% if u.must_change_password %} <span class="badge acc">{% trans "must change password" %}</span>{% endif %}</dd>
+</dl>
+<p class="small"><a href="{% url 'admin:core_user_change' u.pk %}">{% trans "Edit name, role or zone in Configuration" %}</a></p>
+</div>
+
+{% if new_pw %}
+<div class="panel pw-shown">
+  <p><strong>{% trans "New password — give it to the user now. It will not be shown again." %}</strong></p>
+  <div class="pw-box"><code id="new-pw">{{ new_pw }}</code><button type="button" class="btn small" onclick="navigator.clipboard && navigator.clipboard.writeText(document.getElementById('new-pw').textContent); this.textContent='✓';">{% trans "Copy" %}</button></div>
+  <p class="small muted">{% blocktrans with name=u.username %}Username: {{ name }}{% endblocktrans %}</p>
+</div>
+{% endif %}
+
+<h2>{% trans "Reset the password" %}</h2>
+<div class="panel"><form method="post" class="entry" novalidate>{% csrf_token %}
+  {% include "core/inc/fields.html" %}
+  <button class="btn primary" type="submit">{% trans "Replace the password" %}</button>
+</form></div>
+
+<h2>{% trans "Account status" %}</h2>
+<div class="panel">
+  {% if u.is_active %}<p>{% trans "Deactivating signs the user out everywhere and blocks sign-in. Their history stays." %}</p>{% else %}<p>{% trans "This account is deactivated: the user cannot sign in." %}</p>{% endif %}
+  <form method="post" action="{% url 'user_toggle' u.pk %}">{% csrf_token %}
+    {% if u.is_active %}<button class="btn danger" type="submit" {% if u.pk == user.pk %}disabled title="{% trans 'You cannot deactivate your own account.' %}"{% endif %}>{% trans "Deactivate" %}</button>
+    {% else %}<button class="btn primary" type="submit">{% trans "Activate" %}</button>{% endif %}
+  </form>
+</div>
+{% endblock %}
+{% block scripts %}<script>
+(function () {
+  var pw = document.getElementById('fld-new_password');
+  var radios = document.querySelectorAll('input[name=mode]');
+  function sync() { var c = document.querySelector('input[name=mode]:checked'); if (pw) pw.hidden = !c || c.value !== 'set'; }
+  radios.forEach(function (r) { r.addEventListener('change', sync); }); sync();
+})();
+</script>{% endblock %}

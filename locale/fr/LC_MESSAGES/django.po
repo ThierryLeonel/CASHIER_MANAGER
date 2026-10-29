@@ -86,6 +86,14 @@ msgid "%(type)s %(ref)s recorded: %(amt)s FCFA."
 msgstr "%(type)s %(ref)s enregistré(e) : %(amt)s FCFA."
 
 #, python-format
+msgid "%(u)s can sign in again."
+msgstr "%(u)s peut de nouveau se connecter."
+
+#, python-format
+msgid "%(u)s is deactivated and can no longer sign in."
+msgstr "%(u)s est désactivé et ne peut plus se connecter."
+
+#, python-format
 msgid "%(z)s desk · entries go to business day %(d)s"
 msgstr "Poste %(z)s · saisies sur la journée du %(d)s"
 
@@ -96,6 +104,9 @@ msgid ""
 msgstr ""
 "%(z)s est une sous-zone de %(p)s. Choisissez une zone master, ou ouvrez "
 "Zones et videz la zone master de %(z)s."
+
+msgid "(stored encrypted, cannot be shown)"
+msgstr "(stocké chiffré, ne peut pas être affiché)"
 
 msgid ""
 "(you already closed today; new entries belong to the next business day)"
@@ -183,6 +194,9 @@ msgstr "Compte"
 msgid "Account %(acct)s is inactive."
 msgstr "Le compte %(acct)s est inactif."
 
+msgid "Account status"
+msgstr "Statut du compte"
+
 msgid ""
 "Accounts appear here once they exist. Create them first in Configuration:"
 msgstr ""
@@ -201,6 +215,12 @@ msgstr "Comptes › Ajouter"
 
 msgid "Action"
 msgstr "Action"
+
+msgid "Activate"
+msgstr "Activer"
+
+msgid "Active"
+msgstr "Actif"
 
 msgid "Active users"
 msgstr "Utilisateurs actifs"
@@ -353,6 +373,11 @@ msgstr "Êtes-vous toujours là ?"
 msgid "As of"
 msgstr "Au"
 
+msgid "Ask the user to choose their own password at next sign-in"
+msgstr ""
+"Demander à l'utilisateur de choisir son propre mot de passe à la prochaine "
+"connexion"
+
 msgid "Asset rows reconcile"
 msgstr "Les lignes d'actifs concordent"
 
@@ -360,6 +385,14 @@ msgid "Assign the cashier to a subzone, not to a master zone with subzones."
 msgstr ""
 "Affectez le caissier à une sous-zone, pas à une zone principale qui a des "
 "sous-zones."
+
+msgid "At least 10 characters, not only digits, not a common password."
+msgstr ""
+"Au moins 10 caractères, pas uniquement des chiffres, pas un mot de passe "
+"courant."
+
+msgid "At least one active super administrator must remain."
+msgstr "Au moins un super administrateur actif doit rester."
 
 msgid "Audit events"
 msgstr "Événements d'audit"
@@ -586,6 +619,12 @@ msgstr "Signature du caissier"
 
 msgid "Category"
 msgstr "Catégorie"
+
+msgid "Change my password"
+msgstr "Changer mon mot de passe"
+
+msgid "Change password"
+msgstr "Changer le mot de passe"
 
 msgid "Changed by"
 msgstr "Modifié par"
@@ -867,6 +906,9 @@ msgstr "Convertir l'UVE en ER"
 msgid "Convert UVE to ER on a SIM"
 msgstr "Convertir l'UVE en ER sur une SIM"
 
+msgid "Copy"
+msgstr "Copier"
+
 msgid "Correct"
 msgstr "Corriger"
 
@@ -1052,6 +1094,19 @@ msgstr ""
 msgid "Date served"
 msgstr "Date de service"
 
+msgid "Deactivate"
+msgstr "Désactiver"
+
+msgid "Deactivated"
+msgstr "Désactivé"
+
+msgid ""
+"Deactivating signs the user out everywhere and blocks sign-in. Their history"
+" stays."
+msgstr ""
+"La désactivation déconnecte l'utilisateur partout et bloque la connexion. "
+"Son historique est conservé."
+
 msgid "Debit (+)"
 msgstr "Débit (+)"
 
@@ -1155,6 +1210,9 @@ msgstr ""
 
 msgid "Edit"
 msgstr "Modifier"
+
+msgid "Edit name, role or zone in Configuration"
+msgstr "Modifier le nom, le rôle ou la zone dans la Configuration"
 
 msgid "Edit or delete rows"
 msgstr "Modifier ou supprimer des lignes"
@@ -1348,6 +1406,9 @@ msgstr ""
 msgid "Full statement"
 msgstr "Relevé complet"
 
+msgid "Generate a strong password for me"
+msgstr "Générer un mot de passe fort pour moi"
+
 msgid "Generated"
 msgstr "Généré le"
 
@@ -1376,6 +1437,9 @@ msgstr "Accueil"
 
 msgid "I confirm these are the actual counted/read balances."
 msgstr "Je confirme qu'il s'agit des soldes réellement comptés/relevés."
+
+msgid "I will type the new password"
+msgstr "Je saisis le nouveau mot de passe"
 
 msgid ""
 "Identified by business SIM number. Balances are shared across all cashiers."
@@ -1443,6 +1507,9 @@ msgstr "Notes d'enquête"
 
 msgid "Junior manager"
 msgstr "Manager junior"
+
+msgid "Last sign-in"
+msgstr "Dernière connexion"
 
 msgid "Latest entries of your zone"
 msgstr "Dernières écritures de votre zone"
@@ -1560,6 +1627,9 @@ msgstr "Mouvements entre comptes de l'entreprise"
 msgid "My account"
 msgstr "Mon compte"
 
+msgid "My password"
+msgstr "Mon mot de passe"
+
 msgid "My statement"
 msgstr "Mon relevé"
 
@@ -1587,6 +1657,14 @@ msgstr "Nouvel écart"
 msgid "New exchange"
 msgstr "Nouvel échange"
 
+msgid "New password"
+msgstr "Nouveau mot de passe"
+
+msgid "New password — give it to the user now. It will not be shown again."
+msgstr ""
+"Nouveau mot de passe — donnez-le à l'utilisateur maintenant. Il ne sera plus"
+" affiché."
+
 msgid "New responsible party"
 msgstr "Nouveau responsable"
 
@@ -1600,6 +1678,9 @@ msgstr "Nouvel approvisionnement"
 msgid "New uplift +%(p)s%% applies to future conversions only."
 msgstr ""
 "Le nouveau bonus +%(p)s %% s'applique uniquement aux conversions futures."
+
+msgid "New user"
+msgstr "Nouvel utilisateur"
 
 msgid "No UVE→ER conversion rate is configured. Ask the super administrator."
 msgstr ""
@@ -1662,6 +1743,9 @@ msgstr ""
 
 msgid "No notes yet."
 msgstr "Aucune note pour l'instant."
+
+msgid "No password set"
+msgstr "Aucun mot de passe défini"
 
 #, python-format
 msgid "No single %(kind)s account for your subzone: choose one."
@@ -1759,6 +1843,9 @@ msgid ""
 msgstr ""
 "Seuls les approvisionnements, déstockages et dettes d'ouverture peuvent "
 "changer de responsable."
+
+msgid "Only the super administrator manages user accounts."
+msgstr "Seul le super administrateur gère les comptes utilisateurs."
 
 msgid ""
 "Only when a POS receives the supply and an agent explicitly assumes it."
@@ -1951,6 +2038,25 @@ msgstr ""
 
 msgid "Password"
 msgstr "Mot de passe"
+
+msgid "Password / status"
+msgstr "Mot de passe / statut"
+
+#, python-format
+msgid "Password of %(u)s replaced."
+msgstr "Mot de passe de %(u)s remplacé."
+
+msgid "Password to set"
+msgstr "Mot de passe à définir"
+
+msgid ""
+"Passwords are stored encrypted: nobody can read them, not even the "
+"administrator. Open a user to give them a new password, or to deactivate or "
+"reactivate their account."
+msgstr ""
+"Les mots de passe sont stockés chiffrés : personne ne peut les lire, pas "
+"même l'administrateur. Ouvrez un utilisateur pour lui donner un nouveau mot "
+"de passe, ou pour désactiver ou réactiver son compte."
 
 msgid "Paying customer"
 msgstr "Client payeur"
@@ -2159,6 +2265,9 @@ msgstr "Supprimer toutes les transactions, ou tout"
 msgid "Remove the current logo"
 msgstr "Supprimer le logo actuel"
 
+msgid "Replace the password"
+msgstr "Remplacer le mot de passe"
+
 msgid "Replacement"
 msgstr "Remplacement"
 
@@ -2171,6 +2280,12 @@ msgstr "Remplace %(ref)s"
 
 msgid "Reports"
 msgstr "Rapports"
+
+msgid "Reset passwords, activate or deactivate accounts"
+msgstr "Réinitialiser les mots de passe, activer ou désactiver les comptes"
+
+msgid "Reset the password"
+msgstr "Réinitialiser le mot de passe"
 
 msgid "Resolution"
 msgstr "Résolution"
@@ -2237,6 +2352,9 @@ msgstr "Contre-passation de %(ref)s : %(reason)s"
 msgid "Reverse and replace with corrected values"
 msgstr "Contre-passer et remplacer par les valeurs corrigées"
 
+msgid "Role"
+msgstr "Rôle"
+
 msgid "Row"
 msgstr "Ligne"
 
@@ -2266,6 +2384,9 @@ msgstr "Rechercher"
 
 msgid "Search (SIM or name)"
 msgstr "Recherche (SIM ou nom)"
+
+msgid "Search (name, username, staff ID)"
+msgstr "Rechercher (nom, identifiant, matricule)"
 
 msgid "Search, correct, transfer responsibility"
 msgstr "Rechercher, corriger, transférer la responsabilité"
@@ -2322,6 +2443,9 @@ msgstr "La source et la destination doivent être différentes."
 
 msgid "Spending by category"
 msgstr "Dépenses par catégorie"
+
+msgid "Staff ID"
+msgstr "Matricule"
 
 msgid "Statement"
 msgstr "Relevé"
@@ -2570,6 +2694,9 @@ msgstr ""
 "Elles ont été passées sur une journée ouverte ultérieure ; cette clôture n'a"
 " pas été réécrite."
 
+msgid "This account is deactivated: the user cannot sign in."
+msgstr "Ce compte est désactivé : l'utilisateur ne peut pas se connecter."
+
 msgid "This belongs to another zone."
 msgstr "Ceci appartient à une autre zone."
 
@@ -2746,6 +2873,9 @@ msgid "Type the microzone, the name or the business SIM number, then pick."
 msgstr ""
 "Saisissez la microzone, le nom ou le numéro SIM commercial, puis choisissez."
 
+msgid "Type the new password."
+msgstr "Saisissez le nouveau mot de passe."
+
 #, python-format
 msgid "UVE + Cash + ER (%(sum)s FCFA) must equal the amount (%(amt)s FCFA)."
 msgstr ""
@@ -2879,6 +3009,13 @@ msgstr "Utilisateur"
 msgid "Username"
 msgstr "Identifiant"
 
+#, python-format
+msgid "Username: %(name)s"
+msgstr "Identifiant : %(name)s"
+
+msgid "Users & passwords"
+msgstr "Utilisateurs et mots de passe"
+
 msgid "Users, zones, SIMs, drawers, banks, categories"
 msgstr "Utilisateurs, zones, SIM, caisses, banques, catégories"
 
@@ -2947,6 +3084,9 @@ msgstr "Vous n'êtes pas autorisé à recevoir sur %(acct)s."
 msgid "You are not authorised to send from %(acct)s."
 msgstr "Vous n'êtes pas autorisé à envoyer depuis %(acct)s."
 
+msgid "You cannot deactivate your own account."
+msgstr "Vous ne pouvez pas désactiver votre propre compte."
+
 msgid ""
 "You gave cash to a POS, and the POS sent the same value in UVE to an agent. "
 "The agent owes the company; company UVE does not change; the POS owes "
@@ -2977,8 +3117,18 @@ msgstr "Vos dernières saisies"
 msgid "Your password"
 msgstr "Votre mot de passe"
 
+msgid "Your password has been changed."
+msgstr "Votre mot de passe a été changé."
+
 msgid "Your password is incorrect."
 msgstr "Votre mot de passe est incorrect."
+
+msgid ""
+"Your password was reset by the administrator. Choose your own password to "
+"continue."
+msgstr ""
+"Votre mot de passe a été réinitialisé par l'administrateur. Choisissez votre"
+" propre mot de passe pour continuer."
 
 msgid "Zone"
 msgstr "Zone"
@@ -3120,6 +3270,12 @@ msgstr "zone principale"
 
 msgid "microzone"
 msgstr "microzone"
+
+msgid "must change password"
+msgstr "doit changer de mot de passe"
+
+msgid "must change password at next sign-in"
+msgstr "doit changer de mot de passe à la prochaine connexion"
 
 msgid "name"
 msgstr "nom"

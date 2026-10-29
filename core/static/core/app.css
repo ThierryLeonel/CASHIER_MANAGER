@@ -424,3 +424,9 @@ input.auto { background: var(--soft); font-weight: 700; }
 /* text values in tiles (customer name, etc.) wrap instead of overflowing */
 .tile { min-width: 0; }
 .tile .value.text { white-space: normal; overflow-wrap: anywhere; word-break: normal; font-size: 1rem !important; line-height: 1.3; }
+/* password shown once after a reset */
+.pw-shown { border-left: 4px solid var(--accent); }
+.pw-box { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 6px 0; }
+.pw-box code { font-size: 1.35rem; font-weight: 800; letter-spacing: .06em; background: var(--soft); padding: 8px 14px; border-radius: 10px; user-select: all; }
+.side-foot .mypw { display: block; color: var(--side-muted); font-size: .76rem; text-decoration: none; margin-top: 2px; }
+.side-foot .mypw:hover { color: #fff; }

@@ -62,6 +62,9 @@ class User(AbstractUser):
         AGENT = "AGENT", _("Commercial agent")
 
     role = models.CharField(_("role"), max_length=12, choices=Role.choices, default=Role.CASHIER)
+    must_change_password = models.BooleanField(
+        _("must change password at next sign-in"), default=False,
+        help_text="Set when an administrator resets the password; cleared when the user chooses a new one.")
     subzone = models.ForeignKey(
         Zone, null=True, blank=True, on_delete=models.PROTECT, related_name="cashiers",
         verbose_name=_("zone"),
