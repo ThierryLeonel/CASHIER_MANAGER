@@ -295,3 +295,42 @@ class ZoneConfiguration(TestCase):
         self.c.post("/admin/core/subzone/", {"action": "make_master", "_selected_action": [wrong.pk]})
         wrong.refresh_from_db()
         self.assertIsNone(wrong.parent)
+
+    def test_fix_nested_zones_from_the_subzone_page(self):
+        from core.models import Zone
+
+        meme = Zone.objects.create(code="meme", name="MEME")
+        ndian = Zone.objects.create(code="2000", name="MEME NDIAN", parent=meme)
+        fako_bad = Zone.objects.create(code="1000", name="FAKO")
+        Zone.objects.filter(pk=fako_bad.pk).update(parent=ndian)  # invalid nesting from earlier edits
+        Zone.objects.filter(pk=ndian.pk).update(parent=fako_bad)  # and a loop
+        lst = self.c.get("/admin/core/subzone/")
+        self.assertContains(lst, "has zones under it")
+        page = self.c.get(f"/admin/core/subzone/{ndian.pk}/change/")
+        self.assertContains(page, "Make this zone a master zone")
+        # MEME NDIAN under MEME is refused while FAKO sits under it, with the names given
+        r = self.c.post(f"/admin/core/subzone/{ndian.pk}/change/", {"name": "MEME NDIAN", "code": "2000",
+                                                                   "parent": meme.pk, "active": "on"})
+        self.assertContains(r, "still has zones under it (FAKO)")
+        # make FAKO (1000) a master zone, then MEME NDIAN can go under MEME
+        r = self.c.post(f"/admin/core/subzone/{fako_bad.pk}/change/", {"name": "FAKO", "code": "1000",
+                                                                      "make_master": "on", "active": "on"})
+        self.assertEqual(r.status_code, 302)
+        fako_bad.refresh_from_db()
+        self.assertIsNone(fako_bad.parent)
+        r = self.c.post(f"/admin/core/subzone/{ndian.pk}/change/", {"name": "MEME NDIAN", "code": "2000",
+                                                                   "parent": meme.pk, "active": "on"})
+        self.assertEqual(r.status_code, 302)
+        ndian.refresh_from_db()
+        self.assertEqual(ndian.parent, meme)
+
+    def test_used_subzone_cannot_become_master(self):
+        from core.models import User, Zone
+
+        m = Zone.objects.create(code="m", name="M")
+        s = Zone.objects.create(code="s", name="S", parent=m)
+        User.objects.create_user("c1", password="x-Strong-Pass-1", role="CASHIER", subzone=s)
+        r = self.c.post(f"/admin/core/subzone/{s.pk}/change/", {"name": "S", "code": "s", "make_master": "on",
+                                                               "active": "on"})
+        self.assertContains(r, "cannot become a master zone")
+        self.assertContains(r, "1 cashier(s)")

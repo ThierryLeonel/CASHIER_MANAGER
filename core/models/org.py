@@ -45,7 +45,32 @@ class Zone(models.Model):
         if self.parent_id and self.parent.parent_id:
             raise ValidationError({"parent": _("A subzone's parent must be a master zone.")})
         if self.parent_id and self.pk and self.subzones.exists():
-            raise ValidationError({"parent": _("This zone has subzones, so it must stay a master zone.")})
+            names = ", ".join(self.subzones.order_by("name").values_list("name", flat=True))
+            raise ValidationError({"parent": _(
+                "%(z)s still has zones under it (%(names)s). A subzone cannot have subzones: open each of them "
+                "and choose a master zone or make it a master zone, then come back.") % {"z": self.name,
+                                                                                       "names": names}})
+
+    def subzone_usage(self):
+        """What uses this zone as a subzone (it cannot become a master zone while any of this exists)."""
+        from .ledger import Account, Transaction
+
+        out = []
+        n = User.objects.filter(subzone=self).exclude(role=User.Role.JUNIOR).count()
+        if n:
+            out.append(_("%(n)s cashier(s)") % {"n": n})
+        n = Account.objects.filter(zone=self, kind=Account.Kind.CASH_DRAWER).count()
+        if n:
+            out.append(_("%(n)s cash drawer(s)") % {"n": n})
+        n = CompanySim.objects.filter(subzone=self).count()
+        if n:
+            out.append(_("%(n)s SIM(s)") % {"n": n})
+        n = self.microzones.count()
+        if n:
+            out.append(_("%(n)s microzone(s)") % {"n": n})
+        if Transaction.objects.filter(zone=self).exists():
+            out.append(_("recorded entries"))
+        return out
 
     @property
     def level_label(self):

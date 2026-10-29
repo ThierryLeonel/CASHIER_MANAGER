@@ -1068,6 +1068,12 @@ FR = {
     'Subzones': 'Sous-zones',
     'a master zone first, then its subzones.': "d'abord une zone master, puis ses sous-zones.",
     'and': 'et',
+    '%(n)s SIM(s)': '%(n)s SIM',
+    '%(n)s cash drawer(s)': '%(n)s caisse(s)',
+    '%(n)s cashier(s)': '%(n)s caissier(s)',
+    '%(n)s microzone(s)': '%(n)s microzone(s)',
+    '%(z)s still has zones under it (%(names)s). A subzone cannot have subzones: open each of them and choose a master zone or make it a master zone, then come back.': "%(z)s a encore des zones en dessous (%(names)s). Une sous-zone ne peut pas avoir de sous-zones : ouvrez chacune d'elles et choisissez une zone master ou faites-en une zone master, puis revenez.",
+    'recorded entries': 'des écritures enregistrées',
 }
 
 FR_PLURAL = {

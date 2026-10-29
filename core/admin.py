@@ -80,39 +80,93 @@ class MasterZoneAdmin(SuperAdminOnly):
 
 
 class SubZoneForm(forms.ModelForm):
+    make_master = forms.BooleanField(
+        label="Make this zone a master zone", required=False,
+        help_text="Tick to turn this subzone into a master zone (leave Master zone empty). Not possible while "
+                  "cashiers, drawers, SIMs, microzones or entries use it as a subzone.")
+
     class Meta:
         model = SubZone
-        fields = ["name", "code", "parent", "active"]
+        fields = ["name", "code", "parent", "make_master", "active"]
         labels = {"parent": "Master zone"}
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["parent"].queryset = Zone.objects.filter(parent__isnull=True).order_by("name")
-        self.fields["parent"].required = True
-        self.fields["parent"].help_text = "The master zone this subzone depends on (e.g. Fako 1 → Fako)."
+        self.fields["parent"].queryset = Zone.objects.filter(parent__isnull=True).exclude(
+            pk=self.instance.pk or 0).order_by("name")
+        self.fields["parent"].required = False
+        help_ = "The master zone this subzone depends on (e.g. Fako 1 → Fako)."
+        inst = self.instance
+        if inst.pk and inst.parent_id and inst.parent.parent_id is not None:
+            help_ += (f" ⚠ It is currently placed under {inst.parent.name}, which is not a master zone: choose a "
+                      f"master zone, or make this zone a master zone.")
+        if inst.pk and inst.subzones.exists():
+            names = ", ".join(inst.subzones.order_by("name").values_list("name", flat=True))
+            help_ += f" ⚠ Zones are placed under it ({names}): either make it a master zone, or move them first."
+        self.fields["parent"].help_text = help_
+        if not inst.pk:
+            self.fields.pop("make_master")
+
+    def clean(self):
+        cd = super().clean()
+        inst = self.instance
+        if cd.get("make_master"):
+            usage = inst.subzone_usage() if inst.pk else []
+            if usage:
+                raise forms.ValidationError(
+                    f"{inst.name} cannot become a master zone: it is used as a subzone by " + ", ".join(usage)
+                    + ". Move them to another subzone first, or keep it as a subzone.")
+            cd["parent"] = None
+            self.instance.parent = None
+        elif not cd.get("parent"):
+            self.add_error("parent", "Choose the master zone, or tick 'Make this zone a master zone'.")
+        return cd
+
+    def _post_clean(self):
+        if self.cleaned_data.get("make_master"):
+            self.instance.parent = None
+        super()._post_clean()
 
 
 @admin.register(SubZone)
 class SubZoneAdmin(SuperAdminOnly):
     form = SubZoneForm
-    list_display = ("name", "code", "parent", "active")
+    list_display = ("name", "code", "parent", "zone_check", "active")
     list_filter = ("parent",)
     search_fields = ("name", "code")
     ordering = ("parent__name", "name")
     actions = ["make_master"]
 
+    def get_fields(self, request, obj=None):
+        return ["name", "code", "parent", "make_master", "active"] if obj else ["name", "code", "parent", "active"]
+
+    @admin.display(description="check")
+    def zone_check(self, obj):
+        problems = []
+        if obj.parent_id and obj.parent.parent_id is not None:
+            problems.append(f"⚠ placed under {obj.parent.name}, which is not a master zone")
+        names = list(obj.subzones.values_list("name", flat=True))
+        if names:
+            problems.append("⚠ has zones under it: " + ", ".join(names))
+        return "; ".join(problems) or "OK"
+
+    def response_change(self, request, obj):
+        if obj.parent_id is None:  # just became a master zone
+            from django.http import HttpResponseRedirect
+            from django.urls import reverse
+
+            self.message_user(request, f"{obj.name} is now a master zone.")
+            return HttpResponseRedirect(reverse("admin:core_masterzone_change", args=[obj.pk]))
+        return super().response_change(request, obj)
+
     @admin.action(description="Make the selected zones master zones (only zones saved as subzones by mistake)")
     def make_master(self, request, queryset):
-        from core.models import Account, CompanySim, Transaction
-
         done = []
         for z in queryset:
-            used = (User.objects.filter(subzone=z).exists() or Account.objects.filter(zone=z).exists()
-                    or CompanySim.objects.filter(subzone=z).exists() or Transaction.objects.filter(zone=z).exists()
-                    or z.microzones.exists())
-            if used:
-                self.message_user(request, f"{z.name} is already used as a subzone (users, accounts, SIMs or entries) "
-                                           f"and was left unchanged.", level="warning")
+            usage = z.subzone_usage()
+            if usage:
+                self.message_user(request, f"{z.name} was left unchanged: it is used as a subzone by "
+                                           + ", ".join(usage) + ".", level="warning")
                 continue
             Zone.objects.filter(pk=z.pk).update(parent=None)
             done.append(z.name)
