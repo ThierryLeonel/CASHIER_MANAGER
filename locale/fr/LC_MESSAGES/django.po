@@ -298,14 +298,26 @@ msgstr "Montant"
 msgid "Amount (FCFA)"
 msgstr "Montant (FCFA)"
 
+msgid "Amount given now (FCFA)"
+msgstr "Montant donné maintenant (FCFA)"
+
 msgid "Amount must be greater than zero."
 msgstr "Le montant doit être supérieur à zéro."
 
 msgid "Amount received (FCFA)"
 msgstr "Montant reçu (FCFA)"
 
+msgid "Amount served"
+msgstr "Montant servi"
+
+msgid "Amount served (FCFA)"
+msgstr "Montant servi (FCFA)"
+
 msgid "Amount too large"
 msgstr "Montant trop élevé"
+
+msgid "Amounts cannot be negative."
+msgstr "Les montants ne peuvent pas être négatifs."
 
 msgid "Amounts must be whole FCFA"
 msgstr "Les montants doivent être en FCFA entiers"
@@ -363,6 +375,9 @@ msgstr "Solde"
 
 msgid "Balance as of (go-live date)"
 msgstr "Solde au (date de démarrage)"
+
+msgid "Balance to be served"
+msgstr "Reste à servir"
 
 msgid "Balances"
 msgstr "Soldes"
@@ -475,6 +490,12 @@ msgstr "Espèces"
 
 msgid "Cash drawer"
 msgstr "Caisse"
+
+msgid "Cash drawer or UVE wallet that received it."
+msgstr "Caisse ou portefeuille UVE qui l'a reçu."
+
+msgid "Cash drawer or UVE wallet."
+msgstr "Caisse ou portefeuille UVE."
 
 msgid "Cash drawer, SIM wallet and bank movements"
 msgstr "Mouvements des caisses, portefeuilles SIM et banques"
@@ -601,6 +622,9 @@ msgstr ""
 "Choisissez une microzone existante ou saisissez-en une nouvelle, pas les "
 "deux."
 
+msgid "Choose the account that received what was served."
+msgstr "Choisissez le compte qui a reçu ce qui a été servi."
+
 msgid ""
 "Choose the cash drawer or UVE wallet that actually gave or received the "
 "value."
@@ -698,6 +722,9 @@ msgstr "Encaissements par mode de paiement"
 msgid "Column guide"
 msgstr "Guide des colonnes"
 
+msgid "Comment"
+msgstr "Commentaire"
+
 msgid "Commercial agent"
 msgstr "Agent commercial"
 
@@ -753,6 +780,9 @@ msgstr "L'entreprise donne de l'UVE, reçoit des espèces"
 
 msgid "Company gives cash, receives UVE"
 msgstr "L'entreprise donne des espèces, reçoit de l'UVE"
+
+msgid "Company gives from"
+msgstr "L'entreprise donne depuis"
 
 msgid "Company has given"
 msgstr "L'entreprise a donné"
@@ -999,6 +1029,9 @@ msgstr ""
 "Données effacées (%(n)s transactions supprimées). Cette action est "
 "enregistrée dans le journal d'audit."
 
+msgid "Date served"
+msgstr "Date de service"
+
 msgid "Debit (+)"
 msgstr "Débit (+)"
 
@@ -1188,6 +1221,10 @@ msgstr "Approvisionnement direct exceptionnel d'un point de vente"
 
 msgid "Exchange"
 msgstr "Échange"
+
+#, python-format
+msgid "Exchange %(ref)s recorded. Balance to be served: %(amt)s FCFA."
+msgstr "Échange %(ref)s enregistré. Reste à servir : %(amt)s FCFA."
 
 #, python-format
 msgid ""
@@ -1401,6 +1438,9 @@ msgstr "Soldes de démarrage, une fois par compte"
 
 msgid "Launch opening"
 msgstr "Ouverture au démarrage"
+
+msgid "Leave empty if the company gave the full amount."
+msgstr "Laissez vide si l'entreprise a donné le montant total."
 
 msgid ""
 "Leave empty: the POS owes. Fill only if an agent explicitly takes "
@@ -2043,6 +2083,18 @@ msgstr "Enregistrer le solde d'ouverture"
 msgid "Record opening balances"
 msgstr "Enregistrer les soldes d'ouverture"
 
+msgid "Record the balance served (or another side)"
+msgstr "Enregistrer le reste servi (ou un autre côté)"
+
+msgid ""
+"Record what the company gives and what the cash manager has served. If only "
+"part is served now (e.g. 8M of 10M), the balance stays open and is recorded "
+"later on the exchange page."
+msgstr ""
+"Enregistrez ce que l'entreprise donne et ce que le cash manager a servi. Si "
+"seule une partie est servie maintenant (par ex. 8M sur 10M), le reste reste "
+"ouvert et s'enregistre plus tard sur la page de l'échange."
+
 msgid "Recorded"
 msgstr "Enregistrés"
 
@@ -2054,6 +2106,9 @@ msgstr "Enregistré le (Africa/Douala)"
 
 msgid "Recorded by"
 msgstr "Enregistré par"
+
+msgid "Ref number"
+msgstr "Numéro de référence"
 
 msgid "Reference"
 msgstr "Référence"
@@ -2205,6 +2260,9 @@ msgstr "Manager senior"
 msgid "Sent from company account"
 msgstr "Envoyé depuis le compte de l'entreprise"
 
+msgid "Served into"
+msgstr "Servi dans"
+
 msgid "Set by"
 msgstr "Défini par"
 
@@ -2344,6 +2402,12 @@ msgstr "TOTAL OUVERTURE"
 msgid "Templates"
 msgstr "Modèles"
 
+msgid "The amount agreed with the cash manager, 1:1."
+msgstr "Le montant convenu avec le cash manager, 1:1."
+
+msgid "The amount served cannot exceed the agreed amount."
+msgstr "Le montant servi ne peut pas dépasser le montant convenu."
+
 msgid ""
 "The book (expected) balance carries forward to the next day. Unresolved "
 "differences remain open until a manager or finance manager resolves them."
@@ -2362,6 +2426,9 @@ msgstr ""
 msgid "The cash recipient of a destockage must be a POS."
 msgstr "Le bénéficiaire des espèces d'un déstockage doit être un PDV."
 
+msgid "The company cannot give more than the agreed amount."
+msgstr "L'entreprise ne peut pas donner plus que le montant convenu."
+
 msgid "The company may give cash or UVE and receive cash or UVE."
 msgstr ""
 "L'entreprise peut donner des espèces ou de l'UVE et recevoir des espèces ou "
@@ -2369,6 +2436,9 @@ msgstr ""
 
 msgid "The custodian must be a cashier."
 msgstr "Le détenteur doit être un caissier."
+
+msgid "The date served cannot be in the future."
+msgstr "La date de service ne peut pas être dans le futur."
 
 msgid ""
 "The distribution partner using this application. The name and logo appear in"
@@ -2789,6 +2859,13 @@ msgstr "Ce que chaque agent doit en UVE, espèces et ER, par microzone"
 msgid "What happened"
 msgstr "Ce qui a eu lieu"
 
+msgid ""
+"What the cash manager has served the company so far. The balance is served "
+"later from the exchange page."
+msgstr ""
+"Ce que le cash manager a servi à l'entreprise jusqu'ici. Le reste est servi "
+"plus tard depuis la page de l'échange."
+
 msgid "What to clear"
 msgstr "Ce qu'il faut effacer"
 
@@ -2943,6 +3020,9 @@ msgstr "caissier détenteur"
 msgid "customer_sim"
 msgstr "customer_sim"
 
+msgid "date served"
+msgstr "date de service"
+
 msgid "due to customer"
 msgstr "dû au client"
 
@@ -3046,6 +3126,9 @@ msgstr "pied de reçu"
 msgid "received by POS %(pos)s"
 msgstr "reçu par le PDV %(pos)s"
 
+msgid "ref number"
+msgstr "numéro de référence"
+
 msgid "replacement"
 msgstr "remplacement"
 
@@ -3054,6 +3137,10 @@ msgstr "rôle"
 
 msgid "rows"
 msgstr "lignes"
+
+#, python-format
+msgid "served on %(d)s"
+msgstr "servi le %(d)s"
 
 msgid "settled"
 msgstr "soldé"

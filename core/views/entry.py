@@ -122,16 +122,17 @@ def exchange_new(request):
     form = F.ExchangeForm(desk, request.POST or None)
     if request.method == "POST" and form.is_valid():
         resp = run_service(
-            request, form, lambda: ops.create_exchange(request.user, idempotency_key=form.cleaned_data["idem"],
+            request, form, lambda: ops.record_exchange(request.user, idempotency_key=form.cleaned_data["idem"],
                                                        acting_for=acting, **form.params()),
-            success=lambda ex: _("Exchange agreement %(ref)s recorded. Record each side when it actually happens.")
-            % {"ref": ex.reference},
+            success=lambda ex: (_("Exchange %(ref)s recorded. Balance to be served: %(amt)s FCFA.")
+                                % {"ref": ex.reference, "amt": fmt(ex.to_serve)}),
             on_success=lambda ex: redirect("exchange_detail", pk=ex.pk))
         if resp:
             return resp
     return render(request, "core/entry_form.html", {
-        "form": form, "title": _("New cash-manager exchange"),
-        "intro": _("An agreement moves no money. Company balances change only when you record each completed side.")})
+        "form": form, "title": _("New cash-manager exchange"), "exchange_form": True,
+        "intro": _("Record what the company gives and what the cash manager has served. If only part is served "
+                   "now (e.g. 8M of 10M), the balance stays open and is recorded later on the exchange page.")})
 
 
 @roles_required(R.CASHIER, R.MANAGER, R.JUNIOR, R.FINANCE, R.SUPERADMIN)

@@ -4,15 +4,16 @@
 <h1>{% trans "Exchange" %} {{ ex.reference }} <span class="badge {% if ex.status == 'COMPLETE' %}ok{% else %}acc{% endif %}">{{ ex.status }}</span></h1>
 <div class="panel"><dl class="kv">
   <dt>{% trans "Cash manager" %}</dt><dd>{{ ex.cash_manager }}</dd>
-  <dt>{% trans "Exchange" %}</dt><dd>{{ ex.direction_label }}</dd>
-  <dt>{% trans "Agreed amount" %}</dt><dd>{{ ex.amount|fcfa }} FCFA</dd>
+  {% if ex.external_ref %}<dt>{% trans "Ref number" %}</dt><dd>{{ ex.external_ref }}</dd>{% endif %}
+  <dt>{% trans "Amount" %}</dt><dd>{{ ex.amount|fcfa }} FCFA</dd>
   <dt>{% trans "Company has given" %}</dt><dd>{{ give|fcfa }} FCFA</dd>
-  <dt>{% trans "Company has received" %}</dt><dd>{{ recv|fcfa }} FCFA</dd>
+  <dt>{% trans "Amount served" %}</dt><dd>{{ recv|fcfa }} FCFA{% if ex.served_on %} · {% trans "date served" %} {{ ex.served_on|date:"d/m/Y" }}{% endif %}</dd>
+  <dt>{% trans "Balance to be served" %}</dt><dd><strong class="{% if ex.to_serve %}neg{% else %}pos{% endif %}">{{ ex.to_serve|fcfa }} FCFA</strong></dd>
   <dt>{% trans "Recorded by" %}</dt><dd>{{ ex.created_by }} · {{ ex.created_at|date:"d/m/Y H:i" }}</dd>
   {% if ex.note %}<dt>{% trans "Note" %}</dt><dd>{{ ex.note }}</dd>{% endif %}
 </dl></div>
 {% if form and ex.status != 'COMPLETE' %}
-<h2>{% trans "Record a completed side" %}</h2>
+<h2>{% if ex.to_serve %}{% trans "Record the balance served (or another side)" %}{% else %}{% trans "Record a completed side" %}{% endif %}</h2>
 <div class="panel"><form method="post" class="entry" novalidate>{% csrf_token %}
   {% include "core/inc/fields.html" %}
   <p class="small muted">{% trans "Choose the cash drawer or UVE wallet that actually gave or received the value." %}</p>

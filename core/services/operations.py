@@ -18,6 +18,7 @@ Posting matrix (Dr = +, Cr = -):
   RECON_ADJ       shortage: Dr recon adj, Cr asset; surplus: Dr asset, Cr recon adj
   REVERSAL        exact negation of the original entries
 """
+import uuid
 from decimal import Decimal
 
 from django.db import transaction
@@ -314,6 +315,43 @@ def create_exchange(user, *, cash_manager, amount, note="", idempotency_key=None
         reference=next_exchange_reference(), cash_manager=cash_manager, direction=direction, amount=amount,
         created_by=user, business_date=ctx.business_date, note=note, idempotency_key=idempotency_key,
     )
+
+
+def record_exchange(user, *, cash_manager, amount, give_account, amount_given, receive_account=None,
+                    amount_served=ZERO, served_on=None, external_ref="", note="", idempotency_key=None,
+                    acting_for=None):
+    """One step: the agreement, what the company gave and what it was served now. The rest is served later."""
+    amount = _positive(amount)
+    amount_given = _money(amount_given or 0)
+    amount_served = _money(amount_served or 0)
+    if amount_given < 0 or amount_served < 0:
+        raise BusinessError(_("Amounts cannot be negative."), "amount_served")
+    if amount_given > amount:
+        raise BusinessError(_("The company cannot give more than the agreed amount."), "amount_given")
+    if amount_served > amount:
+        raise BusinessError(_("The amount served cannot exceed the agreed amount."), "amount_served")
+    if amount_served and receive_account is None:
+        raise BusinessError(_("Choose the account that received what was served."), "receive_account")
+    if served_on and served_on > douala_today():
+        raise BusinessError(_("The date served cannot be in the future."), "served_on")
+    with transaction.atomic():
+        ex = create_exchange(user, cash_manager=cash_manager, amount=amount, note=note,
+                             idempotency_key=idempotency_key, acting_for=acting_for)
+        CashManagerExchange.objects.filter(pk=ex.pk).update(external_ref=(external_ref or "").strip()[:60],
+                                                           served_on=served_on if amount_served else None)
+        ref = (external_ref or "").strip()
+        desc = " · ".join(x for x in (f"Ref {ref}" if ref else "", note) if x)
+        key = idempotency_key or uuid.uuid4()
+        if amount_given:
+            record_exchange_leg(user, exchange=ex, side=TxType.CM_GIVE, amount=amount_given, account=give_account,
+                                description=desc, idempotency_key=uuid.uuid5(key, "give"), acting_for=acting_for)
+        if amount_served:
+            served_txt = (_("served on %(d)s") % {"d": served_on.strftime("%d/%m/%Y")}) if served_on else ""
+            record_exchange_leg(user, exchange=ex, side=TxType.CM_RECEIVE, amount=amount_served,
+                                account=receive_account, idempotency_key=uuid.uuid5(key, "receive"),
+                                description=" · ".join(x for x in (desc, served_txt) if x), acting_for=acting_for)
+        ex.refresh_from_db()
+        return ex
 
 
 def build_exchange_leg(ctx, *, exchange, side, amount, account, description=""):

@@ -309,11 +309,19 @@ class CashManagerExchange(models.Model):
     created_at = models.DateTimeField(default=timezone.now)
     business_date = models.DateField()
     note = models.CharField(max_length=255, blank=True)
+    external_ref = models.CharField(_("ref number"), max_length=60, blank=True)
+    served_on = models.DateField(_("date served"), null=True, blank=True)
     idempotency_key = models.UUIDField(null=True, blank=True, unique=True)
 
     class Meta:
         ordering = ["-created_at"]
         constraints = [models.CheckConstraint(name="exchange_amount_positive", condition=Q(amount__gt=0))]
+
+    @property
+    def to_serve(self):
+        """What the cash manager still has to serve the company."""
+        give, recv = self.side_totals()
+        return max(give - recv, 0) if give else self.amount - recv
 
     def __str__(self):
         return f"{self.reference} {self.cash_manager.name} {self.amount}"

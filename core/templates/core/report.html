@@ -12,7 +12,7 @@
 </div>
 {% if rep.summary %}
 <div class="grid" style="margin-bottom:14px">
-{% for label, value, kind in rep.summary %}<div class="tile"><div class="label">{{ label }}</div><div class="value" style="font-size:1.05rem">{% if kind == 'money' %}{{ value|fcfa }}{% else %}{{ value }}{% endif %}</div></div>{% endfor %}
+{% for label, value, kind in rep.summary %}<div class="tile"><div class="label">{{ label }}</div><div class="value{% if kind != 'money' %} text{% endif %}" style="font-size:1.05rem">{% if kind == 'money' %}{{ value|fcfa }}{% else %}{{ value }}{% endif %}</div></div>{% endfor %}
 </div>
 {% endif %}
 {% for table in rep.tables %}

@@ -421,3 +421,6 @@ input.auto { background: var(--soft); font-weight: 700; }
 .field.auto-one .auto-acct { display: flex; align-items: center; gap: 8px; min-height: 48px; padding: 0 14px; border-radius: 12px;
   background: var(--soft); border: 1px dashed var(--line); font-weight: 600; }
 .field.auto-one .auto-acct::before { content: "✓"; color: var(--ok, #2e7d32); font-weight: 800; }
+/* text values in tiles (customer name, etc.) wrap instead of overflowing */
+.tile { min-width: 0; }
+.tile .value.text { white-space: normal; overflow-wrap: anywhere; word-break: normal; font-size: 1rem !important; line-height: 1.3; }

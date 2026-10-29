@@ -552,3 +552,52 @@ class ServicePermissions(OrgMixin, TestCase):
                               source_account=self.uve_f1, idempotency_key=k)
         self.assertEqual(cm.exception.existing, t)
         self.assertEqual(self.cbal(self.a1), D(100))
+
+
+class ExchangeServedLater(OrgMixin, TestCase):
+    """We need 10M, give 10M, are served 8M now; the 2M balance is served later."""
+
+    def setUp(self):
+        self.make_org()
+        self.fund(self.d_f1, 10_000_000)
+        self.fund(self.uve_f1, 1_000_000)
+
+    def test_give_10m_served_8m_then_balance(self):
+        from datetime import timedelta
+
+        from core.services.days import douala_today
+
+        before_cash, before_uve = self.bal(self.d_f1), self.bal(self.uve_f1)
+        ex = ops.record_exchange(self.c_f1, cash_manager=self.cm1, amount=D(10_000_000), give_account=self.d_f1,
+                                 amount_given=D(10_000_000), receive_account=self.uve_f1,
+                                 amount_served=D(8_000_000), served_on=douala_today(), external_ref="BK-778",
+                                 note="weekly float")
+        self.assertEqual((ex.external_ref, ex.to_serve, ex.status), ("BK-778", D(2_000_000), "PARTIAL"))
+        self.assertEqual(self.bal(self.d_f1), before_cash - 10_000_000)
+        self.assertEqual(self.bal(self.uve_f1), before_uve + 8_000_000)
+        self.assertEqual(self.bal(self.cm1.account), D(2_000_000))  # the cash manager owes the company 2M
+        ops.record_exchange_leg(self.c_f1, exchange=ex, side=TxType.CM_RECEIVE, amount=D(2_000_000),
+                                account=self.uve_f1)
+        ex.refresh_from_db()
+        self.assertEqual((ex.to_serve, ex.status), (D(0), "COMPLETE"))
+        with self.assertRaises(BusinessError):
+            ops.record_exchange(self.c_f1, cash_manager=self.cm1, amount=D(100), give_account=self.d_f1,
+                                amount_given=D(100), receive_account=self.uve_f1, amount_served=D(50),
+                                served_on=douala_today() + timedelta(days=1))
+
+    def test_form_page(self):
+        import uuid
+
+        c = self.client_class()
+        c.login(username="cashier.fako1", password="Sample-Pass-2026!")
+        page = c.get("/cash-managers/exchange/new/")
+        for txt in ("Ref number", "Amount served", "Date served", "Served into", "Comment"):
+            self.assertContains(page, txt)
+        r = c.post("/cash-managers/exchange/new/", {
+            "idem": str(uuid.uuid4()), "cash_manager": self.cm2.pk, "external_ref": "CM-1", "amount": "10 000 000",
+            "give_account": self.d_f1.pk, "amount_given": "", "served_on": "2026-10-28",
+            "amount_served": "8 000 000", "receive_account": self.uve_f1.pk, "note": ""})
+        self.assertEqual(r.status_code, 302, r.content[:2000])
+        detail = c.get(r["Location"])
+        self.assertContains(detail, "Balance to be served")
+        self.assertContains(detail, "2 000 000")

@@ -283,11 +283,45 @@ class ConversionForm(BaseEntryForm):
 
 
 class ExchangeForm(BaseEntryForm):
+    """New cash-manager exchange: what the company gives and what it is served now; the rest is served later."""
+
     cash_manager = forms.ModelChoiceField(label=_("Cash manager / bank"),
                                           queryset=CashManager.objects.filter(active=True))
-    amount = MoneyField(label=_("Agreed amount (FCFA, 1:1)"),
-                        help_text=_("The company may give cash or UVE and receive cash or UVE."))
-    note = forms.CharField(label=_("Note"), required=False, max_length=255)
+    external_ref = forms.CharField(label=_("Ref number"), required=False, max_length=60)
+    amount = MoneyField(label=_("Amount (FCFA)"), help_text=_("The amount agreed with the cash manager, 1:1."))
+    give_account = AccountChoiceField(label=_("Company gives from"), queryset=Account.objects.none(),
+                                      help_text=_("Cash drawer or UVE wallet."))
+    amount_given = MoneyField(label=_("Amount given now (FCFA)"), required=False,
+                              help_text=_("Leave empty if the company gave the full amount."))
+    served_on = forms.DateField(label=_("Date served"), required=False,
+                                widget=forms.DateInput(attrs={"type": "date"}))
+    amount_served = MoneyField(label=_("Amount served (FCFA)"), required=False,
+                               help_text=_("What the cash manager has served the company so far. The balance is "
+                                           "served later from the exchange page."))
+    receive_account = AccountChoiceField(label=_("Served into"), queryset=Account.objects.none(), required=False,
+                                         help_text=_("Cash drawer or UVE wallet that received it."))
+    note = forms.CharField(label=_("Comment"), required=False, max_length=255)
+
+    def __init__(self, user, *args, **kwargs):
+        super().__init__(user, *args, **kwargs)
+        from core.services.days import douala_today
+
+        self.fields["give_account"].queryset = self.accounts([K.CASH_DRAWER, K.UVE])
+        self.fields["receive_account"].queryset = self.accounts([K.CASH_DRAWER, K.UVE], receiving=True)
+        if not self.is_bound:
+            self.initial.setdefault("served_on", douala_today())
+
+    def clean(self):
+        cd = super().clean()
+        amt = cd.get("amount")
+        if amt and not cd.get("amount_given"):
+            cd["amount_given"] = amt
+        served = cd.get("amount_served") or 0
+        if amt and served > amt:
+            self.add_error("amount_served", _("The amount served cannot exceed the agreed amount."))
+        if served and not cd.get("receive_account"):
+            self.add_error("receive_account", _("Choose the account that received what was served."))
+        return cd
 
 
 class ExchangeLegForm(BaseEntryForm):

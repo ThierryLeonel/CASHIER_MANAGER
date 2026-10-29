@@ -398,12 +398,14 @@ def cash_managers(f):
     for ex in CashManagerExchange.objects.filter(exq).select_related("cash_manager", "created_by"):
         give, recv = ex.side_totals()
         ex_rows.append(dict(reference=ex.reference, business_date=ex.business_date, cm=str(ex.cash_manager),
-                            direction=ex.direction_label, amount=ex.amount, given=give, received=recv,
+                            direction=ex.external_ref, amount=ex.amount, given=give, received=recv,
+                            to_serve=ex.to_serve,
                             status=ex.status, by=str(ex.created_by)))
     rep.tables.append(Table(_("Exchange agreements (no money moves until a leg is recorded)"), [
         Col("reference", _("Reference")), Col("business_date", _("Business date"), "date"),
-        Col("cm", _("Cash manager")), Col("direction", _("Exchange")), Col("amount", _("Agreed"), "money", True),
-        Col("given", _("Company gave"), "money", True), Col("received", _("Company received"), "money", True),
+        Col("cm", _("Cash manager")), Col("direction", _("Ref number")), Col("amount", _("Amount"), "money", True),
+        Col("given", _("Company gave"), "money", True), Col("received", _("Amount served"), "money", True),
+        Col("to_serve", _("Balance to be served"), "money", True),
         Col("status", _("Status")), Col("by", _("Recorded by"))], ex_rows))
     legs = txns(f, [TxType.CM_GIVE, TxType.CM_RECEIVE])
     rep.tables.append(Table(_("Completed legs"), TX_COLUMNS, [txn_row(t) for t in legs]))

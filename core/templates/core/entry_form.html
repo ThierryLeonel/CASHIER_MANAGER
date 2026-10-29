@@ -86,6 +86,22 @@
   }
   if (tsrc && tdst) { tsrc.addEventListener('change', syncTransfer); syncTransfer(); }
   autoAll();
+  // cash-manager exchange: balance still to be served, as you type
+  var exAmt = form.querySelector('[name=amount]'), exServed = form.querySelector('[name=amount_served]');
+  if (exAmt && exServed) {
+    var box = document.createElement('div'); box.className = 'msg info to-serve';
+    exServed.closest('.field').appendChild(box);
+    var n = function (v) { return parseInt(String(v || '').replace(/\D/g, ''), 10) || 0; };
+    var f = function (v) { return String(v).replace(/\B(?=(\d{3})+(?!\d))/g, ' '); };
+    var syncServe = function () {
+      var a = n(exAmt.value), s = n(exServed.value);
+      if (!a) { box.hidden = true; return; }
+      box.hidden = false;
+      box.textContent = s > a ? '{{ _("The amount served cannot exceed the agreed amount.")|escapejs }}'
+        : '{{ _("Balance to be served")|escapejs }}: ' + f(a - s) + ' FCFA';
+    };
+    exAmt.addEventListener('input', syncServe); exServed.addEventListener('input', syncServe); syncServe();
+  }
   // conversion preview (display only; the server computes and stores the posted amounts)
   var rate = form.dataset.rate, amt = form.querySelector('[name=amount]'), pv = document.getElementById('conv-preview');
   if (rate && amt && form.querySelector('[name=uve_account]')) {
