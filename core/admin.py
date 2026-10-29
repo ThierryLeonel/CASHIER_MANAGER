@@ -60,7 +60,7 @@ class SubZoneInline(admin.TabularInline):
         return _is_superadmin(request)
 
     def has_delete_permission(self, request, obj=None):
-        return False  # subzones carry history; deactivate them instead
+        return _is_superadmin(request)  # Django refuses deleting a subzone still in use and names what uses it
 
 
 @admin.register(MasterZone)
@@ -76,7 +76,8 @@ class MasterZoneAdmin(SuperAdminOnly):
         return ", ".join(obj.subzones.order_by("name").values_list("name", flat=True)) or "—"
 
     def has_delete_permission(self, request, obj=None):
-        return _is_superadmin(request) and (obj is None or not obj.subzones.exists())
+        # deleting a master zone also deletes its unused subzones; anything still in use is listed and blocks it
+        return _is_superadmin(request)
 
 
 class SubZoneForm(forms.ModelForm):

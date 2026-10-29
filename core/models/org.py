@@ -20,7 +20,7 @@ class Zone(models.Model):
     code = models.SlugField(max_length=30, unique=True)
     name = models.CharField(_("name"), max_length=100)
     parent = models.ForeignKey(
-        "self", null=True, blank=True, on_delete=models.PROTECT, related_name="subzones",
+        "self", null=True, blank=True, on_delete=models.CASCADE, related_name="subzones",
         verbose_name=_("master zone"),
     )
     active = models.BooleanField(default=True)
@@ -315,7 +315,7 @@ class Counterparty(models.Model):
     kind = models.CharField(_("type"), max_length=5, choices=Kind.choices)
     business_sim = models.CharField(_("business SIM number"), max_length=9, unique=True)
     name = models.CharField(_("name"), max_length=120)
-    master_zone = models.ForeignKey(Zone, null=True, blank=True, on_delete=models.PROTECT,
+    master_zone = models.ForeignKey(Zone, null=True, blank=True, on_delete=models.SET_NULL,
                                     verbose_name=_("usual master zone"),
                                     help_text="Filled automatically from the microzone.")
     microzone = models.ForeignKey("MicroZone", null=True, blank=True, on_delete=models.PROTECT,
@@ -372,7 +372,7 @@ class Counterparty(models.Model):
 class MicroZone(models.Model):
     """Area inside a subzone, controlled by one commercial agent. POS belong to a microzone."""
 
-    subzone = models.ForeignKey(Zone, on_delete=models.PROTECT, related_name="microzones",
+    subzone = models.ForeignKey(Zone, on_delete=models.CASCADE, related_name="microzones",
                                 limit_choices_to={"parent__isnull": False}, verbose_name=_("subzone"))
     name = models.CharField(_("name"), max_length=100)
     agent = models.ForeignKey(Counterparty, null=True, blank=True, on_delete=models.PROTECT,

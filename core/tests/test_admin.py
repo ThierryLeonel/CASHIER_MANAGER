@@ -334,3 +334,43 @@ class ZoneConfiguration(TestCase):
                                                                "active": "on"})
         self.assertContains(r, "cannot become a master zone")
         self.assertContains(r, "1 cashier(s)")
+
+    def test_admin_adds_updates_and_deletes_zones(self):
+        from core.models import Account, MicroZone, Zone
+
+        m = Zone.objects.create(code="ndian", name="NDIAN")
+        s1 = Zone.objects.create(code="ndian-1", name="Ndian 1", parent=m)
+        MicroZone.objects.create(subzone=s1, name="Mundemba")
+        # update
+        r = self.c.post(f"/admin/core/masterzone/{m.pk}/change/", {
+            "name": "NDIAN DIVISION", "code": "ndian", "active": "on",
+            "subzones-TOTAL_FORMS": "1", "subzones-INITIAL_FORMS": "1", "subzones-MIN_NUM_FORMS": "0",
+            "subzones-MAX_NUM_FORMS": "1000", "subzones-0-id": s1.pk, "subzones-0-parent": m.pk,
+            "subzones-0-name": "Ndian One", "subzones-0-code": "ndian-1", "subzones-0-active": "on"})
+        self.assertEqual(r.status_code, 302)
+        s1.refresh_from_db()
+        self.assertEqual((Zone.objects.get(pk=m.pk).name, s1.name), ("NDIAN DIVISION", "Ndian One"))
+        # a subzone in use cannot be deleted from the master zone page; the reason is given
+        Account.objects.create(kind="CASH_DRAWER", name="Drawer Ndian", zone=s1)
+        r = self.c.post(f"/admin/core/masterzone/{m.pk}/change/", {
+            "name": "NDIAN DIVISION", "code": "ndian", "active": "on",
+            "subzones-TOTAL_FORMS": "1", "subzones-INITIAL_FORMS": "1", "subzones-MIN_NUM_FORMS": "0",
+            "subzones-MAX_NUM_FORMS": "1000", "subzones-0-id": s1.pk, "subzones-0-parent": m.pk,
+            "subzones-0-name": "Ndian One", "subzones-0-code": "ndian-1", "subzones-0-active": "on",
+            "subzones-0-DELETE": "on"})
+        self.assertContains(r, "would require deleting the following protected related objects")
+        self.assertContains(r, "Drawer Ndian")
+        self.assertTrue(Zone.objects.filter(pk=s1.pk).exists())
+        self.assertContains(self.c.get(f"/admin/core/masterzone/{m.pk}/delete/"), "Drawer Ndian")  # listed as blocking
+        Account.objects.filter(zone=s1).delete()
+        # delete the master zone: its unused subzones and microzones go with it
+        r = self.c.post(f"/admin/core/masterzone/{m.pk}/delete/", {"post": "yes"})
+        self.assertEqual(r.status_code, 302)
+        self.assertFalse(Zone.objects.filter(code__startswith="ndian").exists())
+        self.assertFalse(MicroZone.objects.filter(name="Mundemba").exists())
+        # delete a single subzone
+        m2 = Zone.objects.create(code="m2", name="M2")
+        s2 = Zone.objects.create(code="s2", name="S2", parent=m2)
+        self.assertEqual(self.c.post(f"/admin/core/subzone/{s2.pk}/delete/", {"post": "yes"}).status_code, 302)
+        self.assertTrue(Zone.objects.filter(pk=m2.pk).exists())
+        self.assertFalse(Zone.objects.filter(pk=s2.pk).exists())
