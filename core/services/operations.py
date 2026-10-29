@@ -196,8 +196,8 @@ def build_expense(ctx, *, category, amount, drawer, description):
         raise BusinessError(_("Choose an active expense category."), "category")
     if not (description or "").strip():
         raise BusinessError(_("Describe the expense."), "description")
-    if drawer.kind != K.CASH_DRAWER:
-        raise BusinessError(_("Expenses are paid from a cash drawer."), "drawer")
+    if drawer.kind not in (K.CASH_DRAWER, K.UVE, K.MTN):  # settled in cash, UVE or MTN float
+        raise BusinessError(_("Expenses are paid from a cash drawer, a UVE wallet or an MTN float wallet."), "drawer")
     _require_send(ctx, drawer)
     return TxSpec(
         type=TxType.EXPENSE,

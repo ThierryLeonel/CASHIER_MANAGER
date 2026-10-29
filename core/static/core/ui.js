@@ -127,13 +127,20 @@
     var items = [], active = -1, timer = null, seq = 0;
     var api = { root: root, close: close };
 
+    function subline(c, withKind) {
+      var parts = [c.sim_display];
+      if (c.subzone) parts.push(c.subzone);
+      if (c.agent_in_charge) parts.push(t('agent', 'AG') + ': ' + c.agent_in_charge);
+      if (withKind) parts.push(c.kind_label);
+      return parts.join(' · ');
+    }
     function showCard(c) {
       card.innerHTML = '';
       if (!c) { card.hidden = true; return; }
       var av = el('span', 'cs-av k-' + c.kind, c.kind === 'POS' ? t('pos', 'POS') : t('agent', 'AG'));
       var info = el('span', 'cs-info');
-      info.appendChild(el('strong', null, c.name));
-      info.appendChild(el('span', 'pk-sub', c.sim_display + ' · ' + c.kind_label));
+      info.appendChild(el('strong', null, c.microzone ? c.microzone + ' — ' + c.name : c.name));
+      info.appendChild(el('span', 'pk-sub', subline(c, true)));
       var bal = el('span', 'cs-bal ' + (c.balance > 0 ? 'owes' : c.balance < 0 ? 'due' : ''));
       bal.appendChild(el('strong', null, c.balance_display + ' FCFA'));
       bal.appendChild(el('span', null, c.balance_label));
@@ -144,8 +151,15 @@
       var it = el('div', 'pk-opt cs-opt');
       it.appendChild(el('span', 'cs-av k-' + c.kind, c.kind === 'POS' ? t('pos', 'POS') : t('agent', 'AG')));
       var info = el('span', 'pk-txt');
-      info.appendChild(el('span', 'pk-main', c.name));
-      info.appendChild(el('span', 'pk-sub', c.sim_display));
+      if (c.microzone) {
+        var main = el('span', 'pk-main');
+        main.appendChild(el('span', 'cs-mz', c.microzone));
+        main.appendChild(document.createTextNode(' ' + c.name));
+        info.appendChild(main);
+      } else {
+        info.appendChild(el('span', 'pk-main', c.name));
+      }
+      info.appendChild(el('span', 'pk-sub', subline(c, false)));
       it.appendChild(info);
       var b = el('span', 'cs-mini ' + (c.balance > 0 ? 'owes' : c.balance < 0 ? 'due' : ''), c.balance_display);
       it.appendChild(b);

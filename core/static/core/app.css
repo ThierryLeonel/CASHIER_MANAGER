@@ -406,3 +406,5 @@ input[type=file] { font: inherit; padding: 10px; border: 1px dashed var(--line);
 .og-done { white-space: nowrap; font-variant-numeric: tabular-nums; }
 .og-grand td { font-size: 1.02rem; font-weight: 800; }
 .og-label { min-width: 140px; }
+.cs-mz { display: inline-block; font-weight: 700; color: var(--accent-strong); background: var(--accent-soft);
+  border-radius: 6px; padding: 0 6px; margin-right: 4px; font-size: .86em; }

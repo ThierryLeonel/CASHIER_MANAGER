@@ -41,6 +41,8 @@ Orange Cameroon distribution partner · FCFA (XAF) · Africa/Douala business dat
 - **Cash-manager exchanges have no direction**: on any exchange the company may give cash or UVE and receive cash or UVE (1:1). Exchanges recorded earlier keep their direction label.
 - **Accounts › Add** creates cash drawers, **UVE wallets** and **MTN float wallets** for a subzone (a UVE or MTN account is created through its SIM, so the SIM number is asked). The master SIM (ER) is added in Company sims: it belongs to the master zone (e.g. Fako, covering Fako 1 and Fako 2) and is operated by its cashier in charge.
 - **Opening balances** are entered on a grid of the control accounts — cash, UVE and ER — by master zone and subzone/master SIM, with totals per column, per zone and the **total opening**. All typed amounts are posted together (all or nothing, idempotent). Agents/POS, cash managers, MTN float and banks are still entered one at a time below the grid.
+- **Expenses** can be settled from a cash drawer, a UVE wallet or an MTN float wallet.
+- **Agent/POS pickers** (supply, payment, destockage, responsibility transfer) lead with the **microzone**, then the name, SIM and subzone, and search by microzone, name or SIM — agents can be moved, the microzone stays.
 - Entry forms say when a subzone has no account of the needed kind yet, and who adds it.
 
 ### Company profile (multi-partner installations)

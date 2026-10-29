@@ -955,6 +955,12 @@ FR = {
     'TOTAL OPENING': 'TOTAL OUVERTURE',
     'Type at least one opening amount.': "Saisissez au moins un montant d'ouverture.",
     'Type the counted amount for each account. Accounts already initialised show their recorded amount. All typed amounts are recorded together.': 'Saisissez le montant compté pour chaque compte. Les comptes déjà initialisés affichent leur montant enregistré. Tous les montants saisis sont enregistrés ensemble.',
+    'Expenses are paid from a cash drawer, a UVE wallet or an MTN float wallet.': 'Les dépenses sont payées depuis une caisse, un portefeuille UVE ou un portefeuille float MTN.',
+    'Microzone, name or SIM number': 'Microzone, nom ou numéro SIM',
+    'Paid from (cash, UVE or MTN float)': 'Payé depuis (espèces, UVE ou float MTN)',
+    "Paid from your cash drawer, UVE wallet or MTN float. Expenses never reduce an agent's debt.": "Payé depuis votre caisse, votre portefeuille UVE ou votre float MTN. Les dépenses ne réduisent jamais la dette d'un agent.",
+    'Paid in cash, UVE or MTN float': 'Payé en espèces, UVE ou float MTN',
+    'Type the microzone, the name or the business SIM number, then pick.': 'Saisissez la microzone, le nom ou le numéro SIM commercial, puis choisissez.',
 }
 
 FR_PLURAL = {

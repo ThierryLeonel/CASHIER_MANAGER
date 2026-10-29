@@ -1199,6 +1199,12 @@ msgstr "Dépense"
 msgid "Expenses"
 msgstr "Dépenses"
 
+msgid ""
+"Expenses are paid from a cash drawer, a UVE wallet or an MTN float wallet."
+msgstr ""
+"Les dépenses sont payées depuis une caisse, un portefeuille UVE ou un "
+"portefeuille float MTN."
+
 msgid "Expenses are paid from a cash drawer."
 msgstr "Les dépenses sont payées depuis une caisse."
 
@@ -1434,6 +1440,9 @@ msgstr "Microzone"
 
 msgid "Microzone · agent in charge"
 msgstr "Microzone · agent responsable"
+
+msgid "Microzone, name or SIM number"
+msgstr "Microzone, nom ou numéro SIM"
 
 msgid "Money received from an agent or POS"
 msgstr "Argent reçu d'un agent ou d'un PDV"
@@ -1800,8 +1809,21 @@ msgstr "Payé par"
 msgid "Paid by %(m)s"
 msgstr "Payé par %(m)s"
 
+msgid "Paid from (cash, UVE or MTN float)"
+msgstr "Payé depuis (espèces, UVE ou float MTN)"
+
 msgid "Paid from drawer"
 msgstr "Payé depuis la caisse"
+
+msgid ""
+"Paid from your cash drawer, UVE wallet or MTN float. Expenses never reduce "
+"an agent's debt."
+msgstr ""
+"Payé depuis votre caisse, votre portefeuille UVE ou votre float MTN. Les "
+"dépenses ne réduisent jamais la dette d'un agent."
+
+msgid "Paid in cash, UVE or MTN float"
+msgstr "Payé en espèces, UVE ou float MTN"
 
 msgid ""
 "Part of this obligation appears already settled: the transfer will be "
@@ -2536,6 +2558,10 @@ msgstr ""
 "Saisissez le montant compté pour chaque compte. Les comptes déjà initialisés"
 " affichent leur montant enregistré. Tous les montants saisis sont "
 "enregistrés ensemble."
+
+msgid "Type the microzone, the name or the business SIM number, then pick."
+msgstr ""
+"Saisissez la microzone, le nom ou le numéro SIM commercial, puis choisissez."
 
 msgid "UVE amount (FCFA)"
 msgstr "Montant UVE (FCFA)"

@@ -81,7 +81,7 @@ def collection_new(request):
 @roles_required(*DESK)
 def expense_new(request):
     return _entry(request, F.ExpenseForm, ops.record_expense, _("Record an expense"),
-                  _("Cash paid out of your drawer. Expenses never reduce an agent's debt."), extra={"icon": "expense"})
+                  _("Paid from your cash drawer, UVE wallet or MTN float. Expenses never reduce an agent's debt."), extra={"icon": "expense"})
 
 
 @roles_required(*DESK)

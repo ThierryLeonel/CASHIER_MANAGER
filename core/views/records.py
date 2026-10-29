@@ -252,27 +252,34 @@ def txn_transfer(request, pk):
 
 @roles_required(*STAFF)
 def customer_search(request):
-    """Live search for the customer pickers: business SIM digits or name."""
+    """Live search for the customer pickers: microzone, business SIM digits or name.
+
+    The microzone comes first: agents can be moved, the microzone stays."""
+    from django.db.models import F as DbF
     from django.http import JsonResponse
 
     q = (request.GET.get("q") or "").strip()
     kind = request.GET.get("kind") or ""
-    qs = Counterparty.objects.filter(active=True)
+    qs = Counterparty.objects.filter(active=True).select_related("microzone__subzone", "microzone__agent")
     if kind in Counterparty.Kind.values:
         qs = qs.filter(kind=kind)
     if q:
         digits = "".join(ch for ch in q if ch.isdigit())
-        cond = Q(name__icontains=q)
+        cond = Q(name__icontains=q) | Q(microzone__name__icontains=q) | Q(microzone__subzone__name__icontains=q) \
+            | Q(controlled_microzones__name__icontains=q)
         if digits:
             cond |= Q(business_sim__contains=digits[-9:] if len(digits) > 9 else digits)
-        qs = qs.filter(cond)
-    qs = list(qs.order_by("kind", "name")[:15])
+        qs = qs.filter(cond).distinct()
+    qs = list(qs.order_by(DbF("microzone__name").asc(nulls_last=True), "kind", "name")[:30])
     bals = dict(Entry.objects.filter(account__counterparty__in=qs).values_list("account__counterparty")
                 .annotate(s=Sum("amount")))
     out = []
     for c in qs:
         bal = bals.get(c.id) or 0
+        mz = c.microzone or (c.controlled_microzones.first() if c.kind == Counterparty.Kind.AGENT else None)
         out.append({"sim": c.business_sim, "sim_display": display_sim(c.business_sim), "name": c.name,
+                    "microzone": mz.name if mz else "", "subzone": mz.subzone.name if mz else "",
+                    "agent_in_charge": (mz.agent.name if mz and mz.agent_id and mz.agent_id != c.id else ""),
                     "kind": c.kind, "kind_label": str(c.get_kind_display()), "balance": int(bal),
                     "balance_display": fmt(abs(bal)),
                     "balance_label": str(_("owes") if bal > 0 else _("supply due") if bal < 0 else _("settled"))})

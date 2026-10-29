@@ -42,8 +42,8 @@ class CustomerField(forms.CharField):
     def __init__(self, *args, kind=None, **kwargs):
         self.kind = kind
         kwargs.setdefault("widget", forms.TextInput(attrs={"list": "customer-list", "autocomplete": "off",
-                                                           "inputmode": "tel", "placeholder": "6XX XX XX XX"}))
-        kwargs.setdefault("help_text", _("Business SIM number"))
+                                                           "placeholder": _("Microzone, name or SIM number")}))
+        kwargs.setdefault("help_text", _("Type the microzone, the name or the business SIM number, then pick."))
         super().__init__(*args, **kwargs)
         self.widget.attrs["data-customer-search"] = kind or ""
 
@@ -172,15 +172,18 @@ class CollectionForm(BaseEntryForm):
         self.fields["account"].queryset = self.accounts([K.CASH_DRAWER, K.UVE, K.MTN, K.BANK], receiving=True)
 
 
+EXPENSE_SOURCE_KINDS = (K.CASH_DRAWER, K.UVE, K.MTN)
+
+
 class ExpenseForm(BaseEntryForm):
     category = forms.ModelChoiceField(label=_("Category"), queryset=ExpenseCategory.objects.filter(active=True))
     amount = MoneyField(label=_("Amount (FCFA)"))
-    drawer = AccountChoiceField(label=_("Paid from drawer"), queryset=Account.objects.none())
+    drawer = AccountChoiceField(label=_("Paid from (cash, UVE or MTN float)"), queryset=Account.objects.none())
     description = forms.CharField(label=_("Description"), max_length=255)
 
     def __init__(self, user, *args, **kwargs):
         super().__init__(user, *args, **kwargs)
-        self.fields["drawer"].queryset = self.accounts([K.CASH_DRAWER])
+        self.fields["drawer"].queryset = self.accounts(list(EXPENSE_SOURCE_KINDS))
 
 
 class InternalTransferForm(BaseEntryForm):

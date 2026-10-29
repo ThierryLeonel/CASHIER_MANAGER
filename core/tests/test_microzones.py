@@ -87,3 +87,35 @@ class EmptySetup(TestCase):
         r = self.c.get("/customers/new/")
         self.assertContains(r, "No subzone exists yet")
         self.assertContains(r, "No microzone yet")
+
+
+class PickerAndExpenses(OrgMixin, TestCase):
+    def setUp(self):
+        cache.clear()
+        self.make_org()
+        self.fund_all()
+        self.c = self.client_class()
+        self.assertTrue(self.c.login(username="cashier.fako1", password=PW))
+
+    def test_search_shows_and_finds_microzone(self):
+        res = self.c.get("/api/customers/?kind=AGENT&q=molyko").json()["results"]
+        self.assertEqual([r["sim"] for r in res], ["691000001"])
+        self.assertEqual((res[0]["microzone"], res[0]["subzone"]), ("Molyko", "Fako 1"))
+        pos = self.c.get("/api/customers/?kind=POS&q=692000001").json()["results"][0]
+        self.assertEqual((pos["microzone"], pos["agent_in_charge"]), ("Molyko", "[SAMPLE] Agent Ndive"))
+
+    def test_expense_from_uve_or_mtn(self):
+        from core.models import ExpenseCategory
+        from core.services import operations as ops
+
+        from .helpers import D
+
+        fuel = ExpenseCategory.objects.get(code="fuel")
+        ops.record_opening_balance(self.admin, account=self.mtn_f1, amount=D(10000))
+        before_uve, before_mtn = self.bal(self.uve_f1), self.bal(self.mtn_f1)
+        ops.record_expense(self.c_f1, category=fuel, amount=D(5000), drawer=self.uve_f1, description="paid in UVE")
+        ops.record_expense(self.c_f1, category=fuel, amount=D(3000), drawer=self.mtn_f1, description="paid in float")
+        self.assertEqual((self.bal(self.uve_f1), self.bal(self.mtn_f1)), (before_uve - 5000, before_mtn - 3000))
+        form = self.c.get("/expense/new/").context["form"]
+        kinds = set(form.fields["drawer"].queryset.values_list("kind", flat=True))
+        self.assertEqual(kinds, {"CASH_DRAWER", "UVE", "MTN"})
