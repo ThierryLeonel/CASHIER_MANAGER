@@ -568,7 +568,8 @@ class ExchangeServedLater(OrgMixin, TestCase):
         from core.services.days import douala_today
 
         before_cash, before_uve = self.bal(self.d_f1), self.bal(self.uve_f1)
-        ex = ops.record_exchange(self.c_f1, cash_manager=self.cm1, amount=D(10_000_000), give_account=self.d_f1,
+        ex = ops.record_exchange(self.c_f1, cash_manager=self.cm1, amount=D(10_000_000), give_kind="CASH",
+                                 give_account=self.d_f1,
                                  amount_given=D(10_000_000), receive_account=self.uve_f1,
                                  amount_served=D(8_000_000), served_on=douala_today(), external_ref="BK-778",
                                  note="weekly float")
@@ -581,7 +582,8 @@ class ExchangeServedLater(OrgMixin, TestCase):
         ex.refresh_from_db()
         self.assertEqual((ex.to_serve, ex.status), (D(0), "COMPLETE"))
         with self.assertRaises(BusinessError):
-            ops.record_exchange(self.c_f1, cash_manager=self.cm1, amount=D(100), give_account=self.d_f1,
+            ops.record_exchange(self.c_f1, cash_manager=self.cm1, amount=D(100), give_kind="CASH",
+                                give_account=self.d_f1,
                                 amount_given=D(100), receive_account=self.uve_f1, amount_served=D(50),
                                 served_on=douala_today() + timedelta(days=1))
 
@@ -595,9 +597,30 @@ class ExchangeServedLater(OrgMixin, TestCase):
             self.assertContains(page, txt)
         r = c.post("/cash-managers/exchange/new/", {
             "idem": str(uuid.uuid4()), "cash_manager": self.cm2.pk, "external_ref": "CM-1", "amount": "10 000 000",
-            "give_account": self.d_f1.pk, "amount_given": "", "served_on": "2026-10-28",
-            "amount_served": "8 000 000", "receive_account": self.uve_f1.pk, "note": ""})
+            "give_kind": "CASH", "amount_given": "", "served_on": "2026-10-28",
+            "amount_served": "8 000 000", "note": ""})  # accounts filled automatically
         self.assertEqual(r.status_code, 302, r.content[:2000])
         detail = c.get(r["Location"])
         self.assertContains(detail, "Balance to be served")
         self.assertContains(detail, "2 000 000")
+
+    def test_sides_follow_what_is_given(self):
+        self.fund(self.mtn_f1, 500_000)
+        # MTN float given -> served in UVE, accounts picked automatically for the subzone
+        ex = ops.record_exchange(self.c_f1, cash_manager=self.cm1, amount=D(500_000), give_kind="MTN",
+                                 amount_served=D(300_000))
+        self.assertEqual((ex.direction, ex.give_kind(), ex.receive_kind()), ("MTN_FOR_UVE", "MTN", "UVE"))
+        self.assertEqual(self.bal(self.mtn_f1), D(0))
+        # the balance must come back in UVE, not cash
+        with self.assertRaises(BusinessError):
+            ops.record_exchange_leg(self.c_f1, exchange=ex, side=TxType.CM_RECEIVE, amount=D(200_000),
+                                    account=self.d_f1)
+        ops.record_exchange_leg(self.c_f1, exchange=ex, side=TxType.CM_RECEIVE, amount=D(200_000),
+                                account=self.uve_f1)
+        # UVE given -> served in cash
+        ex2 = ops.record_exchange(self.c_f1, cash_manager=self.cm2, amount=D(100_000), give_kind="UVE",
+                                  amount_served=D(100_000))
+        self.assertEqual((ex2.direction, ex2.status), ("UVE_FOR_CASH", "COMPLETE"))
+        with self.assertRaises(BusinessError):  # cash cannot be "given" on a UVE exchange
+            ops.record_exchange(self.c_f1, cash_manager=self.cm2, amount=D(1), give_kind="UVE",
+                                give_account=self.d_f1)

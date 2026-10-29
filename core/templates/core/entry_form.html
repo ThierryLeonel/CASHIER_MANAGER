@@ -85,6 +85,21 @@
     autoPick(tdst);
   }
   if (tsrc && tdst) { tsrc.addEventListener('change', syncTransfer); syncTransfer(); }
+  // cash-manager exchange: giving cash or MTN float = served UVE; giving UVE = served cash
+  var gk = form.querySelector('[name=give_kind]'), gAcct = form.querySelector('[name=give_account]'),
+      rAcct = form.querySelector('[name=receive_account]');
+  var sides = {CASH: ['CASH_DRAWER', 'UVE'], MTN: ['MTN', 'UVE'], UVE: ['UVE', 'CASH_DRAWER']};
+  function onlyKind(sel, kind) {
+    if (!sel) return;
+    Array.prototype.forEach.call(sel.options, function (o) {
+      if (!o.value) return;
+      var ok = o.dataset.kind === kind; o.hidden = !ok; o.disabled = !ok;
+    });
+    if (sel.selectedOptions.length && sel.selectedOptions[0].disabled) sel.value = '';
+    autoPick(sel);
+  }
+  function syncGive() { if (!gk) return; var s = sides[gk.value] || []; onlyKind(gAcct, s[0]); onlyKind(rAcct, s[1]); }
+  if (gk) { gk.addEventListener('change', syncGive); syncGive(); }
   autoAll();
   // cash-manager exchange: balance still to be served, as you type
   var exAmt = form.querySelector('[name=amount]'), exServed = form.querySelector('[name=amount_served]');

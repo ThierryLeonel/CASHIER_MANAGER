@@ -6,7 +6,7 @@ from django import forms
 from django.utils.translation import gettext_lazy as _
 
 from core.models import (
-    Account, CashManager, Correction, Counterparty, Discrepancy, ExpenseCategory, PaymentMethod,
+    Account, CashManager, CashManagerExchange, Correction, Counterparty, Discrepancy, ExpenseCategory, PaymentMethod,
     MicroZone, Product, TxType, User, Zone,
 )
 from core.money import MoneyError, fmt, to_money
@@ -289,8 +289,10 @@ class ExchangeForm(BaseEntryForm):
                                           queryset=CashManager.objects.filter(active=True))
     external_ref = forms.CharField(label=_("Ref number"), required=False, max_length=60)
     amount = MoneyField(label=_("Amount (FCFA)"), help_text=_("The amount agreed with the cash manager, 1:1."))
-    give_account = AccountChoiceField(label=_("Company gives from"), queryset=Account.objects.none(),
-                                      help_text=_("Cash drawer or UVE wallet."))
+    give_kind = forms.ChoiceField(label=_("Company gives"), choices=[
+        ("CASH", _("Cash → served in UVE")), ("MTN", _("MTN float → served in UVE")),
+        ("UVE", _("UVE → served in cash"))])
+    give_account = AccountChoiceField(label=_("Company gives from"), queryset=Account.objects.none(), required=False)
     amount_given = MoneyField(label=_("Amount given now (FCFA)"), required=False,
                               help_text=_("Leave empty if the company gave the full amount."))
     served_on = forms.DateField(label=_("Date served"), required=False,
@@ -298,16 +300,17 @@ class ExchangeForm(BaseEntryForm):
     amount_served = MoneyField(label=_("Amount served (FCFA)"), required=False,
                                help_text=_("What the cash manager has served the company so far. The balance is "
                                            "served later from the exchange page."))
-    receive_account = AccountChoiceField(label=_("Served into"), queryset=Account.objects.none(), required=False,
-                                         help_text=_("Cash drawer or UVE wallet that received it."))
+    receive_account = AccountChoiceField(label=_("Served into"), queryset=Account.objects.none(), required=False)
     note = forms.CharField(label=_("Comment"), required=False, max_length=255)
 
     def __init__(self, user, *args, **kwargs):
         super().__init__(user, *args, **kwargs)
         from core.services.days import douala_today
 
-        self.fields["give_account"].queryset = self.accounts([K.CASH_DRAWER, K.UVE])
+        self.fields["give_account"].queryset = self.accounts([K.CASH_DRAWER, K.MTN, K.UVE])
         self.fields["receive_account"].queryset = self.accounts([K.CASH_DRAWER, K.UVE], receiving=True)
+        self.order_fields(["cash_manager", "external_ref", "amount", "give_kind", "give_account", "amount_given",
+                           "served_on", "amount_served", "receive_account", "note"])
         if not self.is_bound:
             self.initial.setdefault("served_on", douala_today())
 
@@ -319,21 +322,58 @@ class ExchangeForm(BaseEntryForm):
         served = cd.get("amount_served") or 0
         if amt and served > amt:
             self.add_error("amount_served", _("The amount served cannot exceed the agreed amount."))
-        if served and not cd.get("receive_account"):
-            self.add_error("receive_account", _("Choose the account that received what was served."))
+        direction = CashManagerExchange.GIVE_DIRECTION.get(cd.get("give_kind"))
+        if direction:
+            gk, rk = CashManagerExchange.SIDES[direction]
+            for name, kind, needed in (("give_account", gk, True), ("receive_account", rk, bool(served))):
+                acct = cd.get(name)
+                if acct is not None and acct.kind != kind:
+                    self.add_error(name, _("Choose a %(kind)s account.") % {"kind": Account.Kind(kind).label})
+                elif acct is None and needed:
+                    qs = self.fields[name].queryset.filter(kind=kind)
+                    if qs.count() == 1:
+                        cd[name] = qs.first()  # the subzone's account: no need to choose
+                    else:
+                        self.add_error(name, _("No single %(kind)s account for your subzone: choose one.")
+                                       % {"kind": Account.Kind(kind).label})
         return cd
 
 
 class ExchangeLegForm(BaseEntryForm):
-    side = forms.ChoiceField(label=_("What happened"), choices=[(TxType.CM_GIVE, _("Company gave (cash or UVE)")),
-                                                                (TxType.CM_RECEIVE, _("Company received (cash or UVE)"))])
+    side = forms.ChoiceField(label=_("What happened"), choices=[
+        (TxType.CM_RECEIVE, _("The cash manager served the company (balance served)")),
+        (TxType.CM_GIVE, _("The company gave"))])
     amount = MoneyField(label=_("Amount (FCFA)"))
-    account = AccountChoiceField(label=_("Company account"), queryset=Account.objects.none())
+    account = AccountChoiceField(label=_("Company account"), queryset=Account.objects.none(), required=False)
     description = forms.CharField(label=_("Note"), required=False, max_length=255)
 
-    def __init__(self, user, *args, **kwargs):
+    def __init__(self, user, *args, exchange=None, **kwargs):
         super().__init__(user, *args, **kwargs)
-        self.fields["account"].queryset = self.accounts([K.CASH_DRAWER, K.UVE])
+        self.exchange = exchange
+        self.fields["account"].queryset = self.accounts([K.CASH_DRAWER, K.MTN, K.UVE])
+        if exchange is not None and not self.is_bound and exchange.to_serve:
+            self.initial.setdefault("amount", exchange.to_serve)
+
+    def side_kind(self, side):
+        ex = self.exchange
+        if ex is None:
+            return None
+        return ex.give_kind() if side == TxType.CM_GIVE else ex.receive_kind()
+
+    def clean(self):
+        cd = super().clean()
+        kind = self.side_kind(cd.get("side"))
+        acct = cd.get("account")
+        if kind and acct is None:
+            qs = self.fields["account"].queryset.filter(kind=kind)
+            if qs.count() == 1:
+                cd["account"] = qs.first()
+            else:
+                self.add_error("account", _("No single %(kind)s account for your subzone: choose one.")
+                               % {"kind": Account.Kind(kind).label})
+        elif acct is None:
+            self.add_error("account", _("Choose the account."))
+        return cd
 
 
 class CounterpartyForm(forms.ModelForm):

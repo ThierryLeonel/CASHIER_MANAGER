@@ -297,6 +297,7 @@ class CashManagerExchange(models.Model):
 
     class Direction(models.TextChoices):
         CASH_FOR_UVE = "CASH_FOR_UVE", _("Company gives cash, receives UVE")
+        MTN_FOR_UVE = "MTN_FOR_UVE", _("Company gives MTN float, receives UVE")
         UVE_FOR_CASH = "UVE_FOR_CASH", _("Company gives UVE, receives cash")
 
     reference = models.CharField(max_length=20, unique=True)
@@ -326,7 +327,20 @@ class CashManagerExchange(models.Model):
     def __str__(self):
         return f"{self.reference} {self.cash_manager.name} {self.amount}"
 
-    LEG_KINDS = (Account.Kind.CASH_DRAWER, Account.Kind.UVE)
+    LEG_KINDS = (Account.Kind.CASH_DRAWER, Account.Kind.UVE)  # exchanges recorded without a direction
+    # direction -> (account kind the company gives from, account kind it is served into)
+    SIDES = {
+        "CASH_FOR_UVE": (Account.Kind.CASH_DRAWER, Account.Kind.UVE),
+        "MTN_FOR_UVE": (Account.Kind.MTN, Account.Kind.UVE),
+        "UVE_FOR_CASH": (Account.Kind.UVE, Account.Kind.CASH_DRAWER),
+    }
+    GIVE_DIRECTION = {"CASH": "CASH_FOR_UVE", "MTN": "MTN_FOR_UVE", "UVE": "UVE_FOR_CASH"}
+
+    def give_kind(self):
+        return self.SIDES.get(self.direction, (None, None))[0]
+
+    def receive_kind(self):
+        return self.SIDES.get(self.direction, (None, None))[1]
 
     @property
     def direction_label(self):

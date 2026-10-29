@@ -317,11 +317,33 @@ def create_exchange(user, *, cash_manager, amount, note="", idempotency_key=None
     )
 
 
-def record_exchange(user, *, cash_manager, amount, give_account, amount_given, receive_account=None,
-                    amount_served=ZERO, served_on=None, external_ref="", note="", idempotency_key=None,
-                    acting_for=None):
-    """One step: the agreement, what the company gave and what it was served now. The rest is served later."""
+def _desk_account(ctx, kind, receiving=False):
+    """The single account of this kind the cashier's subzone uses, or None."""
+    qs = perm.usable_accounts(ctx.cashier, [kind], receiving=receiving)
+    return qs.first() if qs.count() == 1 else None
+
+
+def record_exchange(user, *, cash_manager, amount, give_kind, give_account=None, amount_given=None,
+                    receive_account=None, amount_served=ZERO, served_on=None, external_ref="", note="",
+                    idempotency_key=None, acting_for=None):
+    """One step: the agreement, what the company gave and what it was served now. The rest is served later.
+
+    Giving cash or MTN float means being served UVE; giving UVE means being served cash."""
+    direction = CashManagerExchange.GIVE_DIRECTION.get(give_kind)
+    if direction is None:
+        raise BusinessError(_("Choose what the company gives: cash, MTN float or UVE."), "give_kind")
+    gk, rk = CashManagerExchange.SIDES[direction]
+    ctx0 = cashier_ctx(user, acting_for)
+    give_account = give_account or _desk_account(ctx0, gk)
+    receive_account = receive_account or _desk_account(ctx0, rk, receiving=True)
+    if give_account is None or give_account.kind != gk:
+        raise BusinessError(_("Choose the %(kind)s account the company gives from.")
+                            % {"kind": Account.Kind(gk).label}, "give_account")
+    if receive_account is not None and receive_account.kind != rk:
+        raise BusinessError(_("What is served goes into a %(kind)s account.") % {"kind": Account.Kind(rk).label},
+                            "receive_account")
     amount = _positive(amount)
+    amount_given = amount if amount_given in (None, "") else amount_given
     amount_given = _money(amount_given or 0)
     amount_served = _money(amount_served or 0)
     if amount_given < 0 or amount_served < 0:
@@ -335,7 +357,7 @@ def record_exchange(user, *, cash_manager, amount, give_account, amount_given, r
     if served_on and served_on > douala_today():
         raise BusinessError(_("The date served cannot be in the future."), "served_on")
     with transaction.atomic():
-        ex = create_exchange(user, cash_manager=cash_manager, amount=amount, note=note,
+        ex = create_exchange(user, cash_manager=cash_manager, amount=amount, note=note, direction=direction,
                              idempotency_key=idempotency_key, acting_for=acting_for)
         CashManagerExchange.objects.filter(pk=ex.pk).update(external_ref=(external_ref or "").strip()[:60],
                                                            served_on=served_on if amount_served else None)
@@ -359,7 +381,11 @@ def build_exchange_leg(ctx, *, exchange, side, amount, account, description=""):
     exchange = CashManagerExchange.objects.select_for_update().get(pk=exchange.pk)
     if side not in (TxType.CM_GIVE, TxType.CM_RECEIVE):
         raise BusinessError(_("Choose which side of the exchange happened."), "side")
-    if account.kind not in CashManagerExchange.LEG_KINDS:  # any side may be cash or UVE
+    want = exchange.give_kind() if side == TxType.CM_GIVE else exchange.receive_kind()
+    if want is not None and account.kind != want:
+        raise BusinessError(_("This side of the exchange must use a %(kind)s account.")
+                            % {"kind": Account.Kind(want).label}, "account")
+    if want is None and account.kind not in CashManagerExchange.LEG_KINDS:  # older exchanges without direction
         raise BusinessError(_("Cash-manager exchanges use a cash drawer or a UVE wallet."), "account")
     legs = exchange.legs.filter(type=side, correction__isnull=True)
     if ctx.exclude_txn_id:

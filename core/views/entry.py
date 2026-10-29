@@ -142,7 +142,7 @@ def exchange_detail(request, pk):
     if zids is not None and ex.created_by.subzone_id not in zids:
         raise Http404
     desk, acting = _desk(request) if request.user.role in DESK else (None, None)
-    form = F.ExchangeLegForm(desk, request.POST or None) if desk is not None else None
+    form = F.ExchangeLegForm(desk, request.POST or None, exchange=ex) if desk is not None else None
     if form is not None and request.method == "POST" and form.is_valid():
         resp = run_service(
             request, form, lambda: ops.record_exchange_leg(request.user, exchange=ex, acting_for=acting,
@@ -155,4 +155,5 @@ def exchange_detail(request, pk):
     give, recv = ex.side_totals()
     legs = ex.legs.select_related("entered_by", "source_account__sim", "dest_account__sim").order_by("posted_at")
     return render(request, "core/exchange_detail.html", {"ex": ex, "form": form, "give": give, "recv": recv,
-                                                         "legs": legs})
+                                                         "legs": legs, "give_kind": ex.give_kind() or "",
+                                                         "receive_kind": ex.receive_kind() or ""})

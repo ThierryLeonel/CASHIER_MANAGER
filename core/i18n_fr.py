@@ -1007,6 +1007,19 @@ FR = {
     'date served': 'date de service',
     'ref number': 'numéro de référence',
     'served on %(d)s': 'servi le %(d)s',
+    'Cash → served in UVE': 'Espèces → servi en UVE',
+    'Choose a %(kind)s account.': 'Choisissez un compte %(kind)s.',
+    'Choose the %(kind)s account the company gives from.': "Choisissez le compte %(kind)s depuis lequel l'entreprise donne.",
+    'Choose the account.': 'Choisissez le compte.',
+    'Choose what the company gives: cash, MTN float or UVE.': "Choisissez ce que l'entreprise donne : espèces, float MTN ou UVE.",
+    'Company gives MTN float, receives UVE': "L'entreprise donne du float MTN, reçoit de l'UVE",
+    'MTN float → served in UVE': 'Float MTN → servi en UVE',
+    'No single %(kind)s account for your subzone: choose one.': 'Pas de compte %(kind)s unique pour votre sous-zone : choisissez-en un.',
+    'The cash manager served the company (balance served)': "Le cash manager a servi l'entreprise (reste servi)",
+    'The company gave': "L'entreprise a donné",
+    'UVE → served in cash': 'UVE → servi en espèces',
+    'What is served goes into a %(kind)s account.': 'Ce qui est servi va dans un compte %(kind)s.',
+    'The account follows the exchange: cash or MTN float given, UVE served; UVE given, cash served.': "Le compte suit l'échange : espèces ou float MTN donnés, UVE servie ; UVE donnée, espèces servies.",
 }
 
 FR_PLURAL = {

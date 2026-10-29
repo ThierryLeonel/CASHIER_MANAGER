@@ -545,6 +545,9 @@ msgstr "Espèces aux PDV, UVE aux agents"
 msgid "Cash to a POS, UVE to an agent"
 msgstr "Espèces au PDV, UVE à l'agent"
 
+msgid "Cash → served in UVE"
+msgstr "Espèces → servi en UVE"
+
 #, python-format
 msgid "Cash, UVE, ER and MTN · zone %(z)s"
 msgstr "Espèces, UVE, ER et MTN · zone %(z)s"
@@ -599,6 +602,10 @@ msgstr "Contrôle réussi : prêt à importer"
 msgid "Choose UVE, ER or cash."
 msgstr "Choisissez UVE, ER ou espèces."
 
+#, python-format
+msgid "Choose a %(kind)s account."
+msgstr "Choisissez un compte %(kind)s."
+
 msgid "Choose a UVE wallet to convert from."
 msgstr "Choisissez le portefeuille UVE à convertir."
 
@@ -622,8 +629,15 @@ msgstr ""
 "Choisissez une microzone existante ou saisissez-en une nouvelle, pas les "
 "deux."
 
+#, python-format
+msgid "Choose the %(kind)s account the company gives from."
+msgstr "Choisissez le compte %(kind)s depuis lequel l'entreprise donne."
+
 msgid "Choose the account that received what was served."
 msgstr "Choisissez le compte qui a reçu ce qui a été servi."
+
+msgid "Choose the account."
+msgstr "Choisissez le compte."
 
 msgid ""
 "Choose the cash drawer or UVE wallet that actually gave or received the "
@@ -649,6 +663,9 @@ msgstr "Choisissez la sous-zone de la nouvelle microzone."
 
 msgid "Choose the subzone that uses this SIM."
 msgstr "Choisissez la sous-zone qui utilise cette SIM."
+
+msgid "Choose what the company gives: cash, MTN float or UVE."
+msgstr "Choisissez ce que l'entreprise donne : espèces, float MTN ou UVE."
 
 msgid "Choose what to clear."
 msgstr "Choisissez ce qu'il faut effacer."
@@ -774,6 +791,9 @@ msgstr "L'entreprise a donné sa part"
 
 msgid "Company gives"
 msgstr "L'entreprise donne"
+
+msgid "Company gives MTN float, receives UVE"
+msgstr "L'entreprise donne du float MTN, reçoit de l'UVE"
 
 msgid "Company gives UVE, receives cash"
 msgstr "L'entreprise donne de l'UVE, reçoit des espèces"
@@ -1488,6 +1508,9 @@ msgstr "SIM float MTN"
 msgid "MTN float wallet"
 msgstr "Portefeuille float MTN"
 
+msgid "MTN float → served in UVE"
+msgstr "Float MTN → servi en UVE"
+
 msgid "Main menu"
 msgstr "Menu principal"
 
@@ -1639,6 +1662,11 @@ msgstr ""
 
 msgid "No notes yet."
 msgstr "Aucune note pour l'instant."
+
+#, python-format
+msgid "No single %(kind)s account for your subzone: choose one."
+msgstr ""
+"Pas de compte %(kind)s unique pour votre sous-zone : choisissez-en un."
 
 msgid ""
 "No subzone exists yet. The super administrator creates zones in "
@@ -2402,6 +2430,13 @@ msgstr "TOTAL OUVERTURE"
 msgid "Templates"
 msgstr "Modèles"
 
+msgid ""
+"The account follows the exchange: cash or MTN float given, UVE served; UVE "
+"given, cash served."
+msgstr ""
+"Le compte suit l'échange : espèces ou float MTN donnés, UVE servie ; UVE "
+"donnée, espèces servies."
+
 msgid "The amount agreed with the cash manager, 1:1."
 msgstr "Le montant convenu avec le cash manager, 1:1."
 
@@ -2423,11 +2458,17 @@ msgstr ""
 "Le numéro de SIM business est l'identifiant unique et ne peut pas être "
 "modifié ensuite."
 
+msgid "The cash manager served the company (balance served)"
+msgstr "Le cash manager a servi l'entreprise (reste servi)"
+
 msgid "The cash recipient of a destockage must be a POS."
 msgstr "Le bénéficiaire des espèces d'un déstockage doit être un PDV."
 
 msgid "The company cannot give more than the agreed amount."
 msgstr "L'entreprise ne peut pas donner plus que le montant convenu."
+
+msgid "The company gave"
+msgstr "L'entreprise a donné"
 
 msgid "The company may give cash or UVE and receive cash or UVE."
 msgstr ""
@@ -2737,6 +2778,9 @@ msgstr "Taux de conversion UVE → ER"
 msgid "UVE → ER conversions and rates used"
 msgstr "Conversions UVE → ER et taux utilisés"
 
+msgid "UVE → served in cash"
+msgstr "UVE → servi en espèces"
+
 msgid "UVE, ER and cash supplies, agents versus POS"
 msgstr "Approvisionnements UVE, ER et espèces, agents ou PDV"
 
@@ -2858,6 +2902,10 @@ msgstr "Ce que chaque agent doit en UVE, espèces et ER, par microzone"
 
 msgid "What happened"
 msgstr "Ce qui a eu lieu"
+
+#, python-format
+msgid "What is served goes into a %(kind)s account."
+msgstr "Ce qui est servi va dans un compte %(kind)s."
 
 msgid ""
 "What the cash manager has served the company so far. The balance is served "

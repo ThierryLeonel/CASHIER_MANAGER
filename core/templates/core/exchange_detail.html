@@ -1,9 +1,28 @@
 {% extends "core/base.html" %}{% load i18n cashier %}
 {% block title %}{{ ex.reference }}{% endblock %}
+{% block scripts %}<script>
+(function () {
+  var f = document.getElementById('leg-form'); if (!f || !f.dataset.give) return;
+  var side = f.querySelector('[name=side]'), acct = f.querySelector('[name=account]');
+  function sync() {
+    var kind = side.value === 'CM_GIVE' ? f.dataset.give : f.dataset.receive, ok = [];
+    Array.prototype.forEach.call(acct.options, function (o) {
+      if (!o.value) return;
+      var good = o.dataset.kind === kind; o.hidden = !good; o.disabled = !good; if (good) ok.push(o);
+    });
+    var field = acct.closest('.field'), note = field.querySelector('.auto-acct');
+    if (!note) { note = document.createElement('div'); note.className = 'auto-acct'; field.insertBefore(note, field.querySelector('.help, .err')); }
+    if (ok.length === 1) { acct.value = ok[0].value; acct.dispatchEvent(new Event('change', { bubbles: true })); note.textContent = ok[0].text; field.classList.add('auto-one'); }
+    else { if (acct.selectedOptions.length && acct.selectedOptions[0].disabled) acct.value = ''; field.classList.remove('auto-one'); }
+  }
+  side.addEventListener('change', sync); sync();
+})();
+</script>{% endblock %}
 {% block content %}
 <h1>{% trans "Exchange" %} {{ ex.reference }} <span class="badge {% if ex.status == 'COMPLETE' %}ok{% else %}acc{% endif %}">{{ ex.status }}</span></h1>
 <div class="panel"><dl class="kv">
   <dt>{% trans "Cash manager" %}</dt><dd>{{ ex.cash_manager }}</dd>
+  <dt>{% trans "Exchange" %}</dt><dd>{{ ex.direction_label }}</dd>
   {% if ex.external_ref %}<dt>{% trans "Ref number" %}</dt><dd>{{ ex.external_ref }}</dd>{% endif %}
   <dt>{% trans "Amount" %}</dt><dd>{{ ex.amount|fcfa }} FCFA</dd>
   <dt>{% trans "Company has given" %}</dt><dd>{{ give|fcfa }} FCFA</dd>
@@ -14,9 +33,9 @@
 </dl></div>
 {% if form and ex.status != 'COMPLETE' %}
 <h2>{% if ex.to_serve %}{% trans "Record the balance served (or another side)" %}{% else %}{% trans "Record a completed side" %}{% endif %}</h2>
-<div class="panel"><form method="post" class="entry" novalidate>{% csrf_token %}
+<div class="panel"><form method="post" class="entry" novalidate id="leg-form" data-give="{{ give_kind }}" data-receive="{{ receive_kind }}">{% csrf_token %}
   {% include "core/inc/fields.html" %}
-  <p class="small muted">{% trans "Choose the cash drawer or UVE wallet that actually gave or received the value." %}</p>
+  <p class="small muted">{% trans "The account follows the exchange: cash or MTN float given, UVE served; UVE given, cash served." %}</p>
   <button class="btn primary" type="submit">{% trans "Record" %}</button>
 </form></div>
 {% endif %}
