@@ -224,37 +224,7 @@
     fmt();
   }
 
-  /* UVE / Cash / ER parts: the amount (or total) is their sum */
-  function enhanceSplit(form) {
-    var parts = form.querySelectorAll('input[data-split]');
-    var amount = form.querySelector('input[name=amount]');
-    if (!parts.length || !amount || form.dataset.splitReady) return;
-    form.dataset.splitReady = '1';
-    var first = parts[0].closest('.field');
-    if (first && !form.querySelector('.split-row')) {  /* lay the parts side by side, help text underneath */
-      var rowEl = el('div', 'split-row');
-      first.parentNode.insertBefore(rowEl, first);
-      var help = first.querySelector('.help');
-      parts.forEach(function (p) { rowEl.appendChild(p.closest('.field')); });
-      if (help) { help.classList.add('split-help'); rowEl.parentNode.insertBefore(help, rowEl.nextSibling); }
-    }
-    var last = null;
-    function num(v) { var n = parseInt(String(v || '').replace(/[^\d-]/g, ''), 10); return isNaN(n) ? 0 : n; }
-    function sync() {
-      var any = false, total = 0;
-      parts.forEach(function (p) { if (p.value.trim()) { any = true; total += num(p.value); } });
-      if (any) {
-        amount.value = (total < 0 ? '-' : '') + String(Math.abs(total)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
-        amount.readOnly = true; amount.classList.add('auto');
-      } else { amount.readOnly = false; amount.classList.remove('auto'); }
-    }
-    parts.forEach(function (p) { p.addEventListener('input', sync); });
-    if (last) last.classList.add('split-last');
-    sync();
-  }
-
   function init(scope) {
-    scope.querySelectorAll('form').forEach(enhanceSplit);
     scope.querySelectorAll('main select').forEach(enhanceSelect);
     scope.querySelectorAll('input[data-customer-search]').forEach(enhanceCustomer);
     scope.querySelectorAll('input.money').forEach(enhanceMoney);

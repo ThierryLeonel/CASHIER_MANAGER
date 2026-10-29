@@ -42,6 +42,22 @@ msgid "%(mz)s is already controlled by %(agent)s."
 msgstr "%(mz)s est déjà contrôlée par %(agent)s."
 
 #, python-format
+msgid "%(n)s SIM(s)"
+msgstr "%(n)s SIM"
+
+#, python-format
+msgid "%(n)s cash drawer(s)"
+msgstr "%(n)s caisse(s)"
+
+#, python-format
+msgid "%(n)s cashier(s)"
+msgstr "%(n)s caissier(s)"
+
+#, python-format
+msgid "%(n)s microzone(s)"
+msgstr "%(n)s microzone(s)"
+
+#, python-format
 msgid "%(n)s opening balances recorded, total %(amt)s FCFA."
 msgstr "%(n)s soldes d'ouverture enregistrés, total %(amt)s FCFA."
 
@@ -104,6 +120,16 @@ msgid ""
 msgstr ""
 "%(z)s est une sous-zone de %(p)s. Choisissez une zone master, ou ouvrez "
 "Zones et videz la zone master de %(z)s."
+
+#, python-format
+msgid ""
+"%(z)s still has zones under it (%(names)s). A subzone cannot have subzones: "
+"open each of them and choose a master zone or make it a master zone, then "
+"come back."
+msgstr ""
+"%(z)s a encore des zones en dessous (%(names)s). Une sous-zone ne peut pas "
+"avoir de sous-zones : ouvrez chacune d'elles et choisissez une zone master "
+"ou faites-en une zone master, puis revenez."
 
 msgid "(stored encrypted, cannot be shown)"
 msgstr "(stocké chiffré, ne peut pas être affiché)"
@@ -1504,6 +1530,9 @@ msgstr "Note d'enquête"
 
 msgid "Investigation notes"
 msgstr "Notes d'enquête"
+
+msgid "It reduces the customer's single combined debt."
+msgstr "Il réduit la dette unique et combinée du client."
 
 msgid "Junior manager"
 msgstr "Manager junior"
@@ -3341,6 +3370,9 @@ msgstr "pied de reçu"
 #, python-format
 msgid "received by POS %(pos)s"
 msgstr "reçu par le PDV %(pos)s"
+
+msgid "recorded entries"
+msgstr "des écritures enregistrées"
 
 msgid "ref number"
 msgstr "numéro de référence"

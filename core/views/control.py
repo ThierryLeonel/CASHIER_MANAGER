@@ -229,7 +229,7 @@ def opening_balances(request):
             request, form,
             lambda: ops.record_opening_balance(request.user, account=cd["account"], amount=cd["amount"],
                                                business_date=cd["business_date"], description=cd["description"],
-                                               idempotency_key=cd["idem"], split=cd.get("split")),
+                                               idempotency_key=cd["idem"]),
             success=lambda t: _("Opening balance %(ref)s recorded for %(acct)s.") % {"ref": t.reference,
                                                                                     "acct": cd["account"]},
             on_success=lambda t: redirect("opening_balances"))

@@ -1074,6 +1074,7 @@ FR = {
     '%(n)s microzone(s)': '%(n)s microzone(s)',
     '%(z)s still has zones under it (%(names)s). A subzone cannot have subzones: open each of them and choose a master zone or make it a master zone, then come back.': "%(z)s a encore des zones en dessous (%(names)s). Une sous-zone ne peut pas avoir de sous-zones : ouvrez chacune d'elles et choisissez une zone master ou faites-en une zone master, puis revenez.",
     'recorded entries': 'des écritures enregistrées',
+    "It reduces the customer's single combined debt.": 'Il réduit la dette unique et combinée du client.',
 }
 
 FR_PLURAL = {

@@ -9,7 +9,7 @@ from core.models import (
     Account, CashManager, CashManagerExchange, Correction, Counterparty, Discrepancy, ExpenseCategory, PaymentMethod,
     MicroZone, Product, TxType, User, Zone,
 )
-from core.money import MoneyError, fmt, to_money
+from core.money import MoneyError, to_money
 from core.services import permissions as perm
 from core.simnumbers import SimNumberError, display_sim, normalize_sim
 
@@ -185,28 +185,6 @@ class DestockageForm(BaseEntryForm):
         self.fields["drawer"].queryset = self.accounts([K.CASH_DRAWER])
 
 
-SPLIT_PRODUCTS = (Product.UVE, Product.CASH, Product.ER)
-
-
-def add_split_fields(form, allow_negative=False, help_text=None):
-    for prod in SPLIT_PRODUCTS:
-        f = MoneyField(label=Product(prod).label, required=False, allow_negative=allow_negative)
-        f.widget.attrs.update({"data-split": prod, "placeholder": "0"})
-        form.fields[f"split_{prod}"] = f
-    if help_text:
-        form.fields[f"split_{SPLIT_PRODUCTS[0]}"].help_text = help_text
-
-
-def read_split(form, cd):
-    """Pop the split fields from cleaned data; return {product: amount} (may be empty)."""
-    out = {}
-    for prod in SPLIT_PRODUCTS:
-        v = cd.pop(f"split_{prod}", None)
-        if v:
-            out[prod] = v
-    return out
-
-
 class CollectionForm(BaseEntryForm):
     payer = CustomerField(label=_("Paying customer (business SIM)"))
     method = forms.ChoiceField(label=_("Payment method"), choices=PaymentMethod.choices)
@@ -218,27 +196,7 @@ class CollectionForm(BaseEntryForm):
     def __init__(self, user, *args, **kwargs):
         super().__init__(user, *args, **kwargs)
         self.fields["account"].queryset = self.accounts([K.CASH_DRAWER, K.UVE, K.MTN, K.BANK], receiving=True)
-        add_split_fields(self, help_text=_("Which debt this payment settles: UVE, Cash and/or ER. The parts add up "
-                                           "to the amount received. Leave empty if not known."))
-        self.order_fields(["payer", "split_UVE", "split_CASH", "split_ER", "amount", "method", "account",
-                           "bank_reference", "description"])
-        self.fields["amount"].help_text = _("Filled automatically from the parts above.")
-
-    def clean(self):
-        cd = super().clean()
-        parts = {p: cd.get(f"split_{p}") for p in SPLIT_PRODUCTS if cd.get(f"split_{p}")}
-        if parts and not cd.get("amount") and "amount" in self.errors:
-            del self.errors["amount"]
-            cd["amount"] = sum(parts.values())
-        if parts and cd.get("amount") and sum(parts.values()) != cd["amount"]:
-            self.add_error("amount", _("UVE + Cash + ER (%(sum)s FCFA) must equal the amount (%(amt)s FCFA).")
-                           % {"sum": fmt(sum(parts.values())), "amt": fmt(cd["amount"])})
-        return cd
-
-    def params(self):
-        d = super().params()
-        d["split"] = read_split(self, d) or None
-        return d
+        self.fields["amount"].help_text = _("It reduces the customer's single combined debt.")
 
 
 EXPENSE_SOURCE_KINDS = (K.CASH_DRAWER, K.UVE, K.MTN)
@@ -533,7 +491,7 @@ class NoteForm(forms.Form):
 class OpeningBalanceForm(forms.Form):
     idem = forms.UUIDField(widget=forms.HiddenInput)
     account = forms.ModelChoiceField(label=_("Account"), queryset=Account.objects.none())
-    amount = MoneyField(label=_("Total (FCFA)"), allow_negative=True, required=False,
+    amount = MoneyField(label=_("Amount (FCFA)"), allow_negative=True,
                         help_text=_("Customers / cash managers: positive = owes the company, negative = the company "
                                     "owes them (supply due). Drawers, wallets and banks: positive only."))
     business_date = forms.DateField(label=_("Balance as of (go-live date)"), widget=forms.DateInput(attrs={"type": "date"}))
@@ -548,27 +506,6 @@ class OpeningBalanceForm(forms.Form):
             opening_transactions__isnull=True,
         ).select_related("sim", "counterparty__microzone", "cash_manager").order_by("kind", "name")
         self.fields["account"].label_from_instance = _opening_account_label
-        add_split_fields(self, allow_negative=True,
-                         help_text=_("Agents and POS: what they owe in UVE, Cash and ER. The total adds up by "
-                                     "itself (a negative part = supply due to them)."))
-        self.order_fields(["account", "split_UVE", "split_CASH", "split_ER", "amount", "business_date",
-                           "description"])
-
-    def clean(self):
-        cd = super().clean()
-        parts = {p: cd.get(f"split_{p}") for p in SPLIT_PRODUCTS if cd.get(f"split_{p}")}
-        acct = cd.get("account")
-        if parts and acct is not None and acct.kind != K.CUSTOMER:
-            self.add_error("split_UVE", _("Only agents and POS openings are split by product. Use the total."))
-        if parts and not cd.get("amount"):
-            cd["amount"] = sum(parts.values())
-        if not cd.get("amount"):
-            self.add_error("amount", _("Enter the total, or the UVE, Cash and ER parts."))
-        elif parts and sum(parts.values()) != cd["amount"]:
-            self.add_error("amount", _("UVE + Cash + ER (%(sum)s FCFA) must equal the amount (%(amt)s FCFA).")
-                           % {"sum": fmt(sum(parts.values())), "amt": fmt(cd["amount"])})
-        cd["split"] = read_split(self, cd) or None
-        return cd
 
 
 def _opening_account_label(a):
