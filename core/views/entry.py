@@ -87,7 +87,8 @@ def expense_new(request):
 @roles_required(*DESK)
 def transfer_new(request):
     return _entry(request, F.InternalTransferForm, ops.record_internal_transfer, _("Internal transfer"),
-                  _("A completed move of cash or electronic value between company accounts. No customer is affected."), extra={"icon": "transfer"})
+                  _("A completed move between company accounts of the same kind: MTN float, UVE or bank. "
+                    "No customer is affected."), extra={"icon": "transfer"})
 
 
 @roles_required(*DESK)

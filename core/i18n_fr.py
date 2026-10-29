@@ -979,6 +979,9 @@ FR = {
     'Unknown product %(p)s.': 'Produit inconnu %(p)s.',
     'What each agent owes in UVE, cash and ER, by microzone': 'Ce que chaque agent doit en UVE, espèces et ER, par microzone',
     'Which debt this payment settles: UVE, Cash and/or ER. The parts add up to the amount received. Leave empty if not known.': "Quelle dette ce paiement règle : UVE, espèces et/ou ER. Les parts s'additionnent pour donner le montant reçu. Laissez vide si inconnu.",
+    'Internal transfers are only for MTN float, UVE or bank accounts.': 'Les transferts internes concernent uniquement les comptes float MTN, UVE ou bancaires.',
+    'Same kind as the source: MTN float to MTN float, UVE to UVE, bank to bank.': 'Même type que la source : float MTN vers float MTN, UVE vers UVE, banque vers banque.',
+    'A completed move between company accounts of the same kind: MTN float, UVE or bank. No customer is affected.': "Un mouvement effectué entre comptes de l'entreprise du même type : float MTN, UVE ou banque. Aucun client n'est concerné.",
 }
 
 FR_PLURAL = {

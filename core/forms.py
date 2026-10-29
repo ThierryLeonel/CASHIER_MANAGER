@@ -263,9 +263,12 @@ class InternalTransferForm(BaseEntryForm):
 
     def __init__(self, user, *args, **kwargs):
         super().__init__(user, *args, **kwargs)
-        self.fields["source"].queryset = self.accounts(Account.ASSET_KINDS)
+        kinds = [K.MTN, K.UVE, K.BANK]  # internal transfers: MTN float, UVE or bank only, same kind both sides
+        self.fields["source"].queryset = self.accounts(kinds)
         self.fields["destination"].queryset = Account.objects.filter(
-            kind__in=Account.ASSET_KINDS, active=True).select_related("sim").order_by("kind", "id")
+            kind__in=kinds, active=True).select_related("sim").order_by("kind", "id")
+        self.fields["destination"].help_text = _("Same kind as the source: MTN float to MTN float, UVE to UVE, "
+                                                 "bank to bank.")
 
 
 class ConversionForm(BaseEntryForm):

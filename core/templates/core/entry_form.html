@@ -71,6 +71,20 @@
     autoPick(src);
   }
   if (product) { product.addEventListener('change', syncProduct); syncProduct(); }
+  // internal transfer: destination of the same kind as the source, never the source itself
+  var tsrc = form.querySelector('[name=source]'), tdst = form.querySelector('[name=destination]');
+  function syncTransfer() {
+    if (!tsrc || !tdst) return;
+    var so = tsrc.options[tsrc.selectedIndex], kind = so && so.value ? so.dataset.kind : null;
+    Array.prototype.forEach.call(tdst.options, function (o) {
+      if (!o.value) return;
+      var ok = (!kind || o.dataset.kind === kind) && o.value !== tsrc.value;
+      o.hidden = !ok; o.disabled = !ok;
+    });
+    if (tdst.selectedOptions.length && tdst.selectedOptions[0].disabled) tdst.value = '';
+    autoPick(tdst);
+  }
+  if (tsrc && tdst) { tsrc.addEventListener('change', syncTransfer); syncTransfer(); }
   autoAll();
   // conversion preview (display only; the server computes and stores the posted amounts)
   var rate = form.dataset.rate, amt = form.querySelector('[name=amount]'), pv = document.getElementById('conv-preview');

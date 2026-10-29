@@ -67,8 +67,8 @@ class Command(BaseCommand):
                            description="[SAMPLE] motorbike fuel")
         ops.record_expense(me, category=ExpenseCategory.objects.get(code="orange-prefinance"), amount=D(40_000),
                            drawer=dm, description="[SAMPLE] Orange pre-finance")
-        ops.record_internal_transfer(f2, source=d2, destination=o["bank"], amount=D(500_000),
-                                     description="[SAMPLE] bank deposit of cash")
+        ops.record_internal_transfer(f2, source=o["mtn_f2"], destination=o["mtn_f1"], amount=D(100_000),
+                                     description="[SAMPLE] MTN float moved to Fako 1")
         ex = ops.create_exchange(f1, cash_manager=o["cm2"], amount=D(400_000))
         ops.record_exchange_leg(f1, exchange=ex, side=TxType.CM_GIVE, amount=D(400_000), account=d1)
         ops.record_exchange_leg(f1, exchange=ex, side=TxType.CM_RECEIVE, amount=D(250_000), account=o["uve_f1"])

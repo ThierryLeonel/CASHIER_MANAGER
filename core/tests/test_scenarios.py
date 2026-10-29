@@ -328,22 +328,20 @@ class ExpensesAndTransfers(OrgMixin, TestCase):
             ops.record_expense(self.c_f1, category=fuel, amount=D(2000000), drawer=self.d_f1, description="x")
 
     def test_internal_transfers(self):
-        ops.record_internal_transfer(self.c_f1, source=self.d_f1, destination=self.d_f2, amount=D(30000))
-        self.assertEqual((self.bal(self.d_f1), self.bal(self.d_f2)), (D(970000), D(1030000)))
+        # only MTN float, UVE or bank, and the same kind on both sides
         ops.record_internal_transfer(self.c_f1, source=self.uve_f1, destination=self.uve_me, amount=D(10000))
-        ops.record_internal_transfer(self.c_f1, source=self.d_f1, destination=self.bank, amount=D(70000))
-        self.assertEqual(self.bal(self.bank), D(70000))
-        self.fund(self.er_f2, 5000)  # ER can move to the zone master within Fako
-        ops.record_internal_transfer(self.c_f2, source=self.er_f2, destination=self.er_f1, amount=D(5000))
-        self.assertEqual(self.bal(self.er_f1), D(1005000))
-        with self.assertRaises(BusinessError):
-            ops.record_internal_transfer(self.c_f1, source=self.uve_f1, destination=self.mtn_f1, amount=D(1))
-        with self.assertRaises(BusinessError):
-            ops.record_internal_transfer(self.c_f1, source=self.er_f1, destination=self.er_me, amount=D(1))
+        self.assertEqual(self.bal(self.uve_me), D(1010000))
+        self.fund(self.mtn_f1, 20000)
+        ops.record_internal_transfer(self.c_f1, source=self.mtn_f1, destination=self.mtn_f2, amount=D(20000))
+        self.assertEqual(self.bal(self.mtn_f2), D(20000))
+        for src, dst in ((self.d_f1, self.d_f2), (self.d_f1, self.bank), (self.er_f1, self.er_me),
+                         (self.uve_f1, self.mtn_f1)):
+            with self.assertRaises(BusinessError):
+                ops.record_internal_transfer(self.c_f1, source=src, destination=dst, amount=D(1))
         with self.assertRaises(PermissionDenied):
-            ops.record_internal_transfer(self.c_f2, source=self.d_f1, destination=self.d_f2, amount=D(1))
+            ops.record_internal_transfer(self.c_f2, source=self.uve_f1, destination=self.uve_f2, amount=D(1))
         with self.assertRaises(BusinessError):
-            ops.record_internal_transfer(self.c_f1, source=self.d_f1, destination=self.d_f1, amount=D(1))
+            ops.record_internal_transfer(self.c_f1, source=self.uve_f1, destination=self.uve_f1, amount=D(1))
         self.assertFalse(Entry.objects.filter(transaction__type=TxType.INTERNAL_TRANSFER,
                                               account__kind__in=[K.CUSTOMER, K.EXPENSE]).exists())
         self.assertTrue(ledger_is_balanced())

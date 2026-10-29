@@ -131,6 +131,13 @@ msgstr ""
 " en négatif."
 
 msgid ""
+"A completed move between company accounts of the same kind: MTN float, UVE "
+"or bank. No customer is affected."
+msgstr ""
+"Un mouvement effectué entre comptes de l'entreprise du même type : float "
+"MTN, UVE ou banque. Aucun client n'est concerné."
+
+msgid ""
 "A completed move of cash or electronic value between company accounts. No "
 "customer is affected."
 msgstr ""
@@ -1350,6 +1357,11 @@ msgstr "Transfert interne"
 msgid "Internal transfers"
 msgstr "Transferts internes"
 
+msgid "Internal transfers are only for MTN float, UVE or bank accounts."
+msgstr ""
+"Les transferts internes concernent uniquement les comptes float MTN, UVE ou "
+"bancaires."
+
 msgid "Invalid amount"
 msgstr "Montant invalide"
 
@@ -2147,6 +2159,12 @@ msgstr "Ligne"
 
 msgid "SIM number"
 msgstr "Numéro de SIM"
+
+msgid ""
+"Same kind as the source: MTN float to MTN float, UVE to UVE, bank to bank."
+msgstr ""
+"Même type que la source : float MTN vers float MTN, UVE vers UVE, banque "
+"vers banque."
 
 msgid "Save"
 msgstr "Enregistrer"

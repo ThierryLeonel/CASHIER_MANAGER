@@ -33,7 +33,7 @@ Orange Cameroon distribution partner · FCFA (XAF) · Africa/Douala business dat
 | 2 | Carry-forward when closing shows a difference | **Book (expected) balance carries forward.** Difference becomes an open Discrepancy; later closings show it as "carried unresolved" and only a *change* creates a new discrepancy. | `services/closing.py` |
 | 3 | Shared master wallet reconciliation | **Confirmed by the owner:** the master SIM is assigned to one **cashier in charge**; only that cashier uses it and it is counted in that cashier's subzone closing. All other accounts belong to a zone, not to a cashier. | `CompanySim.custodian`, `zone_closing_accounts` |
 | 4 | "Corresponding master zone" for ER | Master zone of the **cashier entering** the supply. | `build_supply` |
-| 5 | UVE→ER conversion destination | **Same Orange SIM**. ER = UVE × (1 + rate), **ROUND_HALF_UP to whole FCFA** (12 345 → 12 839). ER can then be moved inside the zone by internal transfer. | `build_conversion`, `money.py` |
+| 5 | UVE→ER conversion destination | **Same Orange SIM**. ER = UVE × (1 + rate), **ROUND_HALF_UP to whole FCFA** (12 345 → 12 839). ER is not moved by internal transfer. | `build_conversion`, `money.py` |
 | 6 | Who enters what | Cashiers enter all operations; managers/finance correct, resolve, transfer responsibility; only the super admin enters opening balances and rates. | `services/permissions.py` |
 
 ### Cash managers, wallets and openings (28/10/2026)
@@ -45,6 +45,7 @@ Orange Cameroon distribution partner · FCFA (XAF) · Africa/Douala business dat
 - **Agent/POS pickers** (supply, payment, destockage, responsibility transfer) lead with the **microzone**, then the name, SIM and subzone, and search by microzone, name or SIM — agents can be moved, the microzone stays.
 - **Debt by product**: agent/POS openings can be split into UVE, Cash and ER (the total is their sum), and a payment can say which debt it settles (UVE / Cash / ER parts adding up to the amount). Supplies carry their product; responsibility transfers and corrections follow the original. The "Debt by product" report and each statement show what is owed per product; anything recorded without parts appears as "Not split", so the columns always add up to the single combined balance.
 - **Automatic accounts**: when the subzone has exactly one matching account, it is chosen automatically and shown as a line, not a list — payments go to the account of the payment method (cash → drawer, UVE → UVE wallet, MTN → MTN float, bank → the bank when there is one), supplies leave from the wallet of the product, and any single-choice account list fills itself. The server applies the same rule if the field arrives empty; a list appears only when there is a real choice.
+- **Internal transfers** are only between MTN float, UVE or bank accounts, and only between two accounts of the same kind (MTN→MTN, UVE→UVE, bank→bank). Cash drawers and ER wallets are not transferred internally. The destination list follows the source's kind.
 - Entry forms say when a subzone has no account of the needed kind yet, and who adds it.
 
 ### Company profile (multi-partner installations)

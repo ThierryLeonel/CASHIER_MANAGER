@@ -236,10 +236,11 @@ def record_expense(user, idempotency_key=None, acting_for=None, **params):
 
 
 # ---------------------------------------------------------------- internal transfers
+TRANSFER_KINDS = (K.MTN, K.UVE, K.BANK)  # internal transfers: MTN float, UVE or bank only
+
+
 def _compatible(a, b):
-    if a.kind == b.kind:
-        return True
-    return {a.kind, b.kind} == {K.CASH_DRAWER, K.BANK}
+    return a.kind == b.kind
 
 
 def build_internal_transfer(ctx, *, source, destination, amount, description=""):
@@ -248,11 +249,11 @@ def build_internal_transfer(ctx, *, source, destination, amount, description="")
         raise BusinessError(_("Source and destination must be different."), "destination")
     if not (source.is_asset and destination.is_asset and destination.active):
         raise BusinessError(_("Transfers are only between active company cash, wallet or bank accounts."))
+    if source.kind not in TRANSFER_KINDS or destination.kind not in TRANSFER_KINDS:
+        raise BusinessError(_("Internal transfers are only for MTN float, UVE or bank accounts."), "source")
     if not _compatible(source, destination):
         raise BusinessError(_("Incompatible asset types: %(a)s cannot be transferred to %(b)s.")
                             % {"a": source.get_kind_display(), "b": destination.get_kind_display()}, "destination")
-    if source.kind == K.ER and source.sim.master_zone_id != destination.sim.master_zone_id:
-        raise BusinessError(_("ER can only be transferred between SIMs of the same master zone."), "destination")
     _require_send(ctx, source)
     return TxSpec(
         type=TxType.INTERNAL_TRANSFER,
