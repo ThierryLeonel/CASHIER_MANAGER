@@ -76,3 +76,26 @@ class ProductSplit(OrgMixin, TestCase):
         t = Transaction.objects.filter(type=TxType.COLLECTION).latest("posted_at")
         self.assertEqual((t.amount, t.product_split), (D(6000), {"UVE": 5000, "CASH": 1000}))
         self.assertEqual(c.get("/reports/debt_by_product/?preset=all").status_code, 200)
+
+
+class AutoAccounts(OrgMixin, TestCase):
+    def setUp(self):
+        self.make_org()
+        self.fund_all()
+        self.c = self.client_class()
+        self.assertTrue(self.c.login(username="cashier.fako2", password=PW))
+
+    def test_payment_goes_to_the_subzone_account_of_the_method(self):
+        for method, acct in (("CASH", self.d_f2), ("MTN", self.mtn_f2), ("UVE", self.uve_f2)):
+            before = self.bal(acct)
+            r = self.c.post("/collection/new/", {"idem": str(uuid.uuid4()), "payer": "691000001", "amount": "1 000",
+                                                 "method": method})
+            self.assertEqual(r.status_code, 302, (method, r.content[:1500]))
+            self.assertEqual(self.bal(acct), before + 1000)
+
+    def test_supply_takes_the_subzone_wallet_of_the_product(self):
+        before = self.bal(self.uve_f2)
+        r = self.c.post("/supply/agent/", {"idem": str(uuid.uuid4()), "product": "UVE", "agent": "691000002",
+                                           "amount": "2 000"})
+        self.assertEqual(r.status_code, 302, r.content[:1500])
+        self.assertEqual(self.bal(self.uve_f2), before - 2000)

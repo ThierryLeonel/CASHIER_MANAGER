@@ -415,3 +415,9 @@ input[type=file] { font: inherit; padding: 10px; border: 1px dashed var(--line);
 .help.split-help { margin: 0 0 14px; font-size: .78rem; color: var(--muted); line-height: 1.4; }
 @media (max-width: 560px) { .split-row { grid-template-columns: 1fr; } }
 input.auto { background: var(--soft); font-weight: 700; }
+/* account picked automatically (only one possible) */
+.auto-acct { display: none; }
+.field.auto-one .pk, .field.auto-one select { display: none; }
+.field.auto-one .auto-acct { display: flex; align-items: center; gap: 8px; min-height: 48px; padding: 0 14px; border-radius: 12px;
+  background: var(--soft); border: 1px dashed var(--line); font-weight: 600; }
+.field.auto-one .auto-acct::before { content: "✓"; color: var(--ok, #2e7d32); font-weight: 800; }

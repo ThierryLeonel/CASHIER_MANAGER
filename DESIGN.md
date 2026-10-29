@@ -44,6 +44,7 @@ Orange Cameroon distribution partner · FCFA (XAF) · Africa/Douala business dat
 - **Expenses** can be settled from a cash drawer, a UVE wallet or an MTN float wallet.
 - **Agent/POS pickers** (supply, payment, destockage, responsibility transfer) lead with the **microzone**, then the name, SIM and subzone, and search by microzone, name or SIM — agents can be moved, the microzone stays.
 - **Debt by product**: agent/POS openings can be split into UVE, Cash and ER (the total is their sum), and a payment can say which debt it settles (UVE / Cash / ER parts adding up to the amount). Supplies carry their product; responsibility transfers and corrections follow the original. The "Debt by product" report and each statement show what is owed per product; anything recorded without parts appears as "Not split", so the columns always add up to the single combined balance.
+- **Automatic accounts**: when the subzone has exactly one matching account, it is chosen automatically and shown as a line, not a list — payments go to the account of the payment method (cash → drawer, UVE → UVE wallet, MTN → MTN float, bank → the bank when there is one), supplies leave from the wallet of the product, and any single-choice account list fills itself. The server applies the same rule if the field arrives empty; a list appears only when there is a real choice.
 - Entry forms say when a subzone has no account of the needed kind yet, and who adds it.
 
 ### Company profile (multi-partner installations)

@@ -25,6 +25,19 @@
   form.addEventListener('submit', function () {
     var b = document.getElementById('submit-btn'); b.disabled = true; b.textContent = '…';
   });
+  // an account list with a single possible account fills itself and shows as a line of text
+  function autoPick(sel) {
+    if (!sel) return;
+    var field = sel.closest('.field'); if (!field) return;
+    var ok = Array.prototype.filter.call(sel.options, function (o) { return o.value && !o.disabled; });
+    var note = field.querySelector('.auto-acct');
+    if (!note) { note = document.createElement('div'); note.className = 'auto-acct'; field.insertBefore(note, field.querySelector('.help, .err')); }
+    if (ok.length === 1) {
+      if (sel.value !== ok[0].value) { sel.value = ok[0].value; sel.dispatchEvent(new Event('change', { bubbles: true })); }
+      note.textContent = ok[0].text; field.classList.add('auto-one');
+    } else { field.classList.remove('auto-one'); }
+  }
+  function autoAll() { form.querySelectorAll('select').forEach(function (s) { if (s.querySelector('option[data-kind]')) autoPick(s); }); }
   // collection: show only accounts matching the method; bank reference only for bank deposits
   var method = form.querySelector('[name=method]'), acct = form.querySelector('[name=account]');
   var kindFor = {CASH: 'CASH_DRAWER', UVE: 'UVE', MTN: 'MTN', BANK: 'BANK'};
@@ -40,6 +53,7 @@
     if (acct.selectedOptions.length && acct.selectedOptions[0].disabled) acct.value = first ? first.value : '';
     var bank = document.getElementById('fld-bank_reference');
     if (bank) bank.hidden = method.value !== 'BANK';
+    autoPick(acct);
   }
   if (method) { method.addEventListener('change', syncMethod); syncMethod(); }
   // supply: show only accounts holding the chosen product
@@ -54,8 +68,10 @@
       o.hidden = !ok; o.disabled = !ok; if (ok && !first) first = o;
     });
     if (src.selectedOptions.length && src.selectedOptions[0].disabled) src.value = first ? first.value : '';
+    autoPick(src);
   }
   if (product) { product.addEventListener('change', syncProduct); syncProduct(); }
+  autoAll();
   // conversion preview (display only; the server computes and stores the posted amounts)
   var rate = form.dataset.rate, amt = form.querySelector('[name=amount]'), pv = document.getElementById('conv-preview');
   if (rate && amt && form.querySelector('[name=uve_account]')) {

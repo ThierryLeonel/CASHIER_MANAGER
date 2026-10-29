@@ -96,6 +96,32 @@ class BaseEntryForm(forms.Form):
     def accounts(self, kinds, receiving=False):
         return perm.usable_accounts(self.user, kinds, receiving=receiving).order_by("kind", "id")
 
+    # Account fields filled automatically from another field when the subzone has exactly one matching account.
+    AUTO_ACCOUNT = {
+        "account": ("method", {"CASH": K.CASH_DRAWER, "UVE": K.UVE, "MTN": K.MTN, "BANK": K.BANK}),
+        "source_account": ("product", {"UVE": K.UVE, "ER": K.ER, "CASH": K.CASH_DRAWER}),
+    }
+
+    def clean(self):
+        cd = super().clean()
+        for name, field in self.fields.items():
+            if not isinstance(field, AccountChoiceField) or cd.get(name) or name not in self.errors:
+                continue
+            if (self.data.get(self.add_prefix(name)) or "").strip():  # a value was sent: keep its error
+                continue
+            qs = field.queryset
+            if name in self.AUTO_ACCOUNT:
+                driver, kinds = self.AUTO_ACCOUNT[name]
+                if driver in self.fields:
+                    kind = kinds.get(cd.get(driver))
+                    if kind is None:
+                        continue
+                    qs = qs.filter(kind=kind)
+            if qs.count() == 1:  # the only possible account: take it, no need to choose
+                del self.errors[name]
+                cd[name] = qs.first()
+        return cd
+
     def params(self):
         d = dict(self.cleaned_data)
         d.pop("idem", None)
