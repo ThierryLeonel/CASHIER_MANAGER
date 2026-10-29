@@ -256,3 +256,42 @@ class InactivitySignOut(OrgMixin, TestCase):
         r = c.get("/reports/")
         self.assertContains(r, 'class="report-card"', count=16)
         self.assertNotContains(r, "daily/weekly")
+
+
+class ZoneConfiguration(TestCase):
+    def setUp(self):
+        from core.models import User
+
+        User.objects.create_user("boss", password="Sample-Pass-2026!", role="SUPERADMIN", is_staff=True)
+        self.c = self.client_class()
+        self.c.login(username="boss", password="Sample-Pass-2026!")
+
+    def test_master_zones_and_subzones_are_separate(self):
+        from core.models import Zone
+
+        r = self.c.post("/admin/core/masterzone/add/", {
+            "name": "Fako", "code": "fako", "active": "on",
+            "subzones-TOTAL_FORMS": "2", "subzones-INITIAL_FORMS": "0", "subzones-MIN_NUM_FORMS": "0",
+            "subzones-MAX_NUM_FORMS": "1000",
+            "subzones-0-name": "Fako 1", "subzones-0-code": "fako-1", "subzones-0-active": "on",
+            "subzones-1-name": "Fako 2", "subzones-1-code": "fako-2", "subzones-1-active": "on"})
+        self.assertEqual(r.status_code, 302, [str(e) for e in r.context["errors"]] if r.context else r.status_code)
+        fako = Zone.objects.get(code="fako")
+        self.assertIsNone(fako.parent)
+        self.assertContains(self.c.get(f"/admin/core/masterzone/{fako.pk}/change/"), "Subzones of this master zone")
+        self.assertEqual(set(fako.subzones.values_list("name", flat=True)), {"Fako 1", "Fako 2"})
+        masters = self.c.get("/admin/core/masterzone/")
+        self.assertContains(masters, "Fako 1, Fako 2")
+        subs = self.c.get("/admin/core/subzone/")
+        self.assertContains(subs, "Fako 1")
+        self.assertNotContains(subs, 'field-name"><a href="/admin/core/subzone/%d/' % fako.pk)
+        # a subzone needs a master zone; only master zones are offered
+        r = self.c.post("/admin/core/subzone/add/", {"name": "Lost", "code": "lost", "active": "on"})
+        self.assertEqual(r.status_code, 200)
+        opts = r.context["adminform"].form.fields["parent"].queryset
+        self.assertEqual(list(opts), [fako])
+        # an unused zone saved as a subzone by mistake can be turned into a master zone
+        wrong = Zone.objects.create(code="meme", name="Meme", parent=fako)
+        self.c.post("/admin/core/subzone/", {"action": "make_master", "_selected_action": [wrong.pk]})
+        wrong.refresh_from_db()
+        self.assertIsNone(wrong.parent)

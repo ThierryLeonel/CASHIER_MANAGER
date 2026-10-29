@@ -8,8 +8,8 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
 from core.models import (
-    Account, AccountAccess, AuditEvent, BankAccount, CashManager, CompanySim, Counterparty, ExpenseCategory, MicroZone,
-    User, Zone,
+    Account, AccountAccess, AuditEvent, BankAccount, CashManager, CompanySim, Counterparty, ExpenseCategory, MasterZone,
+    MicroZone, SubZone, User, Zone,
 )
 
 
@@ -42,32 +42,82 @@ class SuperAdminOnly(admin.ModelAdmin):
         return _is_superadmin(request)
 
 
-class ZoneForm(forms.ModelForm):
+class SubZoneInline(admin.TabularInline):
+    model = SubZone
+    fk_name = "parent"
+    fields = ("name", "code", "active")
+    extra = 1
+    verbose_name = "subzone"
+    verbose_name_plural = "subzones of this master zone"
+
+    def has_view_permission(self, request, obj=None):
+        return _is_superadmin(request)
+
+    def has_add_permission(self, request, obj=None):
+        return _is_superadmin(request)
+
+    def has_change_permission(self, request, obj=None):
+        return _is_superadmin(request)
+
+    def has_delete_permission(self, request, obj=None):
+        return False  # subzones carry history; deactivate them instead
+
+
+@admin.register(MasterZone)
+class MasterZoneAdmin(SuperAdminOnly):
+    fields = ("name", "code", "active")
+    list_display = ("name", "code", "subzone_list", "active")
+    search_fields = ("name", "code")
+    ordering = ("name",)
+    inlines = [SubZoneInline]
+
+    @admin.display(description="subzones")
+    def subzone_list(self, obj):
+        return ", ".join(obj.subzones.order_by("name").values_list("name", flat=True)) or "—"
+
+    def has_delete_permission(self, request, obj=None):
+        return _is_superadmin(request) and (obj is None or not obj.subzones.exists())
+
+
+class SubZoneForm(forms.ModelForm):
     class Meta:
-        model = Zone
-        fields = ["code", "name", "parent", "active"]
+        model = SubZone
+        fields = ["name", "code", "parent", "active"]
+        labels = {"parent": "Master zone"}
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        qs = Zone.objects.filter(parent__isnull=True)
-        if self.instance.pk:
-            qs = qs.exclude(pk=self.instance.pk)
-        self.fields["parent"].queryset = qs
-        self.fields["parent"].help_text = (
-            "Leave EMPTY to create a master zone (e.g. Fako). Choose a master zone to create one of its "
-            "subzones (e.g. Fako 1 → master zone Fako). Microzones are added under Microzones.")
+        self.fields["parent"].queryset = Zone.objects.filter(parent__isnull=True).order_by("name")
+        self.fields["parent"].required = True
+        self.fields["parent"].help_text = "The master zone this subzone depends on (e.g. Fako 1 → Fako)."
 
 
-@admin.register(Zone)
-class ZoneAdmin(SuperAdminOnly):
-    form = ZoneForm
-    list_display = ("name", "code", "level", "parent", "active")
+@admin.register(SubZone)
+class SubZoneAdmin(SuperAdminOnly):
+    form = SubZoneForm
+    list_display = ("name", "code", "parent", "active")
     list_filter = ("parent",)
+    search_fields = ("name", "code")
     ordering = ("parent__name", "name")
+    actions = ["make_master"]
 
-    @admin.display(description="level")
-    def level(self, obj):
-        return "Master zone" if obj.parent_id is None else "Subzone"
+    @admin.action(description="Make the selected zones master zones (only zones saved as subzones by mistake)")
+    def make_master(self, request, queryset):
+        from core.models import Account, CompanySim, Transaction
+
+        done = []
+        for z in queryset:
+            used = (User.objects.filter(subzone=z).exists() or Account.objects.filter(zone=z).exists()
+                    or CompanySim.objects.filter(subzone=z).exists() or Transaction.objects.filter(zone=z).exists()
+                    or z.microzones.exists())
+            if used:
+                self.message_user(request, f"{z.name} is already used as a subzone (users, accounts, SIMs or entries) "
+                                           f"and was left unchanged.", level="warning")
+                continue
+            Zone.objects.filter(pk=z.pk).update(parent=None)
+            done.append(z.name)
+        if done:
+            self.message_user(request, "Now master zones: " + ", ".join(done))
 
 
 @admin.register(MicroZone)

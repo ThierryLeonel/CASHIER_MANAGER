@@ -7,7 +7,7 @@
 <div class="panel notice">
   <p><strong>{% trans "No account is waiting for an opening balance." %}</strong> {% trans "Accounts appear here once they exist. Create them first in Configuration:" %}</p>
   <ul>
-    <li><a href="/admin/core/zone/">{% trans "Zones" %}</a> — {% trans "a master zone first, then its subzones (each subzone's master zone = the master)." %}</li>
+    <li><a href="/admin/core/masterzone/">{% trans "Master zones" %}</a> {% trans "and" %} <a href="/admin/core/subzone/">{% trans "Subzones" %}</a> — {% trans "a master zone first, then its subzones." %}</li>
     <li><a href="/admin/core/account/add/">{% trans "Accounts › Add" %}</a> — {% trans "one cash drawer per subzone." %}</li>
     <li><a href="/admin/core/companysim/add/">{% trans "Company sims › Add" %}</a> — {% trans "creates the UVE / ER / MTN wallets (the master SIM with its cashier in charge)." %}</li>
     <li><a href="/admin/core/bankaccount/add/">{% trans "Bank accounts › Add" %}</a>, <a href="{% url 'customer_new' %}">{% trans "agents and POS" %}</a>, <a href="/admin/core/cashmanager/add/">{% trans "cash managers" %}</a>.</li>

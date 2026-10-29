@@ -1064,6 +1064,10 @@ FR = {
     'Your password was reset by the administrator. Choose your own password to continue.': "Votre mot de passe a été réinitialisé par l'administrateur. Choisissez votre propre mot de passe pour continuer.",
     'must change password': 'doit changer de mot de passe',
     'must change password at next sign-in': 'doit changer de mot de passe à la prochaine connexion',
+    'Master zones': 'Zones master',
+    'Subzones': 'Sous-zones',
+    'a master zone first, then its subzones.': "d'abord une zone master, puis ses sous-zones.",
+    'and': 'et',
 }
 
 FR_PLURAL = {

@@ -161,7 +161,7 @@ Every transaction stores its **recording cashier** (`Transaction.cashier`), and 
 
 ### Zones (owner's rules)
 
-- A **master zone** (e.g. Fako) groups **subzones** (Fako 1, Fako 2). Subzones depend on their master: reports, dashboards and reconciliation roll subzones up into the master, and the master into the company.
+- A **master zone** (e.g. Fako) groups **subzones** (Fako 1, Fako 2). In Configuration they are separate: **Master zones** (with their subzones listed and added on the same page) and **Subzones** (each must choose its master zone; only master zones are offered). An unused zone saved as a subzone by mistake can be turned back into a master zone with the "Make master zones" action. Subzones depend on their master: reports, dashboards and reconciliation roll subzones up into the master, and the master into the company.
 - **Accounts are general, not a cashier's**: drawers and SIM wallets belong to a zone (`Account.zone`). Every cashier of a subzone uses that subzone's accounts. The only exception is the **master SIM**, which is assigned to its **cashier in charge**.
 - **Entries are separated by zone**: every transaction stores its subzone (`Transaction.zone`) and its recording cashier.
 - **Microzones**: every subzone is divided into microzones (`MicroZone`), each controlled by one **commercial agent**. A POS belongs to a microzone, so its agent in charge is known; an agent is registered with the microzone he controls (a new microzone can be created from the registration form). Microzones are shown on the agents list, filters and customer reports.

@@ -1593,6 +1593,9 @@ msgstr "Zone principale"
 msgid "Master zone / subzone"
 msgstr "Zone master / sous-zone"
 
+msgid "Master zones"
+msgstr "Zones master"
+
 msgid "Method"
 msgstr "Mode"
 
@@ -2479,6 +2482,9 @@ msgstr "Sous-zone de la nouvelle microzone"
 msgid "Subzone · closed by"
 msgstr "Sous-zone · clôturée par"
 
+msgid "Subzones"
+msgstr "Sous-zones"
+
 msgid "Super administrator"
 msgstr "Super administrateur"
 
@@ -3152,6 +3158,9 @@ msgstr ""
 "d'abord une zone master, puis ses sous-zones (la zone master de chaque sous-"
 "zone = la master)."
 
+msgid "a master zone first, then its subzones."
+msgstr "d'abord une zone master, puis ses sous-zones."
+
 msgid "account number"
 msgstr "numéro de compte"
 
@@ -3160,6 +3169,9 @@ msgstr "adresse"
 
 msgid "agents and POS"
 msgstr "agents et PDV"
+
+msgid "and"
+msgstr "et"
 
 msgid "bank"
 msgstr "banque"

@@ -52,6 +52,43 @@ class Zone(models.Model):
         return _("Master zone") if self.parent_id is None else _("Subzone")
 
 
+class MasterZoneManager(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().filter(parent__isnull=True)
+
+
+class SubZoneManager(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().filter(parent__isnull=False)
+
+
+class MasterZone(Zone):
+    """Configuration view of the master zones only (same table as Zone)."""
+
+    objects = MasterZoneManager()
+
+    class Meta:
+        proxy = True
+        verbose_name = "master zone"
+        verbose_name_plural = "master zones"
+
+    def save(self, *args, **kwargs):
+        self.parent = None
+        super().save(*args, **kwargs)
+
+
+class SubZone(Zone):
+    """Configuration view of the subzones only (same table as Zone); each belongs to a master zone."""
+
+    objects = SubZoneManager()
+
+    class Meta:
+        proxy = True
+        verbose_name = "subzone"
+        verbose_name_plural = "subzones"
+        ordering = ["parent__name", "name"]
+
+
 class User(AbstractUser):
     class Role(models.TextChoices):
         SUPERADMIN = "SUPERADMIN", _("Super administrator")
