@@ -459,7 +459,8 @@ class MicroZone(models.Model):
 
 class CashManager(models.Model):
     name = models.CharField(_("name"), max_length=120)
-    phone = models.CharField(_("phone / SIM"), max_length=9, unique=True)
+    phone = models.CharField(_("phone / SIM"), max_length=9, unique=True, null=True, blank=True,
+                             help_text="Optional.")
     notes = models.CharField(_("notes"), max_length=255, blank=True)
     active = models.BooleanField(default=True)
 
@@ -467,16 +468,19 @@ class CashManager(models.Model):
         ordering = ["name"]
 
     def __str__(self):
-        return f"{self.name} ({display_sim(self.phone)})"
+        return f"{self.name} ({display_sim(self.phone)})" if self.phone else self.name
 
     def clean(self):
+        if not self.phone:
+            self.phone = None
+            return
         try:
             self.phone = normalize_sim(self.phone)
         except SimNumberError as e:
             raise ValidationError({"phone": str(e)})
 
     def save(self, *args, **kwargs):
-        self.phone = normalize_sim(self.phone)
+        self.phone = normalize_sim(self.phone) if self.phone else None
         super().save(*args, **kwargs)
         from .ledger import Account
 

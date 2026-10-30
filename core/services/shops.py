@@ -122,8 +122,15 @@ def visible_shops(user):
     return Shop.objects.none()
 
 
+import contextvars  # noqa: E402
+
+# the CSV / Excel importer posts past shop operations on their own date
+BUSINESS_DATE_OVERRIDE = contextvars.ContextVar("shop_business_date", default=None)
+
+
 def _ctx(user, business_date=None):
-    return Ctx(entered_by=user, cashier=None, day=None, business_date=business_date or douala_today())
+    return Ctx(entered_by=user, cashier=None, day=None,
+               business_date=business_date or BUSINESS_DATE_OVERRIDE.get() or douala_today())
 
 
 def _amt(v, field="amount", allow_zero=False):

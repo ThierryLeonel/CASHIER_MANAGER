@@ -34,12 +34,34 @@ TEMPLATES = {
     "customers": (["type", "business_sim", "name", "subzone", "microzone", "master_zone", "other_phone", "notes"],
                   [["AGENT", "691234567", "Agent Ndive", "fako-1", "Molyko", "", "", ""],
                    ["POS", "692345678", "POS Molyko", "fako-1", "Molyko", "", "677000000", ""]]),
-    "cash_managers": (["name", "phone", "notes"], [["Cash manager Buea", "650123456", ""]]),
+    "cash_managers": (["name", "phone", "notes"], [["Cash manager Buea", "650123456", ""],
+                                                   ["Mama Rose (no SIM)", "", "phone is optional"]]),
     "opening": (["kind", "identifier", "amount", "date", "note"],
                 [["CUSTOMER", "691234567", "150000", "2026-11-01", "owed at launch"],
                  ["CASH_DRAWER", "cashier.fako1", "500000", "2026-11-01", ""],
                  ["UVE", "690000001", "2000000", "2026-11-01", ""],
-                 ["CASH_MANAGER", "650123456", "-50000", "2026-11-01", "company owes"]]),
+                 ["CASH_MANAGER", "650123456", "-50000", "2026-11-01", "company owes"],
+                 ["SHOP_CASH", "shop-molyko", "300000", "2026-11-01", "shop launch"],
+                 ["SHOP_UVE", "shop-molyko", "800000", "2026-11-01", ""],
+                 ["SHOP_ER", "shop-molyko", "150000", "2026-11-01", ""]]),
+    "shops": (["code", "name", "zone", "sim_number", "address", "active"],
+              [["shop-molyko", "Shop Molyko", "fako", "690000099", "Molyko, Buea", "yes"]]),
+    "shop_staff": (["username", "first_name", "last_name", "shop", "duties", "password"],
+                   [["molyko.om", "Ayuk", "Ebai", "shop-molyko", "OM", "Temp-Pass-2026!"],
+                    ["molyko.air", "Grace", "Tabi", "shop-molyko", "AIRTIME, SALES, SERVICES, AGENTS", "Temp-Pass-2026!"],
+                    ["molyko.mgr", "Paul", "Ngu", "shop-molyko", "ALL", "Temp-Pass-2026!"]]),
+    "shop_items": (["category", "name", "price", "active"],
+                   [["Phones", "Smartphone A12", "65000", "yes"], ["Orange energy kits", "Energie kit S", "45000", ""]]),
+    "shop_stock": (["shop", "item", "serials", "note"],
+                   [["shop-molyko", "Smartphone A12", "356000000000011, 356000000000029", "delivery 12"],
+                    ["shop-molyko", "Energie kit S", "OEK-S-0001", ""]]),
+    "shop_transactions": (["date", "shop", "type", "amount", "commission", "service", "client_phone", "note"],
+                          [["2026-11-02", "shop-molyko", "CASHIN", "50000", "250", "", "677123456", ""],
+                           ["2026-11-02", "shop-molyko", "CASHOUT", "20000", "200", "", "", ""],
+                           ["2026-11-02", "shop-molyko", "AIRTIME", "5000", "", "", "", ""],
+                           ["2026-11-02", "shop-molyko", "GOOD_DEAL", "10000", "", "", "", ""],
+                           ["2026-11-02", "shop-molyko", "CONVERT", "100000", "", "", "", ""],
+                           ["2026-11-02", "shop-molyko", "SERVICE", "4", "", "OTT", "", "count of services"]]),
     "transactions": (["date", "cashier", "type", "customer_sim", "agent_sim", "product_or_method", "account",
                       "amount", "category", "bank_reference", "note"],
                      [["2026-11-02", "cashier.fako1", "SUPPLY_AGENT", "691234567", "", "UVE", "690000001", "100000",
@@ -246,11 +268,12 @@ def _take_charge(cp):
 
 
 def _row_cash_manager(user, r):
-    phone = _sim(r.get("phone"), _("phone"))
+    phone = _sim(r.get("phone"), _("phone")) if _s(r.get("phone")) else None  # the SIM number is optional
     name = _s(r.get("name"))
     if not name:
         raise BusinessError(_("name is required"))
-    cm = CashManager.objects.filter(phone=phone).first()
+    cm = (CashManager.objects.filter(phone=phone).first() if phone
+          else CashManager.objects.filter(name__iexact=name).first())
     if cm:
         cm.name, cm.notes = name, _s(r.get("notes")) or cm.notes
         cm.save()
@@ -265,7 +288,9 @@ def _row_opening(user, r):
     if kind in ("CUSTOMER", "AGENT", "POS"):
         acct = _customer(_sim(ident, _("business SIM"))).account
     elif kind == "CASH_MANAGER":
-        cm = CashManager.objects.filter(phone=_sim(ident, _("phone"))).first()
+        t = _s(ident)
+        cm = (CashManager.objects.filter(phone=_sim(t, _("phone"))).first() if t[:1].isdigit() or t.startswith("+")
+              else CashManager.objects.filter(name__iexact=t).first())
         if not cm:
             raise BusinessError(_("Unknown cash manager %(v)s") % {"v": _s(ident)})
         acct = cm.account
@@ -273,8 +298,11 @@ def _row_opening(user, r):
         acct = _asset_account(K.CASH_DRAWER, ident)
     elif kind in ("UVE", "ER", "MTN", "BANK"):
         acct = _asset_account(kind, ident)
+    elif kind in SHOP_KINDS:
+        acct = _shop(ident).account(SHOP_KINDS[kind])
     else:
-        raise BusinessError(_("kind must be CUSTOMER, CASH_MANAGER, CASH_DRAWER, UVE, ER, MTN or BANK"))
+        raise BusinessError(_("kind must be CUSTOMER, CASH_MANAGER, CASH_DRAWER, UVE, ER, MTN, BANK, SHOP_CASH, "
+                              "SHOP_UVE or SHOP_ER"))
     d = _date(r.get("date")) if _s(r.get("date")) else None
     t = ops.record_opening_balance(user, account=acct, amount=_money(r.get("amount")), business_date=d,
                                    description=_s(r.get("note")) or _("Imported"))
@@ -326,8 +354,149 @@ def _row_transaction(user, r):
     return f"{t.reference} {t.display_type} {t.amount}"
 
 
+# ---------------------------------------------------------------- shops
+SHOP_KINDS = {"SHOP_CASH": K.CASH_DRAWER, "SHOP_UVE": K.UVE, "SHOP_ER": K.ER}
+YES = ("", "1", "Y", "YES", "OUI", "TRUE", "VRAI", "X")
+
+
+def _shop(v):
+    from core.models import Shop
+
+    t = _s(v)
+    shop = Shop.objects.filter(code__iexact=t).first() or Shop.objects.filter(name__iexact=t).first()
+    if not shop:
+        raise BusinessError(_("Unknown shop %(v)s (use its code or name)") % {"v": t or "—"})
+    return shop
+
+
+def _row_shop(user, r):
+    from core.models import Shop
+
+    code, name = _s(r.get("code")).lower(), _s(r.get("name"))
+    if not code or not name:
+        raise BusinessError(_("code and name are required"))
+    zone = None
+    if _s(r.get("zone")):
+        z = _s(r.get("zone"))
+        zone = Zone.objects.filter(Q(code__iexact=z) | Q(name__iexact=z)).first()
+        if not zone:
+            raise BusinessError(_("Unknown zone %(v)s") % {"v": z})
+    sim = _sim(r.get("sim_number"), _("SIM number")) if _s(r.get("sim_number")) else ""
+    active = _s(r.get("active")).upper() in YES
+    shop = Shop.objects.filter(code__iexact=code).first()
+    created = shop is None
+    shop = shop or Shop(code=code)
+    shop.name, shop.zone, shop.sim_number, shop.address, shop.active = (
+        name, zone or shop.zone, sim or shop.sim_number, _s(r.get("address")) or shop.address, active)
+    shop.save()
+    return (_("created %(cp)s") if created else _("updated %(cp)s")) % {"cp": shop}
+
+
+def _row_shop_staff(user, r):
+    from core.models import SHOP_DUTY_CODES
+
+    from . import shop_admin as sa
+
+    username = _s(r.get("username"))
+    shop = _shop(r.get("shop"))
+    raw = _s(r.get("duties")).upper().replace(";", ",")
+    duties = SHOP_DUTY_CODES if raw in ("", "ALL", "TOUT", "TOUTES") else [d.strip() for d in raw.split(",") if d.strip()]
+    bad = [d for d in duties if d not in SHOP_DUTY_CODES]
+    if bad:
+        raise BusinessError(_("Unknown duties %(v)s (use %(ok)s or ALL)") % {"v": ", ".join(bad),
+                                                                           "ok": ", ".join(SHOP_DUTY_CODES)})
+    existing = User.objects.filter(username__iexact=username).first()
+    if existing:
+        if not existing.is_shop_manager:
+            raise BusinessError(_("%(u)s is not a shop staff account.") % {"u": username})
+        sa.update_staff(user, existing, first_name=_s(r.get("first_name")) or existing.first_name,
+                        last_name=_s(r.get("last_name")) or existing.last_name, shop=shop, duties=duties)
+        return _("updated %(cp)s") % {"cp": existing.username}
+    pw = _s(r.get("password"))
+    if not pw:
+        raise BusinessError(_("password is required for a new account (it must be changed at the first sign-in)"))
+    u, _pw = sa.create_staff(user, username=username, first_name=_s(r.get("first_name")) or username,
+                             last_name=_s(r.get("last_name")), shop=shop, duties=duties, password=pw)
+    return _("created %(cp)s") % {"cp": u.username}
+
+
+def _row_shop_item(user, r):
+    from core.models import ItemCategory, ShopItem
+
+    cat_name, name = _s(r.get("category")), _s(r.get("name"))
+    if not cat_name or not name:
+        raise BusinessError(_("category and name are required"))
+    cat = ItemCategory.objects.filter(name__iexact=cat_name).first() or ItemCategory.objects.create(name=cat_name)
+    price = _money(r.get("price"))
+    if price <= 0:
+        raise BusinessError(_("price must be greater than zero"))
+    item = ShopItem.objects.filter(name__iexact=name).first()
+    created = item is None
+    item = item or ShopItem(name=name)
+    item.category, item.price, item.active = cat, price, _s(r.get("active")).upper() in YES
+    item.save()
+    return (_("created %(cp)s") if created else _("updated %(cp)s")) % {"cp": item.name}
+
+
+def _row_shop_stock(user, r):
+    from core.models import ShopItem
+
+    from . import shops as sh
+
+    shop = _shop(r.get("shop"))
+    name = _s(r.get("item"))
+    item = ShopItem.objects.filter(name__iexact=name).first()
+    if not item:
+        raise BusinessError(_("Unknown item %(v)s (import the items first)") % {"v": name or "—"})
+    units = sh.receive_stock(user, shop=shop, item=item, serials=_s(r.get("serials")), note=_s(r.get("note")))
+    return _("%(n)s unit(s) of %(i)s received at %(s)s") % {"n": len(units), "i": item.name, "s": shop.name}
+
+
+SHOP_TX = ("CASHIN", "CASHOUT", "AIRTIME", "GOOD_DEAL", "CONVERT", "SERVICE")
+
+
+def _row_shop_transaction(user, r):
+    from core.models import ShopService
+
+    from . import shops as sh
+
+    ttype = _s(r.get("type")).upper().replace(" ", "_").replace("-", "_")
+    ttype = {"CASH_IN": "CASHIN", "CASH_OUT": "CASHOUT", "GOODDEAL": "GOOD_DEAL"}.get(ttype, ttype)
+    if ttype not in SHOP_TX:
+        raise BusinessError(_("type must be one of %(v)s") % {"v": ", ".join(SHOP_TX)})
+    shop, day = _shop(r.get("shop")), _date(r.get("date"))
+    note, phone = _s(r.get("note")), _s(r.get("client_phone"))
+    if ttype == "SERVICE":
+        svc_name = _s(r.get("service"))
+        svc = ShopService.objects.filter(kind=ShopService.Kind.COUNT, active=True).filter(
+            Q(name__iexact=svc_name) | Q(name__istartswith=svc_name)).first() if svc_name else None
+        if not svc:
+            raise BusinessError(_("Unknown counted service %(v)s") % {"v": svc_name or "—"})
+        n = int(_money(r.get("amount")))
+        c = sh.count_service(user, shop=shop, service=svc, count=n, business_date=day, note=note)
+        return f"{svc.name} × {c.count}"
+    token = sh.BUSINESS_DATE_OVERRIDE.set(day)
+    try:
+        amount = _money(r.get("amount"))
+        com = _money(r.get("commission")) if _s(r.get("commission")) else None
+        if ttype == "CASHIN":
+            t = sh.cash_in(user, shop=shop, amount=amount, commission=com, client_phone=phone, description=note)
+        elif ttype == "CASHOUT":
+            t = sh.cash_out(user, shop=shop, amount=amount, commission=com, client_phone=phone, description=note)
+        elif ttype in ("AIRTIME", "GOOD_DEAL"):
+            t = sh.airtime(user, shop=shop, amount=amount, kind="GOOD_DEAL" if ttype == "GOOD_DEAL" else "NORMAL",
+                           client_phone=phone, description=note)
+        else:
+            t = sh.convert(user, shop=shop, amount=amount, description=note)
+    finally:
+        sh.BUSINESS_DATE_OVERRIDE.reset(token)
+    return f"{t.reference} {t.get_type_display()} {t.amount}"
+
+
 HANDLERS = {"customers": _row_customer, "cash_managers": _row_cash_manager, "opening": _row_opening,
-            "transactions": _row_transaction}
+            "transactions": _row_transaction, "shops": _row_shop, "shop_staff": _row_shop_staff,
+            "shop_items": _row_shop_item, "shop_stock": _row_shop_stock,
+            "shop_transactions": _row_shop_transaction}
 
 
 class _Rollback(Exception):

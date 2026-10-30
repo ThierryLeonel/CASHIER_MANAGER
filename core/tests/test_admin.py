@@ -373,3 +373,124 @@ class ZoneConfiguration(TestCase):
         self.assertEqual(self.c.post(f"/admin/core/subzone/{s2.pk}/delete/", {"post": "yes"}).status_code, 302)
         self.assertTrue(Zone.objects.filter(pk=m2.pk).exists())
         self.assertFalse(Zone.objects.filter(pk=s2.pk).exists())
+
+
+class ShopDataAdministration(OrgMixin, TestCase):
+    """Clear data and CSV / Excel import also cover the shops; cash managers may have no SIM number."""
+
+    def setUp(self):
+        from core.models import Account
+
+        self.make_org()
+        self.fund_all()
+        self.shop = self.o["shop"]
+        K = Account.Kind
+        for kind, amt in ((K.CASH_DRAWER, 300000), (K.UVE, 800000), (K.ER, 150000)):
+            self.fund(self.shop.account(kind), amt)
+
+    def _shop_activity(self):
+        from core.models import ShopService
+        from core.services import shop_shifts as ss
+        from core.services import shops as sh
+
+        ss.open_shift(self.o["shop_mgr"], cash=D(300000), uve=D(800000), er=D(150000))
+        sh.cash_in(self.o["shop_mgr"], amount=D(10000), commission=D(100))
+        units = sh.receive_stock(self.o["shop_senior"], shop=self.shop, item=self.o["items"]["kit"], serials="K1\nK2")
+        sale = sh.sell(self.o["shop_mgr"], units=units[:1], client_name="X", client_address="Y",
+                       client_country="Z", id_type="CNI", id_number="1", phone="677445566")
+        sh.count_service(self.o["shop_mgr"], service=ShopService.objects.get(name__startswith="OTT"), count=2)
+        sh.retrieve_sim(self.o["shop_mgr"], sim_number="699887766", holder_name="A", id_type="CNI", id_number="2")
+        sh.desk_to_shop(self.c_f1, shop=self.shop, amount=D(5000))
+        return sale
+
+    def test_delete_one_sale_puts_units_back(self):
+        from core.models import StockUnit
+
+        sale = self._shop_activity()
+        adm.delete_transaction(self.admin, sale, reason="test")
+        self.assertEqual(StockUnit.objects.get(serial="K1").status, StockUnit.Status.IN_STOCK)
+        self.assertTrue(ledger_ok())
+
+    def test_clear_shops_only_then_everything(self):
+        from core.models import ServiceCount, ShopShift, SimRetrieval, StockUnit
+
+        self._shop_activity()
+        cashier_supply = ops.record_supply(self.c_f1, product="UVE", customer=self.a1, amount=D(1000),
+                                           source_account=self.uve_f1)
+        adm.clear_data(self.admin, scope="shops", password=PW, confirm_text="DELETE")
+        self.assertFalse(Transaction.objects.filter(shop__isnull=False).exists())
+        self.assertFalse(Entry.objects.filter(account__shop__isnull=False).exists())
+        for m in (ShopShift, StockUnit, ServiceCount, SimRetrieval):
+            self.assertFalse(m.objects.exists(), m)
+        self.assertTrue(Transaction.objects.filter(pk=cashier_supply.pk).exists())  # the cashiers' data stays
+        self.assertTrue(ledger_ok())
+        for kind, amt in (("CASH_DRAWER", 300000), ("UVE", 800000), ("ER", 150000)):  # their openings went too
+            self.fund(self.shop.account(kind), amt)
+        self._shop_activity()
+        adm.clear_data(self.admin, scope="transactions", password=PW, confirm_text="DELETE")
+        self.assertEqual(Transaction.objects.count(), 0)
+        self.assertFalse(StockUnit.objects.exists())
+        self.assertTrue(self.shop.__class__.objects.filter(pk=self.shop.pk).exists())  # shops and staff stay
+        self.assertTrue(User.objects.filter(role="SHOP_MANAGER").exists())
+        adm.clear_data(self.admin, scope="everything", password=PW, confirm_text="DELETE")
+        self.assertFalse(Counterparty.objects.exists())
+
+    def test_cash_manager_without_sim(self):
+        from core.models import CashManager
+        from core.services import cash_managers as cmsvc  # noqa: F401
+
+        c = self.client_class()
+        c.login(username="finance", password=PW)
+        r = c.post("/cash-managers/", {"action": "cm_save", "cm-name": "Mama Rose", "cm-phone": "", "cm-active": "on"})
+        self.assertEqual(r.status_code, 302, r.content[:1500])
+        r = c.post("/cash-managers/", {"action": "cm_save", "cm-name": "Papa Joe", "cm-phone": "", "cm-active": "on"})
+        self.assertEqual(r.status_code, 302)  # several cash managers without a SIM
+        self.assertEqual(CashManager.objects.filter(phone__isnull=True).count(), 2)
+        self.assertEqual(str(CashManager.objects.get(name="Mama Rose")), "Mama Rose")
+        results, ok = importer.run_import(self.admin, "cash_managers", [{"name": "Mama Rose", "phone": "",
+                                                                         "notes": "market"}], commit=True)
+        self.assertTrue(ok, results)
+        self.assertEqual(CashManager.objects.get(name="Mama Rose").notes, "market")
+        results, ok = importer.run_import(self.admin, "opening", [{"kind": "CASH_MANAGER", "identifier": "Mama Rose",
+                                                                   "amount": "-20000"}], commit=True)
+        self.assertTrue(ok, results)
+
+    def test_shop_imports(self):
+        from core.models import ShopItem, StockUnit
+
+        def run(kind, rows):
+            head, data = rows[0], rows[1:]
+            res, ok = importer.run_import(self.admin, kind, [dict(zip(head, r)) for r in data], commit=True)
+            self.assertTrue(ok, res)
+            return res
+
+        run("shops", [["code", "name", "zone", "sim_number", "address", "active"],
+                      ["shop-limbe", "Shop Limbe", "fako", "690000123", "Limbe", "yes"]])
+        limbe = self.shop.__class__.objects.get(code="shop-limbe")
+        run("shop_staff", [["username", "first_name", "last_name", "shop", "duties", "password"],
+                           ["limbe.om", "Ayuk", "", "shop-limbe", "OM", "Temp-Pass-2026!"],
+                           ["limbe.mgr", "Paul", "", "Shop Limbe", "ALL", "Temp-Pass-2026!"]])
+        om = User.objects.get(username="limbe.om")
+        self.assertEqual((om.shop, om.shop_duties, om.must_change_password), (limbe, "OM", True))
+        run("shop_items", [["category", "name", "price", "active"], ["Solar lamps", "Lamp L1", "5000", ""]])
+        run("shop_stock", [["shop", "item", "serials", "note"], ["shop-limbe", "Lamp L1", "L-1, L-2, L-3", ""]])
+        self.assertEqual(ShopItem.objects.get(name="Lamp L1").stock_at(limbe), 3)
+        run("opening", [["kind", "identifier", "amount", "date"], ["SHOP_CASH", "shop-limbe", "100000", "2026-10-01"],
+                        ["SHOP_UVE", "shop-limbe", "500000", "2026-10-01"],
+                        ["SHOP_ER", "shop-limbe", "50000", "2026-10-01"]])
+        run("shop_transactions", [["date", "shop", "type", "amount", "commission", "service", "client_phone", "note"],
+                                  ["2026-10-02", "shop-limbe", "CASHIN", "40000", "200", "", "", ""],
+                                  ["2026-10-02", "shop-limbe", "GOOD_DEAL", "8000", "", "", "", ""],
+                                  ["2026-10-02", "shop-limbe", "SERVICE", "3", "", "MAX IT", "", ""]])
+        cin = Transaction.objects.get(type="SHOP_CASHIN", shop=limbe)
+        self.assertEqual((str(cin.business_date), cin.commission), ("2026-10-02", D(200)))
+        self.assertEqual(Transaction.objects.get(type="SHOP_AIRTIME", shop=limbe).subtype, "GOOD_DEAL")
+        bad, ok = importer.run_import(self.admin, "shop_transactions",
+                                      [{"date": "2026-10-02", "shop": "nowhere", "type": "CASHIN", "amount": "1"}],
+                                      commit=False)
+        self.assertFalse(ok)
+        self.assertEqual(StockUnit.objects.filter(shop=limbe).count(), 3)
+        c = self.client_class()
+        c.login(username="admin", password=PW)
+        for k in ("shops", "shop_staff", "shop_items", "shop_stock", "shop_transactions"):
+            self.assertEqual(c.get(f"/administration/import/template/{k}/").status_code, 200)

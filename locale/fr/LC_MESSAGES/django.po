@@ -94,6 +94,10 @@ msgid "%(n)s shops"
 msgstr "%(n)s boutiques"
 
 #, python-format
+msgid "%(n)s unit(s) of %(i)s received at %(s)s"
+msgstr "%(n)s unité(s) de %(i)s reçue(s) à %(s)s"
+
+#, python-format
 msgid "%(n)s unit(s) received into stock."
 msgstr "%(n)s unité(s) reçue(s) en stock."
 
@@ -185,6 +189,10 @@ msgstr ""
 #, python-format
 msgid "%(u)s is deactivated and can no longer sign in."
 msgstr "%(u)s est désactivé et ne peut plus se connecter."
+
+#, python-format
+msgid "%(u)s is not a shop staff account."
+msgstr "%(u)s n'est pas un compte du personnel de boutique."
 
 #, python-format
 msgid "%(x)s deleted."
@@ -549,6 +557,14 @@ msgstr "Toutes les tâches"
 
 msgid "All shops"
 msgstr "Toutes les boutiques"
+
+msgid ""
+"All transactions (cashiers and shops), closings, differences, shifts, stock "
+"and shop records (keep agents, POS and configuration)"
+msgstr ""
+"Toutes les transactions (caissiers et boutiques), clôtures, écarts, "
+"services, stock et registres des boutiques (garder agents, PDV et "
+"configuration)"
 
 msgid "All transactions of this shop"
 msgstr "Toutes les opérations de cette boutique"
@@ -3044,6 +3060,11 @@ msgstr "Capitaux d'ouverture"
 msgid "Opening balances"
 msgstr "Soldes d'ouverture"
 
+msgid "Opening balances (cashiers, agents, cash managers, banks and shops)"
+msgstr ""
+"Soldes d'ouverture (caissiers, agents, gestionnaires de cash, banques et "
+"boutiques)"
+
 msgid "Opening balances (launch)"
 msgstr "Soldes d'ouverture (démarrage)"
 
@@ -3075,6 +3096,9 @@ msgstr ""
 
 msgid "Operations"
 msgstr "Opérations"
+
+msgid "Optional."
+msgstr "Facultatif."
 
 msgid "Or create a new microzone"
 msgstr "Ou créer une nouvelle microzone"
@@ -3892,6 +3916,9 @@ msgstr "Majoration UVE→ER boutique (%)"
 msgid "Shop conversion rate saved."
 msgstr "Taux de conversion boutique enregistré."
 
+msgid "Shop items and categories"
+msgstr "Articles et catégories des boutiques"
+
 msgid "Shop manager"
 msgstr "Gérant de boutique"
 
@@ -3924,8 +3951,18 @@ msgstr "Services, articles et taux de conversion des boutiques"
 msgid "Shop staff and their access"
 msgstr "Personnel des boutiques et accès"
 
+msgid "Shop staff and their duties"
+msgstr "Personnel des boutiques et leurs tâches"
+
+msgid "Shop stock (IMEI / serial numbers)"
+msgstr "Stock des boutiques (numéros IMEI / série)"
+
 msgid "Shop transactions"
 msgstr "Opérations des boutiques"
+
+msgid "Shop transactions (cash-in, cash-out, airtime, conversions, services)"
+msgstr ""
+"Transactions des boutiques (dépôts, retraits, crédit, conversions, services)"
 
 msgid "Shop: ER supply from agent"
 msgstr "Boutique : approvisionnement ER par agent"
@@ -3974,6 +4011,16 @@ msgstr "Boutiques et personnel"
 
 msgid "Shops and staff access"
 msgstr "Boutiques et accès du personnel"
+
+msgid ""
+"Shops only: shop operations, transfers between shops and cashiers, capital "
+"on shops, shifts, stock, sales, services and SIM retrievals (keep shops, "
+"staff, items and the cashiers' data)"
+msgstr ""
+"Boutiques uniquement : opérations des boutiques, transferts entre boutiques "
+"et caissiers, capital des boutiques, services, stock, ventes, services "
+"comptés et récupérations de SIM (garder boutiques, personnel, articles et "
+"données des caissiers)"
 
 msgid "Shops overview"
 msgstr "Vue des boutiques"
@@ -4870,8 +4917,20 @@ msgid "Unknown cashier %(v)s (use the username or staff ID)"
 msgstr "Caissier inconnu %(v)s (utilisez l'identifiant ou l'ID)"
 
 #, python-format
+msgid "Unknown counted service %(v)s"
+msgstr "Service compté inconnu %(v)s"
+
+#, python-format
+msgid "Unknown duties %(v)s (use %(ok)s or ALL)"
+msgstr "Tâches inconnues %(v)s (utilisez %(ok)s ou ALL)"
+
+#, python-format
 msgid "Unknown expense category %(v)s"
 msgstr "Catégorie de dépense inconnue %(v)s"
+
+#, python-format
+msgid "Unknown item %(v)s (import the items first)"
+msgstr "Article inconnu %(v)s (importez d'abord les articles)"
 
 #, python-format
 msgid "Unknown master zone %(v)s"
@@ -4882,8 +4941,16 @@ msgid "Unknown product %(p)s."
 msgstr "Produit inconnu %(p)s."
 
 #, python-format
+msgid "Unknown shop %(v)s (use its code or name)"
+msgstr "Boutique inconnue %(v)s (utilisez son code ou son nom)"
+
+#, python-format
 msgid "Unknown subzone %(v)s"
 msgstr "Sous-zone inconnue %(v)s"
+
+#, python-format
+msgid "Unknown zone %(v)s"
+msgstr "Zone inconnue %(v)s"
 
 msgid "Unresolved closing differences"
 msgstr "Écarts de clôture non résolus"
@@ -5249,6 +5316,9 @@ msgstr "caissier responsable"
 msgid "category"
 msgstr "catégorie"
 
+msgid "category and name are required"
+msgstr "la catégorie et le nom sont obligatoires"
+
 msgid "city"
 msgstr "ville"
 
@@ -5270,6 +5340,9 @@ msgstr "clôture du"
 
 msgid "code"
 msgstr "code"
+
+msgid "code and name are required"
+msgstr "le code et le nom sont obligatoires"
 
 msgid "commercial agent in charge"
 msgstr "agent commercial responsable"
@@ -5374,6 +5447,13 @@ msgid "kind must be CUSTOMER, CASH_MANAGER, CASH_DRAWER, UVE, ER, MTN or BANK"
 msgstr ""
 "kind doit être CUSTOMER, CASH_MANAGER, CASH_DRAWER, UVE, ER, MTN ou BANK"
 
+msgid ""
+"kind must be CUSTOMER, CASH_MANAGER, CASH_DRAWER, UVE, ER, MTN, BANK, "
+"SHOP_CASH, SHOP_UVE or SHOP_ER"
+msgstr ""
+"kind doit être CUSTOMER, CASH_MANAGER, CASH_DRAWER, UVE, ER, MTN, BANK, "
+"SHOP_CASH, SHOP_UVE ou SHOP_ER"
+
 msgid "label"
 msgstr "libellé"
 
@@ -5446,11 +5526,21 @@ msgstr "doit"
 msgid "part of a payment made with several methods"
 msgstr "partie d'un paiement fait avec plusieurs modes"
 
+msgid ""
+"password is required for a new account (it must be changed at the first "
+"sign-in)"
+msgstr ""
+"le mot de passe est obligatoire pour un nouveau compte (il devra être changé"
+" à la première connexion)"
+
 msgid "phone"
 msgstr "téléphone"
 
 msgid "phone / SIM"
 msgstr "téléphone / SIM"
+
+msgid "price must be greater than zero"
+msgstr "le prix doit être supérieur à zéro"
 
 msgid "product_or_method must be CASH, UVE, MTN or BANK"
 msgstr "product_or_method doit être CASH, UVE, MTN ou BANK"

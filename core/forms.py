@@ -614,7 +614,11 @@ class AdminDeleteForm(forms.Form):
 
 
 class ClearDataForm(forms.Form):
-    SCOPES = [("transactions", _("All transactions, closings and differences (keep agents, POS and configuration)")),
+    SCOPES = [("shops", _("Shops only: shop operations, transfers between shops and cashiers, capital on shops, "
+                          "shifts, stock, sales, services and SIM retrievals (keep shops, staff, items and the "
+                          "cashiers' data)")),
+              ("transactions", _("All transactions (cashiers and shops), closings, differences, shifts, stock and "
+                                 "shop records (keep agents, POS and configuration)")),
               ("everything", _("Everything above, plus agents, POS, agent logins and cash managers"))]
     scope = forms.ChoiceField(label=_("What to clear"), choices=SCOPES, widget=forms.RadioSelect)
     confirm_text = forms.CharField(label=_("Type DELETE to confirm"), max_length=20)
@@ -623,7 +627,11 @@ class ClearDataForm(forms.Form):
 
 class ImportForm(forms.Form):
     KINDS = [("customers", _("Agents and POS")), ("cash_managers", _("Cash managers")),
-             ("opening", _("Opening balances")), ("transactions", _("Transactions (supplies, payments, expenses)"))]
+             ("opening", _("Opening balances (cashiers, agents, cash managers, banks and shops)")),
+             ("transactions", _("Transactions (supplies, payments, expenses)")),
+             ("shops", _("Shops")), ("shop_staff", _("Shop staff and their duties")),
+             ("shop_items", _("Shop items and categories")), ("shop_stock", _("Shop stock (IMEI / serial numbers)")),
+             ("shop_transactions", _("Shop transactions (cash-in, cash-out, airtime, conversions, services)"))]
     kind = forms.ChoiceField(label=_("What are you importing?"), choices=KINDS)
     file = forms.FileField(label=_("File (.xlsx or .csv)"))
 
@@ -662,7 +670,8 @@ class CompanyProfileForm(forms.ModelForm):
 class CashManagerForm(forms.ModelForm):
     """Add / edit a cash manager (finance manager, super administrator)."""
 
-    phone = forms.CharField(label=_("Phone / SIM number"), max_length=20, widget=forms.TextInput(attrs={"inputmode": "tel"}))
+    phone = forms.CharField(label=_("Phone / SIM number"), max_length=20, required=False,
+                            help_text=_("Optional."), widget=forms.TextInput(attrs={"inputmode": "tel"}))
 
     class Meta:
         model = CashManager
@@ -670,7 +679,9 @@ class CashManagerForm(forms.ModelForm):
         help_texts = {"active": _("Untick to stop using this cash manager; past exchanges stay.")}
 
     def clean_phone(self):
-        v = self.cleaned_data.get("phone") or ""
+        v = (self.cleaned_data.get("phone") or "").strip()
+        if not v:
+            return None
         try:
             return normalize_sim(v)
         except SimNumberError as exc:

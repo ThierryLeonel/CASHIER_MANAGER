@@ -13,9 +13,11 @@ from contextlib import contextmanager
 
 from django.contrib.auth import authenticate
 from django.db import connection, transaction
+from django.db.models import Q
 from django.utils.translation import gettext as _
 
 from core.models import (
+    ItemSale, ServiceCount, ShopDayReview, ShopShift, SimRetrieval, StockMove, StockUnit,
     Account, AuditEvent, CashierDay, CashManager, CashManagerExchange, Closing, ClosingLine, Correction, MicroZone,
     Counterparty, Discrepancy, DiscrepancyNote, Entry, Transaction, TxType, User,
 )
@@ -109,10 +111,19 @@ def delete_transaction(user, t, *, reason):
         if corr_row:
             Discrepancy.objects.filter(correction=corr_row).update(correction=None)
             corr_row.delete()
+        _release_shop_rows(ids)
         Entry.objects.filter(transaction_id__in=ids).delete()
         _sql_delete_transactions("id = ANY(%s)", [ids])
         _check_assets(acct_ids)
     return snaps
+
+
+def _release_shop_rows(txn_ids):
+    """Shop rows hanging on transactions about to be deleted: a deleted sale puts its units back in stock."""
+    sales = ItemSale.objects.filter(transaction_id__in=txn_ids)
+    StockUnit.objects.filter(sale__in=sales).update(status=StockUnit.Status.IN_STOCK, sale=None)
+    StockMove.objects.filter(transaction_id__in=txn_ids).delete()
+    sales.delete()
 
 
 EDITABLE_EXTRA = ["business_date"]
@@ -168,7 +179,22 @@ def edit_transaction(user, t, *, new_values, reason):
         return t
 
 
-CLEAR_SCOPES = ("transactions", "everything")
+CLEAR_SCOPES = ("transactions", "everything", "shops")
+
+
+def _clear_shop_operations():
+    """Shop operations that are not ledger rows: shifts, day sign-offs, services, retrievals, stock and sales."""
+    counts = {"shop_shifts": ShopShift.objects.count(), "stock_units": StockUnit.objects.count(),
+              "service_counts": ServiceCount.objects.count(), "sim_retrievals": SimRetrieval.objects.count()}
+    ShopDayReview.objects.all().delete()
+    ShopShift.objects.all().delete()
+    ServiceCount.objects.all().delete()
+    SimRetrieval.objects.all().delete()
+    StockMove.objects.all().delete()
+    StockUnit.objects.update(sale=None)
+    ItemSale.objects.all().delete()
+    StockUnit.objects.all().delete()
+    return counts
 
 
 def clear_data(user, *, scope, password, confirm_text):
@@ -180,7 +206,29 @@ def clear_data(user, *, scope, password, confirm_text):
     if authenticate(username=user.username, password=password or "") is None:
         raise BusinessError(_("Your password is incorrect."), "password")
     counts = defaultdict(int)
+    if scope == "shops":
+        with admin_override():
+            counts.update(_clear_shop_operations())
+            # every entry with a shop: shop operations, transfers between shops and cashiers, capital on shops
+            ids = set(Transaction.objects.filter(shop__isnull=False).values_list("id", flat=True))
+            ids |= set(Entry.objects.filter(account__shop__isnull=False).values_list("transaction_id", flat=True))
+            corrs = Correction.objects.filter(Q(original_id__in=ids) | Q(reversal_txn_id__in=ids)
+                                              | Q(replacement_txn_id__in=ids))
+            for c in corrs:  # a correction goes with its original, reversal and replacement
+                ids |= {c.original_id, c.reversal_txn_id} | ({c.replacement_txn_id} if c.replacement_txn_id else set())
+            ids = list(ids)
+            acct_ids = list(Entry.objects.filter(transaction_id__in=ids).values_list("account_id", flat=True)
+                            .distinct())
+            counts["transactions"] = len(ids)
+            Discrepancy.objects.filter(correction__in=corrs).update(correction=None)
+            corrs.delete()
+            Entry.objects.filter(transaction_id__in=ids).delete()
+            _sql_delete_transactions("id = ANY(%s)", [ids])
+            _check_assets(acct_ids)
+            AuditEvent.objects.create(user=user, action="data_cleared", detail={"scope": scope, **counts})
+        return dict(counts)
     with admin_override():
+        counts.update(_clear_shop_operations())
         counts["transactions"] = Transaction.objects.count()
         counts["closings"] = Closing.objects.count()
         DiscrepancyNote.objects.all().delete()
@@ -201,6 +249,7 @@ def clear_data(user, *, scope, password, confirm_text):
             AuditEvent.objects.filter(user__role=User.Role.AGENT).update(user=None)
             User.objects.filter(role=User.Role.AGENT).delete()
             Account.objects.filter(kind__in=[Account.Kind.CUSTOMER, Account.Kind.CASH_MANAGER]).delete()
+            Account.objects.filter(kind=Account.Kind.SHOP_PAYABLE).delete()  # shops' positions with agents
             Counterparty.objects.update(microzone=None)
             MicroZone.objects.all().delete()  # microzones are defined with their agents
             Counterparty.objects.all().delete()
