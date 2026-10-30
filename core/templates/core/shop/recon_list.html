@@ -1,0 +1,15 @@
+{% extends "core/base.html" %}{% load i18n cashier %}
+{% block title %}{% trans "Daily reconciliation" %}{% endblock %}
+{% block content %}
+<h1>{% trans "Shops' daily reconciliation" %}</h1>
+<form class="filters panel" method="get"><div class="field"><label>{% trans "Day" %}</label><input type="date" name="date" value="{{ day|date:'Y-m-d' }}"></div><div class="field"><button class="btn" type="submit">{% trans "Show" %}</button></div><div class="field"><a class="btn" href="?date={{ prev|date:'Y-m-d' }}">← {% trans "Previous day" %}</a> <a class="btn" href="?date={{ next|date:'Y-m-d' }}">{% trans "Next day" %} →</a></div></form>
+<div class="tbl-wrap"><table class="t"><thead><tr><th>{% trans "Shop" %}</th><th>{% trans "Status" %}</th><th class="money">{% trans "Cash at closing" %}</th><th class="money">{% trans "UVE at closing" %}</th><th class="money">{% trans "ER at closing" %}</th><th class="money">{% trans "Differences" %}</th><th>{% trans "Signed off" %}</th><th></th></tr></thead>
+<tbody>{% for r in rows %}<tr>
+<td>{{ r.shop }}</td>
+<td><span class="badge {% if r.rec.status == 'BALANCED' %}ok{% elif r.rec.status == 'DIFFERENCE' %}bad{% else %}acc{% endif %}">{{ r.status_label }}</span></td>
+{% for a in r.rec.rows %}<td class="money">{{ a.sys_close|fcfa }}</td>{% endfor %}
+<td class="money">{% for a in r.rec.rows %}{% if a.close_diff %}<span class="neg">{{ a.key|upper }} {{ a.close_diff|fcfa }}</span><br>{% endif %}{% if a.open_diff %}<span class="neg small">{% trans "opening" %} {{ a.key|upper }} {{ a.open_diff|fcfa }}</span><br>{% endif %}{% endfor %}</td>
+<td>{% if r.rec.review %}✓ {{ r.rec.review.reviewed_by }}{% else %}—{% endif %}</td>
+<td><a href="{% url 'shop_reconciliation' r.shop.pk %}?date={{ day|date:'Y-m-d' }}">{% trans "Open" %}</a></td>
+</tr>{% empty %}<tr><td colspan="8" class="muted">{% trans "No shop." %}</td></tr>{% endfor %}</tbody></table></div>
+{% endblock %}

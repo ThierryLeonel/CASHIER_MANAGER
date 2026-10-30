@@ -88,6 +88,11 @@ def update_staff(actor, user, *, first_name, last_name="", shop, duties):
     _staff(actor, user)
     if shop is None:
         raise BusinessError(_("Choose the shop."), "shop")
+    from core.models import ShopShift
+
+    if shop.pk != user.shop_id and ShopShift.objects.filter(user=user, status=ShopShift.Status.OPEN).exists():
+        raise BusinessError(_("%(u)s has an open shift. It must be closed before the transfer.")
+                            % {"u": user.username}, "shop")
     old_shop = user.shop.name if user.shop_id else ""
     user.first_name, user.last_name, user.shop, user.shop_duties = first_name, last_name, shop, _duties(duties)
     user.save(update_fields=["first_name", "last_name", "shop", "shop_duties"])

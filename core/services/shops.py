@@ -52,6 +52,17 @@ def check_duty(user, duty):
                                % {"d": DUTY_LABEL[duty]})
 
 
+def require_shift(user):
+    """Shop staff record only during an open shift (work attendance and till counts)."""
+    from core.models import ShopShift
+
+    sh_ = ShopShift.objects.filter(user=user, status=ShopShift.Status.OPEN).only("shop_id").first()
+    if sh_ is None:
+        raise PermissionDenied(_("Open your shift first (count the till), then record."))
+    if sh_.shop_id != user.shop_id:
+        raise PermissionDenied(_("Your open shift is in another shop. Close it first."))
+
+
 def shop_for(user, shop=None, duty=None):
     """The shop a user records for: a shop manager's own shop; a senior shop manager / super admin choose one.
     `duty` is checked for shop managers whose duties are restricted (segmented shops)."""
@@ -59,6 +70,7 @@ def shop_for(user, shop=None, duty=None):
         raise PermissionDenied(_("Sign in first."))
     if user.is_shop_manager:
         check_duty(user, duty)
+        require_shift(user)
         if shop is not None and shop.pk != user.shop_id:
             raise PermissionDenied(_("You can only record for your own shop."))
         if not user.shop_id:
@@ -308,6 +320,7 @@ def _clean_serials(text):
 def _can_stock(user, shop):
     if user.is_shop_manager:
         check_duty(user, "SALES")
+        require_shift(user)
     if not (user.is_shop_senior or user.is_superadmin or (user.is_shop_manager and user.shop_id == shop.pk)):
         raise PermissionDenied(_("You cannot change this shop's stock."))
 

@@ -1,0 +1,16 @@
+{% extends "core/base.html" %}{% load i18n cashier %}
+{% block title %}{% trans "Attendance" %}{% endblock %}
+{% block content %}
+<h1>{% trans "Work attendance (shifts)" %}</h1>
+<form class="filters panel" method="get">
+  <div class="field"><label>{% trans "From" %}</label><input type="date" name="from" value="{{ d_from|date:'Y-m-d' }}"></div>
+  <div class="field"><label>{% trans "To" %}</label><input type="date" name="to" value="{{ d_to|date:'Y-m-d' }}"></div>
+  {% if shops|length > 1 %}<div class="field"><label>{% trans "Shop" %}</label><select name="shop"><option value="">{% trans "All shops" %}</option>{% for s in shops %}<option value="{{ s.pk }}"{% if shop_id == s.pk|stringformat:"d" %} selected{% endif %}>{{ s }}</option>{% endfor %}</select></div>{% endif %}
+  <div class="field"><button class="btn" type="submit">{% trans "Apply" %}</button></div>
+</form>
+<div class="tbl-wrap"><table class="t"><thead><tr><th>{% trans "Staff" %}</th><th>{% trans "Shop" %}</th><th class="money">{% trans "Days worked" %}</th><th class="money">{% trans "Shifts" %}</th><th class="money">{% trans "Hours" %}</th><th class="money">{% trans "Still open" %}</th><th class="money">{% trans "Closed by the senior" %}</th></tr></thead>
+<tbody>{% for p in people %}<tr><td>{{ p.user.label_with_id }}</td><td>{{ p.shop }}</td><td class="money">{{ p.days }}</td><td class="money">{{ p.shifts }}</td><td class="money">{{ p.hours }}</td><td class="money">{% if p.open %}<span class="badge ok">{{ p.open }}</span>{% else %}0{% endif %}</td><td class="money">{% if p.forced %}<span class="neg">{{ p.forced }}</span>{% else %}0{% endif %}</td></tr>
+{% empty %}<tr><td colspan="7" class="muted">{% trans "No shift in this period." %}</td></tr>{% endfor %}</tbody></table></div>
+<h2>{% trans "Shifts" %}</h2>
+{% include "core/shop/_shifts.html" with shifts=shifts show_who=1 %}
+{% endblock %}

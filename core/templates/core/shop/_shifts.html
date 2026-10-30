@@ -1,0 +1,11 @@
+{% load i18n cashier %}<div class="tbl-wrap"><table class="t"><thead><tr><th>{% trans "Date" %}</th>{% if show_who %}<th>{% trans "Staff" %}</th><th>{% trans "Shop" %}</th>{% endif %}<th>{% trans "Opened" %}</th><th>{% trans "Closed" %}</th><th class="money">{% trans "Hours" %}</th><th>{% trans "Opening count (cash · UVE · ER)" %}</th><th>{% trans "Closing count (cash · UVE · ER)" %}</th>{% if force_form %}<th></th>{% endif %}</tr></thead>
+<tbody>{% for s in shifts %}<tr>
+<td>{{ s.business_date|date:"d/m/Y" }}</td>
+{% if show_who %}<td>{{ s.user.label_with_id }}</td><td>{{ s.shop }}</td>{% endif %}
+<td>{{ s.opened_at|date:"H:i" }}</td>
+<td>{% if s.closed_at %}{{ s.closed_at|date:"d/m H:i" }}{% if s.closed_by_id and s.closed_by_id != s.user_id %}<br><span class="muted small">{% blocktrans with u=s.closed_by %}closed by {{ u }}{% endblocktrans %}{% if s.close_note %}: {{ s.close_note }}{% endif %}</span>{% endif %}{% else %}<span class="badge ok">{% trans "Open" %}</span>{% endif %}</td>
+<td class="money">{{ s.hours }}</td>
+<td class="small">{% if s.open_cash is not None %}{{ s.open_cash|fcfa }} · {{ s.open_uve|fcfa }} · {{ s.open_er|fcfa }}{% with d=s.open_diffs %}{% if d.cash or d.uve or d.er %}<br><span class="neg">{% trans "diff." %} {{ d.cash|default:0|fcfa }} · {{ d.uve|default:0|fcfa }} · {{ d.er|default:0|fcfa }}</span>{% endif %}{% endwith %}{% else %}—{% endif %}</td>
+<td class="small">{% if s.close_cash is not None %}{{ s.close_cash|fcfa }} · {{ s.close_uve|fcfa }} · {{ s.close_er|fcfa }}{% with d=s.close_diffs %}{% if d.cash or d.uve or d.er %}<br><span class="neg">{% trans "diff." %} {{ d.cash|default:0|fcfa }} · {{ d.uve|default:0|fcfa }} · {{ d.er|default:0|fcfa }}</span>{% endif %}{% endwith %}{% else %}—{% endif %}</td>
+{% if force_form %}<td>{% if s.status == 'OPEN' %}<form method="post" class="force-close">{% csrf_token %}<input type="hidden" name="action" value="force"><input type="hidden" name="pk" value="{{ s.pk }}"><input type="text" name="note" placeholder="{% trans 'Reason (forgot to close…)' %}" required maxlength="255"><button class="btn small" type="submit">{% trans "Close this shift" %}</button></form>{% endif %}</td>{% endif %}
+</tr>{% empty %}<tr><td colspan="9" class="muted">{% trans "No shift yet." %}</td></tr>{% endfor %}</tbody></table></div>

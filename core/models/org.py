@@ -233,6 +233,14 @@ class User(AbstractUser):
         return duty in self.shop_duty_set
 
     @property
+    def open_shop_shift(self):
+        if not self.is_shop_manager:
+            return None
+        if not hasattr(self, "_open_shift_cache"):
+            self._open_shift_cache = self.shop_shifts.filter(status="OPEN").first()
+        return self._open_shift_cache
+
+    @property
     def shop_duties_display(self):
         chosen = self.shop_duty_set
         if len(chosen) == len(SHOP_DUTY_CODES):

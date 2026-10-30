@@ -249,3 +249,85 @@ class ShopConversionRate(models.Model):
     @property
     def percent(self):
         return (self.rate * 100).quantize(Decimal("0.01"))
+
+
+class ShopShift(models.Model):
+    """A staff member's shift in a shop: opening and closing times (work attendance) and the till counts.
+
+    The counts (cash counted, UVE and ER read on the shop SIM) are required when the person takes over the till
+    (no other shift open in the shop) and when they hand it back (last shift open); the system balance at that
+    moment is stored next to each count so differences can be explained later."""
+
+    class Status(models.TextChoices):
+        OPEN = "OPEN", _("Open")
+        CLOSED = "CLOSED", _("Closed")
+
+    shop = models.ForeignKey(Shop, on_delete=models.PROTECT, related_name="shifts")
+    user = models.ForeignKey(User, on_delete=models.PROTECT, related_name="shop_shifts")
+    business_date = models.DateField()
+    status = models.CharField(max_length=6, choices=Status.choices, default=Status.OPEN)
+    opened_at = models.DateTimeField(default=timezone.now)
+    closed_at = models.DateTimeField(null=True, blank=True)
+    open_cash = models.DecimalField(**MONEY, null=True, blank=True)
+    open_uve = models.DecimalField(**MONEY, null=True, blank=True)
+    open_er = models.DecimalField(**MONEY, null=True, blank=True)
+    expected_open_cash = models.DecimalField(**MONEY, null=True, blank=True)
+    expected_open_uve = models.DecimalField(**MONEY, null=True, blank=True)
+    expected_open_er = models.DecimalField(**MONEY, null=True, blank=True)
+    close_cash = models.DecimalField(**MONEY, null=True, blank=True)
+    close_uve = models.DecimalField(**MONEY, null=True, blank=True)
+    close_er = models.DecimalField(**MONEY, null=True, blank=True)
+    expected_close_cash = models.DecimalField(**MONEY, null=True, blank=True)
+    expected_close_uve = models.DecimalField(**MONEY, null=True, blank=True)
+    expected_close_er = models.DecimalField(**MONEY, null=True, blank=True)
+    open_note = models.CharField(max_length=255, blank=True)
+    close_note = models.CharField(max_length=255, blank=True)
+    closed_by = models.ForeignKey(User, null=True, blank=True, on_delete=models.PROTECT, related_name="+",
+                                  help_text="Who closed it (the senior shop manager may close a forgotten shift).")
+
+    class Meta:
+        ordering = ["-opened_at"]
+        constraints = [models.UniqueConstraint(fields=["user"], condition=Q(status="OPEN"),
+                                               name="one_open_shift_per_user")]
+
+    def __str__(self):
+        return f"{self.user} · {self.shop} · {self.business_date:%d/%m/%Y}"
+
+    @property
+    def duration(self):
+        end = self.closed_at or timezone.now()
+        return end - self.opened_at
+
+    @property
+    def hours(self):
+        return round(self.duration.total_seconds() / 3600, 2)
+
+    def _diff(self, side, k):
+        got, exp = getattr(self, f"{side}_{k}"), getattr(self, f"expected_{side}_{k}")
+        return None if got is None or exp is None else got - exp
+
+    @property
+    def open_diffs(self):
+        return {k: self._diff("open", k) for k in ("cash", "uve", "er")}
+
+    @property
+    def close_diffs(self):
+        return {k: self._diff("close", k) for k in ("cash", "uve", "er")}
+
+    @property
+    def has_difference(self):
+        return any(v for v in list(self.open_diffs.values()) + list(self.close_diffs.values()))
+
+
+class ShopDayReview(models.Model):
+    """The senior shop manager's sign-off of a shop's daily reconciliation."""
+
+    shop = models.ForeignKey(Shop, on_delete=models.PROTECT, related_name="day_reviews")
+    business_date = models.DateField()
+    reviewed_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name="+")
+    reviewed_at = models.DateTimeField(default=timezone.now)
+    note = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ["-business_date"]
+        constraints = [models.UniqueConstraint(fields=["shop", "business_date"], name="one_review_per_shop_day")]

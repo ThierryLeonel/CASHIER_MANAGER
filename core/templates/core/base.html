@@ -36,6 +36,7 @@
 
     {% if user.is_shop_user %}{% with duties=user.shop_duty_set %}
     <div class="side-group">{% trans "Shop" %}</div>
+    {% if user.is_shop_manager %}<a href="{% url 'shop_shift' %}" class="{% if u == 'shop_shift' %}on{% endif %}">{% icon "clock" %}<span>{% trans "My shift" %} <span class="shift-chip{% if user.open_shop_shift %} on{% endif %}"><span class="dot"></span>{% if user.open_shop_shift %}{% trans "open" %}{% else %}{% trans "closed" %}{% endif %}</span></span></a>{% endif %}
     {% if "OM" in duties %}
     <a href="{% url 'shop_op' 'cashin' %}" class="{% if request.path == '/shops/do/cashin/' %}on{% endif %}">{% icon "payment" %}<span>{% trans "Cash-in" %}</span></a>
     <a href="{% url 'shop_op' 'cashout' %}" class="{% if request.path == '/shops/do/cashout/' %}on{% endif %}">{% icon "supply" %}<span>{% trans "Cash-out" %}</span></a>
@@ -68,6 +69,8 @@
     <a href="{% url 'shop_transactions' %}" class="{% if u == 'shop_transactions' %}on{% endif %}">{% icon "list" %}<span>{% trans "Shop transactions" %}</span></a>
     <a href="{% url 'shop_retrievals' %}" class="{% if u == 'shop_retrievals' %}on{% endif %}">{% icon "users" %}<span>{% trans "SIM retrievals" %}</span></a>
     <a href="{% url 'shop_services_report' %}" class="{% if u == 'shop_services_report' %}on{% endif %}">{% icon "chart" %}<span>{% trans "Services count" %}</span></a>
+    <a href="{% url 'shop_reconciliations' %}" class="{% if u == 'shop_reconciliations' or u == 'shop_reconciliation' %}on{% endif %}">{% icon "lock" %}<span>{% trans "Daily reconciliation" %}</span></a>
+    <a href="{% url 'shop_attendance' %}" class="{% if u == 'shop_attendance' %}on{% endif %}">{% icon "calendar" %}<span>{% trans "Attendance" %}</span></a>
     <a href="{% url 'shop_stock' %}" class="{% if u == 'shop_stock' %}on{% endif %}">{% icon "wallet" %}<span>{% trans "Stock" %}</span></a>
     {% if user.is_shop_senior or user.is_superadmin %}<a href="{% url 'shop_manage' %}" class="{% if u == 'shop_manage' %}on{% endif %}">{% icon "users" %}<span>{% trans "Shops & staff" %}</span></a>
     <a href="{% url 'shop_setup' %}" class="{% if u == 'shop_setup' %}on{% endif %}">{% icon "settings" %}<span>{% trans "Services, items & rate" %}</span></a>{% endif %}

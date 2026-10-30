@@ -9,15 +9,17 @@ from django.db.models import Count, Q, Sum
 from django.core.exceptions import PermissionDenied as DjangoPermissionDenied
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 from django.utils.translation import gettext as _
 
 from core import forms_shop as SF
 from core.models import (
-    User, Account, ItemCategory, ServiceCount, Shop, ShopConversionRate, ShopItem, ShopService, SimRetrieval,
+    ShopShift, User, Account, ItemCategory, ServiceCount, Shop, ShopConversionRate, ShopItem, ShopService, SimRetrieval,
     StockUnit, Transaction, TxType,
 )
 from core.money import fmt
 from core.services import shop_admin as sa
+from core.services import shop_shifts as ss
 from core.services import shops as sh
 from core.services.days import douala_today
 from core.services.errors import BusinessError
@@ -67,6 +69,14 @@ def _need_duty(user, key):
     duty = sh.OP_DUTY.get(key)
     if duty and not user.has_shop_duty(duty):
         raise DjangoPermissionDenied
+
+
+def _shift_redirect(request):
+    """Shop staff must open their shift before recording: send them to the shift page."""
+    if request.user.is_shop_manager and ss.current_shift(request.user) is None:
+        messages.info(request, _("Open your shift first: count the till, then you can record."))
+        return redirect(f"/shops/shift/?next={request.path}")
+    return None
 
 
 def _period(request, default_days=0):
@@ -171,7 +181,7 @@ def shop_detail(request, pk):
         "recent": recent, "staff_rows": staff_rows, "owed": owed, "owed_by": owed_by, "d_from": d_from, "d_to": d_to,
         "can_record": request.user.role in SHOP_DESK and (not request.user.is_shop_manager
                                                           or request.user.shop_id == shop.pk),
-        "rate": ShopConversionRate.current()})
+        "rate": ShopConversionRate.current(), "my_shift": ss.current_shift(request.user)})
 
 
 @roles_required(*SHOP_DESK)
@@ -179,6 +189,8 @@ def shop_op(request, op):
     if op not in OPS:
         raise Http404
     _need_duty(request.user, op)
+    if (r := _shift_redirect(request)):
+        return r
     form_class, fn, title, intro, icon = OPS[op]
     kwargs = {"op": op} if form_class is SF.AgentDealForm else {}
     form = form_class(request.user, request.POST or None, **kwargs)
@@ -224,6 +236,8 @@ def desk_to_shop(request):
 @roles_required(*SHOP_DESK)
 def shop_service(request):
     _need_duty(request.user, "service")
+    if (r := _shift_redirect(request)):
+        return r
     form = SF.ServiceCountForm(request.user, request.POST or None)
     if request.method == "POST" and form.is_valid():
         try:
@@ -241,6 +255,8 @@ def shop_service(request):
 @roles_required(*SHOP_DESK)
 def shop_retrieve(request):
     _need_duty(request.user, "retrieve")
+    if (r := _shift_redirect(request)):
+        return r
     form = SF.RetrievalForm(request.user, request.POST or None)
     if request.method == "POST" and form.is_valid():
         try:
@@ -448,3 +464,103 @@ def shop_manage(request):
     return render(request, "core/shop/manage.html", {
         "shops": shops_qs, "staff": staff, "shop_form": shop_form, "staff_form": staff_form, "new_pw": new_pw,
         "seniors": User.objects.filter(role=User.Role.SHOP_SENIOR)})
+
+
+# ---------------------------------------------------------------- shifts, attendance, daily reconciliation
+def _day(request):
+    try:
+        return date.fromisoformat(request.GET.get("date") or "")
+    except ValueError:
+        return douala_today()
+
+
+@roles_required(R.SHOP_MANAGER)
+def shop_shift(request):
+    """Open or close my shift (work attendance and till counts)."""
+    user = request.user
+    shift = ss.current_shift(user)
+    nxt = request.GET.get("next") or ""
+    nxt = nxt if nxt.startswith("/shops/") and not nxt.startswith("//") else ""
+    if shift is None:
+        required = ss.counts_required_to_open(user.shop) if user.shop_id else True
+    else:
+        required = not ss.others_open(shift.shop, exclude=shift).exists()
+    form = SF.ShiftForm(request.POST or None, required=required)
+    if request.method == "POST" and form.is_valid():
+        cd = form.cleaned_data
+        try:
+            if shift is None:
+                ss.open_shift(user, **cd)
+                messages.success(request, _("Shift opened at %(t)s. Have a good day.")
+                                 % {"t": timezone.localtime().strftime("%H:%M")})
+                return redirect(nxt or "shop_detail", **({} if nxt else {"pk": user.shop_id}))
+            done = ss.close_shift(user, **cd)
+            msg = _("Shift closed at %(t)s (%(h)s h).") % {"t": timezone.localtime(done.closed_at).strftime("%H:%M"),
+                                                          "h": done.hours}
+            if done.has_difference:
+                messages.warning(request, msg + " " + _("The counts differ from the system balances; the senior "
+                                                        "shop manager will review them."))
+            else:
+                messages.success(request, msg)
+            return redirect("shop_shift")
+        except BusinessError as e:
+            form.add_error(e.field if e.field in form.fields else None, e.message)
+    recent = ShopShift.objects.filter(user=user).select_related("shop")[:15]
+    return render(request, "core/shop/shift.html", {"shift": shift, "form": form, "required": required,
+                                                     "recent": recent, "others": ss.others_open(user.shop, exclude=shift)
+                                                     .select_related("user") if user.shop_id else []})
+
+
+@roles_required(*SHOP_ROLES)
+def shop_reconciliations(request):
+    """All visible shops for one day: status of the daily reconciliation."""
+    day = _day(request)
+    rows = []
+    for s in sh.visible_shops(request.user).filter(active=True):
+        rec = ss.day_reconciliation(s, day)
+        rows.append(dict(shop=s, rec=rec, status_label=ss.STATUS_LABELS[rec["status"]]))
+    return render(request, "core/shop/recon_list.html", {"rows": rows, "day": day,
+                                                          "prev": day - timedelta(days=1),
+                                                          "next": day + timedelta(days=1)})
+
+
+@roles_required(*SHOP_ROLES)
+def shop_reconciliation(request, pk):
+    shop = _shop_or_404(request.user, pk)
+    day = _day(request)
+    can_review = request.user.is_shop_senior or request.user.is_superadmin
+    review_form = SF.DayReviewForm(request.POST if request.POST.get("action") == "review" else None)
+    force_form = SF.ForceCloseForm(request.POST if request.POST.get("action") == "force" else None)
+    if request.method == "POST" and can_review:
+        try:
+            if request.POST.get("action") == "review" and review_form.is_valid():
+                ss.review_day(request.user, shop=shop, day=day, note=review_form.cleaned_data["note"])
+                messages.success(request, _("Day signed off."))
+                return redirect(f"{request.path}?date={day.isoformat()}")
+            if request.POST.get("action") == "force" and force_form.is_valid():
+                shift = get_object_or_404(ShopShift, pk=request.POST.get("pk"), shop=shop)
+                ss.close_shift(request.user, shift=shift, note=force_form.cleaned_data["note"])
+                messages.success(request, _("Shift of %(u)s closed.") % {"u": shift.user})
+                return redirect(f"{request.path}?date={day.isoformat()}")
+        except BusinessError as e:
+            target = review_form if request.POST.get("action") == "review" else force_form
+            target.add_error(e.field if e.field in target.fields else None, e.message)
+    rec = ss.day_reconciliation(shop, day)
+    return render(request, "core/shop/recon.html", {
+        "rec": rec, "shop": shop, "day": day, "status_label": ss.STATUS_LABELS[rec["status"]],
+        "can_review": can_review, "review_form": review_form, "force_form": force_form,
+        "prev": day - timedelta(days=1), "next": day + timedelta(days=1)})
+
+
+@roles_required(*SHOP_ROLES)
+def shop_attendance(request):
+    d_from, d_to = _period(request, default_days=6)
+    shops_qs = sh.visible_shops(request.user)
+    shop_id = request.GET.get("shop") or ""
+    if shop_id.isdigit():
+        shops_qs = shops_qs.filter(pk=shop_id)
+    only = request.user if request.user.is_shop_manager else None
+    shifts, people = ss.attendance(shops_qs, d_from, d_to, user=only)
+    return render(request, "core/shop/attendance.html", {
+        "shifts": shifts[:300], "people": people, "d_from": d_from, "d_to": d_to, "shop_id": shop_id,
+        "shops": sh.visible_shops(request.user)})

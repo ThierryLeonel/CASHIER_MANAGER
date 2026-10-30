@@ -9,7 +9,7 @@ from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
 from core.models import (
     Account, AccountAccess, AuditEvent, BankAccount, CashManager, CompanySim, Counterparty, ExpenseCategory, MasterZone,
-    ItemCategory, MicroZone, Shop, ShopItem, ShopService, StockUnit, SubZone, User, Zone,
+    ItemCategory, MicroZone, Shop, ShopItem, ShopService, ShopShift, StockUnit, SubZone, User, Zone,
 )
 
 
@@ -403,4 +403,17 @@ class StockUnitAdmin(SuperAdminOnly):
     readonly_fields = ("serial", "item", "shop", "status", "sale", "received_by", "received_at")
 
     def has_add_permission(self, request):
+        return False
+
+
+@admin.register(ShopShift)
+class ShopShiftAdmin(SuperAdminOnly):
+    list_display = ("business_date", "shop", "user", "opened_at", "closed_at", "status")
+    list_filter = ("status", "shop")
+    date_hierarchy = "business_date"
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
         return False

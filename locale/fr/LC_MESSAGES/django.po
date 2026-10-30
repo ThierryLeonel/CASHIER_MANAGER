@@ -118,6 +118,10 @@ msgid "%(s)s removed from stock."
 msgstr "%(s)s retiré du stock."
 
 #, python-format
+msgid "%(s)s — reconciliation of %(d)s"
+msgstr "%(s)s — rapprochement du %(d)s"
+
+#, python-format
 msgid ""
 "%(shop)s has recorded operations, stock or services, so it cannot be "
 "deleted. Untick Active to close it; its history stays in the reports."
@@ -141,6 +145,10 @@ msgstr "%(type)s %(ref)s enregistré(e) : %(amt)s FCFA."
 #, python-format
 msgid "%(u)s can sign in again."
 msgstr "%(u)s peut de nouveau se connecter."
+
+#, python-format
+msgid "%(u)s has an open shift. It must be closed before the transfer."
+msgstr "%(u)s a un service ouvert. Il doit être fermé avant la mutation."
 
 #, python-format
 msgid ""
@@ -208,6 +216,9 @@ msgstr ""
 
 msgid "A POS belongs to a microzone: choose it or create it."
 msgstr "Un PDV appartient à une microzone : choisissez-la ou créez-la."
+
+msgid "A balance cannot be negative."
+msgstr "Un solde ne peut pas être négatif."
 
 msgid "A cashier must belong to a subzone."
 msgstr "Un caissier doit appartenir à une sous-zone."
@@ -489,6 +500,9 @@ msgstr "Toutes les dates"
 msgid "All duties"
 msgstr "Toutes les tâches"
 
+msgid "All shops"
+msgstr "Toutes les boutiques"
+
 msgid "All transactions of this shop"
 msgstr "Toutes les opérations de cette boutique"
 
@@ -508,6 +522,9 @@ msgstr "Déjà enregistré."
 #, python-format
 msgid "Already registered: %(s)s"
 msgstr "Déjà enregistré : %(s)s"
+
+msgid "Also on shift:"
+msgstr "Aussi en service :"
 
 msgid "Amount"
 msgstr "Montant"
@@ -600,6 +617,9 @@ msgstr ""
 msgid "At least one active super administrator must remain."
 msgstr "Au moins un super administrateur actif doit rester."
 
+msgid "Attendance"
+msgstr "Présences"
+
 msgid "Audit events"
 msgstr "Événements d'audit"
 
@@ -617,6 +637,9 @@ msgstr "Solde au (date de démarrage)"
 
 msgid "Balance to be served"
 msgstr "Reste à servir"
+
+msgid "Balanced"
+msgstr "Équilibré"
 
 msgid "Balances"
 msgstr "Soldes"
@@ -733,6 +756,12 @@ msgstr "Reporté non résolu"
 
 msgid "Cash"
 msgstr "Espèces"
+
+msgid "Cash at closing"
+msgstr "Espèces à la clôture"
+
+msgid "Cash counted in the drawer (FCFA)"
+msgstr "Espèces comptées dans la caisse (FCFA)"
 
 msgid "Cash drawer"
 msgstr "Caisse"
@@ -1054,8 +1083,14 @@ msgstr "Clôture"
 msgid "Close menu"
 msgstr "Fermer le menu"
 
+msgid "Close my shift"
+msgstr "Fermer mon service"
+
 msgid "Close the day"
 msgstr "Clôturer la journée"
+
+msgid "Close this shift"
+msgstr "Fermer ce service"
 
 msgid "Closed"
 msgstr "Clôturée"
@@ -1066,14 +1101,26 @@ msgstr "Clôturée le"
 msgid "Closed by"
 msgstr "Clôturée par"
 
+msgid "Closed by the senior"
+msgstr "Fermés par le responsable"
+
 msgid "Closing"
 msgstr "Clôture"
+
+msgid "Closing (system)"
+msgstr "Clôture (système)"
 
 msgid "Closing balance"
 msgstr "Solde de clôture"
 
 msgid "Closing balance (end of period)"
 msgstr "Solde de clôture (fin de période)"
+
+msgid "Closing count (cash · UVE · ER)"
+msgstr "Comptage de clôture (espèces · UVE · ER)"
+
+msgid "Closing difference"
+msgstr "Écart de clôture"
 
 msgid "Closing differences"
 msgstr "Écarts de clôture"
@@ -1125,6 +1172,9 @@ msgstr "Agents commerciaux qui doivent à la boutique"
 
 msgid "Commission"
 msgstr "Commission"
+
+msgid "Commission earned"
+msgstr "Commission gagnée"
 
 msgid "Commission earned (FCFA)"
 msgstr "Commission gagnée (FCFA)"
@@ -1317,6 +1367,11 @@ msgstr "Nombre"
 msgid "Count cash and wallets"
 msgstr "Compter espèces et portefeuilles"
 
+msgid "Count the cash and read the UVE and ER balances on the shop SIM."
+msgstr ""
+"Comptez les espèces et relevez les soldes UVE et ER sur la SIM de la "
+"boutique."
+
 msgid ""
 "Count your cash and read each SIM wallet balance, then enter the ACTUAL "
 "figures. Expected balances are shown after closing (blind count). "
@@ -1328,6 +1383,12 @@ msgstr ""
 "clôture (comptage à l'aveugle). Les écarts restent ouverts pour enquête ; "
 "ils ne sont jamais absorbés. Après la clôture, toutes les nouvelles saisies "
 "appartiennent à la journée suivante."
+
+msgid "Counted at closing"
+msgstr "Compté à la clôture"
+
+msgid "Counted at opening"
+msgstr "Compté à l'ouverture"
 
 msgid "Counted service (count only)"
 msgstr "Service compté (nombre uniquement)"
@@ -1460,6 +1521,9 @@ msgstr "Clôtures journalières et écarts"
 msgid "Daily closings and unresolved differences"
 msgstr "Clôtures journalières et écarts non résolus"
 
+msgid "Daily reconciliation"
+msgstr "Rapprochement journalier"
+
 msgid ""
 "Daily, weekly, monthly, custom or overall: opening + movements = closing"
 msgstr ""
@@ -1479,6 +1543,15 @@ msgstr "Date"
 
 msgid "Date served"
 msgstr "Date de service"
+
+msgid "Day"
+msgstr "Jour"
+
+msgid "Day signed off."
+msgstr "Journée validée."
+
+msgid "Days worked"
+msgstr "Jours travaillés"
 
 msgid "Deactivate"
 msgstr "Désactiver"
@@ -1596,6 +1669,12 @@ msgstr "Tâches"
 
 msgid "ER"
 msgstr "ER"
+
+msgid "ER at closing"
+msgstr "ER à la clôture"
+
+msgid "ER balance on the shop SIM (FCFA)"
+msgstr "Solde ER sur la SIM de la boutique (FCFA)"
 
 msgid "ER can only be transferred between SIMs of the same master zone."
 msgstr "L'ER ne peut être transféré qu'entre SIM d'une même zone principale."
@@ -1831,6 +1910,9 @@ msgstr "Dépenses par catégorie"
 msgid "Expenses in period"
 msgstr "Dépenses de la période"
 
+msgid "Explain the difference before signing off."
+msgstr "Expliquez l'écart avant de valider."
+
 msgid "Explain the resolution."
 msgstr "Expliquez la résolution."
 
@@ -1924,6 +2006,9 @@ msgstr "Générer un mot de passe fort pour moi"
 msgid "Generated"
 msgstr "Généré le"
 
+msgid "Give the reason for closing this shift."
+msgstr "Indiquez pourquoi vous fermez ce service."
+
 msgid "Give the reason for deleting."
 msgstr "Indiquez le motif de la suppression."
 
@@ -1952,6 +2037,9 @@ msgstr "Historique"
 
 msgid "Home"
 msgstr "Accueil"
+
+msgid "Hours"
+msgstr "Heures"
 
 msgid "How many"
 msgstr "Combien"
@@ -2198,6 +2286,12 @@ msgstr "Microzone · agent responsable"
 msgid "Microzone, name or SIM number"
 msgstr "Microzone, nom ou numéro SIM"
 
+msgid "Money in"
+msgstr "Entrées"
+
+msgid "Money out"
+msgstr "Sorties"
+
 msgid "Money received from an agent or POS"
 msgstr "Argent reçu d'un agent ou d'un PDV"
 
@@ -2225,6 +2319,12 @@ msgstr "Mon compte"
 
 msgid "My password"
 msgstr "Mon mot de passe"
+
+msgid "My recent shifts"
+msgstr "Mes services récents"
+
+msgid "My shift"
+msgstr "Mon service"
 
 msgid "My shop"
 msgstr "Ma boutique"
@@ -2299,6 +2399,9 @@ msgstr ""
 msgid "New user"
 msgstr "Nouvel utilisateur"
 
+msgid "Next day"
+msgstr "Jour suivant"
+
 msgid "No UVE→ER conversion rate is configured. Ask the super administrator."
 msgstr ""
 "Aucun taux de conversion UVE→ER n'est configuré. Contactez le super "
@@ -2327,6 +2430,9 @@ msgid ""
 msgstr ""
 "Aucun agent ni PDV n'est enregistré avec la SIM business %(sim)s. "
 "Enregistrez-le d'abord."
+
+msgid "No closing count"
+msgstr "Pas de comptage de clôture"
 
 msgid "No closings yet."
 msgstr "Aucune clôture pour l'instant."
@@ -2367,6 +2473,12 @@ msgstr "Aucune note pour l'instant."
 msgid "No password set"
 msgstr "Aucun mot de passe défini"
 
+msgid "No shift in this period."
+msgstr "Aucun service sur cette période."
+
+msgid "No shift yet."
+msgstr "Aucun service pour l'instant."
+
 msgid "No shop rate set yet: shops cannot convert UVE to ER until one is set."
 msgstr ""
 "Aucun taux boutique défini : les boutiques ne peuvent pas convertir l'UVE en"
@@ -2383,6 +2495,9 @@ msgid ""
 msgstr ""
 "Aucune boutique pour le moment. Le super administrateur ajoute les boutiques"
 " dans Configuration › Boutiques."
+
+msgid "No shop."
+msgstr "Aucune boutique."
 
 #, python-format
 msgid "No single %(kind)s account for your subzone: choose one."
@@ -2432,6 +2547,9 @@ msgstr "Non réparti par produit"
 msgid "Note"
 msgstr "Note"
 
+msgid "Note (explain any difference)"
+msgstr "Note (expliquez tout écart)"
+
 msgid "Note (supplier, delivery…)"
 msgstr "Note (fournisseur, livraison…)"
 
@@ -2460,6 +2578,9 @@ msgstr ""
 
 msgid "Nothing recorded in this period."
 msgstr "Rien d'enregistré sur cette période."
+
+msgid "Nothing recorded this day."
+msgstr "Rien d'enregistré ce jour."
 
 msgid "Nothing yet."
 msgstr "Rien pour le moment."
@@ -2533,6 +2654,9 @@ msgstr ""
 msgid "Only shop staff accounts are managed here."
 msgstr "Seuls les comptes du personnel des boutiques sont gérés ici."
 
+msgid "Only shop staff open shifts."
+msgstr "Seul le personnel des boutiques ouvre des services."
+
 msgid ""
 "Only supplies, destockages and opening debts can change responsibility."
 msgstr ""
@@ -2546,11 +2670,20 @@ msgstr ""
 "Seul le nombre de services est enregistré (par ex. OTT, MAX IT, mises à jour"
 " d'identification, tickets)."
 
+msgid "Only the senior shop manager closes someone else's shift."
+msgstr ""
+"Seul le responsable principal des boutiques ferme le service d'un autre."
+
 msgid ""
 "Only the senior shop manager or the super administrator manages the shops."
 msgstr ""
 "Seul le responsable principal des boutiques ou le super administrateur gère "
 "les boutiques."
+
+msgid "Only the senior shop manager signs off a shop's day."
+msgstr ""
+"Seul le responsable principal des boutiques valide la journée d'une "
+"boutique."
 
 msgid "Only the super administrator manages user accounts."
 msgstr "Seul le super administrateur gère les comptes utilisateurs."
@@ -2582,14 +2715,39 @@ msgstr "Journées ouvertes"
 msgid "Open menu"
 msgstr "Ouvrir le menu"
 
+msgid "Open my shift"
+msgstr "Ouvrir mon service"
+
+msgid "Open your shift first (count the till), then record."
+msgstr "Ouvrez d'abord votre service (comptez la caisse), puis enregistrez."
+
+msgid "Open your shift first: count the till, then you can record."
+msgstr ""
+"Ouvrez d'abord votre service : comptez la caisse, ensuite vous pourrez "
+"enregistrer."
+
+msgid ""
+"Open your shift when you start work: it records your attendance, and you can"
+" only record operations during an open shift."
+msgstr ""
+"Ouvrez votre service en commençant le travail : il enregistre votre "
+"présence, et vous ne pouvez enregistrer des opérations que pendant un "
+"service ouvert."
+
 msgid "Open – under investigation"
 msgstr "Ouvert – en cours d'enquête"
+
+msgid "Opened"
+msgstr "Ouvert"
 
 msgid "Opening"
 msgstr "Ouverture"
 
 msgid "Opening (book)"
 msgstr "Ouverture (comptable)"
+
+msgid "Opening (system)"
+msgstr "Ouverture (système)"
 
 msgid "Opening + movements = closing"
 msgstr "Ouverture + mouvements = clôture"
@@ -2608,6 +2766,9 @@ msgid ""
 msgstr ""
 "Le montant d'ouverture ne peut pas être nul ; laissez plutôt le compte non "
 "initialisé."
+
+msgid "Opening and closing balances"
+msgstr "Soldes d'ouverture et de clôture"
 
 msgid "Opening balance"
 msgstr "Solde d'ouverture"
@@ -2631,6 +2792,15 @@ msgid ""
 msgstr ""
 "Les soldes d'ouverture concernent uniquement clients, gestionnaires de cash,"
 " caisses, portefeuilles et banques."
+
+msgid "Opening count (cash · UVE · ER)"
+msgstr "Comptage d'ouverture (espèces · UVE · ER)"
+
+msgid "Opening counts"
+msgstr "Comptages d'ouverture"
+
+msgid "Opening difference"
+msgstr "Écart d'ouverture"
 
 msgid "Operation"
 msgstr "Opération"
@@ -2686,6 +2856,13 @@ msgstr "Autre article"
 
 msgid "Other opening balances"
 msgstr "Autres soldes d'ouverture"
+
+msgid ""
+"Others are still on shift, so the counts are optional (the last person to "
+"close counts the till)."
+msgstr ""
+"D'autres sont encore en service : le comptage est facultatif (le dernier à "
+"fermer compte la caisse)."
 
 msgid "Out"
 msgstr "Sorties"
@@ -2887,6 +3064,9 @@ msgstr "Passer un ajustement de rapprochement (perte / constatation)"
 msgid "Posted on business date"
 msgstr "Passée à la date comptable"
 
+msgid "Previous day"
+msgstr "Jour précédent"
+
 msgid "Price"
 msgstr "Prix"
 
@@ -2925,6 +3105,9 @@ msgstr "Taux non défini"
 
 msgid "Reason"
 msgstr "Motif"
+
+msgid "Reason (forgot to close…)"
+msgstr "Motif (oubli de fermeture…)"
 
 msgid "Reason (returned, damaged, lost…)"
 msgstr "Motif (retourné, endommagé, perdu…)"
@@ -3314,6 +3497,9 @@ msgstr "Nombre de services"
 msgid "Services done"
 msgstr "Services rendus"
 
+msgid "Services done:"
+msgstr "Services réalisés :"
+
 msgid "Services, items & rate"
 msgstr "Services, articles et taux"
 
@@ -3328,6 +3514,30 @@ msgstr "Fixer le nouveau taux boutique"
 
 msgid "Settles what the shop owes an agent."
 msgstr "Règle ce que la boutique doit à un agent."
+
+#, python-format
+msgid "Shift closed at %(t)s (%(h)s h)."
+msgstr "Service fermé à %(t)s (%(h)s h)."
+
+#, python-format
+msgid "Shift of %(u)s closed."
+msgstr "Service de %(u)s fermé."
+
+msgid "Shift open"
+msgstr "Service ouvert"
+
+#, python-format
+msgid "Shift opened at %(t)s. Have a good day."
+msgstr "Service ouvert à %(t)s. Bonne journée."
+
+msgid "Shift(s) still open"
+msgstr "Service(s) encore ouvert(s)"
+
+msgid "Shifts"
+msgstr "Services"
+
+msgid "Shifts (attendance)"
+msgstr "Services (présences)"
 
 msgid "Shop"
 msgstr "Boutique"
@@ -3428,6 +3638,9 @@ msgstr "Boutiques et accès du personnel"
 msgid "Shops overview"
 msgstr "Vue des boutiques"
 
+msgid "Shops' daily reconciliation"
+msgstr "Rapprochement journalier des boutiques"
+
 msgid "Shops' rate"
 msgstr "Taux des boutiques"
 
@@ -3454,6 +3667,18 @@ msgstr "Connexion"
 msgid "Sign in first."
 msgstr "Connectez-vous d'abord."
 
+msgid "Sign off"
+msgstr "Valider"
+
+msgid "Sign off again"
+msgstr "Valider à nouveau"
+
+msgid "Sign off the day"
+msgstr "Valider la journée"
+
+msgid "Signed off"
+msgstr "Validé"
+
 msgid "Sold"
 msgstr "Vendu"
 
@@ -3462,6 +3687,16 @@ msgstr "Vendu à"
 
 msgid "Some rows have errors: nothing was imported"
 msgstr "Certaines lignes contiennent des erreurs : rien n'a été importé"
+
+msgid "Some shifts of this day are still open. Close them first."
+msgstr "Des services de ce jour sont encore ouverts. Fermez-les d'abord."
+
+msgid ""
+"Someone is already on shift and has counted the till, so the counts are "
+"optional."
+msgstr ""
+"Quelqu'un est déjà en service et a compté la caisse : le comptage est "
+"facultatif."
 
 msgid "Source and destination must be different."
 msgstr "La source et la destination doivent être différentes."
@@ -3497,6 +3732,9 @@ msgstr ""
 "Étape 1 : téléchargez le modèle et remplissez-le. Étape 2 : chargez-le pour "
 "contrôler chaque ligne. Étape 3 : confirmez. Si une ligne contient une "
 "erreur, rien n'est importé."
+
+msgid "Still open"
+msgstr "Encore ouverts"
 
 msgid "Stock"
 msgstr "Stock"
@@ -3598,6 +3836,17 @@ msgstr "Approvisionnement agent"
 msgid "Surplus"
 msgstr "Excédent"
 
+msgid ""
+"System opening (end of the previous day) + money in − money out = system "
+"closing. The counts come from the first shift opened and the last shift "
+"closed that day; a difference is the count minus the system balance at the "
+"moment of counting."
+msgstr ""
+"Ouverture système (fin de la veille) + entrées − sorties = clôture système. "
+"Les comptages viennent du premier service ouvert et du dernier service fermé"
+" ce jour ; un écart est le comptage moins le solde système au moment du "
+"comptage."
+
 msgid "TOTAL"
 msgstr "TOTAL"
 
@@ -3697,6 +3946,13 @@ msgstr ""
 
 msgid "The count must be at least 1."
 msgstr "Le nombre doit être d'au moins 1."
+
+msgid ""
+"The counts differ from the system balances; the senior shop manager will "
+"review them."
+msgstr ""
+"Les comptages diffèrent des soldes système ; le responsable principal des "
+"boutiques les examinera."
 
 msgid "The custodian must be a cashier."
 msgstr "Le détenteur doit être un caissier."
@@ -3893,6 +4149,9 @@ msgstr ""
 "Ce reçu confirme une transaction effectuée et enregistrée dans le grand "
 "livre de l'entreprise. Montants en FCFA (XAF)."
 
+msgid "This shift is already closed."
+msgstr "Ce service est déjà fermé."
+
 #, python-format
 msgid "This side of the exchange must use a %(kind)s account."
 msgstr "Ce volet de l'échange doit utiliser un compte : %(kind)s."
@@ -4081,6 +4340,12 @@ msgstr "UVE + · espèces −"
 
 msgid "UVE amount (FCFA)"
 msgstr "Montant UVE (FCFA)"
+
+msgid "UVE at closing"
+msgstr "UVE à la clôture"
+
+msgid "UVE balance on the shop SIM (FCFA)"
+msgstr "Solde UVE sur la SIM de la boutique (FCFA)"
 
 msgid "UVE converted"
 msgstr "UVE convertie"
@@ -4304,6 +4569,9 @@ msgstr "Ce qui est envoyé"
 msgid "What is served goes into a %(kind)s account."
 msgstr "Ce qui est servi va dans un compte %(kind)s."
 
+msgid "What moved the balances"
+msgstr "Ce qui a fait bouger les soldes"
+
 msgid ""
 "What the cash manager has served the company so far. The balance is served "
 "later from the exchange page."
@@ -4342,6 +4610,9 @@ msgstr ""
 msgid "With agents & cashiers"
 msgstr "Avec agents et caissiers"
 
+msgid "Work attendance (shifts)"
+msgstr "Présences au travail (services)"
+
 msgid "Write the investigation note."
 msgstr "Rédigez la note d'enquête."
 
@@ -4358,6 +4629,20 @@ msgstr "Vous n'êtes pas autorisé à recevoir sur %(acct)s."
 #, python-format
 msgid "You are not authorised to send from %(acct)s."
 msgstr "Vous n'êtes pas autorisé à envoyer depuis %(acct)s."
+
+msgid ""
+"You are taking over the till: count the cash in the drawer and read the UVE "
+"and ER balances on the shop SIM."
+msgstr ""
+"Vous prenez la caisse : comptez les espèces et relevez les soldes UVE et ER "
+"sur la SIM de la boutique."
+
+msgid ""
+"You are the last on shift: count the cash in the drawer and read the UVE and"
+" ER balances on the shop SIM."
+msgstr ""
+"Vous êtes le dernier en service : comptez les espèces et relevez les soldes "
+"UVE et ER sur la SIM de la boutique."
 
 msgid "You can only record for your own shop."
 msgstr "Vous ne pouvez enregistrer que pour votre boutique."
@@ -4377,6 +4662,9 @@ msgstr ""
 "UVE à un agent. L'agent doit à l'entreprise ; l'UVE de l'entreprise ne "
 "change pas ; le PDV ne doit rien."
 
+msgid "You have no open shift."
+msgstr "Vous n'avez pas de service ouvert."
+
 #, python-format
 msgid ""
 "You were signed out after %(m)s minutes without activity. Sign in again to "
@@ -4395,6 +4683,9 @@ msgstr ""
 msgid "Your account is not linked to a shop."
 msgstr "Votre compte n'est pas lié à une boutique."
 
+msgid "Your account is not linked to an open shop."
+msgstr "Votre compte n'est lié à aucune boutique ouverte."
+
 msgid "Your drawers and wallets (book balances)"
 msgstr "Vos caisses et portefeuilles (soldes comptables)"
 
@@ -4404,6 +4695,9 @@ msgstr "Vos saisies sont enregistrées sur la journée du %(d)s."
 
 msgid "Your latest entries"
 msgstr "Vos dernières saisies"
+
+msgid "Your open shift is in another shop. Close it first."
+msgstr "Votre service ouvert est dans une autre boutique. Fermez-le d'abord."
 
 msgid "Your password"
 msgstr "Votre mot de passe"
@@ -4420,6 +4714,17 @@ msgid ""
 msgstr ""
 "Votre mot de passe a été réinitialisé par l'administrateur. Choisissez votre"
 " propre mot de passe pour continuer."
+
+msgid "Your shift is already open."
+msgstr "Votre service est déjà ouvert."
+
+msgid "Your shift is closed. Open it (count the till) before recording."
+msgstr ""
+"Votre service est fermé. Ouvrez-le (comptez la caisse) avant d'enregistrer."
+
+#, python-format
+msgid "Your shift is open since %(t)s."
+msgstr "Votre service est ouvert depuis %(t)s."
 
 msgid "Zone"
 msgstr "Zone"
@@ -4473,6 +4778,9 @@ msgstr "date comptable"
 msgid "by"
 msgstr "par"
 
+msgid "cash"
+msgstr "espèces"
+
 msgid "cash managers"
 msgstr "cash managers"
 
@@ -4491,6 +4799,13 @@ msgstr "ville"
 
 msgid "client phone"
 msgstr "téléphone du client"
+
+msgid "closed"
+msgstr "fermé"
+
+#, python-format
+msgid "closed by %(u)s"
+msgstr "fermé par %(u)s"
 
 msgid "closing"
 msgstr "clôture"
@@ -4547,6 +4862,9 @@ msgstr "date"
 
 msgid "date served"
 msgstr "date de service"
+
+msgid "diff."
+msgstr "écart"
 
 msgid "due to customer"
 msgstr "dû au client"
@@ -4646,6 +4964,9 @@ msgstr "notes"
 msgid "one cash drawer per subzone."
 msgstr "une caisse par sous-zone."
 
+msgid "open"
+msgstr "ouvert"
+
 msgid "opening"
 msgstr "ouverture"
 
@@ -4723,6 +5044,14 @@ msgstr "boutique"
 
 msgid "shop duties"
 msgstr "tâches en boutique"
+
+#, python-format
+msgid "signed off by %(u)s on %(t)s"
+msgstr "validé par %(u)s le %(t)s"
+
+#, python-format
+msgid "since %(t)s at %(shop)s"
+msgstr "depuis %(t)s à %(shop)s"
 
 msgid "staff ID"
 msgstr "ID employé"

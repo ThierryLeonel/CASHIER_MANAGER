@@ -301,3 +301,27 @@ class StaffForm(forms.Form):
                 pk=instance.shop_id)
         else:
             self.initial.setdefault("duties", SHOP_DUTY_CODES)
+
+
+class ShiftForm(forms.Form):
+    """Till counts at the opening / closing of a shift."""
+
+    cash = MoneyField(label=_("Cash counted in the drawer (FCFA)"), required=False)
+    uve = MoneyField(label=_("UVE balance on the shop SIM (FCFA)"), required=False)
+    er = MoneyField(label=_("ER balance on the shop SIM (FCFA)"), required=False)
+    note = forms.CharField(label=_("Note"), required=False, max_length=255)
+
+    def __init__(self, *args, required=True, **kwargs):
+        super().__init__(*args, **kwargs)
+        for k in ("cash", "uve", "er"):
+            self.fields[k].required = required
+            self.fields[k].widget.attrs["autocomplete"] = "off"
+
+
+class ForceCloseForm(forms.Form):
+    note = forms.CharField(label=_("Reason"), max_length=255)
+
+
+class DayReviewForm(forms.Form):
+    note = forms.CharField(label=_("Note (explain any difference)"), required=False,
+                           widget=forms.Textarea(attrs={"rows": 3}))

@@ -1,0 +1,40 @@
+{% extends "core/base.html" %}{% load i18n cashier %}
+{% block title %}{% trans "Daily reconciliation" %} · {{ shop }}{% endblock %}
+{% block content %}
+<h1>{% blocktrans with s=shop d=day|date:"d/m/Y" %}{{ s }} — reconciliation of {{ d }}{% endblocktrans %}</h1>
+<form class="filters panel" method="get"><div class="field"><label>{% trans "Day" %}</label><input type="date" name="date" value="{{ day|date:'Y-m-d' }}"></div><div class="field"><button class="btn" type="submit">{% trans "Show" %}</button></div><div class="field"><a class="btn" href="?date={{ prev|date:'Y-m-d' }}">← {% trans "Previous day" %}</a> <a class="btn" href="?date={{ next|date:'Y-m-d' }}">{% trans "Next day" %} →</a></div></form>
+<p><span class="badge {% if rec.status == 'BALANCED' %}ok{% elif rec.status == 'DIFFERENCE' %}bad{% else %}acc{% endif %}">{{ status_label }}</span>
+{% if rec.review %} — {% blocktrans with u=rec.review.reviewed_by t=rec.review.reviewed_at|date:"d/m/Y H:i" %}signed off by {{ u }} on {{ t }}{% endblocktrans %}{% if rec.review.note %}: {{ rec.review.note }}{% endif %}{% endif %}</p>
+
+<h2>{% trans "Opening and closing balances" %}</h2>
+<p class="muted small">{% trans "System opening (end of the previous day) + money in − money out = system closing. The counts come from the first shift opened and the last shift closed that day; a difference is the count minus the system balance at the moment of counting." %}</p>
+<div class="tbl-wrap"><table class="t"><thead><tr><th></th><th class="money">{% trans "Opening (system)" %}</th><th class="money">{% trans "Counted at opening" %}</th><th class="money">{% trans "Opening difference" %}</th><th class="money">{% trans "Money in" %}</th><th class="money">{% trans "Money out" %}</th><th class="money">{% trans "Closing (system)" %}</th><th class="money">{% trans "Counted at closing" %}</th><th class="money">{% trans "Closing difference" %}</th></tr></thead>
+<tbody>{% for a in rec.rows %}<tr>
+<td><strong>{% if a.key == 'cash' %}{% trans "Cash drawer" %}{% elif a.key == 'uve' %}UVE{% else %}ER{% endif %}</strong></td>
+<td class="money">{{ a.sys_open|fcfa }}</td>
+<td class="money">{% if a.counted_open is not None %}{{ a.counted_open|fcfa }}{% else %}—{% endif %}</td>
+<td class="money">{% if a.open_diff %}<span class="neg">{{ a.open_diff|fcfa }}</span>{% elif a.counted_open is not None %}0{% else %}—{% endif %}</td>
+<td class="money">{{ a.money_in|fcfa }}</td>
+<td class="money">{{ a.money_out|fcfa }}</td>
+<td class="money"><strong>{{ a.sys_close|fcfa }}</strong></td>
+<td class="money">{% if a.counted_close is not None %}{{ a.counted_close|fcfa }}{% else %}—{% endif %}</td>
+<td class="money">{% if a.close_diff %}<span class="neg">{{ a.close_diff|fcfa }}</span>{% elif a.counted_close is not None %}0{% else %}—{% endif %}</td>
+</tr>{% endfor %}</tbody></table></div>
+
+<h2>{% trans "What moved the balances" %}</h2>
+<div class="tbl-wrap"><table class="t"><thead><tr><th>{% trans "Operation" %}</th><th class="money">{% trans "Count" %}</th><th class="money">{% trans "Amount" %}</th><th class="money">{% trans "Commission" %}</th><th class="money">{% trans "Cash" %}</th><th class="money">UVE</th><th class="money">ER</th></tr></thead>
+<tbody>{% for o in rec.ops %}<tr><td>{{ o.label }}</td><td class="money">{{ o.n }}</td><td class="money">{{ o.amt|fcfa }}</td><td class="money">{% if o.com %}{{ o.com|fcfa }}{% endif %}</td><td class="money">{{ o.cash|fcfa }}</td><td class="money">{{ o.uve|fcfa }}</td><td class="money">{{ o.er|fcfa }}</td></tr>
+{% empty %}<tr><td colspan="7" class="muted">{% trans "Nothing recorded this day." %}</td></tr>{% endfor %}
+{% if rec.commission %}<tr class="total"><td>{% trans "Commission earned" %}</td><td></td><td></td><td class="money">{{ rec.commission|fcfa }}</td><td></td><td></td><td></td></tr>{% endif %}
+</tbody></table></div>
+{% if rec.services %}<p class="small muted">{% trans "Services done:" %} {% for r in rec.services %}{{ r.service__name }} {{ r.n }}{% if not forloop.last %} · {% endif %}{% endfor %}</p>{% endif %}
+
+<h2>{% trans "Shifts (attendance)" %}</h2>
+{% if can_review %}{% include "core/shop/_shifts.html" with shifts=rec.shifts show_who=1 force_form=force_form %}{% if force_form.errors %}<ul class="err">{% for e in force_form.note.errors %}<li>{{ e }}</li>{% endfor %}{% for e in force_form.non_field_errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+{% else %}{% include "core/shop/_shifts.html" with shifts=rec.shifts show_who=1 %}{% endif %}
+
+{% if can_review %}
+<h2>{% trans "Sign off the day" %}</h2>
+<div class="panel"><form method="post" class="entry" novalidate>{% csrf_token %}<input type="hidden" name="action" value="review">{% include "core/inc/fields.html" with form=review_form %}<button class="btn primary" type="submit">{% if rec.review %}{% trans "Sign off again" %}{% else %}{% trans "Sign off" %}{% endif %}</button></form></div>
+{% endif %}
+{% endblock %}

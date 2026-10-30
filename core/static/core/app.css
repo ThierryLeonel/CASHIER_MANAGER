@@ -449,3 +449,8 @@ input.auto { background: var(--soft); font-weight: 700; }
   font: inherit; }
 .linkbtn.danger { color: #c0392b; }
 
+.force-close { display: flex; gap: 6px; align-items: center; }
+.force-close input { min-width: 160px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); color: var(--ink); }
+.shift-chip { display: inline-flex; align-items: center; gap: 6px; font-size: .78rem; }
+.shift-chip .dot { width: 8px; height: 8px; border-radius: 50%; background: #9a948c; }
+.shift-chip.on .dot { background: #2e9d5b; }

@@ -78,6 +78,12 @@ class Command(BaseCommand):
         shop, smgr = o["shop"], o["shop_mgr"]
         for kind, amt in (("CASH_DRAWER", 300_000), ("UVE", 800_000), ("ER", 150_000)):
             ops.record_opening_balance(admin, account=shop.account(kind), amount=D(amt), description="[SAMPLE] shop launch")
+        from core.services import shop_shifts as ss
+
+        b = sh.shop_balances(shop)
+        ss.open_shift(smgr, cash=b["CASH_DRAWER"], uve=b["UVE"], er=b["ER"], note="[SAMPLE] till counted")
+        ss.open_shift(o["shop_om"])
+        ss.open_shift(o["shop_air"])
         sh.receive_stock(o["shop_senior"], shop=shop, item=o["items"]["phone"],
                          serials="356000000000011\n356000000000029\n356000000000037\n356000000000045\n356000000000052")
         sh.receive_stock(o["shop_senior"], shop=shop, item=o["items"]["kit"],
@@ -99,6 +105,11 @@ class Command(BaseCommand):
         sh.count_service(smgr, service=ShopService.objects.get(name__startswith="OTT"), count=4)
         sh.retrieve_sim(smgr, sim_number="699887766", holder_name="[SAMPLE] Client Ebai", id_type="CNI",
                         id_number="SAMPLE-1234567")
+        # the Orange Money desk leaves first; the manager counts the till at closing (2 000 FCFA cash short)
+        ss.close_shift(o["shop_om"])
+        ss.close_shift(o["shop_air"])
+        b = sh.shop_balances(shop)
+        ss.close_shift(smgr, cash=b["CASH_DRAWER"] - D(2000), uve=b["UVE"], er=b["ER"], note="[SAMPLE] closing count")
         # Meme closes with a 2,000 cash shortage (left open for investigation)
         actuals = {a.id: balance(a) for a in cl.closing_accounts(me)}
         actuals[dm.id] -= D(2000)

@@ -1,0 +1,22 @@
+{% extends "core/base.html" %}{% load i18n cashier %}
+{% block title %}{% trans "My shift" %}{% endblock %}
+{% block content %}
+<h1>{% trans "My shift" %}</h1>
+{% if shift %}
+<div class="panel">
+  <p><span class="badge ok">{% trans "Shift open" %}</span> {% blocktrans with t=shift.opened_at|date:"d/m/Y H:i" shop=shift.shop %}since {{ t }} at {{ shop }}{% endblocktrans %} — {{ shift.hours }} h</p>
+  {% if shift.open_cash is not None %}<p class="muted small">{% trans "Opening counts" %}: {% trans "cash" %} {{ shift.open_cash|fcfa }} · UVE {{ shift.open_uve|fcfa }} · ER {{ shift.open_er|fcfa }}</p>{% endif %}
+  {% if others %}<p class="muted small">{% trans "Also on shift:" %} {% for o in others %}{{ o.user }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>{% endif %}
+</div>
+<h2>{% trans "Close my shift" %}</h2>
+<p class="muted">{% if required %}{% trans "You are the last on shift: count the cash in the drawer and read the UVE and ER balances on the shop SIM." %}{% else %}{% trans "Others are still on shift, so the counts are optional (the last person to close counts the till)." %}{% endif %}</p>
+<div class="panel"><form method="post" class="entry" novalidate>{% csrf_token %}{% include "core/inc/fields.html" %}<button class="btn primary" type="submit">{% trans "Close my shift" %}</button></form></div>
+{% else %}
+<p class="muted">{% trans "Open your shift when you start work: it records your attendance, and you can only record operations during an open shift." %}</p>
+<h2>{% trans "Open my shift" %}</h2>
+<p class="muted">{% if required %}{% trans "You are taking over the till: count the cash in the drawer and read the UVE and ER balances on the shop SIM." %}{% else %}{% trans "Someone is already on shift and has counted the till, so the counts are optional." %}{% endif %}</p>
+<div class="panel"><form method="post" class="entry" novalidate>{% csrf_token %}{% include "core/inc/fields.html" %}<button class="btn primary" type="submit">{% trans "Open my shift" %}</button></form></div>
+{% endif %}
+<h2>{% trans "My recent shifts" %}</h2>
+{% include "core/shop/_shifts.html" with shifts=recent %}
+{% endblock %}

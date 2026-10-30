@@ -13,6 +13,16 @@ from .test_web import PW
 K = Account.Kind
 
 
+def open_shifts(o):
+    """Shop staff record only during an open shift."""
+    from core.services import shop_shifts as ss
+
+    b = sh.shop_balances(o["shop"])
+    ss.open_shift(o["shop_mgr"], cash=b[K.CASH_DRAWER], uve=b[K.UVE], er=b[K.ER])
+    for k in ("shop_om", "shop_air"):
+        ss.open_shift(o[k])
+
+
 class ShopMoney(OrgMixin, TestCase):
     def setUp(self):
         self.make_org()
@@ -20,6 +30,7 @@ class ShopMoney(OrgMixin, TestCase):
         self.shop, self.m = self.o["shop"], self.o["shop_mgr"]
         for kind, amt in ((K.CASH_DRAWER, 300000), (K.UVE, 800000), (K.ER, 150000)):
             self.fund(self.shop.account(kind), amt)
+        open_shifts(self.o)
 
     def b(self):
         x = sh.shop_balances(self.shop)
@@ -149,6 +160,7 @@ class ShopPages(OrgMixin, TestCase):
         self.shop = self.o["shop"]
         for kind, amt in ((K.CASH_DRAWER, 300000), (K.UVE, 800000), (K.ER, 150000)):
             self.fund(self.shop.account(kind), amt)
+        open_shifts(self.o)
 
     def client_for(self, u):
         c = self.client_class()
@@ -276,6 +288,7 @@ class ShopDutiesAndAdministration(OrgMixin, TestCase):
         self.shop = self.o["shop"]
         for kind, amt in ((K.CASH_DRAWER, 300000), (K.UVE, 800000), (K.ER, 150000)):
             self.fund(self.shop.account(kind), amt)
+        open_shifts(self.o)
 
     def client_for(self, u):
         c = self.client_class()
@@ -385,3 +398,102 @@ class ShopDutiesAndAdministration(OrgMixin, TestCase):
         r = c.post("/shops/setup/", {"action": "delete_service", "pk": used.pk}, follow=True)
         self.assertContains(r, "cannot be deleted")
         self.assertTrue(ShopService.objects.filter(pk=used.pk).exists())
+
+
+class ShopShiftsAndReconciliation(OrgMixin, TestCase):
+    def setUp(self):
+        from core.services import shop_shifts as ss
+
+        self.ss = ss
+        self.make_org()
+        self.fund_all()
+        self.shop, self.m = self.o["shop"], self.o["shop_mgr"]
+        for kind, amt in ((K.CASH_DRAWER, 300000), (K.UVE, 800000), (K.ER, 150000)):
+            self.fund(self.shop.account(kind), amt)
+
+    def client_for(self, u):
+        c = self.client_class()
+        self.assertTrue(c.login(username=u, password=PW))
+        return c
+
+    def test_no_recording_without_an_open_shift(self):
+        with self.assertRaises(PermissionDenied):
+            sh.cash_in(self.m, amount=D(1000))
+        c = self.client_for("shop.molyko")
+        r = c.get("/shops/do/cashin/")
+        self.assertRedirects(r, "/shops/shift/?next=/shops/do/cashin/", fetch_redirect_response=False)
+        self.assertContains(c.get(f"/shops/{self.shop.pk}/"), "Your shift is closed")
+
+    def test_open_and_close_shifts_with_counts(self):
+        ss = self.ss
+        with self.assertRaises(BusinessError):  # first on shift: the till must be counted
+            ss.open_shift(self.m)
+        s1 = ss.open_shift(self.m, cash=D(300000), uve=D(800000), er=D(149000))  # 1 000 ER missing
+        self.assertEqual(s1.open_diffs, {"cash": D(0), "uve": D(0), "er": D(-1000)})
+        with self.assertRaises(BusinessError):
+            ss.open_shift(self.m, cash=D(1), uve=D(1), er=D(1))  # already open
+        s2 = ss.open_shift(self.o["shop_om"])  # someone already counted: optional
+        self.assertIsNone(s2.open_cash)
+        sh.cash_in(self.o["shop_om"], amount=D(50000), commission=D(250))
+        sh.airtime(self.m, amount=D(5000))
+        ss.close_shift(self.o["shop_om"])  # others still on shift: counts optional
+        with self.assertRaises(BusinessError):  # last to leave counts the till
+            ss.close_shift(self.m)
+        done = ss.close_shift(self.m, cash=D(354000), uve=D(750000), er=D(144000))
+        self.assertEqual(done.close_diffs, {"cash": D(-1000), "uve": D(0), "er": D(-1000)})
+        with self.assertRaises(PermissionDenied):
+            sh.cash_in(self.m, amount=D(1))  # closed again
+        rec = ss.day_reconciliation(self.shop, s1.business_date)
+        cash, uve, er = rec["rows"]
+        # the test funding is posted the same day, so it counts as money in
+        self.assertEqual((cash["sys_open"], cash["money_in"], cash["sys_close"]), (D(0), D(355000), D(355000)))
+        self.assertEqual((uve["money_out"], uve["sys_close"]), (D(50000), D(750000)))
+        self.assertEqual((er["open_diff"], er["close_diff"], cash["close_diff"]), (D(-1000), D(-1000), D(-1000)))
+        self.assertEqual(rec["status"], "DIFFERENCE")
+        self.assertEqual(rec["commission"], D(250))
+        with self.assertRaises(BusinessError):  # a difference must be explained
+            ss.review_day(self.o["shop_senior"], shop=self.shop, day=s1.business_date)
+        with self.assertRaises(PermissionDenied):
+            ss.review_day(self.m, shop=self.shop, day=s1.business_date, note="x")
+        ss.review_day(self.o["shop_senior"], shop=self.shop, day=s1.business_date, note="1 000 short, recounted")
+        _q, people = ss.attendance([self.shop], s1.business_date, s1.business_date)
+        self.assertEqual({str(p["user"]) for p in people}, {str(self.m), str(self.o["shop_om"])})
+
+    def test_balanced_day_and_forced_close_pages(self):
+        ss = self.ss
+        s = ss.open_shift(self.m, cash=D(300000), uve=D(800000), er=D(150000))
+        senior = self.client_for("shop.senior")
+        url = f"/shops/{self.shop.pk}/reconciliation/?date={s.business_date.isoformat()}"
+        self.assertContains(senior.get(url), "Shift(s) still open")
+        r = senior.post(url, {"action": "review", "note": ""})
+        self.assertContains(r, "still open")
+        senior.post(url, {"action": "force", "pk": s.pk, "note": ""})  # a reason is required
+        s.refresh_from_db()
+        self.assertEqual(s.status, "OPEN")
+        senior.post(url, {"action": "force", "pk": s.pk, "note": "Forgot to close"})
+        s.refresh_from_db()
+        self.assertEqual((s.status, s.closed_by), ("CLOSED", self.o["shop_senior"]))
+        self.assertEqual(ss.day_reconciliation(self.shop, s.business_date)["status"], "NOT_COUNTED")
+        # a counted, balanced day
+        c = self.client_for("shop.molyko")
+        r = c.post("/shops/shift/", {"cash": "300 000", "uve": "800 000", "er": "150 000"})
+        self.assertEqual(r.status_code, 302, r.content[:2000])
+        r = c.post("/shops/shift/", {"cash": "300 000", "uve": "800 000", "er": "150 000"})
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(ss.day_reconciliation(self.shop, s.business_date)["status"], "BALANCED")
+        r = senior.post(url, {"action": "review", "note": ""})
+        self.assertEqual(r.status_code, 302)
+        # pages for the different roles
+        for u in ("finance", "manager", "shop.senior", "shop.molyko", "admin"):
+            cl = self.client_for(u)
+            self.assertContains(cl.get(f"/shops/reconciliation/?date={s.business_date.isoformat()}"), "Balanced")
+            self.assertEqual(cl.get(url).status_code, 200)
+            self.assertEqual(cl.get("/shops/attendance/").status_code, 200)
+        self.assertContains(c.get("/shops/attendance/"), "Shop manager Molyko")
+        self.assertEqual(self.client_for("cashier.fako1").get("/shops/attendance/").status_code, 403)
+        # a staff member cannot be transferred during an open shift
+        from core.services import shop_admin as sa
+        ss.open_shift(self.m, cash=D(300000), uve=D(800000), er=D(150000))
+        other = Shop.objects.create(name="Shop Limbe", code="shop-limbe")
+        with self.assertRaises(BusinessError):
+            sa.update_staff(self.o["shop_senior"], self.m, first_name="X", shop=other, duties=[])
