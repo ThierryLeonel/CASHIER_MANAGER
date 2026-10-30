@@ -400,6 +400,9 @@ msgstr "Utilisateurs actifs"
 msgid "Activity"
 msgstr "Activité"
 
+msgid "Activity summary"
+msgstr "Résumé d'activité"
+
 msgid "Actual"
 msgstr "Réel"
 
@@ -655,6 +658,13 @@ msgid ""
 msgstr ""
 "Un accord ne déplace aucun argent. Les soldes de l'entreprise ne changent "
 "que lorsque vous enregistrez chaque volet effectué."
+
+msgid ""
+"An expense of the shop (rent, electricity, transport…), paid from its cash "
+"drawer or UVE."
+msgstr ""
+"Une dépense de la boutique (loyer, électricité, transport…), payée depuis sa"
+" caisse ou son UVE."
 
 msgid "Analysis"
 msgstr "Analyse"
@@ -1158,6 +1168,12 @@ msgstr "Choisissez le mode de paiement : espèces ou UVE."
 msgid "Choose how it was paid: cash, UVE or on credit."
 msgstr "Choisissez le mode de paiement : espèces, UVE ou à crédit."
 
+msgid "Choose how the expense is paid."
+msgstr "Choisissez comment la dépense est payée."
+
+msgid "Choose how the purchase is paid."
+msgstr "Choisissez comment l'achat est payé."
+
 #, python-format
 msgid "Choose the %(kind)s account the company gives from."
 msgstr "Choisissez le compte %(kind)s depuis lequel l'entreprise donne."
@@ -1544,6 +1560,22 @@ msgstr "Corrections et transferts de responsabilité"
 msgid "Corrections posted later for this day"
 msgstr "Corrections passées ultérieurement pour cette journée"
 
+msgid "Cost of items sold"
+msgstr "Coût des articles vendus"
+
+msgid "Cost of the items sold"
+msgstr "Coût des articles vendus"
+
+msgid ""
+"Cost of the items sold uses the purchase price of each unit sold (units "
+"received without a purchase have no cost). Commissions are those recorded "
+"with each cash-in and cash-out. Airtime is sold at face value."
+msgstr ""
+"Le coût des articles vendus utilise le prix d'achat de chaque unité vendue "
+"(les unités reçues sans achat n'ont pas de coût). Les commissions sont "
+"celles enregistrées avec chaque dépôt et retrait. Le crédit est vendu à sa "
+"valeur faciale."
+
 msgid "Count"
 msgstr "Nombre"
 
@@ -1855,8 +1887,17 @@ msgstr "Sens"
 msgid "Discrepancy resolved."
 msgstr "Écart résolu."
 
+msgid "Download"
+msgstr "Télécharger"
+
 msgid "Download PDF"
 msgstr "Télécharger le PDF"
+
+msgid "Download this section in Excel"
+msgstr "Télécharger cette section en Excel"
+
+msgid "Download this section in PDF"
+msgstr "Télécharger cette section en PDF"
 
 msgid "Drawer and SIM wallet movements"
 msgstr "Mouvements des caisses et portefeuilles SIM"
@@ -2108,8 +2149,18 @@ msgstr "Attendu (comptable)"
 msgid "Expense"
 msgstr "Dépense"
 
+msgid "Expense category"
+msgstr "Catégorie de dépense"
+
+#, python-format
+msgid "Expense: %(c)s"
+msgstr "Dépense : %(c)s"
+
 msgid "Expenses"
 msgstr "Dépenses"
+
+msgid "Expenses and purchases"
+msgstr "Dépenses et achats"
 
 msgid ""
 "Expenses are paid from a cash drawer, a UVE wallet or an MTN float wallet."
@@ -2346,6 +2397,13 @@ msgstr "En stock"
 msgid "Inactive"
 msgstr "Inactif"
 
+msgid "Income statement"
+msgstr "Compte de résultat"
+
+#, python-format
+msgid "Income statement — %(a)s to %(b)s"
+msgstr "Compte de résultat — du %(a)s au %(b)s"
+
 #, python-format
 msgid "Incompatible asset types: %(a)s cannot be transferred to %(b)s."
 msgstr ""
@@ -2418,6 +2476,15 @@ msgstr "Article enregistré."
 
 msgid "Items"
 msgstr "Articles"
+
+msgid ""
+"Items bought for resale. The units enter the stock at their purchase price "
+"and the shop pays from its cash drawer or UVE. When a unit is sold, its "
+"price becomes the cost of the sale in the income statement."
+msgstr ""
+"Articles achetés pour la revente. Les unités entrent en stock à leur prix "
+"d'achat et la boutique paie depuis sa caisse ou son UVE. Quand une unité est"
+" vendue, son prix devient le coût de la vente dans le compte de résultat."
 
 msgid "Items for sale"
 msgstr "Articles en vente"
@@ -2534,6 +2601,9 @@ msgstr "Responsable"
 msgid "March"
 msgstr "Mars"
 
+msgid "Margin on items"
+msgstr "Marge sur articles"
+
 msgid "Master SIM"
 msgstr "SIM master"
 
@@ -2625,6 +2695,9 @@ msgstr "Ma boutique"
 msgid "My statement"
 msgstr "Mon relevé"
 
+msgid "NET RESULT"
+msgstr "RÉSULTAT NET"
+
 msgid "NO"
 msgstr "NON"
 
@@ -2648,6 +2721,9 @@ msgstr "Montant net"
 
 msgid "Net capital (all time)"
 msgstr "Capital net (depuis le début)"
+
+msgid "Net result"
+msgstr "Résultat net"
 
 msgid "New"
 msgstr "Nouveau"
@@ -2868,6 +2944,9 @@ msgstr "Note"
 msgid "Note (explain any difference)"
 msgstr "Note (expliquez tout écart)"
 
+msgid "Note (invoice number…)"
+msgstr "Note (numéro de facture…)"
+
 msgid "Note (supplier, delivery…)"
 msgstr "Note (fournisseur, livraison…)"
 
@@ -2912,6 +2991,9 @@ msgstr "Novembre"
 #, python-format
 msgid "Now recording for %(c)s"
 msgstr "Enregistrement en cours pour %(c)s"
+
+msgid "Number of units bought"
+msgstr "Nombre d'unités achetées"
 
 msgid "Number of units received"
 msgstr "Nombre d'unités reçues"
@@ -3165,6 +3247,9 @@ msgstr "Orange Money dépôt / retrait"
 msgid "Orange Money cash-out"
 msgstr "Orange Money : retrait (cash-out)"
 
+msgid "Orange Money commissions"
+msgstr "Commissions Orange Money"
+
 msgid "Orange SIM"
 msgstr "SIM Orange"
 
@@ -3292,6 +3377,9 @@ msgstr "Payé par %(m)s"
 
 msgid "Paid by agents"
 msgstr "Payé par les agents"
+
+msgid "Paid from"
+msgstr "Payé depuis"
 
 msgid "Paid from (cash, UVE or MTN float)"
 msgstr "Payé depuis (espèces, UVE ou float MTN)"
@@ -3448,6 +3536,15 @@ msgstr "Produit"
 msgid "Product amounts cannot be negative."
 msgstr "Les montants par produit ne peuvent pas être négatifs."
 
+msgid "Purchase of items"
+msgstr "Achat d'articles"
+
+msgid "Purchase price per unit (FCFA)"
+msgstr "Prix d'achat unitaire (FCFA)"
+
+msgid "Purchases of items"
+msgstr "Achats d'articles"
+
 msgid "Purpose"
 msgstr "Objet"
 
@@ -3582,6 +3679,9 @@ msgstr "Enregistrer les services rendus"
 
 msgid "Record the balance served (or another side)"
 msgstr "Enregistrer le reste servi (ou un autre côté)"
+
+msgid "Record the purchase"
+msgstr "Enregistrer l'achat"
 
 msgid "Record the sale"
 msgstr "Enregistrer la vente"
@@ -3978,6 +4078,9 @@ msgstr "Majoration UVE→ER boutique (%)"
 msgid "Shop conversion rate saved."
 msgstr "Taux de conversion boutique enregistré."
 
+msgid "Shop expense"
+msgstr "Dépense de boutique"
+
 msgid "Shop items and categories"
 msgstr "Articles et catégories des boutiques"
 
@@ -4056,6 +4159,9 @@ msgstr "Boutique : vente de crédit"
 msgid "Shop: destockage with agent"
 msgstr "Boutique : déstockage avec agent"
 
+msgid "Shop: expense"
+msgstr "Boutique : dépense"
+
 msgid "Shop: item sale"
 msgstr "Boutique : vente d'article"
 
@@ -4067,6 +4173,15 @@ msgstr "Boutique : paiement à un agent (crédit)"
 
 msgid "Shop: position with a commercial agent"
 msgstr "Boutique : position avec un agent commercial"
+
+msgid "Shop: purchase of items"
+msgstr "Boutique : achat d'articles"
+
+msgid "Shop: stock at cost"
+msgstr "Boutique : stock au coût"
+
+msgid "Shop: stock written off"
+msgstr "Boutique : stock sorti en perte"
 
 msgid "Shop: transfer to a cashier"
 msgstr "Boutique : transfert vers un caissier"
@@ -4150,6 +4265,13 @@ msgid "Some shifts of this day are still open. Close them first."
 msgstr "Des services de ce jour sont encore ouverts. Fermez-les d'abord."
 
 msgid ""
+"Some units of this purchase were already sold or removed. Delete those "
+"first."
+msgstr ""
+"Des unités de cet achat ont déjà été vendues ou retirées. Supprimez-les "
+"d'abord."
+
+msgid ""
 "Someone is already on shift and has counted the till, so the counts are "
 "optional."
 msgstr ""
@@ -4218,6 +4340,9 @@ msgstr "Stock d'articles"
 msgid "Stock updated."
 msgstr "Stock mis à jour."
 
+msgid "Stock written off"
+msgstr "Stock sorti en perte"
+
 msgid "Stop recording for a cashier"
 msgstr "Arrêter d'enregistrer pour un caissier"
 
@@ -4254,6 +4379,9 @@ msgstr "UVE approvisionnée"
 
 msgid "Supplied cash"
 msgstr "Espèces approvisionnées"
+
+msgid "Supplier"
+msgstr "Fournisseur"
 
 msgid "Supplies"
 msgstr "Approvisionnements"
@@ -4316,6 +4444,12 @@ msgstr ""
 
 msgid "TOTAL"
 msgstr "TOTAL"
+
+msgid "TOTAL COSTS"
+msgstr "TOTAL DES CHARGES"
+
+msgid "TOTAL INCOME"
+msgstr "TOTAL DES PRODUITS"
 
 msgid "TOTAL OPENING"
 msgstr "TOTAL OUVERTURE"
@@ -4550,6 +4684,9 @@ msgstr ""
 "de l'entreprise ne changent pas ; l'approvisionnement d'origine est "
 "conservé."
 
+msgid "The whole report"
+msgstr "Le rapport complet"
+
 msgid "Their current balance"
 msgstr "Son solde actuel"
 
@@ -4712,6 +4849,12 @@ msgstr "Total (FCFA)"
 
 msgid "Total amount"
 msgstr "Montant total"
+
+msgid "Total costs"
+msgstr "Total des charges"
+
+msgid "Total income"
+msgstr "Total des produits"
 
 msgid "Total of the sale"
 msgstr "Total de la vente"
@@ -4958,6 +5101,9 @@ msgstr "UVE, ER ou espèces remis à un agent ou PDV"
 msgid "UVE→ER"
 msgstr "UVE→ER"
 
+msgid "UVE→ER conversion gain"
+msgstr "Gain de conversion UVE→ER"
+
 msgid "UVE→ER converted"
 msgstr "UVE→ER converti"
 
@@ -4982,6 +5128,9 @@ msgstr "Prix unitaire (FCFA)"
 
 msgid "Unit(s) sold — IMEI / serial"
 msgstr "Unité(s) vendue(s) — IMEI / série"
+
+msgid "Units bought"
+msgstr "Unités achetées"
 
 msgid "Units found"
 msgstr "Unités trouvées"
@@ -5161,6 +5310,11 @@ msgstr ""
 msgid "What to clear"
 msgstr "Ce qu'il faut effacer"
 
+msgid "What was paid, e.g. electricity bill October, transport of stock."
+msgstr ""
+"Ce qui a été payé, par ex. facture d'électricité d'octobre, transport du "
+"stock."
+
 msgid "WhatsApp"
 msgstr "WhatsApp"
 
@@ -5181,6 +5335,9 @@ msgid ""
 msgstr ""
 "Quelle dette ce paiement règle : UVE, espèces et/ou ER. Les parts "
 "s'additionnent pour donner le montant reçu. Laissez vide si inconnu."
+
+msgid "Which report"
+msgstr "Quel rapport"
 
 msgid "Who changed what, and the deleted data"
 msgstr "Qui a modifié quoi, et les données supprimées"
@@ -5712,6 +5869,9 @@ msgstr "ID employé"
 msgid "subzone"
 msgstr "sous-zone"
 
+msgid "supplier"
+msgstr "fournisseur"
+
 msgid "supply due"
 msgstr "approvisionnement dû"
 
@@ -5745,6 +5905,9 @@ msgstr "type doit être AGENT ou POS"
 #, python-format
 msgid "type must be one of %(v)s"
 msgstr "type doit être l'un de %(v)s"
+
+msgid "unit cost"
+msgstr "coût unitaire"
 
 msgid "unit price"
 msgstr "prix unitaire"

@@ -1,0 +1,23 @@
+{% extends "core/base.html" %}{% load i18n cashier %}
+{% block title %}{% trans "Purchase of items" %}{% endblock %}
+{% block topbar %}{% trans "Purchase of items" %}{% endblock %}
+{% block content %}
+<div class="form-head"><span class="form-ic">{% icon "store" 26 %}</span><div><h1>{% trans "Purchase of items" %}</h1>
+<p class="muted">{% trans "Items bought for resale. The units enter the stock at their purchase price and the shop pays from its cash drawer or UVE. When a unit is sold, its price becomes the cost of the sale in the income statement." %}</p></div></div>
+<div class="panel"><form method="post" class="entry" novalidate id="purchase-form">{% csrf_token %}
+{% include "core/inc/fields.html" %}
+{% include "core/shop/_unit_lines.html" with form_id="purchase-form" %}
+<div class="preview" id="purchase-total" hidden></div>
+<div class="form-foot"><button class="btn primary" type="submit" id="submit-btn">{% trans "Record the purchase" %}</button> <a class="btn" href="{% url 'shops' %}">{% trans "Cancel" %}</a><span class="small muted">{% trans "Only record transactions that are completed and confirmed." %}</span></div>
+</form></div>
+<script>
+(function () {
+  var f = document.getElementById('purchase-form'); if (!f) return;
+  var q = f.querySelector('[name=quantity]'), c = f.querySelector('[name=unit_cost]'), out = document.getElementById('purchase-total');
+  var num = function (s) { return parseInt(String(s || '').replace(/[^\d]/g, ''), 10) || 0; };
+  var fmt = function (n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ' '); };
+  function show() { var t = num(q.value) * num(c.value); out.hidden = !t; out.textContent = '{{ _("Total to pay")|escapejs }}: ' + fmt(t) + ' FCFA'; }
+  q.addEventListener('input', show); c.addEventListener('input', show); show();
+})();
+</script>
+{% endblock %}

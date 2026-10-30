@@ -60,6 +60,9 @@ OPS = {
                    _("UVE sent from the shop to a cashier's UVE wallet. It is recorded on the cashier side too."),
                    "transfer"),
     "sale": (SF.SaleForm, sh.sell, _("Sale"), "", "store"),
+    "expense": (SF.ShopExpenseForm, sh.expense, _("Shop expense"),
+                _("An expense of the shop (rent, electricity, transport…), paid from its cash drawer or UVE."),
+                "expense"),
 }
 
 
@@ -593,7 +596,8 @@ def shop_reports(request):
     """Daily / weekly / monthly shop summary, on screen, in Excel and in PDF."""
     from django.http import HttpResponse
 
-    from core.reports.shops import ShopReportForm, shop_summary
+    from core.reports.engine import only_table
+    from core.reports.shops import ShopReportForm, income_statement, shop_summary
     from core.pdf import report_pdf
     from core.reports.xlsx import report_xlsx
     from core.services import operations as ops
@@ -601,12 +605,21 @@ def shop_reports(request):
     visible = sh.visible_shops(request.user).filter(active=True)
     data = request.GET.copy()
     fmt_ = data.pop("format", [None])[0]
+    data.pop("table", None)
     form = ShopReportForm(visible, data or None)
-    rep, period, d_from, d_to = shop_summary(form, visible, viewer=request.user)
+    kind = data.get("kind") or "summary"
+    if kind == "income":
+        if sh.is_restricted(request.user):  # the income statement needs every duty
+            raise DjangoPermissionDenied
+        rep, period, d_from, d_to = income_statement(form, visible)
+    else:
+        rep, period, d_from, d_to = shop_summary(form, visible, viewer=request.user)
+    if fmt_ in ("xlsx", "pdf"):
+        rep = only_table(rep, request)
     who = f"{request.user} ({request.user.get_role_display()})"
     if fmt_ in ("xlsx", "pdf"):
         ops.log_event(request.user, "report_export", report="shops", format=fmt_, filters=rep.title)
-        name = f"shop-report-{period}-{d_from}"
+        name = f"shop-{'income-statement' if kind == 'income' else 'report'}-{period}-{d_from}"
         if fmt_ == "xlsx":
             resp = HttpResponse(report_xlsx(rep, who),
                                 content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
@@ -617,3 +630,22 @@ def shop_reports(request):
         return resp
     return render(request, "core/report.html", {"rep": rep, "form": form, "query": data.urlencode(),
                                                        "period": period})
+
+
+@roles_required(*SHOP_DESK)
+def shop_purchase(request):
+    """Items bought for resale: units enter the stock at cost; the shop pays from cash or UVE."""
+    _need_duty(request.user, "purchase")
+    if (r := _shift_redirect(request)):
+        return r
+    form = SF.PurchaseForm(request.user, request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        resp = run_service(
+            request, form, lambda: sh.purchase(request.user, idempotency_key=form.cleaned_data["idem"],
+                                               **form.params()),
+            success=lambda t: _("%(type)s %(ref)s recorded: %(amt)s FCFA.") % {
+                "type": t.get_type_display(), "ref": t.reference, "amt": fmt(t.amount)},
+            on_success=lambda t: redirect("txn_detail", pk=t.pk))
+        if resp:
+            return resp
+    return render(request, "core/shop/purchase.html", {"form": form})

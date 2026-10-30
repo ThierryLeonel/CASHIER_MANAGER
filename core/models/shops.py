@@ -44,7 +44,8 @@ class Shop(models.Model):
         from .ledger import Account
 
         K = Account.Kind
-        for kind, label in ((K.CASH_DRAWER, "Cash drawer"), (K.UVE, "UVE wallet"), (K.ER, "ER wallet")):
+        for kind, label in ((K.CASH_DRAWER, "Cash drawer"), (K.UVE, "UVE wallet"), (K.ER, "ER wallet"),
+                            (K.SHOP_INVENTORY, "Stock at cost")):
             acct, created = Account.objects.get_or_create(
                 kind=kind, shop=self, shop_agent=None, defaults=dict(name=f"{self.name} · {label}"))
             if not created and acct.active != self.active:
@@ -53,6 +54,9 @@ class Shop(models.Model):
     def account(self, kind):
         from .ledger import Account
 
+        if kind == Account.Kind.SHOP_INVENTORY:  # added later: shops created before get it on first use
+            return Account.objects.get_or_create(kind=kind, shop=self, shop_agent=None,
+                                                 defaults=dict(name=f"{self.name} · Stock at cost"))[0]
         return Account.objects.get(kind=kind, shop=self, shop_agent=None)
 
     def payable_to(self, agent):
@@ -196,6 +200,8 @@ class StockUnit(models.Model):
     item = models.ForeignKey(ShopItem, on_delete=models.PROTECT, related_name="units")
     serial = models.CharField(_("serial number"), max_length=60, unique=True, null=True, blank=True)
     imei = models.CharField(_("IMEI"), max_length=20, unique=True, null=True, blank=True)
+    cost = models.DecimalField(_("unit cost"), max_digits=14, decimal_places=0, null=True, blank=True,
+                               help_text="Purchase price of the unit (set when it was bought through a purchase).")
     status = models.CharField(max_length=10, choices=Status.choices, default=Status.IN_STOCK, db_index=True)
     sale = models.ForeignKey(ItemSale, null=True, blank=True, on_delete=models.PROTECT, related_name="units")
     received_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name="+")

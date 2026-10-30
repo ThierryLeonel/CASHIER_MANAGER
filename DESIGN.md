@@ -121,6 +121,15 @@ Shops have their own **Shop opening balances** page (Shops workspace; super admi
 
 **Admin tab**: the super administrator has a third tab, **Admin**, next to Cashiers and Shops. It holds all administration, grouped: Admin tools; Settings (users & passwords, company profile, conversion rate, configuration); Opening balances (cashiers', shops'); Shops setup (shops & staff, services, items & rate); Capital; Data (import, audit log, clear data). The Cashiers and Shops menus keep only the daily work. Finance and the senior manager keep two tabs and their Capital link; the senior shop manager keeps Shops & staff and Services, items & rate in the shop menu.
 
+#### Section downloads, shop expenses and purchases, income statement (30/10/2026)
+**Downloads**: every report (cashiers' and shops') has a "Download" selector (the whole report or one section) beside the Excel / PDF buttons, and each section heading has its own Excel · PDF links (`?table=N`, `only_table()`).
+
+**Shop expenses** (new duty "Expenses and purchases"): category (the same expense categories as the cashiers), amount, paid from the cash drawer or UVE, description — Dr the category's expense account / Cr shop cash or UVE (`SHOP_EXPENSE`).
+
+**Shop purchases** (same duty): items bought for resale — category, item, number of units with one IMEI / serial line per unit, purchase price per unit, paid from cash or UVE, supplier, note. Dr **shop stock at cost** (`SHOP_INVENTORY`, one per shop, created on first use) / Cr cash or UVE (`SHOP_PURCHASE`); each unit keeps its cost. Selling a unit with a cost also posts Dr **cost of items sold** / Cr shop stock at cost; removing one posts Dr **stock written off** / Cr shop stock at cost (`SHOP_STOCK_OUT`). Units received without a purchase (opening stock, stock sent from head office) have no cost. The admin's single delete of a purchase takes its units out of stock (refused if one was sold).
+
+**Income statement per shop** (Shop reports › Which report: Income statement; staff with every duty, finance, managers, admin): item sales − cost of the items sold = margin on items; + Orange Money commissions (as recorded) + UVE→ER conversion gain = total income; − expenses by category − stock written off = total costs; net result. One column per shop plus all shops; daily, weekly, monthly or custom; Excel / PDF. The activity summary also has Expenses and Purchases columns.
+
 ### Users & passwords
 
 - Passwords are stored hashed: nobody — not even the super administrator — can read them. The super administrator's **Users & passwords** page (Administration) lists every user with role, zone, staff ID, last sign-in and status, and lets them **reset** a password (a strong one generated and shown once, or one they type, checked against the password rules), optionally forcing the user to choose their own at next sign-in, and **deactivate / activate** accounts (deactivation signs the user out at once; you cannot deactivate yourself or the last active super administrator). Every action is in the audit log.

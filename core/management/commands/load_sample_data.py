@@ -105,6 +105,14 @@ class Command(BaseCommand):
         sh.count_service(smgr, service=ShopService.objects.get(name__startswith="OTT"), count=4)
         sh.retrieve_sim(smgr, sim_number="699887766", holder_name="[SAMPLE] Client Ebai", id_type="CNI",
                         id_number="SAMPLE-1234567")
+        # an expense and a purchase of items for resale (bought at cost, one sold later at the catalogue price)
+        sh.expense(smgr, category=ExpenseCategory.objects.filter(active=True).first(), amount=D(8_000), pay="CASH",
+                   description="[SAMPLE] Electricity October")
+        sh.purchase(smgr, item=o["items"]["box"], units=[("356222222222222", "FB-0001"), ("", "FB-0002")],
+                    unit_cost=D(22_000), pay="CASH", supplier="[SAMPLE] Orange Cameroun", description="INV-0077")
+        fb = list(StockUnit.objects.filter(serial="FB-0001"))
+        sh.sell(smgr, units=fb, client_name="[SAMPLE] Client Tabe", client_address="Buea", client_country="Cameroon",
+                id_type="CNI", id_number="SAMPLE-55443", phone="677556677")
         # the Orange Money desk leaves first; the manager counts the till at closing (2 000 FCFA cash short)
         ss.close_shift(o["shop_om"])
         ss.close_shift(o["shop_air"])

@@ -211,6 +211,16 @@ def receipt_rows(t):
             rows.append((_("From"), str(t.source_account)))
         if t.dest_account_id:
             rows.append((_("To"), str(t.dest_account)))
+    if t.type == T.SHOP_EXPENSE and t.expense_category_id:
+        rows.append((_("Expense category"), str(t.expense_category)))
+    if t.type == T.SHOP_PURCHASE:
+        if t.supplier:
+            rows.append((_("Supplier"), t.supplier))
+        units = [m.unit for m in t.stock_moves.select_related("unit", "item").order_by("unit__imei", "unit__serial")
+                 if m.unit_id]
+        if units:
+            rows.append((_("Units bought"), f"{len(units)} × {units[0].item} @ {fmt(units[0].cost or 0)} FCFA — "
+                                           + ", ".join(u.ident for u in units)))
     if t.type in (T.CAPITAL_IN, T.CAPITAL_OUT, T.CAPITAL_MOVE):
         if t.fund_source:
             rows.append((_("Source of the funds") if t.type == T.CAPITAL_IN else _("Paid to / where it goes"),

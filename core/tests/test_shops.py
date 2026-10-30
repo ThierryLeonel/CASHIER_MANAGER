@@ -358,7 +358,7 @@ class ShopDutiesAndAdministration(OrgMixin, TestCase):
                                       "shop-sim_number": "690000123", "shop-address": "Mile 17", "shop-active": "on"})
         self.assertEqual(r.status_code, 302, r.content[:2000])
         new = Shop.objects.get(code="shop-mile17")
-        self.assertEqual(Account.objects.filter(shop=new).count(), 3)
+        self.assertEqual(Account.objects.filter(shop=new).count(), 4)  # cash, UVE, ER and stock at cost
         r = c.post(f"/shops/manage/?shop={new.pk}", {"action": "shop_save", "shop-name": "Shop Mile 17 Buea",
                                                     "shop-code": "shop-mile17", "shop-active": "on"})
         self.assertEqual(r.status_code, 302)
@@ -386,7 +386,8 @@ class ShopDutiesAndAdministration(OrgMixin, TestCase):
         # transfer to Molyko with all duties
         r = c.post(f"/shops/manage/?staff={u.pk}", {"action": "staff_save", "staff-first_name": "Ayuk",
                                                    "staff-shop": self.shop.pk,
-                                                   "staff-duties": ["OM", "AIRTIME", "SALES", "SERVICES", "AGENTS"]})
+                                                   "staff-duties": ["OM", "AIRTIME", "SALES", "SERVICES", "AGENTS",
+                                                                    "EXPENSES"]})
         self.assertEqual(r.status_code, 302, r.content[:2000])
         u.refresh_from_db()
         self.assertEqual((u.shop, u.shop_duties, u.username), (self.shop, "", "limbe.om"))
@@ -801,3 +802,96 @@ class AdminSpace(OrgMixin, TestCase):
         s = self.client_class()
         s.login(username="shop.senior", password=PW)
         self.assertContains(s.get("/shops/"), 'href="/shops/manage/"')
+
+
+class ShopExpensesPurchasesIncome(OrgMixin, TestCase):
+    def setUp(self):
+        self.make_org()
+        self.fund_all()
+        self.shop, self.m = self.o["shop"], self.o["shop_mgr"]
+        for kind, amt in ((K.CASH_DRAWER, 300000), (K.UVE, 800000), (K.ER, 150000)):
+            self.fund(self.shop.account(kind), amt)
+        open_shifts(self.o)
+
+    def client_for(self, u):
+        c = self.client_class()
+        self.assertTrue(c.login(username=u, password=PW))
+        return c
+
+    def test_expense_purchase_cost_of_sales_income_statement(self):
+        from core.models import ExpenseCategory, StockUnit
+        from core.reports.shops import ShopReportForm, income_statement
+
+        cat = ExpenseCategory.objects.first()
+        sh.expense(self.m, category=cat, amount=D(12000), pay="CASH", description="Electricity October")
+        sh.expense(self.m, category=cat, amount=D(3000), pay="UVE", description="Transport")
+        with self.assertRaises(BusinessError):
+            sh.expense(self.m, category=cat, amount=D(1), description="")
+        box = self.o["items"]["box"]
+        p = sh.purchase(self.m, item=box, units=[("356222222222222", "FB-01"), ("", "FB-02"), ("", "FB-03")],
+                        unit_cost=D(22000), pay="CASH", supplier="Orange Cameroun", description="INV-77")
+        self.assertEqual((p.amount, p.supplier), (D(66000), "Orange Cameroun"))
+        self.assertEqual(self.bal(self.shop.account(K.SHOP_INVENTORY)), D(66000))
+        b = sh.shop_balances(self.shop)
+        self.assertEqual((b[K.CASH_DRAWER], b[K.UVE]), (D(300000 - 12000 - 66000), D(797000)))
+        units = list(StockUnit.objects.filter(item=box).order_by("id"))
+        self.assertEqual([u.cost for u in units], [D(22000)] * 3)
+        sh.sell(self.m, units=units[:2], prices={box.pk: D(30000)}, client_name="X", client_address="Y",
+                client_country="Z", id_type="CNI", id_number="1", phone="677445566")
+        self.assertEqual(self.bal(self.shop.account(K.SHOP_INVENTORY)), D(22000))  # cost of the 2 sold left
+        sh.remove_unit(self.o["shop_senior"], serial="FB-03", note="damaged")
+        self.assertEqual(self.bal(self.shop.account(K.SHOP_INVENTORY)), D(0))
+        sh.cash_in(self.o["shop_om"], amount=D(50000), commission=D(300))
+        sh.convert(self.m, amount=D(100000))  # shop rate 3.5 % -> 3 500 gain
+        shops = Shop.objects.filter(active=True)
+        from core.services.days import douala_today
+        rep, *_x = income_statement(ShopReportForm(shops, {"kind": "income", "period": "day",
+                                                            "day": douala_today().isoformat()}), shops)
+        rows = {r["line"]: r[f"s{self.shop.pk}"] for r in rep.tables[0].rows}
+        self.assertEqual(rows["Item sales"], D(60000))
+        self.assertEqual(rows["Cost of the items sold"], D(44000))
+        self.assertEqual(rows["Margin on items"], D(16000))
+        self.assertEqual(rows["Orange Money commissions"], D(300))
+        self.assertEqual(rows["UVE→ER conversion gain"], D(3500))
+        self.assertEqual(rows["TOTAL INCOME"], D(19800))
+        self.assertEqual(rows["Stock written off"], D(22000))
+        self.assertEqual(rows["TOTAL COSTS"], D(15000 + 22000))
+        self.assertEqual(rows["NET RESULT"], D(19800 - 37000))
+
+    def test_pages_duties_and_section_downloads(self):
+        from core.models import ExpenseCategory
+
+        c = self.client_for("shop.molyko")
+        cat = ExpenseCategory.objects.first()
+        r = c.post("/shops/do/expense/", {"idem": str(uuid.uuid4()), "category": cat.pk, "amount": "8 000",
+                                          "pay": "CASH", "description": "Rent"})
+        self.assertEqual(r.status_code, 302, r.content[:1500])
+        kit = self.o["items"]["kit"]
+        self.assertContains(c.get("/shops/purchase/"), "Number of units bought")
+        r = c.post("/shops/purchase/", {"idem": str(uuid.uuid4()), "category": kit.category_id, "item": kit.pk,
+                                        "quantity": "2", "unit_imei_1": "", "unit_serial_1": "OEK-P1",
+                                        "unit_imei_2": "", "unit_serial_2": "OEK-P2", "unit_cost": "30 000",
+                                        "pay": "UVE", "supplier": "Supplier SA"})
+        self.assertEqual(r.status_code, 302, r.content[:1500])
+        pt = Transaction.objects.get(type=TxType.SHOP_PURCHASE)
+        rec = c.get(f"/transactions/{pt.pk}/")
+        for txt in ("Supplier SA", "OEK-P1", "OEK-P2", "30 000"):
+            self.assertContains(rec, txt)
+        # the expenses duty is needed; the Orange Money desk has not got it
+        om = self.client_for("shop.molyko.om")
+        self.assertEqual(om.get("/shops/do/expense/").status_code, 403)
+        self.assertEqual(om.get("/shops/purchase/").status_code, 403)
+        self.assertEqual(om.get("/shops/reports/?kind=income").status_code, 403)
+        # income statement page, and downloading one section only
+        fin = self.client_for("finance")
+        page = fin.get("/shops/reports/?kind=income&period=month")
+        self.assertContains(page, "NET RESULT")
+        self.assertContains(page, "The whole report")
+        week = fin.get("/shops/reports/?period=week")
+        self.assertContains(week, "&format=xlsx&table=0")
+        whole = fin.get("/shops/reports/?period=week&format=xlsx")
+        one = fin.get("/shops/reports/?period=week&format=xlsx&table=0")
+        self.assertEqual((whole.status_code, one.status_code), (200, 200))
+        self.assertLess(len(one.content), len(whole.content))
+        self.assertEqual(fin.get("/shops/reports/?kind=income&format=pdf&table=0").status_code, 200)
+        self.assertEqual(fin.get("/reports/reconciliation/?preset=all&format=xlsx&table=1").status_code, 200)

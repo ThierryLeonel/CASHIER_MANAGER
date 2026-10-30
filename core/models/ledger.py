@@ -40,11 +40,14 @@ class Account(models.Model):
         SHOP_PAYABLE = "SHOP_PAYABLE", _("Shop: position with a commercial agent")
         SHOP_SALES = "SHOP_SALES", _("Shop sales")
         OWNER_CAPITAL = "OWNER_CAPITAL", _("Owner's capital")
+        SHOP_INVENTORY = "SHOP_INVENTORY", _("Shop: stock at cost")
+        COST_OF_SALES = "COST_OF_SALES", _("Cost of items sold")
+        STOCK_LOSS = "STOCK_LOSS", _("Stock written off")
 
     ASSET_KINDS = (Kind.CASH_DRAWER, Kind.UVE, Kind.ER, Kind.MTN, Kind.BANK)
     CLOSING_KINDS = (Kind.CASH_DRAWER, Kind.UVE, Kind.ER, Kind.MTN)
     SYSTEM_KINDS = (Kind.CONVERSION_UPLIFT, Kind.RECON_ADJUSTMENT, Kind.OPENING_EQUITY, Kind.SHOP_SALES,
-                    Kind.OWNER_CAPITAL)
+                    Kind.OWNER_CAPITAL, Kind.COST_OF_SALES, Kind.STOCK_LOSS)
 
     kind = models.CharField(max_length=20, choices=Kind.choices)
     name = models.CharField(_("name"), max_length=150)
@@ -187,6 +190,9 @@ class TxType(models.TextChoices):
     CAPITAL_IN = "CAPITAL_IN", _("Capital injection")
     CAPITAL_OUT = "CAPITAL_OUT", _("Capital withdrawal")
     CAPITAL_MOVE = "CAPITAL_MOVE", _("Capital transfer")
+    SHOP_EXPENSE = "SHOP_EXPENSE", _("Shop: expense")
+    SHOP_PURCHASE = "SHOP_PURCHASE", _("Shop: purchase of items")
+    SHOP_STOCK_OUT = "SHOP_STOCK_OUT", _("Shop: stock written off")
 
 
 class Product(models.TextChoices):
@@ -242,6 +248,7 @@ class Transaction(models.Model):
                                    help_text="Capital injection: where the money comes from. Withdrawal: who / where "
                                              "it goes to.")
     fund_purpose = models.CharField(_("purpose"), max_length=255, blank=True)
+    supplier = models.CharField(_("supplier"), max_length=120, blank=True)
     description = models.CharField(max_length=255, blank=True)
     idempotency_key = models.UUIDField(null=True, blank=True, unique=True)
     reverses = models.OneToOneField("self", null=True, blank=True, on_delete=models.PROTECT,

@@ -211,3 +211,12 @@ class Filters:
         if self.customer:
             q &= Q(**{f"{prefix}counterparty": self.customer}) | Q(**{f"{prefix}counterparty_2": self.customer})
         return q
+
+
+def only_table(report, request):
+    """?table=N: the report reduced to that one table (to download a single section)."""
+    raw = request.GET.get("table")
+    if raw is None or not raw.isdigit() or int(raw) >= len(report.tables):
+        return report
+    t = report.tables[int(raw)]
+    return Report(report.key, f"{report.title} — {t.title}", report.filters_text, tables=[t], summary=[])

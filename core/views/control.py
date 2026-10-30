@@ -377,6 +377,11 @@ def report(request, key):
     f = Filters.from_form(form, request.user, force_customer=force)
     rep = fn(f)
     fmt_ = request.GET.get("format")
+    data.pop("table", None)
+    if fmt_ in ("xlsx", "pdf"):
+        from core.reports.engine import only_table
+
+        rep = only_table(rep, request)
     who = f"{request.user} ({request.user.get_role_display()})"
     if fmt_ in ("xlsx", "pdf"):
         ops.log_event(request.user, "report_export", report=key, format=fmt_, filters=f.text())

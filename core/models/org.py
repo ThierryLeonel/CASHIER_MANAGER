@@ -120,6 +120,7 @@ SHOP_DUTIES = [
     ("SALES", _("Item sales and stock")),
     ("SERVICES", _("Counted services and SIM retrieval")),
     ("AGENTS", _("Commercial agents and transfers to cashiers")),
+    ("EXPENSES", _("Expenses and purchases")),
 ]
 SHOP_DUTY_CODES = [c for c, _l in SHOP_DUTIES]
 

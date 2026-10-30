@@ -6,7 +6,7 @@ from django.utils.translation import gettext_lazy as _
 
 from core.forms import CustomerField, MoneyField
 from core.models import (
-    SHOP_DUTIES, SHOP_DUTY_CODES, Account, User, Zone, Counterparty, ItemCategory, ItemSale, Shop, ShopItem, ShopService, SimRetrieval, StockUnit,
+    ExpenseCategory, SHOP_DUTIES, SHOP_DUTY_CODES, Account, User, Zone, Counterparty, ItemCategory, ItemSale, Shop, ShopItem, ShopService, SimRetrieval, StockUnit,
 )
 
 K = Account.Kind
@@ -408,3 +408,46 @@ class ShopPositionOpeningForm(forms.Form):
         if not a or a <= 0:
             raise forms.ValidationError(_("Amount must be greater than zero."))
         return a
+
+
+PAY_FROM = [("CASH", _("Cash drawer")), ("UVE", _("UVE wallet"))]
+
+
+class ShopExpenseForm(ShopForm):
+    category = forms.ModelChoiceField(label=_("Expense category"), queryset=ExpenseCategory.objects.filter(active=True))
+    amount = MoneyField(label=_("Amount (FCFA)"))
+    pay = forms.ChoiceField(label=_("Paid from"), choices=PAY_FROM, widget=forms.RadioSelect, initial="CASH")
+    description = forms.CharField(label=_("Description"), max_length=255,
+                                  help_text=_("What was paid, e.g. electricity bill October, transport of stock."))
+
+
+class PurchaseForm(ShopForm):
+    """Items bought for resale: how many units, their IMEI / serial numbers, the unit cost and how it is paid."""
+
+    MAX_UNITS = StockForm.MAX_UNITS
+    category = forms.ModelChoiceField(label=_("Category"), queryset=ItemCategory.objects.filter(active=True))
+    item = forms.ModelChoiceField(label=_("Item"), queryset=ShopItem.objects.filter(active=True), widget=ItemWidget)
+    quantity = forms.IntegerField(label=_("Number of units bought"), min_value=1, max_value=StockForm.MAX_UNITS,
+                                  widget=forms.NumberInput(attrs={"min": 1, "inputmode": "numeric"}),
+                                  help_text=_("A line appears for each unit: type its IMEI and / or its serial "
+                                              "number."))
+    unit_cost = MoneyField(label=_("Purchase price per unit (FCFA)"))
+    pay = forms.ChoiceField(label=_("Paid from"), choices=PAY_FROM, widget=forms.RadioSelect, initial="CASH")
+    supplier = forms.CharField(label=_("Supplier"), max_length=120, required=False)
+    description = forms.CharField(label=_("Note (invoice number…)"), required=False, max_length=255)
+
+    unit_rows = StockForm.unit_rows
+
+    def clean(self):
+        cd = super().clean()
+        item, cat = cd.get("item"), cd.get("category")
+        if item and cat and item.category_id != cat.pk:
+            self.add_error("item", _("This item is not in the chosen category."))
+        cd["units"] = [(imei, ser) for _i, imei, ser in self.unit_rows()]
+        return cd
+
+    def params(self):
+        d = super().params()
+        for k in ("category", "quantity"):
+            d.pop(k, None)
+        return d

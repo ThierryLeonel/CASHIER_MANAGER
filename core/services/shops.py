@@ -44,7 +44,8 @@ DUTY_LABEL = dict(SHOP_DUTIES)
 # shop page / operation -> duty needed (segmented shops: each staff member has some of the duties)
 OP_DUTY = {"cashin": "OM", "cashout": "OM", "airtime": "AIRTIME", "convert": "AIRTIME", "sale": "SALES",
            "stock": "SALES", "service": "SERVICES", "retrieve": "SERVICES", "appro": "AGENTS", "er_supply": "AGENTS",
-           "destockage": "AGENTS", "pay_agent": "AGENTS", "agent_repay": "AGENTS", "to_cashier": "AGENTS"}
+           "destockage": "AGENTS", "pay_agent": "AGENTS", "agent_repay": "AGENTS", "to_cashier": "AGENTS",
+           "expense": "EXPENSES", "purchase": "EXPENSES"}
 
 
 # operation type -> duty that sees it; unlisted types (capital, openings, corrections) are for staff with all duties
@@ -55,6 +56,7 @@ TYPE_DUTY = {
     TxType.SHOP_APPRO: "AGENTS", TxType.SHOP_ER_SUPPLY: "AGENTS", TxType.SHOP_DESTOCK: "AGENTS",
     TxType.SHOP_AGENT_PAY: "AGENTS", TxType.SHOP_AGENT_REPAY: "AGENTS", TxType.SHOP_TO_DESK: "AGENTS",
     TxType.DESK_TO_SHOP: "AGENTS",
+    TxType.SHOP_EXPENSE: "EXPENSES", TxType.SHOP_PURCHASE: "EXPENSES", TxType.SHOP_STOCK_OUT: "SALES",
 }
 
 
@@ -373,12 +375,8 @@ def _clean_imei(v):
     return v
 
 
-def receive_stock(user, *, shop, item, units=None, serials="", note=""):
-    """Receive units into a shop's stock. `units` = [(imei, serial number)], one pair per unit, at least one of the
-    two for each; `serials` (text, one per line or comma-separated) is kept for the importer."""
-    _can_stock(user, shop)
-    if item is None or not item.active:
-        raise BusinessError(_("Choose an item."), "item")
+def _prepare_units(units=None, serials=""):
+    """[(imei, serial)] cleaned and checked: one of the two per unit, no duplicates, nothing already registered."""
     pairs = [(None, x) for x in _clean_serials(serials)] if serials else []
     for i, (imei, ser) in enumerate(units or [], start=1):
         imei, ser = _clean_imei(imei), (ser or "").strip() or None
@@ -397,13 +395,67 @@ def receive_stock(user, *, shop, item, units=None, serials="", note=""):
               if u.upper() in sers]
     if taken:
         raise BusinessError(_("Already registered: %(s)s") % {"s": ", ".join(taken)}, "units")
-    with transaction.atomic():
-        made = [StockUnit.objects.create(shop=shop, item=item, imei=imei, serial=ser, received_by=user, note=note)
-                for imei, ser in pairs]
-        for u in made:
-            StockMove.objects.create(shop=shop, item=item, unit=u, kind=StockMove.Kind.RECEIVED, quantity=1,
-                                     recorded_by=user, note=note)
+    return pairs
+
+
+def _create_units(user, shop, item, pairs, note, cost=None, txn=None):
+    made = [StockUnit.objects.create(shop=shop, item=item, imei=imei, serial=ser, cost=cost, received_by=user,
+                                     note=note) for imei, ser in pairs]
+    for u in made:
+        StockMove.objects.create(shop=shop, item=item, unit=u, kind=StockMove.Kind.RECEIVED, quantity=1,
+                                 transaction=txn, recorded_by=user, note=note)
     return made
+
+
+def receive_stock(user, *, shop, item, units=None, serials="", note=""):
+    """Receive units into a shop's stock without paying for them here (e.g. opening stock, stock sent by head
+    office). `units` = [(imei, serial number)]; `serials` (text) is kept for the importer. A purchase is recorded
+    with purchase()."""
+    _can_stock(user, shop)
+    if item is None or not item.active:
+        raise BusinessError(_("Choose an item."), "item")
+    pairs = _prepare_units(units, serials)
+    with transaction.atomic():
+        return _create_units(user, shop, item, pairs, note)
+
+
+def purchase(user, *, shop=None, item, units, unit_cost, pay="CASH", supplier="", description="",
+             idempotency_key=None):
+    """Items bought for resale: the units enter the stock at their cost; the shop pays from its cash drawer or UVE.
+    Shop stock at cost +, cash or UVE −. When a unit is sold, its cost becomes the cost of the sale."""
+    shop = shop_for(user, shop, "EXPENSES")
+    if item is None or not item.active:
+        raise BusinessError(_("Choose an item."), "item")
+    cost = _amt(unit_cost, "unit_cost")
+    if pay not in PAY_KINDS:
+        raise BusinessError(_("Choose how the purchase is paid."), "pay")
+    pairs = _prepare_units(units)
+    total = cost * len(pairs)
+    src = shop.account(PAY_KINDS[pay])
+    with transaction.atomic():
+        t = _record(user, [_spec(TxType.SHOP_PURCHASE, shop, [(shop.account(K.SHOP_INVENTORY), total), (src, -total)],
+                                 total, source_account=src, supplier=(supplier or "").strip()[:120],
+                                 description=(f"{len(pairs)} × {item.name} @ {fmt(cost)}"
+                                              + (f" — {description}" if description else "")))],
+                    idempotency_key)[0]
+        _create_units(user, shop, item, pairs, (supplier or "").strip()[:255], cost=cost, txn=t)
+    return t
+
+
+def expense(user, *, shop=None, category, amount, pay="CASH", description="", idempotency_key=None):
+    """An expense of the shop (rent, electricity, transport…), paid from its cash drawer or UVE."""
+    shop = shop_for(user, shop, "EXPENSES")
+    if category is None or not category.active:
+        raise BusinessError(_("Choose an active expense category."), "category")
+    if not (description or "").strip():
+        raise BusinessError(_("Describe the expense."), "description")
+    if pay not in PAY_KINDS:
+        raise BusinessError(_("Choose how the expense is paid."), "pay")
+    a = _amt(amount)
+    src = shop.account(PAY_KINDS[pay])
+    return _record(user, [_spec(TxType.SHOP_EXPENSE, shop, [(category.ledger_account, a), (src, -a)], a,
+                                expense_category=category, source_account=src, description=description.strip())],
+                   idempotency_key)[0]
 
 
 def remove_unit(user, *, serial, note):
@@ -419,9 +471,15 @@ def remove_unit(user, *, serial, note):
     if not (note or "").strip():
         raise BusinessError(_("Give the reason."), "note")
     with transaction.atomic():
+        t = None
+        if u.cost:  # a unit bought at a cost: its value leaves the stock as a loss
+            c = Decimal(u.cost)
+            t = _record(user, [_spec(TxType.SHOP_STOCK_OUT, u.shop, [(Account.system(K.STOCK_LOSS), c),
+                                                                    (u.shop.account(K.SHOP_INVENTORY), -c)], c,
+                                     description=f"{u.item.name} {u.ident} — {note.strip()}")], None)[0]
         StockUnit.objects.filter(pk=u.pk).update(status=StockUnit.Status.REMOVED, note=note.strip())
         StockMove.objects.create(shop=u.shop, item=u.item, unit=u, kind=StockMove.Kind.ADJUST, quantity=-1,
-                                 recorded_by=user, note=note.strip())
+                                 transaction=t, recorded_by=user, note=note.strip())
     return u
 
 
@@ -475,8 +533,11 @@ def sell(user, *, shop=None, units, item=None, unit_price=None, prices=None, cli
                 raise BusinessError(_("Set the price of %(i)s.") % {"i": it.name}, "units")
             total = price * len(its)
             serials = ", ".join(u.ident for u in its)
-            spec = _spec(TxType.SHOP_SALE, shop, [(shop.account(K.CASH_DRAWER), total),
-                                                  (Account.system(K.SHOP_SALES), -total)], total,
+            lines = [(shop.account(K.CASH_DRAWER), total), (Account.system(K.SHOP_SALES), -total)]
+            cogs = sum((Decimal(u.cost) for u in its if u.cost), Decimal(0))
+            if cogs:  # units bought at a cost: that cost leaves the stock and becomes the cost of the sale
+                lines += [(Account.system(K.COST_OF_SALES), cogs), (shop.account(K.SHOP_INVENTORY), -cogs)]
+            spec = _spec(TxType.SHOP_SALE, shop, lines, total,
                          client_phone=_phone(phone), payment_group=group,
                          description=(f"{len(its)} × {it.name} ({serials})"
                                       + (f" — {description}" if description else "")))

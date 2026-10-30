@@ -33,7 +33,11 @@ MONTHS = [_l("January"), _l("February"), _l("March"), _l("April"), _l("May"), _l
           _l("August"), _l("September"), _l("October"), _l("November"), _l("December")]
 
 
+KINDS_OF_REPORT = [("summary", _l("Activity summary")), ("income", _l("Income statement"))]
+
+
 class ShopReportForm(forms.Form):
+    kind = forms.ChoiceField(label=_l("Which report"), choices=KINDS_OF_REPORT, required=False, initial="summary")
     period = forms.ChoiceField(label=_l("Report"), choices=PERIODS, required=False, initial="day")
     day = forms.DateField(label=_l("Date"), required=False, widget=forms.DateInput(attrs={"type": "date"}))
     date_from = forms.DateField(label=_l("From (custom)"), required=False,
@@ -101,12 +105,14 @@ def _period_title(period, start, end):
 
 
 METRICS = ["cashin", "cashin_n", "cashout", "cashout_n", "commission", "airtime", "good_deal", "convert", "appro",
-           "er_supply", "destock", "agent_paid", "agent_repaid", "to_cashiers", "from_cashiers", "capital", "sales",
+           "er_supply", "destock", "agent_paid", "agent_repaid", "to_cashiers", "from_cashiers", "capital", "expenses",
+           "purchases", "sales",
            "units", "services", "retrievals", "hours", "diff_cash", "diff_uve", "diff_er"]
 TYPE_METRIC = {T.SHOP_CASHIN: "cashin", T.SHOP_CASHOUT: "cashout", T.SHOP_CONVERT: "convert",
                T.SHOP_APPRO: "appro", T.SHOP_ER_SUPPLY: "er_supply", T.SHOP_DESTOCK: "destock",
                T.SHOP_AGENT_PAY: "agent_paid", T.SHOP_AGENT_REPAY: "agent_repaid", T.SHOP_TO_DESK: "to_cashiers",
-               T.DESK_TO_SHOP: "from_cashiers", T.SHOP_SALE: "sales"}
+               T.DESK_TO_SHOP: "from_cashiers", T.SHOP_SALE: "sales", T.SHOP_EXPENSE: "expenses",
+               T.SHOP_PURCHASE: "purchases"}
 
 
 def _daily(shops, d_from, d_to, hours_of=None):
@@ -197,6 +203,7 @@ def _cols_control(first_key, first_label):
             Col("to_cashiers", _("UVE to cashiers"), "money", True),
             Col("from_cashiers", _("UVE from cashiers"), "money", True),
             Col("capital", _("Capital (net)"), "money", True),
+            Col("expenses", _("Expenses"), "money", True), Col("purchases", _("Purchases of items"), "money", True),
             Col("diff_cash", _("Cash difference (counted)"), "money", True),
             Col("diff_uve", _("UVE difference"), "money", True), Col("diff_er", _("ER difference"), "money", True),
             Col("cash_c", _("Cash at closing"), "money"), Col("uve_c", _("UVE at closing"), "money"),
@@ -218,7 +225,7 @@ COL_DUTY = {"cashin": "OM", "cashin_n": "OM", "cashout": "OM", "cashout_n": "OM"
             "airtime": "AIRTIME", "good_deal": "AIRTIME", "convert": "AIRTIME", "sales": "SALES", "units": "SALES",
             "services": "SERVICES", "retrievals": "SERVICES", "appro": "AGENTS", "er_supply": "AGENTS",
             "destock": "AGENTS", "agent_paid": "AGENTS", "agent_repaid": "AGENTS", "to_cashiers": "AGENTS",
-            "from_cashiers": "AGENTS", "capital": "ALL"}
+            "from_cashiers": "AGENTS", "capital": "ALL", "expenses": "EXPENSES", "purchases": "EXPENSES"}
 
 
 def _allowed(viewer):
@@ -328,6 +335,85 @@ def shop_summary(form, visible_shops, viewer=None):
              (None, _("ER in shops at closing"), sum((end_bal[s.pk]["er"] for s in shops), Z), "money")]
     rep.summary = [(label, v, kind) for duty, label, v, kind in tiles
                    if duties is None or duty is None or duty in duties]
+    return rep, period, d_from, d_to
+
+
+# ---------------------------------------------------------------- income statement per shop
+def income_statement(form, visible_shops):
+    """Income statement of each shop over the period (columns: shops, then the total).
+
+    Income: item sales − cost of the items sold (purchase price of the units sold) = margin on items,
+    + Orange Money commissions (as recorded with each cash-in / cash-out),
+    + UVE→ER conversion gain (ER received above the UVE converted).
+    Costs: expenses by category, stock written off (units removed that had a cost).
+    Result = income − costs. Airtime is sold at face value (no margin); capital, transfers and agent dealings
+    are not income or costs."""
+    from core.models import Account as A, ExpenseCategory
+
+    period, d_from, d_to, shops_qs, _buckets = resolve(form, visible_shops)
+    shops = list(shops_qs.filter(active=True).order_by("name"))
+    ids = [s.pk for s in shops]
+    tx = Transaction.objects.filter(shop_id__in=ids, business_date__gte=d_from, business_date__lte=d_to,
+                                    correction__isnull=True).exclude(type=T.REVERSAL)
+    val = defaultdict(lambda: defaultdict(lambda: Z))  # line -> shop id -> amount
+    for r in tx.filter(type=T.SHOP_SALE).values("shop_id").annotate(s=Sum("amount")):
+        val["sales"][r["shop_id"]] = r["s"] or Z
+    for r in tx.filter(type__in=[T.SHOP_CASHIN, T.SHOP_CASHOUT]).values("shop_id").annotate(s=Sum("commission")):
+        val["commission"][r["shop_id"]] = r["s"] or Z
+    for t in tx.filter(type=T.SHOP_CONVERT).only("shop_id", "amount", "amount_received"):
+        val["conversion"][t.shop_id] += (t.amount_received or t.amount) - t.amount
+    for kind, line in ((A.Kind.COST_OF_SALES, "cogs"), (A.Kind.STOCK_LOSS, "stock_loss")):
+        for r in Entry.objects.filter(account__kind=kind, transaction__in=tx).values("transaction__shop_id") \
+                .annotate(s=Sum("amount")):
+            val[line][r["transaction__shop_id"]] = r["s"] or Z
+    cats = {}
+    for r in tx.filter(type=T.SHOP_EXPENSE).values("shop_id", "expense_category_id").annotate(s=Sum("amount")):
+        val[f"exp_{r['expense_category_id']}"][r["shop_id"]] = r["s"] or Z
+        cats[r["expense_category_id"]] = True
+    cat_names = {c.pk: str(c) for c in ExpenseCategory.objects.filter(pk__in=list(cats))}
+
+    def line(label, key=None, values=None, bold=False):
+        row = {"line": label, "_bold": bold}
+        tot = Z
+        for s in shops:
+            v = values[s.pk] if values is not None else val[key][s.pk]
+            row[f"s{s.pk}"] = v
+            tot += v
+        row["total"] = tot
+        return row
+
+    def combine(*parts):
+        out = defaultdict(lambda: Z)
+        for sign, key in parts:
+            for s in shops:
+                out[s.pk] += sign * (val[key][s.pk] if isinstance(key, str) else key[s.pk])
+        return out
+
+    margin = combine((1, "sales"), (-1, "cogs"))
+    income = combine((1, margin), (1, "commission"), (1, "conversion"))
+    exp_keys = [f"exp_{cid}" for cid in sorted(cats, key=lambda c: cat_names.get(c, ""))]
+    costs = combine(*[(1, k) for k in exp_keys], (1, "stock_loss"))
+    result = combine((1, income), (-1, costs))
+    rows = [line(_("Item sales"), "sales"), line(_("Cost of the items sold"), "cogs"),
+            line(_("Margin on items"), values=margin, bold=True),
+            line(_("Orange Money commissions"), "commission"), line(_("UVE→ER conversion gain"), "conversion"),
+            line(_("TOTAL INCOME"), values=income, bold=True)]
+    rows += [line(_("Expense: %(c)s") % {"c": cat_names.get(int(k[4:]), "?")}, k) for k in exp_keys]
+    rows += [line(_("Stock written off"), "stock_loss"), line(_("TOTAL COSTS"), values=costs, bold=True),
+             line(_("NET RESULT"), values=result, bold=True)]
+    cols = [Col("line", "")] + [Col(f"s{s.pk}", s.name, "money") for s in shops]
+    if len(shops) > 1:
+        cols.append(Col("total", _("All shops"), "money"))
+    rep = Report("shop-income", _("Income statement — %(a)s to %(b)s") % {"a": d_from.strftime("%d/%m/%Y"),
+                                                                          "b": d_to.strftime("%d/%m/%Y")},
+                 ", ".join(s.name for s in shops) if len(shops) < 6 else _("%(n)s shops") % {"n": len(shops)})
+    rep.tables.append(Table(_("Income statement"), cols, rows,
+                            note=_("Cost of the items sold uses the purchase price of each unit sold (units received "
+                                   "without a purchase have no cost). Commissions are those recorded with each "
+                                   "cash-in and cash-out. Airtime is sold at face value.")))
+    tot = lambda key: sum((key[s.pk] for s in shops), Z)  # noqa: E731
+    rep.summary = [(_("Total income"), tot(income), "money"), (_("Total costs"), tot(costs), "money"),
+                   (_("Net result"), tot(result), "money")]
     return rep, period, d_from, d_to
 
 

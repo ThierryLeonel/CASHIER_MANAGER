@@ -6,17 +6,33 @@
 {% if not user.is_agent %}{% include "core/inc/filters.html" with filters_text=rep.filters_text %}{% else %}
 <form class="panel filters" method="get">{% for f in form.visible_fields %}{% if f.name == 'preset' or f.name == 'date_from' or f.name == 'date_to' %}<div class="field"><label>{{ f.label }}</label>{{ f }}</div>{% endif %}{% endfor %}<div class="field"><button class="btn primary">{% trans "Apply" %}</button></div></form>
 {% endif %}
-<div class="actions">
-  <a class="btn" href="?{{ query }}&format=xlsx">⬇ Excel (.xlsx)</a>
-  <a class="btn" href="?{{ query }}&format=pdf">⬇ PDF</a>
+<div class="actions dl-bar">
+  <label for="dl-table" class="small muted">{% trans "Download" %}</label>
+  <select id="dl-table" data-query="{{ query }}">
+    <option value="">{% trans "The whole report" %}</option>
+    {% for table in rep.tables %}<option value="{{ forloop.counter0 }}">{{ table.title }}</option>{% endfor %}
+  </select>
+  <a class="btn" data-dl="xlsx" href="?{{ query }}&format=xlsx">⬇ Excel (.xlsx)</a>
+  <a class="btn" data-dl="pdf" href="?{{ query }}&format=pdf">⬇ PDF</a>
 </div>
+<script>
+(function () {
+  var sel = document.getElementById('dl-table'); if (!sel) return;
+  function upd() {
+    document.querySelectorAll('[data-dl]').forEach(function (a) {
+      a.href = '?' + sel.dataset.query + '&format=' + a.dataset.dl + (sel.value !== '' ? '&table=' + sel.value : '');
+    });
+  }
+  sel.addEventListener('change', upd); upd();
+})();
+</script>
 {% if rep.summary %}
 <div class="grid" style="margin-bottom:14px">
 {% for label, value, kind in rep.summary %}<div class="tile"><div class="label">{{ label }}</div><div class="value{% if kind != 'money' %} text{% endif %}" style="font-size:1.05rem">{% if kind == 'money' %}{{ value|fcfa }}{% else %}{{ value }}{% endif %}</div></div>{% endfor %}
 </div>
 {% endif %}
 {% for table in rep.tables %}
-<h2>{{ table.title }}</h2>{% if table.note %}<p class="small muted">{{ table.note }}</p>{% endif %}
+<h2 class="tbl-head">{{ table.title }}{% if rep.tables|length > 1 %} <span class="tbl-dl"><a href="?{{ query }}&format=xlsx&table={{ forloop.counter0 }}" title="{% trans 'Download this section in Excel' %}">Excel</a> · <a href="?{{ query }}&format=pdf&table={{ forloop.counter0 }}" title="{% trans 'Download this section in PDF' %}">PDF</a></span>{% endif %}</h2>{% if table.note %}<p class="small muted">{{ table.note }}</p>{% endif %}
 {% if table.columns %}
 <div class="tbl-wrap"><table class="t">
 <thead><tr>{% for c in table.columns %}<th class="{% if c.kind == 'money' or c.kind == 'int' or c.kind == 'rate' %}money{% endif %}">{{ c.label }}</th>{% endfor %}</tr></thead>

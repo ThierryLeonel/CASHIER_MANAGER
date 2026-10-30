@@ -53,6 +53,10 @@
     {% if "SALES" in duties %}
     <a href="{% url 'shop_op' 'sale' %}" class="{% if request.path == '/shops/do/sale/' %}on{% endif %}">{% icon "store" %}<span>{% trans "Sell an item" %}</span></a>
     {% endif %}
+    {% if "EXPENSES" in duties %}
+    <a href="{% url 'shop_op' 'expense' %}" class="{% if request.path == '/shops/do/expense/' %}on{% endif %}">{% icon "expense" %}<span>{% trans "Expense" %}</span></a>
+    <a href="{% url 'shop_purchase' %}" class="{% if u == 'shop_purchase' %}on{% endif %}">{% icon "download" %}<span>{% trans "Purchase of items" %}</span></a>
+    {% endif %}
     {% if "SERVICES" in duties %}
     <a href="{% url 'shop_service' %}" class="{% if u == 'shop_service' %}on{% endif %}">{% icon "list" %}<span>{% trans "Services done" %}</span></a>
     <a href="{% url 'shop_retrieve' %}" class="{% if u == 'shop_retrieve' %}on{% endif %}">{% icon "users" %}<span>{% trans "SIM retrieval" %}</span></a>

@@ -490,3 +490,9 @@ input.auto { background: var(--soft); font-weight: 700; }
 .space-switch.three a { font-size: .82rem; padding: 8px 4px; }
 .space-switch.three a svg { display: none; }
 .space-switch.three a { font-size: .86rem; }
+/* reports: choose what to download */
+.dl-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.dl-bar select { padding: 9px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); color: var(--ink); font: inherit; max-width: 100%; }
+.tbl-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px; }
+.tbl-dl { font-size: .8rem; font-weight: 500; color: var(--muted); }
+.tbl-dl a { color: inherit; }

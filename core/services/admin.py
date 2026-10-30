@@ -122,7 +122,13 @@ def _release_shop_rows(txn_ids):
     """Shop rows hanging on transactions about to be deleted: a deleted sale puts its units back in stock."""
     sales = ItemSale.objects.filter(transaction_id__in=txn_ids)
     StockUnit.objects.filter(sale__in=sales).update(status=StockUnit.Status.IN_STOCK, sale=None)
-    StockMove.objects.filter(transaction_id__in=txn_ids).delete()
+    # a deleted purchase takes its units out of the stock again (refused when one was already sold)
+    bought = StockUnit.objects.filter(moves__transaction_id__in=txn_ids, moves__kind=StockMove.Kind.RECEIVED)
+    if bought.exclude(status=StockUnit.Status.IN_STOCK).exists():
+        raise BusinessError(_("Some units of this purchase were already sold or removed. Delete those first."))
+    bought_ids = list(bought.values_list("id", flat=True))
+    StockMove.objects.filter(Q(transaction_id__in=txn_ids) | Q(unit_id__in=bought_ids)).delete()
+    StockUnit.objects.filter(id__in=bought_ids).delete()
     sales.delete()
 
 

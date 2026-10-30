@@ -1,0 +1,35 @@
+{% load i18n %}<div class="unit-lines" id="unit-lines" data-l-unit="{% trans 'Unit' %}" data-l-imei="{% trans 'IMEI (15 digits)' %}" data-l-serial="{% trans 'Serial number' %}">
+  {% for n, imei, ser in form.unit_rows %}<div class="unit-line"><span class="unit-n">{% trans "Unit" %} {{ n }}</span><input type="text" name="unit_imei_{{ n }}" value="{{ imei }}" placeholder="{% trans 'IMEI (15 digits)' %}" inputmode="numeric" autocomplete="off" maxlength="20"><input type="text" name="unit_serial_{{ n }}" value="{{ ser }}" placeholder="{% trans 'Serial number' %}" autocomplete="off" maxlength="60"></div>{% endfor %}
+</div>
+<p class="small muted" id="unit-hint">{% trans "For each unit, type its IMEI, its serial number, or both. A number already registered is refused." %}</p>
+<script>
+(function () {
+  var form = document.getElementById('{{ form_id }}'); if (!form) return;
+  var qty = form.querySelector('input[name=quantity]'), box = document.getElementById('unit-lines');
+  var hint = document.getElementById('unit-hint'), fq = document.getElementById('fld-quantity');
+  if (fq) { fq.parentNode.insertBefore(box, fq.nextSibling); box.parentNode.insertBefore(hint, box.nextSibling); }
+  function line(n) {
+    var d = document.createElement('div'); d.className = 'unit-line';
+    var lab = document.createElement('span'); lab.className = 'unit-n'; lab.textContent = box.dataset.lUnit + ' ' + n;
+    var a = document.createElement('input'); a.type = 'text'; a.name = 'unit_imei_' + n; a.placeholder = box.dataset.lImei;
+    a.inputMode = 'numeric'; a.autocomplete = 'off'; a.maxLength = 20;
+    var b = document.createElement('input'); b.type = 'text'; b.name = 'unit_serial_' + n; b.placeholder = box.dataset.lSerial;
+    b.autocomplete = 'off'; b.maxLength = 60;
+    d.appendChild(lab); d.appendChild(a); d.appendChild(b); return d;
+  }
+  function sync() {
+    var n = Math.max(0, Math.min(parseInt(qty.value || '0', 10) || 0, 200));
+    while (box.children.length < n) box.appendChild(line(box.children.length + 1));
+    while (box.children.length > n) box.removeChild(box.lastChild);  // typed values of the remaining lines are kept
+    hint.hidden = n === 0;
+  }
+  qty.addEventListener('input', sync); sync();
+  // a scanner sends Enter after each code: jump to the next box instead of submitting
+  box.addEventListener('keydown', function (e) {
+    if (e.key !== 'Enter') return;
+    e.preventDefault();
+    var all = Array.prototype.slice.call(box.querySelectorAll('input')), i = all.indexOf(e.target);
+    if (all[i + 1]) all[i + 1].focus();
+  });
+})();
+</script>
