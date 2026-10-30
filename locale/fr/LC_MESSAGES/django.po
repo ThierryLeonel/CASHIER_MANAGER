@@ -30,6 +30,14 @@ msgid "%(agent)s owes the shop only %(owed)s FCFA."
 msgstr "%(agent)s ne doit à la boutique que %(owed)s FCFA."
 
 #, python-format
+msgid ""
+"%(cm)s already has exchanges, so it cannot be deleted. Untick Active to stop"
+" using it; its history stays."
+msgstr ""
+"%(cm)s a déjà des échanges : impossible de le supprimer. Décochez Active "
+"pour ne plus l'utiliser ; son historique reste."
+
+#, python-format
 msgid "%(cp)s is inactive."
 msgstr "%(cp)s est inactif."
 
@@ -387,6 +395,9 @@ msgstr "Les soldes réels ne peuvent pas être négatifs."
 msgid "Actual counted/read"
 msgstr "Réel compté/lu"
 
+msgid "Add a cash manager"
+msgstr "Ajouter un gestionnaire de cash"
+
 msgid "Add a category"
 msgstr "Ajouter une catégorie"
 
@@ -665,6 +676,9 @@ msgstr "Au moins un super administrateur actif doit rester."
 msgid "Attendance"
 msgstr "Présences"
 
+msgid "Attendance summary"
+msgstr "Résumé des présences"
+
 msgid "Audit events"
 msgstr "Événements d'audit"
 
@@ -882,6 +896,14 @@ msgstr "Espèces des boutiques à la clôture"
 
 msgid "Cash manager"
 msgstr "Gestionnaire de cash"
+
+#, python-format
+msgid "Cash manager %(cm)s deleted."
+msgstr "Gestionnaire de cash %(cm)s supprimé."
+
+#, python-format
+msgid "Cash manager %(cm)s saved."
+msgstr "Gestionnaire de cash %(cm)s enregistré."
 
 msgid "Cash manager / bank"
 msgstr "Gestionnaire de cash / banque"
@@ -1732,6 +1754,13 @@ msgstr ""
 "Supprimer ce compte ? Seul un compte qui n'a jamais rien enregistré peut "
 "être supprimé."
 
+msgid ""
+"Delete this cash manager? One with exchanges cannot be deleted — untick "
+"Active instead."
+msgstr ""
+"Supprimer ce gestionnaire de cash ? Un gestionnaire ayant des échanges ne "
+"peut pas être supprimé — décochez plutôt Active."
+
 msgid "Delete this shop? Only a shop that was never used can be deleted."
 msgstr ""
 "Supprimer cette boutique ? Seule une boutique jamais utilisée peut être "
@@ -1865,6 +1894,10 @@ msgstr ""
 
 msgid "Edit"
 msgstr "Modifier"
+
+#, python-format
+msgid "Edit %(n)s"
+msgstr "Modifier %(n)s"
 
 #, python-format
 msgid "Edit %(s)s"
@@ -2243,6 +2276,9 @@ msgstr "Entrées et sorties de chaque caisse, portefeuille SIM et banque"
 
 msgid "In stock"
 msgstr "En stock"
+
+msgid "Inactive"
+msgstr "Inactif"
 
 #, python-format
 msgid "Incompatible asset types: %(a)s cannot be transferred to %(b)s."
@@ -2637,6 +2673,9 @@ msgstr ""
 
 msgid "No capital movement in this period."
 msgstr "Aucun mouvement de capital sur cette période."
+
+msgid "No cash manager yet."
+msgstr "Aucun gestionnaire de cash pour l'instant."
 
 msgid "No closing count"
 msgstr "Pas de comptage de clôture"
@@ -3271,6 +3310,9 @@ msgstr "Personne"
 
 msgid "Person and SIM registered"
 msgstr "Personne et SIM enregistrées"
+
+msgid "Phone / SIM number"
+msgstr "Téléphone / numéro SIM"
 
 msgid "Point of sale (POS)"
 msgstr "Point de vente (PDV)"
@@ -4858,6 +4900,11 @@ msgstr ""
 "Décochez pour fermer la boutique : elle disparaît des listes, son historique"
 " reste."
 
+msgid "Untick to stop using this cash manager; past exchanges stay."
+msgstr ""
+"Décochez pour ne plus utiliser ce gestionnaire de cash ; les échanges passés"
+" restent."
+
 msgid ""
 "Until a logo is uploaded, the first letter of the company name is shown."
 msgstr ""
@@ -5083,6 +5130,10 @@ msgstr "Votre compte n'est lié à aucune boutique ouverte."
 
 msgid "Your drawers and wallets (book balances)"
 msgstr "Vos caisses et portefeuilles (soldes comptables)"
+
+#, python-format
+msgid "Your duties only: %(d)s"
+msgstr "Vos tâches uniquement : %(d)s"
 
 #, python-format
 msgid "Your entries are recorded on business day %(d)s."

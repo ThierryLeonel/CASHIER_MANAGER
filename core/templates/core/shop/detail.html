@@ -8,8 +8,8 @@
   <div class="bal k-CASH_DRAWER"><span class="bal-label">{% trans "Cash drawer" %}</span><span class="bal-value">{{ bal.CASH_DRAWER|fcfa }}</span><span class="bal-unit">FCFA</span></div>
   <div class="bal k-UVE"><span class="bal-label">{% trans "UVE" %}</span><span class="bal-value">{{ bal.UVE|fcfa }}</span><span class="bal-unit">FCFA</span></div>
   <div class="bal k-ER"><span class="bal-label">{% trans "ER" %}</span><span class="bal-value">{{ bal.ER|fcfa }}</span><span class="bal-unit">FCFA</span></div>
-  <div class="bal k-MTN"><span class="bal-label">{% trans "Owed to agents" %}</span><span class="bal-value">{{ bal.owed_agents|fcfa }}</span><span class="bal-unit">FCFA</span></div>
-  <div class="bal k-BANK"><span class="bal-label">{% trans "Agents owe the shop" %}</span><span class="bal-value">{{ bal.owed_by_agents|fcfa }}</span><span class="bal-unit">FCFA</span></div>
+  {% if sees_agents %}<div class="bal k-MTN"><span class="bal-label">{% trans "Owed to agents" %}</span><span class="bal-value">{{ bal.owed_agents|fcfa }}</span><span class="bal-unit">FCFA</span></div>
+  <div class="bal k-BANK"><span class="bal-label">{% trans "Agents owe the shop" %}</span><span class="bal-value">{{ bal.owed_by_agents|fcfa }}</span><span class="bal-unit">FCFA</span></div>{% endif %}
 </div>
 {% if user.is_shop_manager %}{% if my_shift %}<div class="msg info small">{% blocktrans with t=my_shift.opened_at|date:"H:i" %}Your shift is open since {{ t }}.{% endblocktrans %} <a href="{% url 'shop_shift' %}">{% trans "Close my shift" %}</a></div>{% else %}<div class="msg warning">{% trans "Your shift is closed. Open it (count the till) before recording." %} <a class="btn small primary" href="{% url 'shop_shift' %}">{% trans "Open my shift" %}</a></div>{% endif %}{% endif %}
 {% if can_record %}{% with duties=user.shop_duty_set %}

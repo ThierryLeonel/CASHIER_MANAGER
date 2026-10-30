@@ -657,3 +657,21 @@ class CompanyProfileForm(forms.ModelForm):
         except LogoError as e:
             raise forms.ValidationError(_("The file is larger than 3 MB.") if str(e) == "too_big"
                                         else _("Upload a PNG, JPEG or WEBP image."))
+
+
+class CashManagerForm(forms.ModelForm):
+    """Add / edit a cash manager (finance manager, super administrator)."""
+
+    phone = forms.CharField(label=_("Phone / SIM number"), max_length=20, widget=forms.TextInput(attrs={"inputmode": "tel"}))
+
+    class Meta:
+        model = CashManager
+        fields = ["name", "phone", "notes", "active"]
+        help_texts = {"active": _("Untick to stop using this cash manager; past exchanges stay.")}
+
+    def clean_phone(self):
+        v = self.cleaned_data.get("phone") or ""
+        try:
+            return normalize_sim(v)
+        except SimNumberError as exc:
+            raise forms.ValidationError(str(exc))

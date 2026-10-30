@@ -154,32 +154,43 @@ def shop_detail(request, pk):
     b = sh.shop_balances(shop)
     by, svc, ret = _activity([shop], d_from, d_to)
     act = by.get(shop.pk, {})
+    user = request.user
+    types = sh.visible_types(user)  # segmented shop: a staff member sees only the operations of their duties
+    restricted = types is not None
     summary = []
     for t in SHOP_TYPES:
         row = act.get(t)
-        if row:
+        if row and (types is None or t in types):
             summary.append(dict(label=TxType(t).label, n=row["n"], amt=row["amt"], com=row["com"]))
+    sees_services = user.has_shop_duty("SERVICES")
     svc_rows = ServiceCount.objects.filter(shop=shop, business_date__gte=d_from, business_date__lte=d_to) \
-        .values("service__name").annotate(n=Sum("count")).order_by("service__name")
+        .values("service__name").annotate(n=Sum("count")).order_by("service__name") if sees_services else []
     recent = Transaction.objects.filter(shop=shop).select_related("counterparty", "entered_by", "correction") \
-        .order_by("-posted_at")[:25]
+        .order_by("-posted_at")
+    if restricted:
+        recent = recent.filter(type__in=types)
+    recent = recent[:25]
     positions = [(a.shop_agent, sum((e.amount for e in a.entries.all()), Decimal(0)))
                  for a in Account.objects.filter(kind=K.SHOP_PAYABLE, shop=shop).select_related("shop_agent")
-                 .prefetch_related("entries")]
-    per_user = {r["entered_by_id"]: r for r in Transaction.objects.filter(
-        shop=shop, business_date__gte=d_from, business_date__lte=d_to, correction__isnull=True)
-        .exclude(type=TxType.REVERSAL).values("entered_by_id").annotate(n=Count("id"), amt=Sum("amount"),
-                                                                         com=Sum("commission"))}
-    staff_rows = [dict(user=u, n=(per_user.get(u.pk) or {}).get("n") or 0,
-                       amt=(per_user.get(u.pk) or {}).get("amt") or 0, com=(per_user.get(u.pk) or {}).get("com"))
-                  for u in User.objects.filter(shop=shop).order_by("-is_active", "username")]
+                 .prefetch_related("entries")] if user.has_shop_duty("AGENTS") else []
+    staff_rows = []
+    if not restricted:
+        per_user = {r["entered_by_id"]: r for r in Transaction.objects.filter(
+            shop=shop, business_date__gte=d_from, business_date__lte=d_to, correction__isnull=True)
+            .exclude(type=TxType.REVERSAL).values("entered_by_id").annotate(n=Count("id"), amt=Sum("amount"),
+                                                                             com=Sum("commission"))}
+        staff_rows = [dict(user=u, n=(per_user.get(u.pk) or {}).get("n") or 0,
+                           amt=(per_user.get(u.pk) or {}).get("amt") or 0,
+                           com=(per_user.get(u.pk) or {}).get("com"))
+                      for u in User.objects.filter(shop=shop).order_by("-is_active", "username")]
     owed = [(ag, -v) for ag, v in positions if v < 0]
     owed_by = [(ag, v) for ag, v in positions if v > 0]
     return render(request, "core/shop/detail.html", {
-        "shop": shop, "bal": b, "summary": summary, "svc_rows": svc_rows, "retrievals": ret.get(shop.pk, 0),
+        "shop": shop, "bal": b, "summary": summary, "svc_rows": svc_rows,
+        "retrievals": ret.get(shop.pk, 0) if sees_services else 0, "restricted": restricted,
+        "sees_agents": user.has_shop_duty("AGENTS"), "sees_services": sees_services,
         "recent": recent, "staff_rows": staff_rows, "owed": owed, "owed_by": owed_by, "d_from": d_from, "d_to": d_to,
-        "can_record": request.user.role in SHOP_DESK and (not request.user.is_shop_manager
-                                                          or request.user.shop_id == shop.pk),
+        "can_record": user.role in SHOP_DESK and (not user.is_shop_manager or user.shop_id == shop.pk),
         "rate": ShopConversionRate.current(), "my_shift": ss.current_shift(request.user)})
 
 
@@ -283,19 +294,24 @@ def shop_transactions(request):
     qs = Transaction.objects.filter(shop__in=shops_qs, business_date__gte=d_from, business_date__lte=d_to) \
         .select_related("shop", "counterparty", "entered_by", "correction").order_by("-posted_at")
     shop_id, typ = request.GET.get("shop") or "", request.GET.get("type") or ""
+    allowed = sh.visible_types(user)
+    types = [t for t in SHOP_TYPES if allowed is None or t in allowed]
+    if allowed is not None:
+        qs = qs.filter(type__in=allowed)
     if shop_id.isdigit():
         qs = qs.filter(shop_id=shop_id)
-    if typ in SHOP_TYPES:
+    if typ in types:
         qs = qs.filter(type=typ)
     totals = qs.exclude(type=TxType.REVERSAL).aggregate(amt=Sum("amount"), com=Sum("commission"))
     page = Paginator(qs, 50).get_page(request.GET.get("page"))
     return render(request, "core/shop/transactions.html", {
-        "page": page, "shops": shops_qs, "types": [(t, TxType(t).label) for t in SHOP_TYPES], "shop_id": shop_id,
+        "page": page, "shops": shops_qs, "types": [(t, TxType(t).label) for t in types], "shop_id": shop_id,
         "typ": typ, "d_from": d_from, "d_to": d_to, "totals": totals})
 
 
 @roles_required(*SHOP_ROLES)
 def shop_retrievals(request):
+    _need_duty(request.user, "retrieve")
     d_from, d_to = _period(request, default_days=30)
     q = (request.GET.get("q") or "").strip()
     qs = SimRetrieval.objects.filter(shop__in=sh.visible_shops(request.user), business_date__gte=d_from,
@@ -308,6 +324,7 @@ def shop_retrievals(request):
 
 @roles_required(*SHOP_ROLES)
 def shop_services_report(request):
+    _need_duty(request.user, "service")
     d_from, d_to = _period(request, default_days=30)
     shops_qs = sh.visible_shops(request.user)
     rows = ServiceCount.objects.filter(shop__in=shops_qs, business_date__gte=d_from, business_date__lte=d_to) \
@@ -320,6 +337,7 @@ def shop_services_report(request):
 @roles_required(*SHOP_ROLES)
 def shop_stock(request):
     user = request.user
+    _need_duty(user, "stock")
     shops_qs = list(sh.visible_shops(user).filter(active=True))
     items = list(ShopItem.objects.filter(active=True).select_related("category"))
     levels = {(m["shop_id"], m["item_id"]): m["n"] for m in
@@ -548,7 +566,7 @@ def shop_reconciliation(request, pk):
         except BusinessError as e:
             target = review_form if request.POST.get("action") == "review" else force_form
             target.add_error(e.field if e.field in target.fields else None, e.message)
-    rec = ss.day_reconciliation(shop, day)
+    rec = ss.day_reconciliation(shop, day, viewer=request.user)
     return render(request, "core/shop/recon.html", {
         "rec": rec, "shop": shop, "day": day, "status_label": ss.STATUS_LABELS[rec["status"]],
         "can_review": can_review, "review_form": review_form, "force_form": force_form,
@@ -583,7 +601,7 @@ def shop_reports(request):
     data = request.GET.copy()
     fmt_ = data.pop("format", [None])[0]
     form = ShopReportForm(visible, data or None)
-    rep, period, d_from, d_to = shop_summary(form, visible)
+    rep, period, d_from, d_to = shop_summary(form, visible, viewer=request.user)
     who = f"{request.user} ({request.user.get_role_display()})"
     if fmt_ in ("xlsx", "pdf"):
         ops.log_event(request.user, "report_export", report="shops", format=fmt_, filters=rep.title)

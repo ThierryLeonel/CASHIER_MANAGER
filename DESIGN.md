@@ -101,6 +101,13 @@ A movement on a cashier-side account is posted in that subzone's open business d
 
 **Sales of several items**: one sale to one client can contain any number of units of any items. The page lists everything in stock by category and item (filter + search by item or IMEI/serial); the cashier ticks the units, the basket shows each item with its quantity, an editable unit price and the total; the client's details are entered once. Each item is posted as its own sale line, all lines sharing one group and **one receipt** that lists every item with its serials and the total.
 
+#### Cash managers, report sections, duty-based views (30/10/2026)
+**Cash managers** — the finance manager (and the super admin) add, edit (name, phone/SIM, notes, active) and delete cash managers on the Cash managers page. One with exchanges cannot be deleted (its account has entries): untick Active instead; inactive ones disappear from the exchange form.
+
+**Shop report** now also has a **SIM retrievals** table (date, shop, SIM, new ICCID, person, ID, phone, recorded by) and an **Attendance summary** (per staff: duties, days worked, shifts, hours, still open, closed by the senior), plus a SIM retrievals tile and a staff-hours tile.
+
+**Duty-based views** — a staff member who does not have every duty sees only what belongs to their duties, everywhere: transaction detail (404 otherwise), shop transactions list and its type filter, the shop page (activity, recent operations; agent positions only with the agents duty; services only with the services duty; no staff table), SIM retrievals and services pages (services duty), stock (sales duty), the daily reconciliation (their operations and their own shifts; the till balances stay visible) and the shop report (only the columns, tiles and tables of their duties, their own hours and attendance; "Your duties only" is shown). Capital and opening entries are only for staff with every duty. Operation → duty: cash-in/out → Orange Money; airtime, UVE→ER → Airtime; item sale → Sales; appro, ER supply, destockage, payments with agents, UVE to/from cashiers → Agents.
+
 ### Users & passwords
 
 - Passwords are stored hashed: nobody — not even the super administrator — can read them. The super administrator's **Users & passwords** page (Administration) lists every user with role, zone, staff ID, last sign-in and status, and lets them **reset** a password (a strong one generated and shown once, or one they type, checked against the password rules), optionally forcing the user to choose their own at next sign-in, and **deactivate / activate** accounts (deactivation signs the user out at once; you cannot deactivate yourself or the last active super administrator). Every action is in the audit log.

@@ -124,7 +124,7 @@ def close_shift(user, *, shift=None, cash=None, uve=None, er=None, note=""):
 
 
 # ---------------------------------------------------------------- daily reconciliation
-def day_reconciliation(shop, day):
+def day_reconciliation(shop, day, viewer=None):
     accounts = {k: shop.account(kind) for k, kind in KINDS}
     rows = []
     shifts = list(ShopShift.objects.filter(shop=shop, business_date=day).select_related("user", "closed_by")
@@ -180,6 +180,16 @@ def day_reconciliation(shop, day):
         status = "DIFFERENCE"
     else:
         status = "BALANCED"
+    if viewer is not None:  # a staff member with some duties only sees their operations and their own shifts
+        from .shops import TYPE_DUTY, is_restricted
+
+        if is_restricted(viewer):
+            duties = viewer.shop_duty_set
+            keep = {str(TxType(t).label) for t, d in TYPE_DUTY.items() if d in duties}
+            ops = [o for o in ops if str(o["label"]) in keep]
+            shifts = [x for x in shifts if x.user_id == viewer.pk]
+            if "SERVICES" not in duties:
+                services = []
     return dict(shop=shop, day=day, rows=rows, ops=ops, services=services, shifts=shifts, still_open=still_open,
                 first_open=first_open, last_close=last_close, status=status,
                 commission=sum((o["com"] or 0) for o in ops),

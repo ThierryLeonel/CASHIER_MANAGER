@@ -46,6 +46,37 @@ OP_DUTY = {"cashin": "OM", "cashout": "OM", "airtime": "AIRTIME", "convert": "AI
            "destockage": "AGENTS", "pay_agent": "AGENTS", "agent_repay": "AGENTS", "to_cashier": "AGENTS"}
 
 
+# operation type -> duty that sees it; unlisted types (capital, openings, corrections) are for staff with all duties
+TYPE_DUTY = {
+    TxType.SHOP_CASHIN: "OM", TxType.SHOP_CASHOUT: "OM",
+    TxType.SHOP_AIRTIME: "AIRTIME", TxType.SHOP_CONVERT: "AIRTIME",
+    TxType.SHOP_SALE: "SALES",
+    TxType.SHOP_APPRO: "AGENTS", TxType.SHOP_ER_SUPPLY: "AGENTS", TxType.SHOP_DESTOCK: "AGENTS",
+    TxType.SHOP_AGENT_PAY: "AGENTS", TxType.SHOP_AGENT_REPAY: "AGENTS", TxType.SHOP_TO_DESK: "AGENTS",
+    TxType.DESK_TO_SHOP: "AGENTS",
+}
+
+
+def is_restricted(user):
+    """A shop staff member who does not have every duty (segmented shop)."""
+    from core.models import SHOP_DUTY_CODES
+
+    return user.is_shop_manager and len(user.shop_duty_set) < len(SHOP_DUTY_CODES)
+
+
+def visible_types(user):
+    """Operation types the user may see; None = all of them."""
+    if not is_restricted(user):
+        return None
+    duties = user.shop_duty_set
+    return [t for t, d in TYPE_DUTY.items() if d in duties]
+
+
+def can_see_type(user, type_):
+    types = visible_types(user)
+    return types is None or type_ in types
+
+
 def check_duty(user, duty):
     if duty and not user.has_shop_duty(duty):
         raise PermissionDenied(_("This is not one of your duties in the shop (%(d)s). Ask the senior shop manager.")

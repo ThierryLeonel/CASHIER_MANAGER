@@ -547,11 +547,14 @@ class ShopReports(OrgMixin, TestCase):
 
         today = douala_today()
         shops = Shop.objects.filter(active=True)
-        for period, tables in (("day", 3), ("week", 5), ("month", 5)):
+        for period, tables in (("day", 5), ("week", 7), ("month", 7)):
             form = ShopReportForm(shops, {"period": period, "day": today.isoformat()})
             rep, p, d_from, d_to = shop_summary(form, shops)
             self.assertEqual(len(rep.tables), tables)
-            by_shop = rep.tables[-3].rows[0]
+            titles = [t.title for t in rep.tables]
+            self.assertIn("SIM retrievals", titles)
+            self.assertIn("Attendance summary", titles)
+            by_shop = next(t for t in rep.tables if t.title == "By shop — activity").rows[0]
             self.assertEqual((by_shop["cashin"], by_shop["commission"], by_shop["good_deal"], by_shop["services"]),
                              (D(50000), D(250), D(10000), 3))
             self.assertEqual(by_shop["cash_c"], D(360000))
@@ -564,3 +567,108 @@ class ShopReports(OrgMixin, TestCase):
         self.assertContains(fin.get("/shops/reports/?period=month"), "Monthly shop report")
         self.assertEqual(self.client_for("shop.molyko").get("/shops/reports/").status_code, 200)
         self.assertEqual(self.client_for("cashier.fako1").get("/shops/reports/").status_code, 403)
+
+
+class DutyBasedViews(OrgMixin, TestCase):
+    """A segmented shop's staff see only the operations of their duties, everywhere."""
+
+    def setUp(self):
+        self.make_org()
+        self.fund_all()
+        self.shop = self.o["shop"]
+        for kind, amt in ((K.CASH_DRAWER, 300000), (K.UVE, 800000), (K.ER, 150000)):
+            self.fund(self.shop.account(kind), amt)
+        open_shifts(self.o)
+        self.cashin = sh.cash_in(self.o["shop_om"], amount=D(50000), commission=D(250))
+        self.air = sh.airtime(self.o["shop_air"], amount=D(7000), kind="GOOD_DEAL")
+        sh.retrieve_sim(self.o["shop_air"], sim_number="699887766", holder_name="Ebai Joseph", id_type="CNI",
+                        id_number="1234567")
+
+    def client_for(self, u):
+        c = self.client_class()
+        self.assertTrue(c.login(username=u, password=PW))
+        return c
+
+    def test_orange_money_desk_sees_only_orange_money(self):
+        c = self.client_for("shop.molyko.om")
+        self.assertEqual(c.get(f"/transactions/{self.cashin.pk}/").status_code, 200)
+        self.assertEqual(c.get(f"/transactions/{self.air.pk}/").status_code, 404)
+        lst = c.get("/shops/transactions/")
+        self.assertContains(lst, self.cashin.reference)
+        self.assertNotContains(lst, self.air.reference)
+        page = c.get(f"/shops/{self.shop.pk}/")
+        self.assertContains(page, "Orange Money cash-in")
+        self.assertNotContains(page, "airtime sale")
+        self.assertNotContains(page, "Owed to agents")
+        self.assertNotContains(page, "Staff and duties")
+        for url in ("/shops/retrievals/", "/shops/services/", "/shops/stock/"):
+            self.assertEqual(c.get(url).status_code, 403, url)
+        rep = c.get("/shops/reports/?period=week")
+        self.assertContains(rep, "Your duties only")
+        self.assertContains(rep, "Cash-in")
+        self.assertNotContains(rep, "of which good deal")
+        self.assertNotContains(rep, "Ebai Joseph")  # SIM retrievals belong to the services duty
+        self.assertNotContains(rep, "Molyko airtime desk")  # attendance: own shifts only
+        rec = c.get(f"/shops/{self.shop.pk}/reconciliation/")
+        self.assertContains(rec, "Orange Money cash-in")
+        self.assertNotContains(rec, "airtime sale")
+
+    def test_airtime_desk_and_full_manager(self):
+        c = self.client_for("shop.molyko.airtime")
+        self.assertEqual(c.get(f"/transactions/{self.cashin.pk}/").status_code, 404)
+        self.assertEqual(c.get(f"/transactions/{self.air.pk}/").status_code, 200)
+        rep = c.get("/shops/reports/?period=week")
+        self.assertContains(rep, "of which good deal")
+        self.assertContains(rep, "Ebai Joseph")
+        self.assertNotContains(rep, "Cash-in")
+        full = self.client_for("shop.molyko")
+        self.assertEqual(full.get(f"/transactions/{self.air.pk}/").status_code, 200)
+        r = full.get("/shops/reports/?period=week")
+        for txt in ("Cash-in", "of which good deal", "Ebai Joseph", "Molyko airtime desk", "Attendance summary"):
+            self.assertContains(r, txt)
+        self.assertNotContains(r, "Your duties only")
+
+
+class CashManagerAdministration(OrgMixin, TestCase):
+    def setUp(self):
+        self.make_org()
+        self.fund_all()
+
+    def client_for(self, u):
+        c = self.client_class()
+        self.assertTrue(c.login(username=u, password=PW))
+        return c
+
+    def test_finance_adds_edits_deletes_cash_managers(self):
+        from core.models import CashManager
+        from core.services import operations as ops
+
+        fin = self.client_for("finance")
+        page = fin.get("/cash-managers/")
+        self.assertContains(page, "Add a cash manager")
+        r = fin.post("/cash-managers/", {"action": "cm_save", "cm-name": "Mama Rose", "cm-phone": "677 11 22 33",
+                                         "cm-notes": "Market", "cm-active": "on"})
+        self.assertEqual(r.status_code, 302, r.content[:2000])
+        cm = CashManager.objects.get(name="Mama Rose")
+        self.assertEqual(cm.phone, "677112233")
+        r = fin.post(f"/cash-managers/?cm={cm.pk}", {"action": "cm_save", "cm-name": "Mama Rose Ngwa",
+                                                    "cm-phone": "677112233", "cm-active": "on"})
+        self.assertEqual(r.status_code, 302)
+        cm.refresh_from_db()
+        self.assertEqual(cm.name, "Mama Rose Ngwa")
+        fin.post("/cash-managers/", {"action": "cm_delete", "pk": cm.pk})
+        self.assertFalse(CashManager.objects.filter(pk=cm.pk).exists())
+        # one with exchanges is only deactivated
+        used = CashManager.objects.first()
+        ops.record_exchange(self.c_f1, cash_manager=used, amount=D(10000), give_kind="CASH", amount_served=D(10000))
+        r = fin.post("/cash-managers/", {"action": "cm_delete", "pk": used.pk}, follow=True)
+        self.assertContains(r, "cannot be deleted")
+        self.assertTrue(CashManager.objects.filter(pk=used.pk).exists())
+        # only finance and the super admin manage them
+        self.assertContains(self.client_for("admin").get("/cash-managers/"), "Add a cash manager")
+        for u in ("manager", "junior.fako", "cashier.fako1"):
+            self.assertNotContains(self.client_for(u).get("/cash-managers/"), "Add a cash manager")
+        n = CashManager.objects.count()
+        self.client_for("manager").post("/cash-managers/", {"action": "cm_save", "cm-name": "X",
+                                                            "cm-phone": "677000001", "cm-active": "on"})
+        self.assertEqual(CashManager.objects.count(), n)

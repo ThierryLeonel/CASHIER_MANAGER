@@ -1666,6 +1666,18 @@ FR = {
     'purpose': 'objet',
     'source of the funds': 'source des fonds',
     'unit(s)': 'unité(s)',
+    '%(cm)s already has exchanges, so it cannot be deleted. Untick Active to stop using it; its history stays.': "%(cm)s a déjà des échanges : impossible de le supprimer. Décochez Active pour ne plus l'utiliser ; son historique reste.",
+    'Add a cash manager': 'Ajouter un gestionnaire de cash',
+    'Attendance summary': 'Résumé des présences',
+    'Cash manager %(cm)s deleted.': 'Gestionnaire de cash %(cm)s supprimé.',
+    'Cash manager %(cm)s saved.': 'Gestionnaire de cash %(cm)s enregistré.',
+    'Delete this cash manager? One with exchanges cannot be deleted — untick Active instead.': 'Supprimer ce gestionnaire de cash ? Un gestionnaire ayant des échanges ne peut pas être supprimé — décochez plutôt Active.',
+    'Edit %(n)s': 'Modifier %(n)s',
+    'Inactive': 'Inactif',
+    'No cash manager yet.': "Aucun gestionnaire de cash pour l'instant.",
+    'Untick to stop using this cash manager; past exchanges stay.': 'Décochez pour ne plus utiliser ce gestionnaire de cash ; les échanges passés restent.',
+    'Your duties only: %(d)s': 'Vos tâches uniquement : %(d)s',
+    'Phone / SIM number': 'Téléphone / numéro SIM',
 }
 
 FR_PLURAL = {

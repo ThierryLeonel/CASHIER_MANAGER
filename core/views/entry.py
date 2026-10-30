@@ -1,5 +1,6 @@
 """Cashier data-entry screens. Every POST is idempotent via a per-form UUID."""
 
+from django.contrib import messages
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.translation import gettext as _
@@ -8,6 +9,7 @@ from core import forms as F
 from core.models import CashManager, CashManagerExchange, ConversionRate, Counterparty
 from core.money import fmt
 from core.services import operations as ops
+from core.services.errors import BusinessError
 
 from .base import R, acting_cashier, run_service, roles_required
 
@@ -130,13 +132,35 @@ def conversion_new(request):
 def exchanges(request):
     from core.services.ledger import balance
 
+    from core.services import cash_managers as cmsvc
+
+    can_manage = request.user.role in cmsvc.CM_ADMIN_ROLES
+    cm_form = None
+    if can_manage:
+        inst = CashManager.objects.filter(pk=request.GET.get("cm") or 0).first()
+        action = request.POST.get("action") if request.method == "POST" else None
+        cm_form = F.CashManagerForm(request.POST if action == "cm_save" else None, instance=inst, prefix="cm")
+        try:
+            if action == "cm_save" and cm_form.is_valid():
+                cm = cmsvc.save_cash_manager(request.user, cm_form)
+                messages.success(request, _("Cash manager %(cm)s saved.") % {"cm": cm.name})
+                return redirect("exchanges")
+            if action == "cm_delete":
+                cm = CashManager.objects.get(pk=request.POST.get("pk"))
+                name = cm.name
+                cmsvc.delete_cash_manager(request.user, cm)
+                messages.success(request, _("Cash manager %(cm)s deleted.") % {"cm": name})
+                return redirect("exchanges")
+        except (BusinessError, CashManager.DoesNotExist) as e:
+            messages.error(request, getattr(e, "message", str(e)))
     cms = [(c, balance(c.account)) for c in CashManager.objects.all()]
     exs = CashManagerExchange.objects.select_related("cash_manager", "created_by")
     zids = request.user.zone_ids_in_scope()
     if zids is not None:  # junior manager: exchanges started in his zone
         exs = exs.filter(created_by__subzone__in=zids)
     exs = exs[:200]
-    return render(request, "core/exchanges.html", {"cms": cms, "exchanges": exs})
+    return render(request, "core/exchanges.html", {"cms": cms, "exchanges": exs, "can_manage": can_manage,
+                                                    "cm_form": cm_form})
 
 
 @roles_required(*DESK)
