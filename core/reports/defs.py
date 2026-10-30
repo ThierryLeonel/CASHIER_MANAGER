@@ -541,6 +541,7 @@ RECON_GROUPS = [
     ("transfers", _l("Internal transfers"), [TxType.INTERNAL_TRANSFER]),
     ("adjust", _l("Reconciliation adj."), [TxType.RECON_ADJUSTMENT]),
     ("reversal", _l("Correction reversals"), [TxType.REVERSAL]),
+    ("capital", _l("Capital movements"), [TxType.CAPITAL_IN, TxType.CAPITAL_OUT, TxType.CAPITAL_MOVE]),
     ("shops", _l("Transfers with shops"), [t for t in TxType.values if t.startswith("SHOP_")] + [TxType.DESK_TO_SHOP]),
 ]
 

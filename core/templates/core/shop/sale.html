@@ -1,0 +1,112 @@
+{% extends "core/base.html" %}{% load i18n cashier %}
+{% block title %}{% trans "Sale" %}{% endblock %}
+{% block topbar %}{% trans "Sale" %}{% endblock %}
+{% block content %}
+<div class="form-head"><span class="form-ic">{% icon "store" 26 %}</span><div><h1>{% trans "Sale" %}</h1>
+<p class="muted">{% trans "Tick every unit the client buys — several items can be sold together — check the prices in the basket, then enter the client's details once." %}</p></div></div>
+<form method="post" class="entry sale-form" novalidate id="sale-form">{% csrf_token %}
+{% for f in form.hidden_fields %}{% if f.name != 'units' %}{{ f }}{% endif %}{% endfor %}
+{% if form.non_field_errors %}<div class="nonfield">{% for e in form.non_field_errors %}<div>{{ e }}</div>{% endfor %}</div>{% endif %}
+<div class="panel">
+  <h2 class="panel-title">1. {% trans "Items sold" %}</h2>
+  {% if form.shop %}<div class="field" id="fld-shop"><label for="{{ form.shop.id_for_label }}">{{ form.shop.label }} *</label>{{ form.shop }}</div>{% endif %}
+  <div class="pick-tools">
+    <select id="pick-cat" aria-label="{% trans 'Category' %}"><option value="">{% trans "All categories" %}</option>{% for cat, items in form.catalogue %}<option value="{{ cat.pk }}">{{ cat }}</option>{% endfor %}</select>
+    <input type="search" id="pick-q" placeholder="{% trans 'Search an item or an IMEI / serial…' %}" autocomplete="off">
+  </div>
+  {% if form.units.errors %}<ul class="err">{% for e in form.units.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+  <div class="pick-list">
+  {% with chosen=form.chosen %}
+  {% for cat, items in form.catalogue %}<div class="pick-cat" data-cat="{{ cat.pk }}"><div class="pick-cat-name">{{ cat }}</div>
+    {% for item, units in items %}<div class="pick-item" data-item="{{ item.pk }}" data-name="{{ item.name|lower }}" data-price="{{ item.price|floatformat:0 }}" data-label="{{ item.name }}">
+      <div class="pick-item-head"><strong>{{ item.name }}</strong> <span class="muted small">{{ item.price|fcfa }} FCFA · <span class="n-stock">{{ units|length }}</span> {% trans "in stock" %}</span></div>
+      <div class="pick-units">{% for u in units %}<label class="unit" data-shop="{{ u.shop_id }}" data-serial="{{ u.serial|lower }}"><input type="checkbox" name="units" value="{{ u.pk }}"{% if u.pk|stringformat:"d" in chosen %} checked{% endif %}><span class="mono">{{ u.serial }}</span></label>{% endfor %}</div>
+    </div>{% endfor %}
+  </div>{% empty %}<p class="muted">{% trans "Nothing in stock. Receive units into stock first." %}</p>{% endfor %}
+  {% endwith %}
+  </div>
+</div>
+<div class="panel">
+  <h2 class="panel-title">2. {% trans "Basket" %}</h2>
+  <div class="tbl-wrap"><table class="t basket"><thead><tr><th>{% trans "Item" %}</th><th class="money">{% trans "Quantity" %}</th><th class="money">{% trans "Unit price (FCFA)" %}</th><th class="money">{% trans "Total" %}</th></tr></thead>
+  <tbody id="basket-rows"><tr class="empty"><td colspan="4" class="muted">{% trans "No unit ticked yet." %}</td></tr></tbody>
+  <tfoot><tr class="total"><td>{% trans "Total to pay" %}</td><td class="money" id="basket-n">0</td><td></td><td class="money" id="basket-total">0</td></tr></tfoot></table></div>
+  <div id="basket-prices">{% for k, v in request.POST.items %}{% if k|slice:":6" == "price_" %}<input type="hidden" name="{{ k }}" value="{{ v }}">{% endif %}{% endfor %}</div>
+</div>
+<div class="panel">
+  <h2 class="panel-title">3. {% trans "Client" %}</h2>
+  {% for f in form.visible_fields %}{% if f.name != 'shop' %}
+  <div class="field" id="fld-{{ f.name }}"><label for="{{ f.id_for_label }}">{{ f.label }}{% if f.field.required %} *{% endif %}</label>{{ f }}{% if f.errors %}<ul class="err">{% for e in f.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}</div>
+  {% endif %}{% endfor %}
+  <div class="form-foot"><button class="btn primary" type="submit" id="submit-btn">{% trans "Record the sale" %}</button> <a class="btn" href="{% url 'shops' %}">{% trans "Cancel" %}</a><span class="small muted">{% trans "Only record transactions that are completed and confirmed." %}</span></div>
+</div>
+</form>
+<script>
+(function () {
+  var form = document.getElementById('sale-form'); if (!form) return;
+  var cat = document.getElementById('pick-cat'), q = document.getElementById('pick-q');
+  var shop = form.querySelector('select[name=shop]');
+  var rows = document.getElementById('basket-rows'), priceBox = document.getElementById('basket-prices');
+  var fmt = function (n) { return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ' '); };
+  var num = function (s) { return parseFloat(String(s || '').replace(/[^\d.]/g, '')) || 0; };
+  var prices = {};
+  priceBox.querySelectorAll('input').forEach(function (i) { prices[i.name.slice(6)] = i.value; });
+  function filter() {
+    var c = cat.value, term = q.value.trim().toLowerCase(), s = shop ? shop.value : '';
+    form.querySelectorAll('.pick-cat').forEach(function (pc) {
+      var anyItem = false;
+      pc.querySelectorAll('.pick-item').forEach(function (it) {
+        var nameHit = !term || it.dataset.name.indexOf(term) >= 0, shown = 0;
+        it.querySelectorAll('.unit').forEach(function (u) {
+          var ok = (!s || u.dataset.shop === s) && (nameHit || u.dataset.serial.indexOf(term) >= 0);
+          var box = u.querySelector('input');
+          if (s && u.dataset.shop !== s) box.checked = false;
+          u.hidden = !ok && !box.checked; if (!u.hidden) shown++;
+        });
+        it.hidden = shown === 0; if (!it.hidden) anyItem = true;
+      });
+      pc.hidden = (c && pc.dataset.cat !== c) || !anyItem;
+    });
+  }
+  function basket() {
+    var lines = [], n = 0, total = 0;
+    form.querySelectorAll('.pick-item').forEach(function (it) {
+      var k = it.querySelectorAll('.unit input:checked').length;
+      it.classList.toggle('picked', k > 0);
+      if (k) lines.push({id: it.dataset.item, label: it.dataset.label, k: k, cat: num(it.dataset.price)});
+    });
+    rows.innerHTML = ''; priceBox.innerHTML = '';
+    if (!lines.length) { rows.innerHTML = '<tr class="empty"><td colspan="4" class="muted">{{ _("No unit ticked yet.")|escapejs }}</td></tr>'; }
+    lines.forEach(function (l) {
+      var p = prices[l.id] !== undefined && prices[l.id] !== '' ? num(prices[l.id]) : l.cat;
+      var tr = document.createElement('tr');
+      tr.innerHTML = '<td></td><td class="money"></td><td class="money"><input class="price-in" inputmode="numeric" autocomplete="off"></td><td class="money"></td>';
+      tr.children[0].textContent = l.label; tr.children[1].textContent = l.k;
+      var inp = tr.querySelector('input'); inp.value = fmt(p); inp.placeholder = fmt(l.cat);
+      tr.children[3].textContent = fmt(p * l.k);
+      inp.addEventListener('input', function () { prices[l.id] = inp.value; update(); });
+      rows.appendChild(tr);
+      var h = document.createElement('input'); h.type = 'hidden'; h.name = 'price_' + l.id; h.value = String(num(prices[l.id] !== undefined && prices[l.id] !== '' ? prices[l.id] : l.cat)); priceBox.appendChild(h);
+      n += l.k; total += p * l.k;
+    });
+    document.getElementById('basket-n').textContent = n;
+    document.getElementById('basket-total').textContent = fmt(total);
+  }
+  function update() {  // prices typed: refresh totals without rebuilding the inputs
+    var n = 0, total = 0, i = 0;
+    var lines = form.querySelectorAll('.pick-item.picked');
+    rows.querySelectorAll('tr').forEach(function (tr) {
+      var it = lines[i++]; if (!it) return;
+      var k = it.querySelectorAll('.unit input:checked').length, p = num(tr.querySelector('input').value);
+      tr.children[3].textContent = fmt(p * k); n += k; total += p * k;
+      var h = priceBox.querySelector('input[name="price_' + it.dataset.item + '"]'); if (h) h.value = String(p);
+    });
+    document.getElementById('basket-total').textContent = fmt(total);
+  }
+  cat.addEventListener('change', filter); q.addEventListener('input', filter);
+  if (shop) shop.addEventListener('change', function () { filter(); basket(); });
+  form.addEventListener('change', function (e) { if (e.target.name === 'units') basket(); });
+  filter(); basket();
+})();
+</script>
+{% endblock %}

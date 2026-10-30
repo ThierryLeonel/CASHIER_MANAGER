@@ -71,10 +71,13 @@ urlpatterns = [
     path("shops/stock/", v.shop_stock, name="shop_stock"),
     path("shops/setup/", v.shop_setup, name="shop_setup"),
     path("shops/manage/", v.shop_manage, name="shop_manage"),
+    path("capital/", v.capital, name="capital"),
+    path("capital/<str:op>/", v.capital_op, name="capital_op"),
     path("shops/shift/", v.shop_shift, name="shop_shift"),
     path("shops/reconciliation/", v.shop_reconciliations, name="shop_reconciliations"),
     path("shops/<int:pk>/reconciliation/", v.shop_reconciliation, name="shop_reconciliation"),
     path("shops/attendance/", v.shop_attendance, name="shop_attendance"),
+    path("shops/reports/", v.shop_reports, name="shop_reports"),
     path("transfer/to-shop/", v.desk_to_shop, name="desk_to_shop"),
     path("admin/", admin.site.urls),
 ]

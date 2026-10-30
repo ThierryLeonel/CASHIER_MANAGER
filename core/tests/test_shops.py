@@ -228,23 +228,30 @@ class ShopPages(OrgMixin, TestCase):
         self.assertContains(c.get("/shops/retrievals/"), "Ebai Joseph")
         kit = self.o["items"]["kit"]
         units = sh.receive_stock(self.o["shop_senior"], shop=self.shop, item=kit, serials="OEK-1\nOEK-2")
+        phone = self.o["items"]["phone"]
+        ph = sh.receive_stock(self.o["shop_senior"], shop=self.shop, item=phone, serials="IMEI-A\nIMEI-B")
         form = c.get("/shops/do/sale/")
-        self.assertContains(form, 'data-category="%s"' % kit.category_id)
-        self.assertContains(form, "OEK-1")
-        r = c.post("/shops/do/sale/", {"idem": str(uuid.uuid4()), "category": kit.category_id, "item": kit.pk,
-                                       "units": [units[0].pk], "client_name": "Ngwa Peter",
-                                       "client_address": "Molyko", "client_country": "Cameroon", "id_type": "PASSPORT",
-                                       "id_number": "P123", "phone": "677445566", "whatsapp": ""})
+        self.assertContains(form, 'data-cat="%s"' % kit.category_id)
+        for txt in ("OEK-1", "IMEI-A", "Basket"):
+            self.assertContains(form, txt)
+        client = {"client_name": "Ngwa Peter", "client_address": "Molyko", "client_country": "Cameroon",
+                  "id_type": "PASSPORT", "id_number": "P123", "phone": "677445566", "whatsapp": ""}
+        # one client buys an energy kit and two phones (one price negotiated) in a single sale
+        r = c.post("/shops/do/sale/", {"idem": str(uuid.uuid4()), "units": [units[0].pk, ph[0].pk, ph[1].pk],
+                                       f"price_{phone.pk}": "60 000", **client})
         self.assertEqual(r.status_code, 302, r.content[:1500])
-        sale = Transaction.objects.get(type=TxType.SHOP_SALE)
-        rec = c.get(f"/transactions/{sale.pk}/")
-        for txt in ("Ngwa Peter", "P123", "OEK-1", "Cameroon"):
+        sales = list(Transaction.objects.filter(type=TxType.SHOP_SALE).order_by("id"))
+        self.assertEqual(len(sales), 2)  # one line per item, one group, one receipt
+        self.assertEqual(sales[0].payment_group, sales[1].payment_group)
+        self.assertEqual(sorted(t.amount for t in sales), [D(45000), D(120000)])
+        self.assertEqual(sum(1 for t in sales if t.receipt_no), 1)
+        rec = c.get(f"/transactions/{sales[0].pk}/")
+        for txt in ("Ngwa Peter", "P123", "OEK-1", "IMEI-A", "IMEI-B", "Cameroon", "165 000"):
             self.assertContains(rec, txt)
-        # a mismatched category is refused
-        r = c.post("/shops/do/sale/", {"idem": str(uuid.uuid4()), "category": self.o["items"]["phone"].category_id,
-                                       "item": kit.pk, "units": [units[1].pk], "client_name": "X",
-                                       "client_address": "Y", "client_country": "Z", "id_type": "CNI",
-                                       "id_number": "1", "phone": "677445566"})
+        # nothing ticked is refused, and a sold unit cannot be sold again
+        r = c.post("/shops/do/sale/", {"idem": str(uuid.uuid4()), **client})
+        self.assertEqual(r.status_code, 200)
+        r = c.post("/shops/do/sale/", {"idem": str(uuid.uuid4()), "units": [ph[0].pk], **client})
         self.assertEqual(r.status_code, 200)
         self.assertContains(c.get("/shops/stock/?q=OEK-1"), "Ngwa Peter")
         self.assertContains(c.get("/shops/stock/"), "Orange Energie kit S")
@@ -515,3 +522,45 @@ class ShopShiftsAndReconciliation(OrgMixin, TestCase):
         other = Shop.objects.create(name="Shop Limbe", code="shop-limbe")
         with self.assertRaises(BusinessError):
             sa.update_staff(self.o["shop_senior"], self.m, first_name="X", shop=other, duties=[])
+
+
+class ShopReports(OrgMixin, TestCase):
+    def setUp(self):
+        self.make_org()
+        self.fund_all()
+        self.shop = self.o["shop"]
+        for kind, amt in ((K.CASH_DRAWER, 300000), (K.UVE, 800000), (K.ER, 150000)):
+            self.fund(self.shop.account(kind), amt)
+        open_shifts(self.o)
+        sh.cash_in(self.o["shop_om"], amount=D(50000), commission=D(250))
+        sh.airtime(self.o["shop_air"], amount=D(10000), kind="GOOD_DEAL")
+        sh.count_services(self.o["shop_air"], counts={ShopService.objects.get(name__startswith="OTT"): 3})
+
+    def client_for(self, u):
+        c = self.client_class()
+        self.assertTrue(c.login(username=u, password=PW))
+        return c
+
+    def test_daily_weekly_monthly(self):
+        from core.reports.shops import ShopReportForm, shop_summary
+        from core.services.days import douala_today
+
+        today = douala_today()
+        shops = Shop.objects.filter(active=True)
+        for period, tables in (("day", 3), ("week", 5), ("month", 5)):
+            form = ShopReportForm(shops, {"period": period, "day": today.isoformat()})
+            rep, p, d_from, d_to = shop_summary(form, shops)
+            self.assertEqual(len(rep.tables), tables)
+            by_shop = rep.tables[-3].rows[0]
+            self.assertEqual((by_shop["cashin"], by_shop["commission"], by_shop["good_deal"], by_shop["services"]),
+                             (D(50000), D(250), D(10000), 3))
+            self.assertEqual(by_shop["cash_c"], D(360000))
+        self.assertEqual(shop_summary(ShopReportForm(shops, {"period": "week", "day": today.isoformat()}),
+                                      shops)[0].tables[0].rows.__len__(), 7)
+        fin = self.client_for("finance")
+        for q in ("", "?period=week", "?period=month", "?period=custom&date_from=2026-10-01&date_to=2026-10-31",
+                  "?period=month&format=xlsx", "?period=week&format=pdf"):
+            self.assertEqual(fin.get("/shops/reports/" + q).status_code, 200, q)
+        self.assertContains(fin.get("/shops/reports/?period=month"), "Monthly shop report")
+        self.assertEqual(self.client_for("shop.molyko").get("/shops/reports/").status_code, 200)
+        self.assertEqual(self.client_for("cashier.fako1").get("/shops/reports/").status_code, 403)

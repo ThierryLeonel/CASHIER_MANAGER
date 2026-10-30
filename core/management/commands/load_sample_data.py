@@ -110,6 +110,13 @@ class Command(BaseCommand):
         ss.close_shift(o["shop_air"])
         b = sh.shop_balances(shop)
         ss.close_shift(smgr, cash=b["CASH_DRAWER"] - D(2000), uve=b["UVE"], er=b["ER"], note="[SAMPLE] closing count")
+        # capital: the owners inject cash into Fako 1 and move part of it to the shop
+        from core.services import capital as cap
+
+        cap.inject(o["finance"], account=o["drawers"]["f1"], amount=D(1_000_000), source="[SAMPLE] Owner's savings",
+                   purpose="Increase the Fako 1 float")
+        cap.transfer(o["finance"], source=o["drawers"]["f1"], destination=shop.account("CASH_DRAWER"),
+                     amount=D(200_000), purpose="[SAMPLE] Shop Molyko float")
         # Meme closes with a 2,000 cash shortage (left open for investigation)
         actuals = {a.id: balance(a) for a in cl.closing_accounts(me)}
         actuals[dm.id] -= D(2000)

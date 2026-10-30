@@ -90,6 +90,17 @@ Finance, the senior manager and the super administrator switch between two **wor
 
 **Services done**: one form lists every active counted service with its own count box; the staff type how many of each were done and record them together (`count_services`, one `ServiceCount` per service with a count, in one transaction). The page also shows what was already recorded today.
 
+#### Capital, shop reports and multi-item sales (30/10/2026)
+**Capital** (finance manager, senior manager, super admin; menu "Capital" in both workspaces). Three movements, each with a description, the **source of the funds** (or, for a withdrawal, who / where it goes to) and the **purpose**:
+* **Inject** — Dr the chosen company account (any cash drawer, UVE, ER, MTN float, bank or shop account) / Cr **Owner's capital** (new system account).
+* **Withdraw** — Dr Owner's capital / Cr the account (balance checked).
+* **Transfer** — Dr the receiving account / Cr the sending account, between any two company accounts (cashier subzones, master SIMs, banks, shops); same product, or cash ↔ bank.
+A movement on a cashier-side account is posted in that subzone's open business day (the cashier sees it, the closing counts it); a shop account sets the shop on the entry (the shop sees it; its reconciliation and reports count it). The cashiers' reconciliation report has a "Capital movements" column so opening + movements = closing still holds. Capital movements can only be cancelled (reversal) and recorded again. The Capital page shows net capital (all time), injected, withdrawn, transferred and the list of movements.
+
+**Shop reports** (Shops workspace › Shop reports; on screen, Excel, PDF): **Daily** (the day, by shop), **Weekly** (Monday–Sunday, by day and by shop), **Monthly** (by week and by shop), **Custom** dates (by day and by shop); all shops or one. Two tables per breakdown: *activity* (cash-in/out with counts, commission, airtime and good deal, conversions, item sales and units, services, SIM retrievals, staff hours) and *agents, cash control and balances* (appro, ER supply, destockage, paid to / by agents, UVE to / from cashiers, net capital, counted closing differences, closing cash/UVE/ER at the end of each line), plus services by type and summary tiles.
+
+**Sales of several items**: one sale to one client can contain any number of units of any items. The page lists everything in stock by category and item (filter + search by item or IMEI/serial); the cashier ticks the units, the basket shows each item with its quantity, an editable unit price and the total; the client's details are entered once. Each item is posted as its own sale line, all lines sharing one group and **one receipt** that lists every item with its serials and the total.
+
 ### Users & passwords
 
 - Passwords are stored hashed: nobody — not even the super administrator — can read them. The super administrator's **Users & passwords** page (Administration) lists every user with role, zone, staff ID, last sign-in and status, and lets them **reset** a password (a strong one generated and shown once, or one they type, checked against the password rules), optionally forcing the user to choose their own at next sign-in, and **deactivate / activate** accounts (deactivation signs the user out at once; you cannot deactivate yourself or the last active super administrator). Every action is in the audit log.

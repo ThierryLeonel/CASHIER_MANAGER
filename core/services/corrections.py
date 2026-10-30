@@ -25,7 +25,7 @@ from .days import current_day, douala_today
 from .errors import BusinessError
 from .ledger import Ctx, TxSpec, post
 
-VOID_ONLY = (TxType.RESPONSIBILITY_TRANSFER,)
+VOID_ONLY = (TxType.RESPONSIBILITY_TRANSFER, TxType.CAPITAL_IN, TxType.CAPITAL_OUT, TxType.CAPITAL_MOVE)
 NOT_CORRECTABLE = (TxType.REVERSAL, TxType.RECON_ADJUSTMENT) + tuple(t for t in TxType.values if t.startswith("SHOP_")) + (TxType.DESK_TO_SHOP,)
 
 
@@ -99,7 +99,9 @@ def correct_transaction(user, original, *, kind, reason, new_values=None, idempo
         if Correction.objects.filter(original=original).exists():
             raise BusinessError(_("%(ref)s has already been corrected.") % {"ref": original.reference})
         if kind == Correction.Kind.REPLACE and original.type in VOID_ONLY:
-            raise BusinessError(_("A responsibility transfer can only be cancelled, then recorded again."))
+            if original.type == TxType.RESPONSIBILITY_TRANSFER:
+                raise BusinessError(_("A responsibility transfer can only be cancelled, then recorded again."))
+            raise BusinessError(_("A capital movement can only be cancelled, then recorded again."))
         if kind not in Correction.Kind.values:
             raise BusinessError(_("Choose the correction type."), "kind")
         if original.type in ops.TRANSFERABLE_TYPES and ops.active_transfer(original):

@@ -364,12 +364,16 @@ def remove_unit(user, *, serial, note):
 CLIENT_FIELDS = ("client_name", "client_address", "client_country", "id_type", "id_number", "phone")
 
 
-def sell(user, *, shop=None, item, units, unit_price=None, client_name, client_address, client_country, id_type,
-         id_number, phone, whatsapp="", description="", idempotency_key=None):
-    """Sell one or more units (chosen by IMEI / serial) to an identified client."""
+def sell(user, *, shop=None, units, item=None, unit_price=None, prices=None, client_name, client_address,
+         client_country, id_type, id_number, phone, whatsapp="", description="", idempotency_key=None):
+    """Sell one or more units (chosen by IMEI / serial), of one or several items, to one identified client.
+
+    Each item is posted as its own sale line (cash +, shop sales −), all together (all or nothing), sharing one
+    group and one receipt. `prices` = {item id: unit price}; an item without a price uses its catalogue price.
+    (`item` / `unit_price` are kept for single-item calls.)"""
+    import uuid
+
     shop = shop_for(user, shop, "SALES")
-    if item is None or not item.active:
-        raise BusinessError(_("Choose an item."), "item")
     units = list(units or [])
     if not units:
         raise BusinessError(_("Choose the unit(s) sold by IMEI / serial number."), "units")
@@ -379,30 +383,54 @@ def sell(user, *, shop=None, item, units, unit_price=None, client_name, client_a
             raise BusinessError(_("This client information is required."), f)
     if id_type not in ItemSale.IdType.values:
         raise BusinessError(_("Choose the type of identification."), "id_type")
-    price = _amt(unit_price, "unit_price") if unit_price not in (None, "") else Decimal(item.price)
+    prices = dict(prices or {})
+    if item is not None:
+        if not item.active:
+            raise BusinessError(_("Choose an item."), "item")
+        if unit_price not in (None, ""):
+            prices[item.pk] = unit_price
     with transaction.atomic():
-        locked = list(StockUnit.objects.select_for_update().filter(pk__in=[u.pk for u in units]))
+        locked = list(StockUnit.objects.select_for_update().select_related("item")
+                      .filter(pk__in=[u.pk for u in units]).order_by("item__name", "serial"))
+        lines = {}
         for u in locked:
-            if u.shop_id != shop.pk or u.item_id != item.pk or u.status != StockUnit.Status.IN_STOCK:
+            if u.shop_id != shop.pk or u.status != StockUnit.Status.IN_STOCK or (item and u.item_id != item.pk):
                 raise BusinessError(_("%(s)s is not in stock at %(shop)s for this item.")
                                     % {"s": u.serial, "shop": shop.name}, "units")
-        total = price * len(locked)
-        serials = ", ".join(u.serial for u in locked)
-        t = post([_spec(TxType.SHOP_SALE, shop, [(shop.account(K.CASH_DRAWER), total),
-                                                 (Account.system(K.SHOP_SALES), -total)], total,
-                        client_phone=_phone(phone),
-                        description=(f"{len(locked)} × {item.name} ({serials})"
-                                     + (f" — {description}" if description else "")))],
-                 _ctx(user), idempotency_key)[0]
-        sale = ItemSale.objects.create(transaction=t, shop=shop, item=item, unit_price=price,
-                                       client_name=client_name.strip(), client_address=client_address.strip(),
-                                       client_country=client_country.strip(), id_type=id_type,
-                                       id_number=id_number.strip(), phone=_phone(phone), whatsapp=_phone(whatsapp))
-        StockUnit.objects.filter(pk__in=[u.pk for u in locked]).update(status=StockUnit.Status.SOLD, sale=sale)
-        for u in locked:
-            StockMove.objects.create(shop=shop, item=item, unit=u, kind=StockMove.Kind.SALE, quantity=-1,
-                                     transaction=t, recorded_by=user, note=fmt(price))
-    return t
+            if not u.item.active:
+                raise BusinessError(_("%(i)s is no longer sold.") % {"i": u.item.name}, "units")
+            lines.setdefault(u.item_id, []).append(u)
+        group = (uuid.uuid5(idempotency_key, "sale") if isinstance(idempotency_key, uuid.UUID)
+                 else uuid.uuid4()) if len(lines) > 1 else None
+        specs, plan = [], []
+        for i, (item_id, its) in enumerate(lines.items()):
+            it = its[0].item
+            raw = prices.get(item_id)
+            price = _amt(raw, "units") if raw not in (None, "") else Decimal(it.price)
+            if price <= 0:
+                raise BusinessError(_("Set the price of %(i)s.") % {"i": it.name}, "units")
+            total = price * len(its)
+            serials = ", ".join(u.serial for u in its)
+            spec = _spec(TxType.SHOP_SALE, shop, [(shop.account(K.CASH_DRAWER), total),
+                                                  (Account.system(K.SHOP_SALES), -total)], total,
+                         client_phone=_phone(phone), payment_group=group,
+                         description=(f"{len(its)} × {it.name} ({serials})"
+                                      + (f" — {description}" if description else "")))
+            spec.receipt = i == 0
+            specs.append(spec)
+            plan.append((it, its, price))
+        txns = post(specs, _ctx(user), idempotency_key)
+        for t, (it, its, price) in zip(txns, plan):
+            sale = ItemSale.objects.create(transaction=t, shop=shop, item=it, unit_price=price,
+                                           client_name=client_name.strip(), client_address=client_address.strip(),
+                                           client_country=client_country.strip(), id_type=id_type,
+                                           id_number=id_number.strip(), phone=_phone(phone),
+                                           whatsapp=_phone(whatsapp))
+            StockUnit.objects.filter(pk__in=[u.pk for u in its]).update(status=StockUnit.Status.SOLD, sale=sale)
+            for u in its:
+                StockMove.objects.create(shop=shop, item=it, unit=u, kind=StockMove.Kind.SALE, quantity=-1,
+                                         transaction=t, recorded_by=user, note=fmt(price))
+    return txns[0]
 
 
 # ---------------------------------------------------------------- counted services and SIM retrievals

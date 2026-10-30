@@ -1,0 +1,33 @@
+{% extends "core/base.html" %}{% load i18n cashier %}
+{% block title %}{% trans "Capital" %}{% endblock %}
+{% block content %}
+<h1>{% trans "Capital" %}</h1>
+<p class="muted">{% trans "Capital the owners put into the business or take out, and capital moved between company accounts (cashiers, master SIMs, banks, shops). Each movement records its source and purpose." %}</p>
+<div class="bal-row">
+  <div class="bal k-CASH_DRAWER"><span class="bal-label">{% trans "Net capital (all time)" %}</span><span class="bal-value">{{ tot.net|fcfa }}</span><span class="bal-unit">FCFA</span></div>
+  <div class="bal k-UVE"><span class="bal-label">{% trans "Injected" %}</span><span class="bal-value">{{ tot.injected|fcfa }}</span><span class="bal-unit">FCFA</span></div>
+  <div class="bal k-ER"><span class="bal-label">{% trans "Withdrawn" %}</span><span class="bal-value">{{ tot.withdrawn|fcfa }}</span><span class="bal-unit">FCFA</span></div>
+  <div class="bal k-MTN"><span class="bal-label">{% trans "Transferred" %}</span><span class="bal-value">{{ tot.moved|fcfa }}</span><span class="bal-unit">FCFA</span></div>
+</div>
+<div class="quick">
+  <a class="qa main" href="{% url 'capital_op' 'inject' %}"><span class="qa-ic">{% icon "payment" 22 %}</span><strong>{% trans "Inject capital" %}</strong><span class="d">{% trans "Cash, UVE, ER, MTN or bank" %}</span></a>
+  <a class="qa" href="{% url 'capital_op' 'withdraw' %}"><span class="qa-ic">{% icon "supply" 22 %}</span><strong>{% trans "Withdraw capital" %}</strong><span class="d">{% trans "Owners take money out" %}</span></a>
+  <a class="qa" href="{% url 'capital_op' 'transfer' %}"><span class="qa-ic">{% icon "transfer" 22 %}</span><strong>{% trans "Transfer capital" %}</strong><span class="d">{% trans "Between any two accounts" %}</span></a>
+</div>
+<h2>{% trans "Capital movements" %}</h2>
+<form class="filters panel" method="get">
+  <div class="field"><label>{% trans "From" %}</label><input type="date" name="from" value="{{ d_from|date:'Y-m-d' }}"></div>
+  <div class="field"><label>{% trans "To" %}</label><input type="date" name="to" value="{{ d_to|date:'Y-m-d' }}"></div>
+  <div class="field"><label>{% trans "Type" %}</label><select name="type"><option value="">{% trans "All" %}</option>{% for v, l in types %}<option value="{{ v }}"{% if typ == v %} selected{% endif %}>{{ l }}</option>{% endfor %}</select></div>
+  <div class="field"><button class="btn" type="submit">{% trans "Apply" %}</button></div>
+</form>
+<div class="tbl-wrap"><table class="t"><thead><tr><th>{% trans "Date" %}</th><th>{% trans "Ref." %}</th><th>{% trans "Type" %}</th><th>{% trans "From" %}</th><th>{% trans "To" %}</th><th class="money">{% trans "Amount" %}</th><th>{% trans "Source / paid to" %}</th><th>{% trans "Purpose" %}</th><th>{% trans "By" %}</th></tr></thead>
+<tbody>{% for t in page %}<tr{% if t.is_corrected %} class="corrected"{% endif %}>
+<td>{{ t.business_date|date:"d/m/Y" }}</td><td><a href="{% url 'txn_detail' t.pk %}">{{ t.reference }}</a>{% if t.is_corrected %} <span class="badge">{% trans "cancelled" %}</span>{% endif %}</td>
+<td>{{ t.get_type_display }}</td>
+<td class="small">{% if t.type == 'CAPITAL_IN' %}{% trans "Owners" %}{% else %}{{ t.source_account }}{% endif %}</td>
+<td class="small">{% if t.type == 'CAPITAL_OUT' %}{% trans "Owners" %}{% else %}{{ t.dest_account }}{% endif %}</td>
+<td class="money">{{ t.amount|fcfa }}</td><td class="small">{{ t.fund_source|default:"—" }}</td><td class="small">{{ t.fund_purpose }}{% if t.description %}<br><span class="muted">{{ t.description }}</span>{% endif %}</td><td class="small">{{ t.entered_by }}</td>
+</tr>{% empty %}<tr><td colspan="9" class="muted">{% trans "No capital movement in this period." %}</td></tr>{% endfor %}</tbody></table></div>
+<div class="pager">{% if page.has_previous %}<a class="btn small" href="?from={{ d_from|date:'Y-m-d' }}&to={{ d_to|date:'Y-m-d' }}&type={{ typ }}&page={{ page.previous_page_number }}">←</a>{% endif %}<span class="muted small">{{ page.number }} / {{ page.paginator.num_pages }}</span>{% if page.has_next %}<a class="btn small" href="?from={{ d_from|date:'Y-m-d' }}&to={{ d_to|date:'Y-m-d' }}&type={{ typ }}&page={{ page.next_page_number }}">→</a>{% endif %}</div>
+{% endblock %}

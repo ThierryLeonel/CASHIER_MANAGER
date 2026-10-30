@@ -30,7 +30,8 @@ SHOP_ROLES = (R.SHOP_MANAGER, R.SHOP_SENIOR, R.MANAGER, R.FINANCE, R.SUPERADMIN)
 SHOP_DESK = (R.SHOP_MANAGER, R.SHOP_SENIOR, R.SUPERADMIN)  # who records shop operations
 SHOP_CONFIG = (R.SHOP_SENIOR, R.SUPERADMIN)  # who manages services, items, stock and the shop rate
 K = Account.Kind
-SHOP_TYPES = [t for t in TxType.values if t.startswith("SHOP_")] + [TxType.DESK_TO_SHOP]
+SHOP_TYPES = [t for t in TxType.values if t.startswith("SHOP_")] + [TxType.DESK_TO_SHOP, TxType.CAPITAL_IN,
+                                                                   TxType.CAPITAL_OUT, TxType.CAPITAL_MOVE]
 
 # op -> (form class, service, title, intro, icon)
 OPS = {
@@ -58,9 +59,7 @@ OPS = {
     "to_cashier": (SF.ToCashierForm, sh.to_cashier, _("Transfer UVE to a cashier"),
                    _("UVE sent from the shop to a cashier's UVE wallet. It is recorded on the cashier side too."),
                    "transfer"),
-    "sale": (SF.SaleForm, sh.sell, _("Sale of an item"),
-             _("Choose the category, the item and the unit(s) by IMEI / serial, then the client's details."),
-             "store"),
+    "sale": (SF.SaleForm, sh.sell, _("Sale"), "", "store"),
 }
 
 
@@ -207,6 +206,8 @@ def shop_op(request, op):
         r = ShopConversionRate.current()
         intro = f"{intro} " + (_("Current shop rate: %(p)s %%.") % {"p": r.percent} if r else
                                 _("The shop rate is not set yet."))
+    if op == "sale":
+        return render(request, "core/shop/sale.html", {"form": form})
     return render(request, "core/entry_form.html", {"form": form, "title": title, "intro": intro, "icon": icon})
 
 
@@ -566,3 +567,34 @@ def shop_attendance(request):
     return render(request, "core/shop/attendance.html", {
         "shifts": shifts[:300], "people": people, "d_from": d_from, "d_to": d_to, "shop_id": shop_id,
         "shops": sh.visible_shops(request.user)})
+
+
+@roles_required(*SHOP_ROLES)
+def shop_reports(request):
+    """Daily / weekly / monthly shop summary, on screen, in Excel and in PDF."""
+    from django.http import HttpResponse
+
+    from core.reports.shops import ShopReportForm, shop_summary
+    from core.pdf import report_pdf
+    from core.reports.xlsx import report_xlsx
+    from core.services import operations as ops
+
+    visible = sh.visible_shops(request.user).filter(active=True)
+    data = request.GET.copy()
+    fmt_ = data.pop("format", [None])[0]
+    form = ShopReportForm(visible, data or None)
+    rep, period, d_from, d_to = shop_summary(form, visible)
+    who = f"{request.user} ({request.user.get_role_display()})"
+    if fmt_ in ("xlsx", "pdf"):
+        ops.log_event(request.user, "report_export", report="shops", format=fmt_, filters=rep.title)
+        name = f"shop-report-{period}-{d_from}"
+        if fmt_ == "xlsx":
+            resp = HttpResponse(report_xlsx(rep, who),
+                                content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+            resp["Content-Disposition"] = f'attachment; filename="{name}.xlsx"'
+        else:
+            resp = HttpResponse(report_pdf(rep, who), content_type="application/pdf")
+            resp["Content-Disposition"] = f'attachment; filename="{name}.pdf"'
+        return resp
+    return render(request, "core/report.html", {"rep": rep, "form": form, "query": data.urlencode(),
+                                                       "period": period})

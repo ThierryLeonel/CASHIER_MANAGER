@@ -24,7 +24,7 @@ def app_context(request):
     return ctx
 
 
-NEUTRAL_PREFIXES = ("/transactions/", "/account/", "/administration/", "/setup/", "/act-as/", "/admin/")
+NEUTRAL_PREFIXES = ("/capital/", "/transactions/", "/account/", "/administration/", "/setup/", "/act-as/", "/admin/")
 
 
 def _space(request, user):

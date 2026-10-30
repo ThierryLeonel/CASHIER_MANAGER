@@ -114,12 +114,13 @@ class ItemWidget(forms.Select):
 
 
 class SaleForm(ShopForm):
-    category = forms.ModelChoiceField(label=_("Category"), queryset=ItemCategory.objects.filter(active=True))
-    item = forms.ModelChoiceField(label=_("Item"), queryset=ShopItem.objects.filter(active=True), widget=ItemWidget)
-    units = forms.ModelMultipleChoiceField(label=_("Unit(s) sold — IMEI / serial"), queryset=StockUnit.objects.none(),
-                                           widget=UnitsWidget)
-    unit_price = MoneyField(label=_("Unit price (FCFA)"), required=False,
-                            help_text=_("Leave empty to use the item's price."))
+    """One sale to one client: tick the units sold (any number of items, by IMEI / serial); the prices per item
+    come from the basket (price_<item id>), the catalogue price otherwise."""
+
+    units = forms.ModelMultipleChoiceField(label=_("Units sold — IMEI / serial"), queryset=StockUnit.objects.none(),
+                                           widget=forms.MultipleHiddenInput,
+                                           error_messages={"required": _("Choose the unit(s) sold by IMEI / serial "
+                                                                         "number.")})
     client_name = forms.CharField(label=_("Client full name"), max_length=150)
     client_address = forms.CharField(label=_("Address"), max_length=255)
     client_country = forms.CharField(label=_("Country of origin"), max_length=80, initial="Cameroon")
@@ -133,25 +134,37 @@ class SaleForm(ShopForm):
         super().__init__(user, *args, **kwargs)
         from core.services.shops import visible_shops
 
-        self.fields["item"].label_from_instance = lambda i: f"{i.name} — {i.price:,.0f} FCFA".replace(",", " ")
-        self.fields["units"].queryset = StockUnit.objects.filter(
-            status=StockUnit.Status.IN_STOCK, shop__in=visible_shops(user)).select_related("item")
-        self.fields["units"].label_from_instance = lambda u: u.serial
+        self.stock = StockUnit.objects.filter(status=StockUnit.Status.IN_STOCK, shop__in=visible_shops(user),
+                                              item__active=True).select_related("item__category", "shop")
+        self.fields["units"].queryset = self.stock
+
+    def catalogue(self):
+        """[(category, [(item, [units])])] of what is in stock, for the picker."""
+        cats = {}
+        for u in self.stock.order_by("item__category__sort", "item__category__name", "item__name", "serial"):
+            c = cats.setdefault(u.item.category_id, (u.item.category, {}))
+            c[1].setdefault(u.item_id, (u.item, []))[1].append(u)
+        return [(cat, list(items.values())) for cat, items in cats.values()]
+
+    def chosen(self):
+        if self.is_bound:
+            return set(self.data.getlist("units"))
+        return set()
 
     def clean(self):
         cd = super().clean()
-        item, cat = cd.get("item"), cd.get("category")
-        if item and cat and item.category_id != cat.pk:
-            self.add_error("item", _("This item is not in the chosen category."))
+        prices = {}
         for u in cd.get("units") or []:
-            if item and u.item_id != item.pk:
-                self.add_error("units", _("%(s)s is not a %(item)s.") % {"s": u.serial, "item": item.name})
-        return cd
+            raw = (self.data.get(f"price_{u.item_id}") or "").strip()
+            if raw:
+                try:
+                    from core.money import to_money
 
-    def params(self):
-        d = super().params()
-        d.pop("category", None)
-        return d
+                    prices[u.item_id] = to_money(raw)
+                except Exception:  # noqa: BLE001
+                    self.add_error(None, _("Check the price of %(i)s.") % {"i": u.item.name})
+        cd["prices"] = prices
+        return cd
 
 
 class ServiceCountForm(ShopForm):

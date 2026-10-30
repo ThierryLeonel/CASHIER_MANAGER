@@ -74,6 +74,7 @@
     <a href="{% url 'shop_retrievals' %}" class="{% if u == 'shop_retrievals' %}on{% endif %}">{% icon "users" %}<span>{% trans "SIM retrievals" %}</span></a>
     <a href="{% url 'shop_services_report' %}" class="{% if u == 'shop_services_report' %}on{% endif %}">{% icon "chart" %}<span>{% trans "Services count" %}</span></a>
     <a href="{% url 'shop_reconciliations' %}" class="{% if u == 'shop_reconciliations' or u == 'shop_reconciliation' %}on{% endif %}">{% icon "lock" %}<span>{% trans "Daily reconciliation" %}</span></a>
+    <a href="{% url 'shop_reports' %}" class="{% if u == 'shop_reports' %}on{% endif %}">{% icon "chart" %}<span>{% trans "Shop reports" %}</span></a>
     <a href="{% url 'shop_attendance' %}" class="{% if u == 'shop_attendance' %}on{% endif %}">{% icon "calendar" %}<span>{% trans "Attendance" %}</span></a>
     <a href="{% url 'shop_stock' %}" class="{% if u == 'shop_stock' %}on{% endif %}">{% icon "wallet" %}<span>{% trans "Stock" %}</span></a>
     {% if user.is_shop_senior or user.is_superadmin %}<a href="{% url 'shop_manage' %}" class="{% if u == 'shop_manage' %}on{% endif %}">{% icon "users" %}<span>{% trans "Shops & staff" %}</span></a>
@@ -95,6 +96,11 @@
     {% if show_cash %}
     <div class="side-group">{% trans "Analysis" %}</div>
     <a href="{% url 'reports' %}" class="{% if u == 'reports' or u == 'report' %}on{% endif %}">{% if user.is_agent %}{% icon "statement" %}<span>{% trans "My statement" %}</span>{% else %}{% icon "chart" %}<span>{% trans "Reports" %}</span>{% endif %}</a>
+    {% endif %}
+
+    {% if can_switch %}
+    <div class="side-group">{% trans "Capital" %}</div>
+    <a href="{% url 'capital' %}" class="{% if u == 'capital' or u == 'capital_op' %}on{% endif %}">{% icon "bank" %}<span>{% trans "Capital" %}</span></a>
     {% endif %}
 
     {% if user.is_superadmin %}

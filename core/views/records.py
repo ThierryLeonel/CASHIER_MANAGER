@@ -1,5 +1,6 @@
 """Customers, transaction detail, receipts, corrections, responsibility transfers."""
 import uuid
+from decimal import Decimal
 
 from django.contrib import messages
 from django.core.paginator import Paginator
@@ -142,13 +143,21 @@ def receipt_rows(t):
     if t.on_credit:
         rows.append((_("On credit"), _("Yes")))
     if t.type == T.SHOP_SALE and hasattr(t, "item_sale"):
+        parts = [p for p in t.payment_parts if hasattr(p, "item_sale")]
         s = t.item_sale
-        units = list(s.units.order_by("serial").values_list("serial", flat=True))
-        rows += [(_("Item"), f"{s.item} ({s.item.category})"),
-                 (_("Quantity"), str(len(units) or 1)),
-                 (_("Unit price"), f"{fmt(s.unit_price)} FCFA"),
-                 (_("IMEI / serial"), ", ".join(units) or "—"),
-                 (_("Client full name"), s.client_name),
+        n_units, total = 0, Decimal(0)
+        for p in parts:
+            ps = p.item_sale
+            units = list(ps.units.order_by("serial").values_list("serial", flat=True))
+            n_units += len(units)
+            total += p.amount
+            note = " — " + _("CORRECTED") if hasattr(p, "correction") else ""
+            rows.append((f"{ps.item} ({ps.item.category})",
+                         f"{len(units)} × {fmt(ps.unit_price)} = {fmt(p.amount)} FCFA — "
+                         f"{_('IMEI / serial')}: {', '.join(units) or '—'}{note}"))
+        if len(parts) > 1:
+            rows.append((_("Total of the sale"), f"{n_units} {_('unit(s)')} — {fmt(total)} FCFA"))
+        rows += [(_("Client full name"), s.client_name),
                  (_("Address"), s.client_address),
                  (_("Country of origin"), s.client_country),
                  (_("Identification"), f"{s.get_id_type_display()} — {s.id_number}"),
@@ -202,6 +211,12 @@ def receipt_rows(t):
             rows.append((_("From"), str(t.source_account)))
         if t.dest_account_id:
             rows.append((_("To"), str(t.dest_account)))
+    if t.type in (T.CAPITAL_IN, T.CAPITAL_OUT, T.CAPITAL_MOVE):
+        if t.fund_source:
+            rows.append((_("Source of the funds") if t.type == T.CAPITAL_IN else _("Paid to / where it goes"),
+                         t.fund_source))
+        if t.fund_purpose:
+            rows.append((_("Purpose"), t.fund_purpose))
     if t.replaces_id:
         rows.append((_("Replaces"), f"{t.replaces.reference} ({t.replaces.receipt_no or ''})"))
     if t.description:

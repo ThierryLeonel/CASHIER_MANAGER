@@ -467,3 +467,16 @@ input.auto { background: var(--soft); font-weight: 700; }
 .side-nav .space-switch a { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 6px;
   border-radius: 9px; font-weight: 600; font-size: .9rem; margin: 0; }
 .side-nav .space-switch a.on { background: var(--accent); color: #fff; }
+/* sale: pick units of several items, basket */
+.panel-title { font-size: 1.05rem; margin: 0 0 12px; }
+.pick-tools { display: grid; grid-template-columns: minmax(160px, 240px) 1fr; gap: 8px; margin-bottom: 12px; }
+.pick-tools select, .pick-tools input { padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); color: var(--ink); font: inherit; }
+.pick-list { display: grid; gap: 12px; max-height: 460px; overflow: auto; padding-right: 4px; }
+.pick-cat-name { font-size: .75rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 700; margin: 4px 0 6px; }
+.pick-item { border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; margin-bottom: 8px; background: var(--panel); }
+.pick-item.picked { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
+.pick-units { display: flex; flex-wrap: wrap; gap: 6px 10px; margin-top: 8px; }
+.pick-units .unit { display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; border-radius: 8px; background: var(--soft); font-size: .9rem; cursor: pointer; }
+.pick-units .unit[hidden] { display: none; }
+.basket .price-in { width: 120px; text-align: right; padding: 6px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); color: var(--ink); font: inherit; }
+@media (max-width: 700px) { .pick-tools { grid-template-columns: 1fr; } }

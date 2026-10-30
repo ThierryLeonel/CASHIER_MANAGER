@@ -39,10 +39,12 @@ class Account(models.Model):
         OPENING_EQUITY = "OPENING_EQUITY", _("Opening balance equity")
         SHOP_PAYABLE = "SHOP_PAYABLE", _("Shop: position with a commercial agent")
         SHOP_SALES = "SHOP_SALES", _("Shop sales")
+        OWNER_CAPITAL = "OWNER_CAPITAL", _("Owner's capital")
 
     ASSET_KINDS = (Kind.CASH_DRAWER, Kind.UVE, Kind.ER, Kind.MTN, Kind.BANK)
     CLOSING_KINDS = (Kind.CASH_DRAWER, Kind.UVE, Kind.ER, Kind.MTN)
-    SYSTEM_KINDS = (Kind.CONVERSION_UPLIFT, Kind.RECON_ADJUSTMENT, Kind.OPENING_EQUITY, Kind.SHOP_SALES)
+    SYSTEM_KINDS = (Kind.CONVERSION_UPLIFT, Kind.RECON_ADJUSTMENT, Kind.OPENING_EQUITY, Kind.SHOP_SALES,
+                    Kind.OWNER_CAPITAL)
 
     kind = models.CharField(max_length=20, choices=Kind.choices)
     name = models.CharField(_("name"), max_length=150)
@@ -182,6 +184,9 @@ class TxType(models.TextChoices):
     SHOP_SALE = "SHOP_SALE", _("Shop: item sale")
     SHOP_AGENT_REPAY = "SHOP_AGENT_REPAY", _("Shop: agent pays the shop")
     DESK_TO_SHOP = "DESK_TO_SHOP", _("Cashier: transfer to a shop")
+    CAPITAL_IN = "CAPITAL_IN", _("Capital injection")
+    CAPITAL_OUT = "CAPITAL_OUT", _("Capital withdrawal")
+    CAPITAL_MOVE = "CAPITAL_MOVE", _("Capital transfer")
 
 
 class Product(models.TextChoices):
@@ -233,6 +238,10 @@ class Transaction(models.Model):
     rate_used = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
     amount_received = models.DecimalField(**MONEY, null=True, blank=True)  # ER received in conversions
     bank_reference = models.CharField(max_length=60, blank=True)
+    fund_source = models.CharField(_("source of the funds"), max_length=255, blank=True,
+                                   help_text="Capital injection: where the money comes from. Withdrawal: who / where "
+                                             "it goes to.")
+    fund_purpose = models.CharField(_("purpose"), max_length=255, blank=True)
     description = models.CharField(max_length=255, blank=True)
     idempotency_key = models.UUIDField(null=True, blank=True, unique=True)
     reverses = models.OneToOneField("self", null=True, blank=True, on_delete=models.PROTECT,
