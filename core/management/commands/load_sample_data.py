@@ -30,7 +30,7 @@ class Command(BaseCommand):
         o = build_sample_org(opts["password"])
         self.stdout.write(self.style.SUCCESS("Sample organisation created. Users (password: %s):" % opts["password"]))
         for u in ("admin", "manager", "junior.fako", "finance", "cashier.fako1", "cashier.fako2", "cashier.meme", "agent.ndive",
-                  "agent.ekane"):
+                  "agent.ekane", "shop.molyko", "shop.senior"):
             self.stdout.write(f"  {u}")
         if opts["activity"]:
             self._activity(o)
@@ -71,6 +71,26 @@ class Command(BaseCommand):
                                      description="[SAMPLE] MTN float moved to Fako 1")
         ops.record_exchange(f1, cash_manager=o["cm2"], amount=D(400_000), give_kind="CASH",
                             amount_served=D(250_000), external_ref="SAMPLE-CM-01")  # 150,000 still to be served
+        # shop: opening capital, then a day of shop activity
+        from core.models import ShopService
+        from core.services import shops as sh
+
+        shop, smgr = o["shop"], o["shop_mgr"]
+        for kind, amt in (("CASH_DRAWER", 300_000), ("UVE", 800_000), ("ER", 150_000)):
+            ops.record_opening_balance(admin, account=shop.account(kind), amount=D(amt), description="[SAMPLE] shop launch")
+        sh.receive_stock(o["shop_senior"], shop=shop, item=o["items"]["phone"], quantity=5)
+        sh.receive_stock(o["shop_senior"], shop=shop, item=o["items"]["kit"], quantity=3)
+        sh.cash_in(smgr, amount=D(50_000), commission=D(250), client_phone="677123456")
+        sh.cash_out(smgr, amount=D(20_000), commission=D(200))
+        sh.airtime(smgr, amount=D(5_000))
+        sh.convert(smgr, amount=D(100_000))
+        sh.appro(smgr, agent=a1, amount=D(200_000), pay="CASH")
+        sh.er_supply(smgr, agent=a2, amount=D(50_000), pay="CREDIT")
+        sh.destockage(smgr, agent=a1, amount=D(30_000))
+        sh.sell(smgr, item=o["items"]["phone"], quantity=1)
+        sh.count_service(smgr, service=ShopService.objects.get(name__startswith="OTT"), count=4)
+        sh.retrieve_sim(smgr, sim_number="699887766", holder_name="[SAMPLE] Client Ebai", id_type="CNI",
+                        id_number="SAMPLE-1234567")
         # Meme closes with a 2,000 cash shortage (left open for investigation)
         actuals = {a.id: balance(a) for a in cl.closing_accounts(me)}
         actuals[dm.id] -= D(2000)

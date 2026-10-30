@@ -1,0 +1,9 @@
+{% load i18n cashier %}<div class="tbl-wrap"><table class="t">
+<thead><tr><th>{% trans "Recorded at" %}</th>{% if show_shop %}<th>{% trans "Shop" %}</th>{% endif %}<th>{% trans "Reference" %}</th><th>{% trans "Operation" %}</th><th>{% trans "Agent / client" %}</th><th class="money">{% trans "Amount" %}</th><th class="money">{% trans "Commission" %}</th><th>{% trans "By" %}</th></tr></thead>
+<tbody>{% for t in txns %}<tr{% if t.is_corrected %} class="corrected"{% endif %}>
+  <td>{{ t.posted_at|date:"d/m/Y H:i" }}</td>{% if show_shop %}<td>{{ t.shop }}</td>{% endif %}
+  <td class="keep"><a href="{% url 'txn_detail' t.pk %}">{{ t.reference }}</a>{% if t.is_corrected %} <span class="badge bad">{% trans "CORRECTED" %}</span>{% endif %}</td>
+  <td>{{ t.get_type_display }}{% if t.on_credit %} <span class="badge acc">{% trans "credit" %}</span>{% endif %}{% if t.description %}<br><span class="muted small">{{ t.description }}</span>{% endif %}</td>
+  <td>{% if t.counterparty %}{{ t.counterparty.name }}{% elif t.client_phone %}{{ t.client_phone|sim }}{% endif %}</td>
+  <td class="money">{{ t.amount|fcfa }}</td><td class="money">{% if t.commission %}{{ t.commission|fcfa }}{% endif %}</td><td>{{ t.entered_by }}</td>
+</tr>{% empty %}<tr><td colspan="8" class="muted">{% trans "Nothing yet." %}</td></tr>{% endfor %}</tbody></table></div>

@@ -1,0 +1,13 @@
+{% extends "core/base.html" %}{% load i18n cashier %}
+{% block title %}{% trans "Stock" %}{% endblock %}
+{% block content %}
+<h1>{% trans "Stock of gadgets and energy kits" %}</h1>
+<div class="tbl-wrap"><table class="t"><thead><tr><th>{% trans "Item" %}</th><th class="money">{% trans "Price" %}</th>{% for s in shops %}<th class="money">{{ s }}</th>{% endfor %}</tr></thead>
+<tbody>{% for r in table %}<tr><td>{{ r.item }} <span class="muted small">{{ r.item.get_category_display }}</span></td><td class="money">{{ r.item.price|fcfa }}</td>{% for q in r.cells %}<td class="money">{% if q <= 0 %}<span class="neg">{{ q }}</span>{% else %}{{ q }}{% endif %}</td>{% endfor %}</tr>
+{% empty %}<tr><td colspan="{{ shops|length|add:2 }}" class="muted">{% trans "No item yet." %}{% if user.is_shop_senior or user.is_superadmin %} <a href="{% url 'shop_setup' %}">{% trans "Add items" %}</a>{% endif %}</td></tr>{% endfor %}</tbody></table></div>
+{% if form %}<h2>{% trans "Receive stock or adjust" %}</h2>
+<div class="panel"><form method="post" class="entry" novalidate>{% csrf_token %}{% include "core/inc/fields.html" %}<button class="btn primary" type="submit">{% trans "Save" %}</button></form></div>{% endif %}
+<h2>{% trans "Latest stock movements" %}</h2>
+<div class="tbl-wrap"><table class="t"><thead><tr><th>{% trans "When" %}</th><th>{% trans "Shop" %}</th><th>{% trans "Item" %}</th><th>{% trans "Movement" %}</th><th class="money">{% trans "Quantity" %}</th><th>{% trans "By" %}</th></tr></thead>
+<tbody>{% for m in moves %}<tr><td>{{ m.recorded_at|date:"d/m/Y H:i" }}</td><td>{{ m.shop }}</td><td>{{ m.item }}</td><td>{{ m.get_kind_display }}{% if m.transaction %} · <a href="{% url 'txn_detail' m.transaction.pk %}">{{ m.transaction.reference }}</a>{% endif %}</td><td class="money">{{ m.quantity }}</td><td>{{ m.recorded_by }}</td></tr>{% empty %}<tr><td colspan="6" class="muted">{% trans "Nothing yet." %}</td></tr>{% endfor %}</tbody></table></div>
+{% endblock %}

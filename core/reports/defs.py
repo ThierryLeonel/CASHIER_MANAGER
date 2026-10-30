@@ -539,6 +539,7 @@ RECON_GROUPS = [
     ("transfers", _l("Internal transfers"), [TxType.INTERNAL_TRANSFER]),
     ("adjust", _l("Reconciliation adj."), [TxType.RECON_ADJUSTMENT]),
     ("reversal", _l("Correction reversals"), [TxType.REVERSAL]),
+    ("shops", _l("Shop operations"), [t for t in TxType.values if t.startswith("SHOP_")]),
 ]
 
 
@@ -573,6 +574,19 @@ def _zone_summary(f):
         for k, v in g["tot"].items():
             company[k] += v
     if f.master_zone is None and f.subzone is None and f.cashier is None:
+        shop_accts = list(Account.objects.filter(kind__in=kinds, shop__isnull=False).select_related("shop"))
+        if shop_accts:
+            sb = balances_by_account(shop_accts, f)
+            per_shop, all_shops = {}, defaultdict(Decimal)
+            for a in shop_accts:
+                d = per_shop.setdefault(a.shop.name, defaultdict(Decimal))
+                o, _dr, _cr, cl, _cur = sb[a.id]
+                for tgt in (d, all_shops, company):
+                    tgt[f"{a.kind}_o"] += o
+                    tgt[f"{a.kind}_c"] += cl
+            rows.append(dict(zone=_("SHOPS"), level=_("Shops"), **all_shops, _bold=True))
+            for name in sorted(per_shop):
+                rows.append(dict(zone="   " + name, level=_("Shop"), **per_shop[name]))
         rows.append(dict(zone=_("COMPANY TOTAL"), level=_("Company"), **company, _bold=True))
     cols = [Col("zone", _("Zone")), Col("level", _("Level"))]
     for k in kinds:

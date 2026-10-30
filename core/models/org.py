@@ -122,8 +122,12 @@ class User(AbstractUser):
         FINANCE = "FINANCE", _("Finance manager")
         CASHIER = "CASHIER", _("Cashier")
         AGENT = "AGENT", _("Commercial agent")
+        SHOP_MANAGER = "SHOP_MANAGER", _("Shop manager")
+        SHOP_SENIOR = "SHOP_SENIOR", _("Senior shop manager")
 
     role = models.CharField(_("role"), max_length=12, choices=Role.choices, default=Role.CASHIER)
+    shop = models.ForeignKey("Shop", null=True, blank=True, on_delete=models.PROTECT, related_name="managers",
+                             verbose_name=_("shop"), help_text="Shop managers: the shop they run.")
     must_change_password = models.BooleanField(
         _("must change password at next sign-in"), default=False,
         help_text="Set when an administrator resets the password; cleared when the user chooses a new one.")
@@ -160,7 +164,7 @@ class User(AbstractUser):
     def __str__(self):
         return self.get_full_name() or self.username
 
-    PREFIX = {"SUPERADMIN": "ADM", "MANAGER": "MGR", "JUNIOR": "JMG", "FINANCE": "FIN", "CASHIER": "CSH",
+    PREFIX = {"SUPERADMIN": "ADM", "MANAGER": "MGR", "JUNIOR": "JMG", "FINANCE": "FIN", "CASHIER": "CSH", "SHOP_MANAGER": "SHP", "SHOP_SENIOR": "SSM",
               "AGENT": "AGT"}
 
     def save(self, *args, **kwargs):
@@ -193,6 +197,22 @@ class User(AbstractUser):
         return self.role in (self.Role.MANAGER, self.Role.JUNIOR, self.Role.FINANCE)
 
     @property
+    def is_shop_manager(self):
+        return self.role == self.Role.SHOP_MANAGER
+
+    @property
+    def is_shop_senior(self):
+        return self.role == self.Role.SHOP_SENIOR
+
+    @property
+    def is_shop_user(self):
+        return self.role in (self.Role.SHOP_MANAGER, self.Role.SHOP_SENIOR)
+
+    @property
+    def sees_all_shops(self):
+        return self.role in (self.Role.SHOP_SENIOR, self.Role.MANAGER, self.Role.FINANCE, self.Role.SUPERADMIN)
+
+    @property
     def is_junior(self):
         return self.role == self.Role.JUNIOR
 
@@ -222,6 +242,8 @@ class User(AbstractUser):
                 raise ValidationError(_("An agent login must be linked to an agent account."))
             if self.counterparty.kind != Counterparty.Kind.AGENT:
                 raise ValidationError(_("Only commercial agents (not POS) may have a login."))
+        if self.role == self.Role.SHOP_MANAGER and not self.shop_id:
+            raise ValidationError(_("A shop manager must be assigned a shop."))
         if self.role == self.Role.JUNIOR and not self.subzone_id:
             raise ValidationError(_("A junior manager must be assigned the zone they supervise."))
         if self.role == self.Role.CASHIER:

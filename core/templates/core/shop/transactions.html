@@ -1,0 +1,15 @@
+{% extends "core/base.html" %}{% load i18n cashier %}
+{% block title %}{% trans "Shop transactions" %}{% endblock %}
+{% block content %}
+<h1>{% trans "Shop transactions" %}</h1>
+<form class="filters panel" method="get">
+  <div class="field"><label>{% trans "From" %}</label><input type="date" name="from" value="{{ d_from|date:'Y-m-d' }}"></div>
+  <div class="field"><label>{% trans "To" %}</label><input type="date" name="to" value="{{ d_to|date:'Y-m-d' }}"></div>
+  {% if shops|length > 1 %}<div class="field"><label>{% trans "Shop" %}</label><select name="shop"><option value="">—</option>{% for s in shops %}<option value="{{ s.pk }}" {% if s.pk|stringformat:"s" == shop_id %}selected{% endif %}>{{ s }}</option>{% endfor %}</select></div>{% endif %}
+  <div class="field"><label>{% trans "Operation" %}</label><select name="type"><option value="">—</option>{% for v, l in types %}<option value="{{ v }}" {% if v == typ %}selected{% endif %}>{{ l }}</option>{% endfor %}</select></div>
+  <div class="field"><button class="btn" type="submit">{% trans "Apply" %}</button></div>
+</form>
+<p class="muted">{% trans "Total amount" %}: <strong>{{ totals.amt|default:0|fcfa }} FCFA</strong> · {% trans "Commissions" %}: <strong>{{ totals.com|default:0|fcfa }} FCFA</strong></p>
+{% include "core/shop/_txns.html" with txns=page show_shop=True %}
+<div class="pager">{% if page.has_previous %}<a class="btn small" href="?from={{ d_from|date:'Y-m-d' }}&to={{ d_to|date:'Y-m-d' }}&shop={{ shop_id }}&type={{ typ }}&page={{ page.previous_page_number }}">←</a>{% endif %}<span class="muted small">{{ page.number }} / {{ page.paginator.num_pages }}</span>{% if page.has_next %}<a class="btn small" href="?from={{ d_from|date:'Y-m-d' }}&to={{ d_to|date:'Y-m-d' }}&shop={{ shop_id }}&type={{ typ }}&page={{ page.next_page_number }}">→</a>{% endif %}</div>
+{% endblock %}

@@ -26,7 +26,7 @@ from .errors import BusinessError
 from .ledger import Ctx, TxSpec, post
 
 VOID_ONLY = (TxType.RESPONSIBILITY_TRANSFER,)
-NOT_CORRECTABLE = (TxType.REVERSAL, TxType.RECON_ADJUSTMENT)
+NOT_CORRECTABLE = (TxType.REVERSAL, TxType.RECON_ADJUSTMENT) + tuple(t for t in TxType.values if t.startswith("SHOP_"))
 
 
 def params_from_txn(t):

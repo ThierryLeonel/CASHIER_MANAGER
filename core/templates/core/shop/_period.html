@@ -1,0 +1,6 @@
+{% load i18n %}<form class="filters panel" method="get">
+  <div class="field"><label>{% trans "From" %}</label><input type="date" name="from" value="{{ d_from|date:'Y-m-d' }}"></div>
+  <div class="field"><label>{% trans "To" %}</label><input type="date" name="to" value="{{ d_to|date:'Y-m-d' }}"></div>
+  {{ extra_filters|default:"" }}
+  <div class="field"><button class="btn" type="submit">{% trans "Apply" %}</button></div>
+</form>

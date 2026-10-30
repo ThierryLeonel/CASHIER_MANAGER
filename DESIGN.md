@@ -52,6 +52,27 @@ Orange Cameroon distribution partner · FCFA (XAF) · Africa/Douala business dat
 - **Internal transfers** are only between MTN float, UVE or bank accounts, and only between two accounts of the same kind (MTN→MTN, UVE→UVE, bank→bank). Cash drawers and ER wallets are not transferred internally. The destination list follows the source's kind.
 - Entry forms say when a subzone has no account of the needed kind yet, and who adds it.
 
+### Shops (points of service)
+
+Shops are separate from the cashiers' desks. Each shop (Configuration › Shops) has its own **cash drawer, UVE and ER** accounts (created automatically; its company SIM number is recorded on the shop), its **shop manager** (teller and controller of that shop) and the one **senior shop manager** over all shops. Finance, the senior manager and the super administrator see every shop (Shops overview: capital and activity per shop with totals; shop transactions; SIM retrievals; services count; stock). Shops never see the commercial agents' balances (the agent picker shows names only), the cashiers' transactions or reports; cashiers and junior managers do not see shop dealings.
+
+Shop operations go through the same double-entry ledger, on the shop's accounts (`Transaction.shop`, no cashier or business day):
+
+| Operation | Effect |
+|---|---|
+| Orange Money cash-in | UVE −, cash + (commission recorded, not posted) |
+| Orange Money cash-out | UVE +, cash − (commission recorded) |
+| Airtime sale | ER −, cash + |
+| UVE→ER conversion | at the **shop rate** (separate from the cashiers' rate; set by the senior shop manager / super admin) |
+| Appro (UVE from an agent) | UVE +; cash −, or owed to the agent if on credit |
+| ER supply from an agent | ER +; cash − or UVE −, or owed to the agent if on credit |
+| Destockage with an agent | UVE −, cash + |
+| Pay an agent | owed to the agent −; cash − or UVE − |
+| Transfer to a cashier | shop cash/UVE −; the cashier subzone's drawer/UVE wallet + |
+| Item sale (gadgets, energy kits) | cash +, shop sales −; stock − |
+
+Counted services (OTT, MAX IT, identification update, ticket creation, … — added or removed by the senior shop manager / super admin) record only their number per day. A **SIM retrieval** registers the SIM, the new SIM serial, the person's name, ID type and number and contact. Items have a price and a stock per shop (received / sold / adjusted). Shop dealings with agents use a per-shop, per-agent "owed to the agent" account and never touch the agent's balance with the company. Shop accounts appear in the opening grid (Shops group) and in the finance reconciliation (SHOPS rows, included in the company total).
+
 ### Users & passwords
 
 - Passwords are stored hashed: nobody — not even the super administrator — can read them. The super administrator's **Users & passwords** page (Administration) lists every user with role, zone, staff ID, last sign-in and status, and lets them **reset** a password (a strong one generated and shown once, or one they type, checked against the password rules), optionally forcing the user to choose their own at next sign-in, and **deactivate / activate** accounts (deactivation signs the user out at once; you cannot deactivate yourself or the last active super administrator). Every action is in the audit log.

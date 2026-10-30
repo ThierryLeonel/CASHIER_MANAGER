@@ -37,10 +37,12 @@ class Account(models.Model):
         CONVERSION_UPLIFT = "CONVERSION_UPLIFT", _("Conversion uplift")
         RECON_ADJUSTMENT = "RECON_ADJUSTMENT", _("Reconciliation adjustments")
         OPENING_EQUITY = "OPENING_EQUITY", _("Opening balance equity")
+        SHOP_PAYABLE = "SHOP_PAYABLE", _("Shop: owed to a commercial agent")
+        SHOP_SALES = "SHOP_SALES", _("Shop sales")
 
     ASSET_KINDS = (Kind.CASH_DRAWER, Kind.UVE, Kind.ER, Kind.MTN, Kind.BANK)
     CLOSING_KINDS = (Kind.CASH_DRAWER, Kind.UVE, Kind.ER, Kind.MTN)
-    SYSTEM_KINDS = (Kind.CONVERSION_UPLIFT, Kind.RECON_ADJUSTMENT, Kind.OPENING_EQUITY)
+    SYSTEM_KINDS = (Kind.CONVERSION_UPLIFT, Kind.RECON_ADJUSTMENT, Kind.OPENING_EQUITY, Kind.SHOP_SALES)
 
     kind = models.CharField(max_length=20, choices=Kind.choices)
     name = models.CharField(_("name"), max_length=150)
@@ -59,6 +61,9 @@ class Account(models.Model):
                                 related_name="ledger_account")
     expense_category = models.OneToOneField(ExpenseCategory, null=True, blank=True, on_delete=models.PROTECT,
                                             related_name="ledger_account")
+    shop = models.ForeignKey("Shop", null=True, blank=True, on_delete=models.PROTECT, related_name="accounts")
+    shop_agent = models.ForeignKey(Counterparty, null=True, blank=True, on_delete=models.PROTECT,
+                                   related_name="shop_payables", help_text="SHOP_PAYABLE: the agent owed.")
     active = models.BooleanField(default=True)
     created_at = models.DateTimeField(default=timezone.now)
 
@@ -66,12 +71,18 @@ class Account(models.Model):
         ordering = ["kind", "name"]
         constraints = [
             models.UniqueConstraint(fields=["kind", "sim"], condition=Q(sim__isnull=False), name="one_wallet_per_kind_per_sim"),
-            models.UniqueConstraint(fields=["kind"], condition=Q(kind__in=["CONVERSION_UPLIFT", "RECON_ADJUSTMENT", "OPENING_EQUITY"]),
+            models.UniqueConstraint(fields=["kind"], condition=Q(kind__in=["CONVERSION_UPLIFT", "RECON_ADJUSTMENT",
+                                                                           "OPENING_EQUITY", "SHOP_SALES"]),
                                     name="singleton_system_accounts"),
             models.CheckConstraint(name="wallet_has_sim",
-                                   condition=~Q(kind__in=["UVE", "ER", "MTN"]) | Q(sim__isnull=False)),
+                                   condition=~Q(kind__in=["UVE", "ER", "MTN"]) | Q(sim__isnull=False)
+                                   | Q(shop__isnull=False)),
             models.CheckConstraint(name="drawer_has_zone",
-                                   condition=~Q(kind="CASH_DRAWER") | Q(zone__isnull=False)),
+                                   condition=~Q(kind="CASH_DRAWER") | Q(zone__isnull=False) | Q(shop__isnull=False)),
+            models.UniqueConstraint(fields=["kind", "shop"], condition=Q(shop__isnull=False, shop_agent__isnull=True),
+                                    name="one_account_per_kind_per_shop"),
+            models.UniqueConstraint(fields=["shop", "shop_agent"], condition=Q(shop_agent__isnull=False),
+                                    name="one_payable_per_shop_agent"),
             models.CheckConstraint(name="customer_has_counterparty",
                                    condition=~Q(kind="CUSTOMER") | Q(counterparty__isnull=False)),
             models.CheckConstraint(name="cm_has_cash_manager",
@@ -159,6 +170,16 @@ class TxType(models.TextChoices):
     OPENING_BALANCE = "OPENING", _("Opening balance")
     RECON_ADJUSTMENT = "RECON_ADJ", _("Reconciliation adjustment")
     REVERSAL = "REVERSAL", _("Correction reversal")
+    SHOP_CASHIN = "SHOP_CASHIN", _("Shop: Orange Money cash-in")
+    SHOP_CASHOUT = "SHOP_CASHOUT", _("Shop: Orange Money cash-out")
+    SHOP_AIRTIME = "SHOP_AIRTIME", _("Shop: airtime sale")
+    SHOP_CONVERT = "SHOP_CONVERT", _("Shop: UVE → ER conversion")
+    SHOP_APPRO = "SHOP_APPRO", _("Shop: UVE supply from agent (appro)")
+    SHOP_ER_SUPPLY = "SHOP_ER_SUPPLY", _("Shop: ER supply from agent")
+    SHOP_DESTOCK = "SHOP_DESTOCK", _("Shop: destockage with agent")
+    SHOP_AGENT_PAY = "SHOP_AGENT_PAY", _("Shop: payment to agent (credit)")
+    SHOP_TO_DESK = "SHOP_TO_DESK", _("Shop: transfer to a cashier")
+    SHOP_SALE = "SHOP_SALE", _("Shop: item sale")
 
 
 class Product(models.TextChoices):
@@ -226,6 +247,10 @@ class Transaction(models.Model):
     # One payment made with several methods (cash + UVE + MTN + bank) is recorded as one collection per method,
     # posted together and sharing this id and one receipt.
     payment_group = models.UUIDField(null=True, blank=True, db_index=True)
+    shop = models.ForeignKey("Shop", null=True, blank=True, on_delete=models.PROTECT, related_name="transactions")
+    commission = models.DecimalField(_("commission"), **MONEY, null=True, blank=True)
+    client_phone = models.CharField(_("client phone"), max_length=30, blank=True)
+    on_credit = models.BooleanField(default=False)
 
     class Meta:
         ordering = ["-posted_at", "-id"]

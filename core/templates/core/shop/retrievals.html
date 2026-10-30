@@ -1,0 +1,15 @@
+{% extends "core/base.html" %}{% load i18n cashier %}
+{% block title %}{% trans "SIM retrievals" %}{% endblock %}
+{% block content %}
+<h1>{% trans "SIM retrievals" %}</h1>
+<form class="filters panel" method="get">
+  <div class="field"><label>{% trans "Search (SIM, name, ID)" %}</label><input type="text" name="q" value="{{ q }}"></div>
+  <div class="field"><label>{% trans "From" %}</label><input type="date" name="from" value="{{ d_from|date:'Y-m-d' }}"></div>
+  <div class="field"><label>{% trans "To" %}</label><input type="date" name="to" value="{{ d_to|date:'Y-m-d' }}"></div>
+  <div class="field"><button class="btn" type="submit">{% trans "Search" %}</button>{% if user.is_shop_user %} <a class="btn primary" href="{% url 'shop_retrieve' %}">+ {% trans "New" %}</a>{% endif %}</div>
+</form>
+<div class="tbl-wrap"><table class="t"><thead><tr><th>{% trans "Date" %}</th><th>{% trans "Shop" %}</th><th>{% trans "SIM" %}</th><th>{% trans "New SIM serial (ICCID)" %}</th><th>{% trans "Person" %}</th><th>{% trans "ID" %}</th><th>{% trans "Contact" %}</th><th>{% trans "By" %}</th></tr></thead>
+<tbody>{% for r in page %}<tr><td>{{ r.business_date|date:"d/m/Y" }}</td><td>{{ r.shop }}</td><td><strong>{{ r.sim_number|sim }}</strong></td><td>{{ r.iccid|default:"—" }}</td><td>{{ r.holder_name }}</td><td>{{ r.get_id_type_display }} {{ r.id_number }}</td><td>{{ r.phone|default:"—" }}</td><td>{{ r.recorded_by }}</td></tr>
+{% empty %}<tr><td colspan="8" class="muted">{% trans "Nothing found." %}</td></tr>{% endfor %}</tbody></table></div>
+<div class="pager">{% if page.has_previous %}<a class="btn small" href="?q={{ q|urlencode }}&from={{ d_from|date:'Y-m-d' }}&to={{ d_to|date:'Y-m-d' }}&page={{ page.previous_page_number }}">←</a>{% endif %}<span class="muted small">{{ page.number }} / {{ page.paginator.num_pages }}</span>{% if page.has_next %}<a class="btn small" href="?q={{ q|urlencode }}&from={{ d_from|date:'Y-m-d' }}&to={{ d_to|date:'Y-m-d' }}&page={{ page.next_page_number }}">→</a>{% endif %}</div>
+{% endblock %}

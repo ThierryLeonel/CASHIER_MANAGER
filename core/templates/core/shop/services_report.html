@@ -1,0 +1,11 @@
+{% extends "core/base.html" %}{% load i18n %}
+{% block title %}{% trans "Services count" %}{% endblock %}
+{% block content %}
+<h1>{% trans "Services count" %}</h1>
+{% include "core/shop/_period.html" %}
+<div class="tbl-wrap"><table class="t"><thead><tr><th>{% trans "Shop" %}</th><th>{% trans "Service" %}</th><th class="money">{% trans "Count" %}</th></tr></thead>
+<tbody>{% for r in rows %}<tr><td>{{ r.shop__name }}</td><td>{{ r.service__name }}</td><td class="money">{{ r.n }}</td></tr>{% empty %}<tr><td colspan="3" class="muted">{% trans "Nothing recorded in this period." %}</td></tr>{% endfor %}</tbody></table></div>
+<h2>{% trans "Latest records" %}</h2>
+<div class="tbl-wrap"><table class="t"><thead><tr><th>{% trans "Date" %}</th><th>{% trans "Shop" %}</th><th>{% trans "Service" %}</th><th class="money">{% trans "Count" %}</th><th>{% trans "By" %}</th><th>{% trans "Note" %}</th></tr></thead>
+<tbody>{% for r in recent %}<tr><td>{{ r.business_date|date:"d/m/Y" }}</td><td>{{ r.shop }}</td><td>{{ r.service }}</td><td class="money">{{ r.count }}</td><td>{{ r.recorded_by }}</td><td>{{ r.note }}</td></tr>{% empty %}<tr><td colspan="6" class="muted">{% trans "Nothing yet." %}</td></tr>{% endfor %}</tbody></table></div>
+{% endblock %}

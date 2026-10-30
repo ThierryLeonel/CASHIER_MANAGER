@@ -1,0 +1,25 @@
+{% extends "core/base.html" %}{% load i18n cashier %}
+{% block title %}{% trans "Shops overview" %}{% endblock %}
+{% block topbar %}{% trans "Shops" %}{% endblock %}
+{% block content %}
+<h1>{% trans "Shops overview" %}</h1>
+<p class="muted">{% trans "Capital (cash, UVE, ER) of every shop now, and their activity over the period." %}</p>
+{% include "core/shop/_period.html" %}
+<div class="bal-row">
+  <div class="bal k-CASH_DRAWER"><span class="bal-label">{% trans "Cash in shops" %}</span><span class="bal-value">{{ tot.cash|fcfa }}</span><span class="bal-unit">FCFA</span></div>
+  <div class="bal k-UVE"><span class="bal-label">{% trans "UVE in shops" %}</span><span class="bal-value">{{ tot.uve|fcfa }}</span><span class="bal-unit">FCFA</span></div>
+  <div class="bal k-ER"><span class="bal-label">{% trans "ER in shops" %}</span><span class="bal-value">{{ tot.er|fcfa }}</span><span class="bal-unit">FCFA</span></div>
+  <div class="bal k-MTN"><span class="bal-label">{% trans "Commissions (period)" %}</span><span class="bal-value">{{ tot.com|fcfa }}</span><span class="bal-unit">FCFA</span></div>
+</div>
+<div class="tbl-wrap"><table class="t">
+<thead><tr><th>{% trans "Shop" %}</th><th class="money">{% trans "Cash" %}</th><th class="money">UVE</th><th class="money">ER</th><th class="money">{% trans "Owed to agents" %}</th><th class="money">{% trans "Cash-in" %}</th><th class="money">{% trans "Cash-out" %}</th><th class="money">{% trans "Commission" %}</th><th class="money">{% trans "Airtime" %}</th><th class="money">{% trans "Sales" %}</th><th class="money">{% trans "Services" %}</th><th class="money">{% trans "Retrievals" %}</th></tr></thead>
+<tbody>{% for r in rows %}<tr>
+  <td><a href="{% url 'shop_detail' r.shop.pk %}?from={{ d_from|date:'Y-m-d' }}&to={{ d_to|date:'Y-m-d' }}"><strong>{{ r.shop }}</strong></a>{% if r.shop.zone %}<br><span class="muted small">{{ r.shop.zone }}</span>{% endif %}</td>
+  <td class="money">{{ r.cash|fcfa }}</td><td class="money">{{ r.uve|fcfa }}</td><td class="money">{{ r.er|fcfa }}</td>
+  <td class="money">{% if r.owed %}<span class="neg">{{ r.owed|fcfa }}</span>{% else %}0{% endif %}</td>
+  <td class="money">{{ r.cashin|fcfa }}</td><td class="money">{{ r.cashout|fcfa }}</td><td class="money">{{ r.com|fcfa }}</td>
+  <td class="money">{{ r.airtime|fcfa }}</td><td class="money">{{ r.sales|fcfa }}</td><td class="money">{{ r.services }}</td><td class="money">{{ r.retrievals }}</td>
+</tr>{% empty %}<tr><td colspan="12" class="muted">{% trans "No shop yet. The super administrator adds shops in Configuration › Shops." %}</td></tr>{% endfor %}</tbody>
+{% if rows %}<tfoot><tr class="total"><td>{% trans "TOTAL" %}</td><td class="money">{{ tot.cash|fcfa }}</td><td class="money">{{ tot.uve|fcfa }}</td><td class="money">{{ tot.er|fcfa }}</td><td class="money">{{ tot.owed|fcfa }}</td><td class="money">{{ tot.cashin|fcfa }}</td><td class="money">{{ tot.cashout|fcfa }}</td><td class="money">{{ tot.com|fcfa }}</td><td class="money">{{ tot.airtime|fcfa }}</td><td class="money">{{ tot.sales|fcfa }}</td><td></td><td></td></tr></tfoot>{% endif %}
+</table></div>
+{% endblock %}

@@ -5,3 +5,6 @@ from .ledger import (  # noqa: F401
     Account, AccountAccess, CashierDay, CashManagerExchange, Entry, PaymentMethod, Product, Transaction, TxType,
 )
 from .control import AuditEvent, Closing, ClosingLine, Correction, Discrepancy, DiscrepancyNote  # noqa: F401
+from .shops import (  # noqa: F401,E402
+    ServiceCount, Shop, ShopConversionRate, ShopItem, ShopService, SimRetrieval, StockMove,
+)

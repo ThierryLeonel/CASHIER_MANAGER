@@ -94,6 +94,10 @@ def run_service(request, form, fn, *, success, on_success):
 def can_view_txn(user, t):
     if user.sees_all_zones:
         return True
+    if user.is_shop_user:  # shops see only their own shop's entries
+        return bool(t.shop_id) and (user.is_shop_senior or t.shop_id == user.shop_id)
+    if t.shop_id and t.type != "SHOP_TO_DESK":
+        return False  # shop dealings are not visible to cashiers, junior managers or agents
     if user.is_agent:
         return Entry.objects.filter(transaction=t, account__counterparty=user.counterparty).exists()
     if user.is_junior:
@@ -211,6 +215,8 @@ def zone_matrix(zone=None):
 def dashboard(request):
     user = request.user
     ctx = {"today": douala_today()}
+    if user.is_shop_user:
+        return redirect("shops")
     if user.is_agent:
         cp = user.counterparty
         ctx["cp"] = cp

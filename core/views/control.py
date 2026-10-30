@@ -5,6 +5,7 @@ from decimal import Decimal
 
 from django.contrib import messages
 from django.db import transaction as db_transaction
+from django.db.models import Q
 from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.translation import gettext as _
@@ -134,16 +135,39 @@ def discrepancy_detail(request, pk):
 OPENING_GRID_KINDS = (Account.Kind.CASH_DRAWER, Account.Kind.UVE, Account.Kind.ER)
 
 
+class _ShopsGroup:
+    pk = "shops"
+
+    @property
+    def name(self):
+        return str(_("SHOPS"))
+
+    def __str__(self):
+        return self.name
+
+
 def opening_grid():
     """Control accounts (cash, UVE, ER) by master zone -> subzone / master SIM line, with recorded openings."""
-    accts = list(Account.objects.filter(kind__in=OPENING_GRID_KINDS, active=True, zone__isnull=False)
-                 .select_related("zone__parent", "custodian", "sim").order_by("id"))
+    accts = list(Account.objects.filter(kind__in=OPENING_GRID_KINDS, active=True)
+                 .filter(Q(zone__isnull=False) | Q(shop__isnull=False))
+                 .select_related("zone__parent", "custodian", "sim", "shop").order_by("id"))
     recorded = {}
     for t in Transaction.objects.filter(type=TxType.OPENING_BALANCE, opening_for_account__in=accts,
                                         correction__isnull=True):
         recorded[t.opening_for_account_id] = t
     masters, totals = {}, {k: Decimal(0) for k in OPENING_GRID_KINDS}
     for a in accts:
+        if a.shop_id:  # shops: one row per shop under a "Shops" group
+            me = masters.setdefault("shops", {"zone": _ShopsGroup(), "rows": {},
+                                              "totals": {k: Decimal(0) for k in OPENING_GRID_KINDS}})
+            row = me["rows"].setdefault(("shop", a.shop_id), {"label": a.shop.name, "master_level": False,
+                                                              "cells": {k: [] for k in OPENING_GRID_KINDS}})
+            t = recorded.get(a.id)
+            row["cells"][a.kind].append({"account": a, "txn": t})
+            if t is not None:
+                me["totals"][a.kind] += t.amount
+                totals[a.kind] += t.amount
+            continue
         m = a.zone.master
         me = masters.setdefault(m.id, {"zone": m, "rows": {}, "totals": {k: Decimal(0) for k in OPENING_GRID_KINDS}})
         if a.zone.is_master and (a.custodian_id or not m.subzones.exists()):
@@ -159,7 +183,7 @@ def opening_grid():
             me["totals"][a.kind] += t.amount
             totals[a.kind] += t.amount
     out = []
-    for m in sorted(masters.values(), key=lambda x: x["zone"].name):
+    for m in sorted(masters.values(), key=lambda x: (isinstance(x["zone"], _ShopsGroup), x["zone"].name)):
         rows = sorted(m["rows"].values(), key=lambda r: (r["master_level"], r["label"]))
         out.append({"zone": m["zone"], "totals": [m["totals"][k] for k in OPENING_GRID_KINDS],
                     "total": sum(m["totals"].values()),

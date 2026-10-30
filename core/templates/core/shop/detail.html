@@ -1,0 +1,38 @@
+{% extends "core/base.html" %}{% load i18n cashier %}
+{% block title %}{{ shop }}{% endblock %}
+{% block topbar %}{{ shop }}{% endblock %}
+{% block content %}
+<h1>{{ shop }}</h1>
+<p class="muted">{% if shop.zone %}{{ shop.zone }} · {% endif %}{% if shop.sim_number %}SIM {{ shop.sim_number|sim }} · {% endif %}{{ today|default:d_to|date:"d/m/Y" }}</p>
+<div class="bal-row">
+  <div class="bal k-CASH_DRAWER"><span class="bal-label">{% trans "Cash drawer" %}</span><span class="bal-value">{{ bal.CASH_DRAWER|fcfa }}</span><span class="bal-unit">FCFA</span></div>
+  <div class="bal k-UVE"><span class="bal-label">{% trans "UVE" %}</span><span class="bal-value">{{ bal.UVE|fcfa }}</span><span class="bal-unit">FCFA</span></div>
+  <div class="bal k-ER"><span class="bal-label">{% trans "ER" %}</span><span class="bal-value">{{ bal.ER|fcfa }}</span><span class="bal-unit">FCFA</span></div>
+  <div class="bal k-MTN"><span class="bal-label">{% trans "Owed to agents" %}</span><span class="bal-value">{{ bal.owed_agents|fcfa }}</span><span class="bal-unit">FCFA</span></div>
+</div>
+{% if can_record %}
+<div class="quick">
+  <a class="qa main" href="{% url 'shop_op' 'cashin' %}"><span class="qa-ic">{% icon "payment" 22 %}</span><strong>{% trans "Cash-in" %}</strong><span class="d">{% trans "UVE − · cash +" %}</span></a>
+  <a class="qa main" href="{% url 'shop_op' 'cashout' %}"><span class="qa-ic">{% icon "supply" 22 %}</span><strong>{% trans "Cash-out" %}</strong><span class="d">{% trans "UVE + · cash −" %}</span></a>
+  <a class="qa" href="{% url 'shop_op' 'airtime' %}"><span class="qa-ic">{% icon "clock" 22 %}</span><strong>{% trans "Airtime" %}</strong><span class="d">{% trans "ER − · cash +" %}</span></a>
+  <a class="qa" href="{% url 'shop_op' 'convert' %}"><span class="qa-ic">{% icon "convert" 22 %}</span><strong>{% trans "UVE→ER" %}</strong><span class="d">{% if rate %}{% blocktrans with p=rate.percent %}Shop rate {{ p }} %{% endblocktrans %}{% else %}{% trans "Rate not set" %}{% endif %}</span></a>
+  <a class="qa" href="{% url 'shop_op' 'sale' %}"><span class="qa-ic">{% icon "store" 22 %}</span><strong>{% trans "Sell an item" %}</strong><span class="d">{% trans "Gadgets and energy kits" %}</span></a>
+  <a class="qa" href="{% url 'shop_service' %}"><span class="qa-ic">{% icon "list" 22 %}</span><strong>{% trans "Services done" %}</strong><span class="d">{% trans "OTT, MAX IT, ID update, tickets…" %}</span></a>
+  <a class="qa" href="{% url 'shop_retrieve' %}"><span class="qa-ic">{% icon "users" 22 %}</span><strong>{% trans "SIM retrieval" %}</strong><span class="d">{% trans "Person and SIM registered" %}</span></a>
+</div>
+{% endif %}
+<h2>{% trans "Activity" %}</h2>
+{% include "core/shop/_period.html" %}
+<div class="tbl-wrap"><table class="t"><thead><tr><th>{% trans "Operation" %}</th><th class="money">{% trans "Count" %}</th><th class="money">{% trans "Amount" %}</th><th class="money">{% trans "Commission" %}</th></tr></thead>
+<tbody>{% for r in summary %}<tr><td>{{ r.label }}</td><td class="money">{{ r.n }}</td><td class="money">{{ r.amt|fcfa }}</td><td class="money">{% if r.com %}{{ r.com|fcfa }}{% endif %}</td></tr>
+{% empty %}<tr><td colspan="4" class="muted">{% trans "Nothing recorded in this period." %}</td></tr>{% endfor %}
+{% for r in svc_rows %}<tr><td>{{ r.service__name }}</td><td class="money">{{ r.n }}</td><td></td><td></td></tr>{% endfor %}
+{% if retrievals %}<tr><td>{% trans "SIM retrievals" %}</td><td class="money">{{ retrievals }}</td><td></td><td></td></tr>{% endif %}
+</tbody></table></div>
+{% if owed %}<h2>{% trans "Owed to commercial agents" %}</h2>
+<div class="tbl-wrap"><table class="t"><thead><tr><th>{% trans "Agent" %}</th><th class="money">{% trans "Owed" %}</th></tr></thead>
+<tbody>{% for ag, v in owed %}<tr><td>{{ ag.name }}</td><td class="money">{{ v|fcfa }}</td></tr>{% endfor %}</tbody></table></div>{% endif %}
+<h2>{% trans "Latest entries" %}</h2>
+{% include "core/shop/_txns.html" with txns=recent %}
+<p><a href="{% url 'shop_transactions' %}?shop={{ shop.pk }}">{% trans "All transactions of this shop" %} →</a></p>
+{% endblock %}

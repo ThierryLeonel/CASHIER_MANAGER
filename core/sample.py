@@ -96,7 +96,18 @@ def build_sample_org(password="Sample-Pass-2026!"):
     def acct(kind, sim_key):
         return Account.objects.get(kind=kind, sim=sims[sim_key])
 
+    from core.models import Shop, ShopConversionRate, ShopItem
+
+    shop = Shop.objects.create(name=S + "Shop Molyko", code="shop-molyko", zone=fako, sim_number="690000099")
+    shop_mgr = _user("shop.molyko", User.Role.SHOP_MANAGER, password, first_name=S + "Shop manager Molyko",
+                     shop=shop)
+    shop_senior = _user("shop.senior", User.Role.SHOP_SENIOR, password, first_name=S + "Senior shop manager")
+    ShopConversionRate.objects.create(rate="0.035", set_by=admin, note="[SAMPLE] shop rate 3.5 %")
+    items = {"phone": ShopItem.objects.create(name=S + "Smartphone A12", category="GADGET", price=65000),
+             "box": ShopItem.objects.create(name=S + "Flybox 4G", category="GADGET", price=30000),
+             "kit": ShopItem.objects.create(name=S + "Orange Energie kit S", category="ENERGY", price=45000)}
     return dict(
+        shop=shop, shop_mgr=shop_mgr, shop_senior=shop_senior, items=items,
         microzones=mzs,
         zones=dict(fako=fako, fako1=fako1, fako2=fako2, meme=meme, meme_sub=meme_sub),
         admin=admin, manager=manager, finance=finance, junior=junior, c_f1=c_f1, c_f2=c_f2, c_me=c_me,

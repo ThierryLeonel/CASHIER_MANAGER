@@ -11,7 +11,7 @@
   <div id="conv-preview" class="preview" hidden></div>
   <div class="form-foot">
     <button type="submit" class="btn primary" id="submit-btn">{% trans "Record" %}</button>
-    <a class="btn" href="{% url 'dashboard' %}">{% trans "Cancel" %}</a>
+    <a class="btn" href="{% if user.is_shop_user %}{% url 'shops' %}{% else %}{% url 'dashboard' %}{% endif %}">{% trans "Cancel" %}</a>
     <span class="small muted">{% trans "Only record transactions that are completed and confirmed." %}</span>
   </div>
 </form>
@@ -122,6 +122,12 @@
       if (bank) autoPick(form.querySelector('[name=bank_account]'));
     };
     pays.forEach(function (p) { p.addEventListener('input', syncPay); }); syncPay();
+  }
+  // shop transfer to a cashier: the receiving account follows what is sent (cash -> drawer, UVE -> UVE wallet)
+  var tk = form.querySelector('select[name=kind]'), tdest = form.querySelector('select[name=destination]');
+  if (tk && tdest) {
+    var syncKind = function () { onlyKind(tdest, tk.value === 'CASH' ? 'CASH_DRAWER' : 'UVE'); };
+    tk.addEventListener('change', syncKind); syncKind();
   }
   autoAll();
   // cash-manager exchange: balance still to be served, as you type

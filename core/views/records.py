@@ -193,7 +193,7 @@ def receipt_rows(t):
     return rows
 
 
-@roles_required(*STAFF, R.AGENT)
+@roles_required(*STAFF, R.AGENT, R.SHOP_MANAGER, R.SHOP_SENIOR)
 def txn_detail(request, pk):
     t = _get_visible_txn(request, pk)
     entries = t.entries.select_related("account__sim", "account__counterparty").order_by("id") \
@@ -274,7 +274,7 @@ def txn_transfer(request, pk):
         "customers": Counterparty.objects.filter(active=True)})
 
 
-@roles_required(*STAFF)
+@roles_required(*STAFF, R.SHOP_MANAGER, R.SHOP_SENIOR)
 def customer_search(request):
     """Live search for the customer pickers: microzone, business SIM digits or name.
 
@@ -284,6 +284,9 @@ def customer_search(request):
 
     q = (request.GET.get("q") or "").strip()
     kind = request.GET.get("kind") or ""
+    shop_user = request.user.is_shop_user  # shops deal with agents but never see their balances
+    if shop_user:
+        kind = Counterparty.Kind.AGENT
     qs = Counterparty.objects.filter(active=True).select_related("microzone__subzone", "microzone__agent")
     if kind in Counterparty.Kind.values:
         qs = qs.filter(kind=kind)
@@ -299,12 +302,13 @@ def customer_search(request):
                 .annotate(s=Sum("amount")))
     out = []
     for c in qs:
-        bal = bals.get(c.id) or 0
+        bal = 0 if shop_user else (bals.get(c.id) or 0)
         mz = c.microzone or (c.controlled_microzones.first() if c.kind == Counterparty.Kind.AGENT else None)
         out.append({"sim": c.business_sim, "sim_display": display_sim(c.business_sim), "name": c.name,
                     "microzone": mz.name if mz else "", "subzone": mz.subzone.name if mz else "",
                     "agent_in_charge": (mz.agent.name if mz and mz.agent_id and mz.agent_id != c.id else ""),
                     "kind": c.kind, "kind_label": str(c.get_kind_display()), "balance": int(bal),
                     "balance_display": fmt(abs(bal)),
-                    "balance_label": str(_("owes") if bal > 0 else _("supply due") if bal < 0 else _("settled"))})
+                    "balance_label": str(_("owes") if bal > 0 else _("supply due") if bal < 0 else _("settled")),
+                    "hide_balance": shop_user})
     return JsonResponse({"results": out})

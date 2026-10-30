@@ -9,7 +9,7 @@ from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
 from core.models import (
     Account, AccountAccess, AuditEvent, BankAccount, CashManager, CompanySim, Counterparty, ExpenseCategory, MasterZone,
-    MicroZone, SubZone, User, Zone,
+    MicroZone, Shop, ShopItem, ShopService, SubZone, User, Zone,
 )
 
 
@@ -188,13 +188,13 @@ class MicroZoneAdmin(SuperAdminOnly):
 
 @admin.register(User)
 class UserAdmin(BaseUserAdmin, SuperAdminOnly):
-    list_display = ("username", "first_name", "last_name", "role", "subzone", "counterparty", "is_active")
+    list_display = ("username", "first_name", "last_name", "role", "subzone", "shop", "counterparty", "is_active")
     list_filter = ("role", "is_active", "subzone")
     fieldsets = BaseUserAdmin.fieldsets[:2] + (
-        ("Role", {"fields": ("role", "subzone", "counterparty", "is_active", "is_staff")}),
+        ("Role", {"fields": ("role", "subzone", "shop", "counterparty", "is_active", "is_staff")}),
         ("Dates", {"fields": ("last_login", "date_joined")}),
     )
-    add_fieldsets = BaseUserAdmin.add_fieldsets + (("Role", {"fields": ("role", "subzone", "counterparty",
+    add_fieldsets = BaseUserAdmin.add_fieldsets + (("Role", {"fields": ("role", "subzone", "shop", "counterparty",
                                                                         "first_name", "last_name")}),)
     autocomplete_fields = ("counterparty",)
 
@@ -364,3 +364,26 @@ class AuditEventAdmin(SuperAdminOnly):
 
     def has_change_permission(self, request, obj=None):
         return False
+
+
+@admin.register(Shop)
+class ShopAdmin(SuperAdminOnly):
+    list_display = ("name", "code", "zone", "sim_number", "managers_list", "active")
+    search_fields = ("name", "code", "sim_number")
+    fields = ("name", "code", "zone", "sim_number", "address", "active")
+
+    @admin.display(description="shop managers")
+    def managers_list(self, obj):
+        return ", ".join(str(u) for u in obj.managers.all()) or "—"
+
+
+@admin.register(ShopService)
+class ShopServiceAdmin(SuperAdminOnly):
+    list_display = ("name", "kind", "sort", "active")
+    list_editable = ("sort", "active")
+
+
+@admin.register(ShopItem)
+class ShopItemAdmin(SuperAdminOnly):
+    list_display = ("name", "category", "price", "active")
+    list_filter = ("category", "active")

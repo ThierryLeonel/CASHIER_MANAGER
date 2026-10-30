@@ -141,10 +141,13 @@
       var info = el('span', 'cs-info');
       info.appendChild(el('strong', null, c.microzone ? c.microzone + ' — ' + c.name : c.name));
       info.appendChild(el('span', 'pk-sub', subline(c, true)));
-      var bal = el('span', 'cs-bal ' + (c.balance > 0 ? 'owes' : c.balance < 0 ? 'due' : ''));
-      bal.appendChild(el('strong', null, c.balance_display + ' FCFA'));
-      bal.appendChild(el('span', null, c.balance_label));
-      card.appendChild(av); card.appendChild(info); card.appendChild(bal);
+      card.appendChild(av); card.appendChild(info);
+      if (!c.hide_balance) {
+        var bal = el('span', 'cs-bal ' + (c.balance > 0 ? 'owes' : c.balance < 0 ? 'due' : ''));
+        bal.appendChild(el('strong', null, c.balance_display + ' FCFA'));
+        bal.appendChild(el('span', null, c.balance_label));
+        card.appendChild(bal);
+      }
       card.hidden = false;
     }
     function row(c) {
@@ -161,8 +164,9 @@
       }
       info.appendChild(el('span', 'pk-sub', subline(c, false)));
       it.appendChild(info);
-      var b = el('span', 'cs-mini ' + (c.balance > 0 ? 'owes' : c.balance < 0 ? 'due' : ''), c.balance_display);
-      it.appendChild(b);
+      if (!c.hide_balance) {
+        it.appendChild(el('span', 'cs-mini ' + (c.balance > 0 ? 'owes' : c.balance < 0 ? 'due' : ''), c.balance_display));
+      }
       it.addEventListener('mousedown', function (e) { e.preventDefault(); pick(c); });
       return it;
     }
