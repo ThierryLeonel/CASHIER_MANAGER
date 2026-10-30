@@ -1,9 +1,11 @@
 {% extends "core/base.html" %}{% load i18n cashier %}
-{% block title %}{% trans "Opening balances" %}{% endblock %}
+{% block title %}{% if shops_mode %}{% trans "Shop opening balances" %}{% else %}{% trans "Opening balances" %}{% endif %}{% endblock %}
 {% block content %}
-<h1>{% trans "Opening balances (launch)" %}</h1>
+<h1>{% if shops_mode %}{% trans "Shop opening balances (launch)" %}{% else %}{% trans "Opening balances (launch)" %}{% endif %}</h1>
 <p class="muted">{% trans "Each account can be initialised once, through an auditable ledger entry against opening equity. To change one later, a manager or finance manager corrects it." %}</p>
-{% if not form.fields.account.queryset.exists %}
+{% if shops_mode %}<p class="small muted">{% trans "The cashiers' opening balances are on their own page." %} <a href="{% url 'opening_balances' %}">{% trans "Cashiers' opening balances" %} →</a></p>
+{% if not grid %}<div class="panel notice"><p><strong>{% trans "No shop yet." %}</strong> <a href="{% url 'shop_manage' %}">{% trans "Add a shop" %}</a> — {% trans "its cash drawer, UVE and ER accounts are created automatically." %}</p></div>{% endif %}
+{% elif not form.fields.account.queryset.exists %}
 <div class="panel notice">
   <p><strong>{% trans "No account is waiting for an opening balance." %}</strong> {% trans "Accounts appear here once they exist. Create them first in Configuration:" %}</p>
   <ul>
@@ -15,7 +17,7 @@
   <p class="small muted">{% trans "Accounts that already have an opening balance are listed under Recorded below." %}</p>
 </div>
 {% endif %}
-<h2>{% trans "Control accounts: cash, UVE and ER" %}</h2>
+<h2>{% if shops_mode %}{% trans "Each shop: cash, UVE and ER" %}{% else %}{% trans "Control accounts: cash, UVE and ER" %}{% endif %}</h2>
 {% if grid %}
 <form method="post" class="panel og" novalidate>{% csrf_token %}
   <input type="hidden" name="action" value="grid"><input type="hidden" name="batch" value="{{ batch }}">
@@ -24,7 +26,7 @@
     <div class="field"><label for="og-note">{% trans "Note" %}</label><input id="og-note" type="text" name="note" maxlength="255" value="{{ posted_note }}"></div>
   </div>
   <div class="tbl-wrap"><table class="t og-t">
-    <thead><tr><th>{% trans "Master zone / subzone" %}</th>{% for k in kinds %}<th class="money">{{ k }}</th>{% endfor %}<th class="money">{% trans "Total" %}</th></tr></thead>
+    <thead><tr><th>{% if shops_mode %}{% trans "Shop" %}{% else %}{% trans "Master zone / subzone" %}{% endif %}</th>{% for k in kinds %}<th class="money">{{ k }}</th>{% endfor %}<th class="money">{% trans "Total" %}</th></tr></thead>
     <tbody>
     {% for m in grid %}
       <tr class="total"><td>{{ m.zone }}</td>{% for v in m.totals %}<td class="money" data-zone-total="{{ m.zone.pk }}-{{ forloop.counter0 }}">{{ v|fcfa }}</td>{% endfor %}<td class="money" data-zone-total="{{ m.zone.pk }}-all">{{ m.total|fcfa }}</td></tr>
@@ -50,12 +52,17 @@
 </form>
 {% endif %}
 
+{% if shops_mode %}
+<h2>{% trans "Positions with commercial agents" %}</h2>
+<p class="muted small">{% trans "At go-live, what a commercial agent owes a shop (e.g. a destockage on credit) or what the shop owes the agent (e.g. ER supplied on credit). One at a time." %}</p>
+{% else %}
 <h2>{% trans "Other opening balances" %}</h2>
-<p class="muted small">{% trans "Agents and POS, cash managers, MTN float wallets and bank accounts: one at a time." %}</p>
+<p class="muted small">{% trans "Agents and POS, cash managers, MTN float wallets and bank accounts: one at a time." %} <a href="{% url 'shop_opening_balances' %}">{% trans "Shop opening balances" %} →</a></p>
+{% endif %}
 <div class="panel"><form method="post" class="entry" novalidate>{% csrf_token %}<input type="hidden" name="action" value="single">{% include "core/inc/fields.html" %}<button class="btn primary" type="submit">{% trans "Record opening balance" %}</button></form></div>
 <h2>{% trans "Recorded" %}</h2>
 <div class="tbl-wrap"><table class="t"><thead><tr><th>{% trans "Reference" %}</th><th>{% trans "As of" %}</th><th>{% trans "Account" %}</th><th class="money">{% trans "Amount" %}</th><th>{% trans "By" %}</th></tr></thead>
-<tbody>{% for t in done %}<tr{% if t.is_corrected %} class="corrected"{% endif %}><td class="keep"><a href="{% url 'txn_detail' t.pk %}">{{ t.reference }}</a>{% if t.is_corrected %} <span class="badge bad">{% trans "CORRECTED" %}</span>{% endif %}</td><td>{{ t.business_date|date:"d/m/Y" }}</td><td>{{ t.opening_for_account|default:t.dest_account|default:t.counterparty|default:"" }}</td><td class="money">{{ t.amount|fcfa }}</td><td>{{ t.entered_by }}</td></tr>
+<tbody>{% for t in done %}<tr{% if t.is_corrected %} class="corrected"{% endif %}><td class="keep"><a href="{% url 'txn_detail' t.pk %}">{{ t.reference }}</a>{% if t.is_corrected %} <span class="badge bad">{% trans "CORRECTED" %}</span>{% endif %}</td><td>{{ t.business_date|date:"d/m/Y" }}</td><td>{{ t.opening_for_account|default:t.dest_account|default:t.counterparty|default:"" }}</td><td class="money">{{ t.amount|fcfa }}{% if t.who_owes %}<br><span class="muted small">{{ t.who_owes }}</span>{% endif %}</td><td>{{ t.entered_by }}</td></tr>
 {% empty %}<tr><td colspan="5" class="muted">{% trans "None yet." %}</td></tr>{% endfor %}</tbody></table></div>
 {% endblock %}
 {% block scripts %}<script>

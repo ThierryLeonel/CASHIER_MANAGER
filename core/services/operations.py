@@ -500,7 +500,7 @@ def record_exchange_leg(user, idempotency_key=None, acting_for=None, **params):
 
 
 # ---------------------------------------------------------------- opening balances
-OPENING_KINDS = Account.ASSET_KINDS + (K.CUSTOMER, K.CASH_MANAGER)
+OPENING_KINDS = Account.ASSET_KINDS + (K.CUSTOMER, K.CASH_MANAGER, K.SHOP_PAYABLE)
 
 
 def build_opening(ctx, *, account, amount, description="", split=None):
@@ -525,7 +525,10 @@ def build_opening(ctx, *, account, amount, description="", split=None):
     fields = dict(amount=abs(amount), description=description or "", product_split=split,
                   counterparty=account.counterparty if account.kind == K.CUSTOMER else None,
                   cash_manager=account.cash_manager if account.kind == K.CASH_MANAGER else None,
-                  dest_account=account if account.is_asset else None)
+                  dest_account=account if account.is_asset else None,
+                  shop=account.shop if account.shop_id else None)  # a shop sees its own openings
+    if account.kind == K.SHOP_PAYABLE:
+        fields["counterparty"] = account.shop_agent
     if ctx.exclude_txn_id is None:
         fields["opening_for_account"] = account
     return TxSpec(type=TxType.OPENING_BALANCE, lines=[(account, amount), (equity, -amount)], fields=fields)

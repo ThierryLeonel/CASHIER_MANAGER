@@ -79,6 +79,7 @@
     {% if "SALES" in user.shop_duty_set %}<a href="{% url 'shop_stock' %}" class="{% if u == 'shop_stock' %}on{% endif %}">{% icon "wallet" %}<span>{% trans "Stock" %}</span></a>{% endif %}
     {% if user.is_shop_senior or user.is_superadmin %}<a href="{% url 'shop_manage' %}" class="{% if u == 'shop_manage' %}on{% endif %}">{% icon "users" %}<span>{% trans "Shops & staff" %}</span></a>
     <a href="{% url 'shop_setup' %}" class="{% if u == 'shop_setup' %}on{% endif %}">{% icon "settings" %}<span>{% trans "Services, items & rate" %}</span></a>{% endif %}
+    {% if user.is_superadmin %}<a href="{% url 'shop_opening_balances' %}" class="{% if u == 'shop_opening_balances' %}on{% endif %}">{% icon "key" %}<span>{% trans "Shop opening balances" %}</span></a>{% endif %}
     {% endif %}
 
     {% if show_cash and not user.is_agent %}

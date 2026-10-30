@@ -294,7 +294,9 @@ class ShopPages(OrgMixin, TestCase):
         self.assertNotContains(shops_page, "/closings/")  # shops' space: no cashier menu
         self.assertEqual(self.client_for("junior.fako").get("/reports/").status_code, 200)
         # opening grid has the shop row
-        self.assertContains(self.client_for("admin").get("/setup/opening-balances/"), "Shop Molyko")
+        # the shops have their own opening page; the cashiers' grid no longer lists them
+        self.assertNotContains(self.client_for("admin").get("/setup/opening-balances/"), "Shop Molyko")
+        self.assertContains(self.client_for("admin").get("/shops/opening-balances/"), "Shop Molyko")
 
     def test_shop_manager_needs_shop(self):
         from django.core.exceptions import ValidationError
@@ -672,3 +674,54 @@ class CashManagerAdministration(OrgMixin, TestCase):
         self.client_for("manager").post("/cash-managers/", {"action": "cm_save", "cm-name": "X",
                                                             "cm-phone": "677000001", "cm-active": "on"})
         self.assertEqual(CashManager.objects.count(), n)
+
+
+class ShopOpeningBalances(OrgMixin, TestCase):
+    def setUp(self):
+        self.make_org()
+        self.shop = self.o["shop"]
+
+    def client_for(self, u):
+        c = self.client_class()
+        self.assertTrue(c.login(username=u, password=PW))
+        return c
+
+    def test_grid_and_agent_positions(self):
+        adm = self.client_for("admin")
+        page = adm.get("/shops/opening-balances/")
+        self.assertContains(page, "Each shop: cash, UVE and ER")
+        cash, uve, er = (self.shop.account(k) for k in (K.CASH_DRAWER, K.UVE, K.ER))
+        r = adm.post("/shops/opening-balances/", {"action": "grid", "batch": str(uuid.uuid4()),
+                                                  "business_date": "2026-10-01", "note": "launch",
+                                                  f"acct_{cash.pk}": "300 000", f"acct_{uve.pk}": "800 000",
+                                                  f"acct_{er.pk}": "150 000"})
+        self.assertRedirects(r, "/shops/opening-balances/", fetch_redirect_response=False)
+        self.assertEqual((self.bal(cash), self.bal(uve), self.bal(er)), (D(300000), D(800000), D(150000)))
+        t = Transaction.objects.get(type=TxType.OPENING_BALANCE, opening_for_account=cash)
+        self.assertEqual((t.shop, str(t.business_date)), (self.shop, "2026-10-01"))
+        self.assertContains(adm.get("/shops/opening-balances/"), "All control accounts have their opening balance")
+        # positions with commercial agents
+        r = adm.post("/shops/opening-balances/", {"action": "single", "idem": str(uuid.uuid4()), "shop": self.shop.pk,
+                                                  "agent": "691000001", "direction": "AGENT_OWES", "amount": "20 000",
+                                                  "business_date": "2026-10-01"})
+        self.assertEqual(r.status_code, 302, r.content[:2000])
+        r = adm.post("/shops/opening-balances/", {"action": "single", "idem": str(uuid.uuid4()), "shop": self.shop.pk,
+                                                  "agent": "691000002", "direction": "SHOP_OWES", "amount": "35 000",
+                                                  "business_date": "2026-10-01"})
+        self.assertEqual(r.status_code, 302, r.content[:2000])
+        b = sh.shop_balances(self.shop)
+        self.assertEqual((b["owed_by_agents"], b["owed_agents"]), (D(20000), D(35000)))
+        self.assertEqual(self.bal(self.a1.account), D(0))  # the agent's balance with the company is untouched
+        rec = adm.get("/shops/opening-balances/")
+        self.assertContains(rec, "the agent owes the shop")
+        self.assertContains(rec, "the shop owes the agent")
+        # a second opening for the same position is refused
+        r = adm.post("/shops/opening-balances/", {"action": "single", "idem": str(uuid.uuid4()), "shop": self.shop.pk,
+                                                  "agent": "691000001", "direction": "AGENT_OWES", "amount": "1 000",
+                                                  "business_date": "2026-10-01"})
+        self.assertContains(r, "already has an opening balance")
+        # the shop sees its openings; the cashiers' page lists none of them
+        self.assertEqual(self.client_for("shop.molyko").get(f"/transactions/{t.pk}/").status_code, 200)
+        self.assertNotContains(adm.get("/setup/opening-balances/"), t.reference)
+        for u in ("finance", "shop.senior", "shop.molyko"):
+            self.assertEqual(self.client_for(u).get("/shops/opening-balances/").status_code, 403)

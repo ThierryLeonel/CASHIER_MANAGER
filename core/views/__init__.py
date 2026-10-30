@@ -1,6 +1,6 @@
 from .base import dashboard, login_view, logout_view  # noqa: F401
 from .control import (  # noqa: F401
-    close_day, closing_detail, closings, conversion_rate, discrepancies, discrepancy_detail, opening_balances, report,
+    close_day, closing_detail, closings, conversion_rate, discrepancies, discrepancy_detail, opening_balances, shop_opening_balances, report,
     reports_index,
 )
 from .entry import (  # noqa: F401

@@ -11,7 +11,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.translation import gettext as _
 
 from core import forms as F
-from core.models import Account, Closing, ConversionRate, Correction, Counterparty, Discrepancy, Transaction, TxType
+from core.models import Account, Closing, ConversionRate, Correction, Counterparty, Discrepancy, Entry, Transaction, TxType
 from core.money import fmt
 from core.pdf import report_pdf
 from core.reports.defs import REPORTS
@@ -146,11 +146,13 @@ class _ShopsGroup:
         return self.name
 
 
-def opening_grid():
-    """Control accounts (cash, UVE, ER) by master zone -> subzone / master SIM line, with recorded openings."""
-    accts = list(Account.objects.filter(kind__in=OPENING_GRID_KINDS, active=True)
-                 .filter(Q(zone__isnull=False) | Q(shop__isnull=False))
-                 .select_related("zone__parent", "custodian", "sim", "shop").order_by("id"))
+def opening_grid(shops=False):
+    """Control accounts (cash, UVE, ER) with recorded openings: the cashiers' by master zone -> subzone / master SIM
+    line, or (shops=True) one line per shop."""
+    accts = Account.objects.filter(kind__in=OPENING_GRID_KINDS, active=True)
+    accts = accts.filter(shop__isnull=False, shop_agent__isnull=True, shop__active=True) if shops \
+        else accts.filter(zone__isnull=False, shop__isnull=True)
+    accts = list(accts.select_related("zone__parent", "custodian", "sim", "shop").order_by("id"))
     recorded = {}
     for t in Transaction.objects.filter(type=TxType.OPENING_BALANCE, opening_for_account__in=accts,
                                         correction__isnull=True):
@@ -191,7 +193,7 @@ def opening_grid():
     return out, [totals[k] for k in OPENING_GRID_KINDS], sum(totals.values()), accts, recorded
 
 
-def _save_grid(request, accts, recorded):
+def _save_grid(request, accts, recorded, back="opening_balances"):
     """Record every amount typed in the grid, all or nothing."""
     from core.money import MoneyError, to_money
 
@@ -227,14 +229,14 @@ def _save_grid(request, accts, recorded):
                                            description=note, idempotency_key=uuid.uuid5(batch, str(a.id)))
     except DuplicateSubmission:
         messages.info(request, _("Already recorded."))
-        return redirect("opening_balances")
+        return redirect(back)
     except BusinessError as exc:
         messages.error(request, exc.message)
         return None
     total = sum(amt for _a, amt in todo)
     messages.success(request, _("%(n)s opening balances recorded, total %(amt)s FCFA.") % {"n": len(todo),
                                                                                          "amt": fmt(total)})
-    return redirect("opening_balances")
+    return redirect(back)
 
 
 @roles_required(R.SUPERADMIN)
@@ -246,7 +248,8 @@ def opening_balances(request):
             return resp
     form = F.OpeningBalanceForm(request.POST if request.POST.get("action") == "single" else None,
                                 initial={"business_date": douala_today()})
-    form.fields["account"].queryset = form.fields["account"].queryset.exclude(kind__in=OPENING_GRID_KINDS)
+    form.fields["account"].queryset = form.fields["account"].queryset.exclude(kind__in=OPENING_GRID_KINDS) \
+        .exclude(shop__isnull=False)
     if request.method == "POST" and request.POST.get("action") == "single" and form.is_valid():
         cd = form.cleaned_data
         resp = run_service(
@@ -259,10 +262,52 @@ def opening_balances(request):
             on_success=lambda t: redirect("opening_balances"))
         if resp:
             return resp
-    done = Transaction.objects.filter(type=TxType.OPENING_BALANCE).select_related(
-        "opening_for_account__sim", "entered_by", "correction").order_by("-posted_at")
+    done = Transaction.objects.filter(type=TxType.OPENING_BALANCE).exclude(opening_for_account__shop__isnull=False) \
+        .select_related("opening_for_account__sim", "entered_by", "correction").order_by("-posted_at")
     return render(request, "core/opening.html", {
         "form": form, "done": done, "grid": grid, "kind_totals": kind_totals, "grand": grand,
+        "kinds": [Account.Kind(k).label for k in OPENING_GRID_KINDS], "batch": uuid.uuid4(),
+        "today": douala_today(), "posted_date": request.POST.get("business_date") or "",
+        "posted": ({a.id: request.POST.get(f"acct_{a.id}", "") for a in accts}
+                   if request.POST.get("action") == "grid" else {}),
+        "posted_note": request.POST.get("note", "") if request.POST.get("action") == "grid" else "",
+        "any_open": any(a.id not in recorded for a in accts)})
+
+
+@roles_required(R.SUPERADMIN)
+def shop_opening_balances(request):
+    """The shops' opening balances: cash, UVE and ER per shop, and their positions with commercial agents."""
+    grid, kind_totals, grand, accts, recorded = opening_grid(shops=True)
+    if request.method == "POST" and request.POST.get("action") == "grid":
+        resp = _save_grid(request, accts, recorded, back="shop_opening_balances")
+        if resp:
+            return resp
+    from core import forms_shop as SF
+
+    form = SF.ShopPositionOpeningForm(request.POST if request.POST.get("action") == "single" else None,
+                                      initial={"business_date": douala_today()})
+    if request.method == "POST" and request.POST.get("action") == "single" and form.is_valid():
+        cd = form.cleaned_data
+        acct = cd["shop"].payable_to(cd["agent"])
+        amount = cd["amount"] if cd["direction"] == "AGENT_OWES" else -cd["amount"]
+        resp = run_service(
+            request, form,
+            lambda: ops.record_opening_balance(request.user, account=acct, amount=amount,
+                                               business_date=cd["business_date"], description=cd["description"],
+                                               idempotency_key=cd["idem"]),
+            success=lambda t: _("Opening balance %(ref)s recorded for %(acct)s.") % {"ref": t.reference, "acct": acct},
+            on_success=lambda t: redirect("shop_opening_balances"))
+        if resp:
+            return resp
+    done = list(Transaction.objects.filter(type=TxType.OPENING_BALANCE, opening_for_account__shop__isnull=False)
+                .select_related("opening_for_account__shop", "entered_by", "correction").order_by("-posted_at"))
+    signs = {e.transaction_id: e.amount for e in Entry.objects.filter(
+        transaction__in=done, account__kind=Account.Kind.SHOP_PAYABLE)}
+    for t in done:
+        if t.pk in signs:
+            t.who_owes = _("the agent owes the shop") if signs[t.pk] > 0 else _("the shop owes the agent")
+    return render(request, "core/opening.html", {
+        "shops_mode": True, "form": form, "done": done, "grid": grid, "kind_totals": kind_totals, "grand": grand,
         "kinds": [Account.Kind(k).label for k in OPENING_GRID_KINDS], "batch": uuid.uuid4(),
         "today": douala_today(), "posted_date": request.POST.get("business_date") or "",
         "posted": ({a.id: request.POST.get(f"acct_{a.id}", "") for a in accts}

@@ -681,6 +681,15 @@ msgstr ""
 "Affectez le caissier à une sous-zone, pas à une zone principale qui a des "
 "sous-zones."
 
+msgid ""
+"At go-live, what a commercial agent owes a shop (e.g. a destockage on "
+"credit) or what the shop owes the agent (e.g. ER supplied on credit). One at"
+" a time."
+msgstr ""
+"Au démarrage, ce qu'un agent commercial doit à une boutique (par ex. un "
+"déstockage à crédit) ou ce que la boutique doit à l'agent (par ex. de l'ER "
+"fourni à crédit). Un à la fois."
+
 msgid "At least 10 characters, not only digits, not a common password."
 msgstr ""
 "Au moins 10 caractères, pas uniquement des chiffres, pas un mot de passe "
@@ -1042,6 +1051,9 @@ msgstr ""
 "Les caissiers et les boutiques ont chacun leur taux. Un changement ne "
 "s'applique qu'aux conversions futures ; chaque conversion garde le taux "
 "utilisé."
+
+msgid "Cashiers' opening balances"
+msgstr "Soldes d'ouverture des caissiers"
 
 msgid "Cashiers' rate"
 msgstr "Taux des caissiers"
@@ -1907,6 +1919,9 @@ msgid ""
 msgstr ""
 "Chaque nouvelle boutique reçoit automatiquement sa caisse, son compte UVE et"
 " son compte ER."
+
+msgid "Each shop: cash, UVE and ER"
+msgstr "Chaque boutique : espèces, UVE et ER"
 
 msgid "Edit"
 msgstr "Modifier"
@@ -3350,6 +3365,9 @@ msgstr "Positions"
 msgid "Positions (positive = cash manager owes the company)"
 msgstr "Positions (positif = le gestionnaire de cash doit à l'entreprise)"
 
+msgid "Positions with commercial agents"
+msgstr "Positions avec les agents commerciaux"
+
 msgid ""
 "Positive = owed to the company; negative = supply due to the customer. \"Not"
 " split\" = openings, payments or corrections recorded without product parts."
@@ -3922,6 +3940,12 @@ msgstr "Articles et catégories des boutiques"
 msgid "Shop manager"
 msgstr "Gérant de boutique"
 
+msgid "Shop opening balances"
+msgstr "Soldes d'ouverture des boutiques"
+
+msgid "Shop opening balances (launch)"
+msgstr "Soldes d'ouverture des boutiques (démarrage)"
+
 msgid "Shop operations"
 msgstr "Opérations des boutiques"
 
@@ -4271,6 +4295,9 @@ msgstr ""
 "Le compte suit l'échange : espèces ou float MTN donnés, UVE servie ; UVE "
 "donnée, espèces servies."
 
+msgid "The agent owes the shop"
+msgstr "L'agent doit à la boutique"
+
 msgid ""
 "The agent pays back what he owes the shop (e.g. a destockage taken on "
 "credit)."
@@ -4318,6 +4345,9 @@ msgstr "Le cash manager a servi l'entreprise (reste servi)"
 
 msgid "The cash recipient of a destockage must be a POS."
 msgstr "Le bénéficiaire des espèces d'un déstockage doit être un PDV."
+
+msgid "The cashiers' opening balances are on their own page."
+msgstr "Les soldes d'ouverture des caissiers sont sur leur propre page."
 
 msgid ""
 "The client gives cash and receives Orange Money: UVE goes down, the cash "
@@ -4402,6 +4432,9 @@ msgstr ""
 #, python-format
 msgid "The shop owes %(agent)s only %(owed)s FCFA."
 msgstr "La boutique ne doit que %(owed)s FCFA à %(agent)s."
+
+msgid "The shop owes the agent"
+msgstr "La boutique doit à l'agent"
 
 msgid "The shop rate is not set yet."
 msgstr "Le taux boutique n'est pas encore défini."
@@ -5104,6 +5137,9 @@ msgstr ""
 "Qui gère quoi dans cette boutique, et ce que chacun a enregistré sur la "
 "période."
 
+msgid "Who owes whom"
+msgstr "Qui doit à qui"
+
 msgid "Who receives the money, e.g. the owner, a partner, a bank."
 msgstr "Qui reçoit l'argent, par ex. le propriétaire, un associé, une banque."
 
@@ -5440,6 +5476,9 @@ msgstr "vers %(acct)s"
 msgid "it must be changed at the first sign-in."
 msgstr "il devra être changé à la première connexion."
 
+msgid "its cash drawer, UVE and ER accounts are created automatically."
+msgstr "sa caisse et ses comptes UVE et ER sont créés automatiquement."
+
 msgid "kind"
 msgstr "type"
 
@@ -5630,6 +5669,12 @@ msgstr "numéro de contribuable (NIU)"
 
 msgid "telephone contact"
 msgstr "contact téléphonique"
+
+msgid "the agent owes the shop"
+msgstr "l'agent doit à la boutique"
+
+msgid "the shop owes the agent"
+msgstr "la boutique doit à l'agent"
 
 msgid "trade register (RCCM)"
 msgstr "registre du commerce (RCCM)"

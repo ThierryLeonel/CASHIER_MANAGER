@@ -360,3 +360,29 @@ class ForceCloseForm(forms.Form):
 class DayReviewForm(forms.Form):
     note = forms.CharField(label=_("Note (explain any difference)"), required=False,
                            widget=forms.Textarea(attrs={"rows": 3}))
+
+
+class ShopPositionOpeningForm(forms.Form):
+    """Opening position of a shop with a commercial agent (what one owes the other at go-live)."""
+
+    DIRECTIONS = [("AGENT_OWES", _("The agent owes the shop")), ("SHOP_OWES", _("The shop owes the agent"))]
+    idem = forms.UUIDField(widget=forms.HiddenInput)
+    shop = forms.ModelChoiceField(label=_("Shop"), queryset=Shop.objects.filter(active=True))
+    agent = CustomerField(label=_("Commercial agent (business SIM)"), kind=Counterparty.Kind.AGENT)
+    direction = forms.ChoiceField(label=_("Who owes whom"), choices=DIRECTIONS, widget=forms.RadioSelect,
+                                  initial="AGENT_OWES")
+    amount = MoneyField(label=_("Amount (FCFA)"))
+    business_date = forms.DateField(label=_("Balance as of (go-live date)"),
+                                    widget=forms.DateInput(attrs={"type": "date"}))
+    description = forms.CharField(label=_("Note"), required=False, max_length=255)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if not self.is_bound:
+            self.initial.setdefault("idem", uuid.uuid4())
+
+    def clean_amount(self):
+        a = self.cleaned_data.get("amount")
+        if not a or a <= 0:
+            raise forms.ValidationError(_("Amount must be greater than zero."))
+        return a

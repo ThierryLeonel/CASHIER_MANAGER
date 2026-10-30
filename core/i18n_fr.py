@@ -1698,6 +1698,19 @@ FR = {
     'kind must be CUSTOMER, CASH_MANAGER, CASH_DRAWER, UVE, ER, MTN, BANK, SHOP_CASH, SHOP_UVE or SHOP_ER': 'kind doit être CUSTOMER, CASH_MANAGER, CASH_DRAWER, UVE, ER, MTN, BANK, SHOP_CASH, SHOP_UVE ou SHOP_ER',
     'password is required for a new account (it must be changed at the first sign-in)': 'le mot de passe est obligatoire pour un nouveau compte (il devra être changé à la première connexion)',
     'price must be greater than zero': 'le prix doit être supérieur à zéro',
+    'At go-live, what a commercial agent owes a shop (e.g. a destockage on credit) or what the shop owes the agent (e.g. ER supplied on credit). One at a time.': "Au démarrage, ce qu'un agent commercial doit à une boutique (par ex. un déstockage à crédit) ou ce que la boutique doit à l'agent (par ex. de l'ER fourni à crédit). Un à la fois.",
+    "Cashiers' opening balances": "Soldes d'ouverture des caissiers",
+    'Each shop: cash, UVE and ER': 'Chaque boutique : espèces, UVE et ER',
+    'Positions with commercial agents': 'Positions avec les agents commerciaux',
+    'Shop opening balances': "Soldes d'ouverture des boutiques",
+    'Shop opening balances (launch)': "Soldes d'ouverture des boutiques (démarrage)",
+    'The agent owes the shop': "L'agent doit à la boutique",
+    "The cashiers' opening balances are on their own page.": "Les soldes d'ouverture des caissiers sont sur leur propre page.",
+    'The shop owes the agent': "La boutique doit à l'agent",
+    'Who owes whom': 'Qui doit à qui',
+    'its cash drawer, UVE and ER accounts are created automatically.': 'sa caisse et ses comptes UVE et ER sont créés automatiquement.',
+    'the agent owes the shop': "l'agent doit à la boutique",
+    'the shop owes the agent': "la boutique doit à l'agent",
 }
 
 FR_PLURAL = {
