@@ -480,3 +480,13 @@ input.auto { background: var(--soft); font-weight: 700; }
 .pick-units .unit[hidden] { display: none; }
 .basket .price-in { width: 120px; text-align: right; padding: 6px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); color: var(--ink); font: inherit; }
 @media (max-width: 700px) { .pick-tools { grid-template-columns: 1fr; } }
+/* receive stock: one line per unit with IMEI and serial number */
+.unit-lines { display: grid; gap: 8px; margin: 4px 0 8px; max-width: 680px; }
+.unit-line { display: grid; grid-template-columns: 70px 1fr 1fr; gap: 8px; align-items: center; }
+.unit-line .unit-n { font-size: .85rem; color: var(--muted); font-weight: 600; }
+.unit-line input { padding: 9px 11px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); color: var(--ink); font: inherit; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+@media (max-width: 600px) { .unit-line { grid-template-columns: 1fr 1fr; } .unit-line .unit-n { grid-column: 1 / -1; } }
+.space-switch.three { grid-template-columns: repeat(3, 1fr); }
+.space-switch.three a { font-size: .82rem; padding: 8px 4px; }
+.space-switch.three a svg { display: none; }
+.space-switch.three a { font-size: .86rem; }

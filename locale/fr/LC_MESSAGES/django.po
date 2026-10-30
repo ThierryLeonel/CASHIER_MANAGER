@@ -305,6 +305,12 @@ msgstr ""
 msgid "A junior manager must be assigned the zone they supervise."
 msgstr "Un manager junior doit être affecté à la zone qu'il supervise."
 
+msgid ""
+"A line appears for each unit: type its IMEI and / or its serial number."
+msgstr ""
+"Une ligne apparaît pour chaque unité : saisissez son IMEI et / ou son numéro"
+" de série."
+
 msgid "A microzone belongs to a subzone, not to a master zone."
 msgstr "Une microzone appartient à une sous-zone, pas à une zone master."
 
@@ -453,6 +459,9 @@ msgstr "Adresse"
 
 msgid "Adjustment"
 msgstr "Ajustement"
+
+msgid "Admin"
+msgstr "Admin"
 
 msgid "Admin tools"
 msgstr "Outils d'administration"
@@ -1708,6 +1717,9 @@ msgstr ""
 "Journalier, hebdomadaire, mensuel, personnalisé ou global : ouverture + "
 "mouvements = clôture"
 
+msgid "Data"
+msgstr "Données"
+
 #, python-format
 msgid ""
 "Data cleared (%(n)s transactions removed). This action is recorded in the "
@@ -1983,6 +1995,9 @@ msgstr "Saisissez le numéro de la pièce."
 msgid "Enter the IMEI or serial number of each unit, one per line."
 msgstr "Saisissez le numéro IMEI ou de série de chaque unité, un par ligne."
 
+msgid "Enter the IMEI or serial number of each unit."
+msgstr "Saisissez l'IMEI ou le numéro de série de chaque unité."
+
 #, python-format
 msgid "Enter the actual balance for %(acct)s."
 msgstr "Saisissez le solde réel de %(acct)s."
@@ -2167,6 +2182,13 @@ msgstr ""
 "Pour un remplacement, ne remplissez que les valeurs qui changent ; les "
 "autres sont reprises de l'original et revalidées."
 
+msgid ""
+"For each unit, type its IMEI, its serial number, or both. A number already "
+"registered is refused."
+msgstr ""
+"Pour chaque unité, saisissez son IMEI, son numéro de série, ou les deux. Un "
+"numéro déjà enregistré est refusé."
+
 msgid "For security, you will be signed out because of inactivity in:"
 msgstr "Par sécurité, vous serez déconnecté pour inactivité dans :"
 
@@ -2272,6 +2294,16 @@ msgstr "Récépissé"
 msgid "ID type"
 msgstr "Type de pièce"
 
+msgid "IMEI"
+msgstr "IMEI"
+
+#, python-format
+msgid "IMEI %(v)s: an IMEI has 15 digits."
+msgstr "IMEI %(v)s : un IMEI a 15 chiffres."
+
+msgid "IMEI (15 digits)"
+msgstr "IMEI (15 chiffres)"
+
 msgid "IMEI / serial"
 msgstr "IMEI / série"
 
@@ -2280,6 +2312,9 @@ msgstr "Numéro IMEI / série"
 
 msgid "IMEI / serial numbers"
 msgstr "Numéros IMEI / série"
+
+msgid "IMEI or serial number"
+msgstr "IMEI ou numéro de série"
 
 msgid "Identification"
 msgstr "Pièce d'identité"
@@ -2877,6 +2912,9 @@ msgstr "Novembre"
 #, python-format
 msgid "Now recording for %(c)s"
 msgstr "Enregistrement en cours pour %(c)s"
+
+msgid "Number of units received"
+msgstr "Nombre d'unités reçues"
 
 msgid "OK"
 msgstr "OK"
@@ -3836,6 +3874,9 @@ msgstr "Envoyé depuis le compte de l'entreprise"
 msgid "September"
 msgstr "Septembre"
 
+msgid "Serial number"
+msgstr "Numéro de série"
+
 msgid "Served into"
 msgstr "Servi dans"
 
@@ -3882,6 +3923,9 @@ msgstr "Fixer le nouveau taux boutique"
 #, python-format
 msgid "Set the price of %(i)s."
 msgstr "Indiquez le prix de %(i)s."
+
+msgid "Settings"
+msgstr "Paramètres"
 
 msgid "Settles what the shop owes an agent."
 msgstr "Règle ce que la boutique doit à un agent."
@@ -4048,6 +4092,9 @@ msgstr ""
 
 msgid "Shops overview"
 msgstr "Vue des boutiques"
+
+msgid "Shops setup"
+msgstr "Configuration des boutiques"
 
 msgid "Shops' daily reconciliation"
 msgstr "Rapprochement journalier des boutiques"
@@ -4920,6 +4967,13 @@ msgstr "Bonus UVE→ER (%)"
 msgid "UVE→ER uplift for future conversions"
 msgstr "Bonus UVE→ER pour les conversions futures"
 
+msgid "Unit"
+msgstr "Unité"
+
+#, python-format
+msgid "Unit %(n)s: enter its IMEI or its serial number."
+msgstr "Unité %(n)s : saisissez son IMEI ou son numéro de série."
+
 msgid "Unit price"
 msgstr "Prix unitaire"
 
@@ -5621,6 +5675,9 @@ msgstr "lignes"
 
 msgid "selling price (FCFA)"
 msgstr "prix de vente (FCFA)"
+
+msgid "serial number"
+msgstr "numéro de série"
 
 #, python-format
 msgid "served on %(d)s"

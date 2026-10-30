@@ -725,3 +725,79 @@ class ShopOpeningBalances(OrgMixin, TestCase):
         self.assertNotContains(adm.get("/setup/opening-balances/"), t.reference)
         for u in ("finance", "shop.senior", "shop.molyko"):
             self.assertEqual(self.client_for(u).get("/shops/opening-balances/").status_code, 403)
+
+
+class ReceiveUnitsByLine(OrgMixin, TestCase):
+    def setUp(self):
+        self.make_org()
+        self.shop = self.o["shop"]
+
+    def client_for(self, u):
+        c = self.client_class()
+        self.assertTrue(c.login(username=u, password=PW))
+        return c
+
+    def test_quantity_then_imei_and_serial_per_unit(self):
+        from core.models import StockUnit
+
+        phone = self.o["items"]["phone"]
+        c = self.client_for("shop.senior")
+        page = c.get("/shops/stock/")
+        self.assertContains(page, "Number of units received")
+        self.assertNotContains(page, "<textarea")
+        base = {"action": "receive", "shop": self.shop.pk, "category": phone.category_id, "item": phone.pk,
+                "quantity": "3", "note": "delivery 12"}
+        r = c.post("/shops/stock/", dict(base, unit_imei_1="356 000 000 000 011", unit_serial_1="SN-A1",
+                                         unit_imei_2="356000000000029", unit_serial_2="",
+                                         unit_imei_3="", unit_serial_3="SN-A3"))
+        self.assertRedirects(r, "/shops/stock/", fetch_redirect_response=False)
+        u1 = StockUnit.objects.get(imei="356000000000011")
+        self.assertEqual((u1.serial, u1.ident), ("SN-A1", "IMEI 356000000000011 · S/N SN-A1"))
+        self.assertEqual(StockUnit.objects.get(serial="SN-A3").imei, None)
+        self.assertEqual(phone.stock_at(self.shop), 3)
+        # a line with neither number, a bad IMEI, a duplicate, or a number already registered: nothing is saved
+        for extra, msg in (({"unit_imei_1": "", "unit_serial_1": ""}, "enter its IMEI or its serial number"),
+                           ({"unit_imei_1": "12345", "unit_serial_1": ""}, "an IMEI has 15 digits"),
+                           ({"unit_imei_1": "", "unit_serial_1": "sn-a1"}, "Already registered"),
+                           ({"unit_imei_1": "356000000000037", "unit_serial_1": "X"}, "Typed twice")):
+            data = dict(base, quantity="2", unit_imei_2="356000000000037", unit_serial_2="", **extra)
+            r = c.post("/shops/stock/", data)
+            self.assertContains(r, msg)
+            self.assertContains(r, 'name="unit_imei_2"')  # the lines come back with what was typed
+        self.assertEqual(phone.stock_at(self.shop), 3)
+        # find and remove by IMEI; the sale picker shows the IMEI
+        self.assertContains(c.get("/shops/stock/?q=356000000000029"), "356000000000029")
+        r = c.post("/shops/stock/", {"action": "remove", "serial": "356000000000029", "note": "damaged"})
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(StockUnit.objects.get(imei="356000000000029").status, StockUnit.Status.REMOVED)
+        self.assertContains(self.client_for("admin").get("/shops/do/sale/"), "IMEI 356000000000011")
+
+
+class AdminSpace(OrgMixin, TestCase):
+    def setUp(self):
+        self.make_org()
+
+    def test_administration_lives_in_its_own_tab(self):
+        c = self.client_class()
+        self.assertTrue(c.login(username="admin", password=PW))
+        cash = c.get("/")
+        self.assertContains(cash, 'class="space-switch three"')
+        for url in ("/administration/users/", "/administration/import/", "/shops/manage/", "/capital/"):
+            self.assertNotContains(cash, f'href="{url}"')  # not crowding the cashiers' menu
+        shops = c.get("/shops/")
+        for url in ("/administration/users/", "/shops/manage/", "/shops/opening-balances/"):
+            self.assertNotContains(shops, f'href="{url}"')
+        admin = c.get("/administration/")
+        for url in ("/administration/users/", "/administration/import/", "/administration/clear/", "/shops/manage/",
+                    "/shops/opening-balances/", "/setup/opening-balances/", "/capital/"):
+            self.assertContains(admin, f'href="{url}"')
+        self.assertNotContains(admin, 'href="/closings/"')  # the Admin tab shows only administration
+        # finance keeps two tabs and its Capital link; the senior shop manager keeps Shops & staff
+        f = self.client_class()
+        f.login(username="finance", password=PW)
+        page = f.get("/")
+        self.assertContains(page, 'class="space-switch"')
+        self.assertContains(page, 'href="/capital/"')
+        s = self.client_class()
+        s.login(username="shop.senior", password=PW)
+        self.assertContains(s.get("/shops/"), 'href="/shops/manage/"')

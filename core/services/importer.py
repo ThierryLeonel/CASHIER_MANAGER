@@ -448,7 +448,12 @@ def _row_shop_stock(user, r):
     item = ShopItem.objects.filter(name__iexact=name).first()
     if not item:
         raise BusinessError(_("Unknown item %(v)s (import the items first)") % {"v": name or "—"})
-    units = sh.receive_stock(user, shop=shop, item=item, serials=_s(r.get("serials")), note=_s(r.get("note")))
+    # one or more numbers separated by commas / semicolons / new lines; 15 digits = an IMEI, otherwise a serial number
+    raw = _s(r.get("serials")).replace(";", ",").replace("\n", ",")
+    tokens = [t.strip() for t in raw.split(",") if t.strip()]
+    pairs = [(t.replace(" ", ""), None) if t.replace(" ", "").isdigit() and len(t.replace(" ", "")) == 15 else (None, t)
+             for t in tokens]
+    units = sh.receive_stock(user, shop=shop, item=item, units=pairs, note=_s(r.get("note")))
     return _("%(n)s unit(s) of %(i)s received at %(s)s") % {"n": len(units), "i": item.name, "s": shop.name}
 
 

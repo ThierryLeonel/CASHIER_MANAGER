@@ -21,6 +21,7 @@ positive = the agent owes the shop.
 from decimal import Decimal
 
 from django.db import transaction
+from django.db.models import Q
 from django.utils.translation import gettext as _
 
 from core.models import (
@@ -363,28 +364,53 @@ def _can_stock(user, shop):
         raise PermissionDenied(_("You cannot change this shop's stock."))
 
 
-def receive_stock(user, *, shop, item, serials, note=""):
-    """Receive units into a shop's stock, each with its IMEI / serial number."""
+def _clean_imei(v):
+    v = "".join((v or "").split())
+    if not v:
+        return None
+    if not v.isdigit() or len(v) not in (15, 16):
+        raise BusinessError(_("IMEI %(v)s: an IMEI has 15 digits.") % {"v": v}, "units")
+    return v
+
+
+def receive_stock(user, *, shop, item, units=None, serials="", note=""):
+    """Receive units into a shop's stock. `units` = [(imei, serial number)], one pair per unit, at least one of the
+    two for each; `serials` (text, one per line or comma-separated) is kept for the importer."""
     _can_stock(user, shop)
     if item is None or not item.active:
         raise BusinessError(_("Choose an item."), "item")
-    found = _clean_serials(serials)
-    if not found:
-        raise BusinessError(_("Enter the IMEI or serial number of each unit, one per line."), "serials")
-    taken = list(StockUnit.objects.filter(serial__in=found).values_list("serial", flat=True))
+    pairs = [(None, x) for x in _clean_serials(serials)] if serials else []
+    for i, (imei, ser) in enumerate(units or [], start=1):
+        imei, ser = _clean_imei(imei), (ser or "").strip() or None
+        if not imei and not ser:
+            raise BusinessError(_("Unit %(n)s: enter its IMEI or its serial number.") % {"n": i}, "units")
+        pairs.append((imei, ser))
+    if not pairs:
+        raise BusinessError(_("Enter the IMEI or serial number of each unit."), "units")
+    imeis = [p[0] for p in pairs if p[0]]
+    sers = [p[1].upper() for p in pairs if p[1]]
+    dup = sorted({x for x in imeis if imeis.count(x) > 1} | {x for x in sers if sers.count(x) > 1})
+    if dup:
+        raise BusinessError(_("Typed twice: %(s)s") % {"s": ", ".join(dup)}, "units")
+    taken = list(StockUnit.objects.filter(imei__in=imeis).values_list("imei", flat=True))
+    taken += [u for u in StockUnit.objects.filter(serial__isnull=False).values_list("serial", flat=True)
+              if u.upper() in sers]
     if taken:
-        raise BusinessError(_("Already registered: %(s)s") % {"s": ", ".join(taken)}, "serials")
+        raise BusinessError(_("Already registered: %(s)s") % {"s": ", ".join(taken)}, "units")
     with transaction.atomic():
-        units = [StockUnit.objects.create(shop=shop, item=item, serial=x, received_by=user, note=note) for x in found]
-        for u in units:
+        made = [StockUnit.objects.create(shop=shop, item=item, imei=imei, serial=ser, received_by=user, note=note)
+                for imei, ser in pairs]
+        for u in made:
             StockMove.objects.create(shop=shop, item=item, unit=u, kind=StockMove.Kind.RECEIVED, quantity=1,
                                      recorded_by=user, note=note)
-    return units
+    return made
 
 
 def remove_unit(user, *, serial, note):
     """Take a unit out of stock (returned, damaged, lost…)."""
-    u = StockUnit.objects.filter(serial__iexact=(serial or "").strip()).select_related("shop", "item").first()
+    key = "".join((serial or "").split())
+    u = StockUnit.objects.filter(Q(serial__iexact=(serial or "").strip()) | Q(imei=key)) \
+        .select_related("shop", "item").first() if key else None
     if u is None:
         raise BusinessError(_("No unit with this IMEI / serial number."), "serial")
     _can_stock(user, u.shop)
@@ -429,12 +455,12 @@ def sell(user, *, shop=None, units, item=None, unit_price=None, prices=None, cli
             prices[item.pk] = unit_price
     with transaction.atomic():
         locked = list(StockUnit.objects.select_for_update().select_related("item")
-                      .filter(pk__in=[u.pk for u in units]).order_by("item__name", "serial"))
+                      .filter(pk__in=[u.pk for u in units]).order_by("item__name", "imei", "serial"))
         lines = {}
         for u in locked:
             if u.shop_id != shop.pk or u.status != StockUnit.Status.IN_STOCK or (item and u.item_id != item.pk):
                 raise BusinessError(_("%(s)s is not in stock at %(shop)s for this item.")
-                                    % {"s": u.serial, "shop": shop.name}, "units")
+                                    % {"s": u.ident, "shop": shop.name}, "units")
             if not u.item.active:
                 raise BusinessError(_("%(i)s is no longer sold.") % {"i": u.item.name}, "units")
             lines.setdefault(u.item_id, []).append(u)
@@ -448,7 +474,7 @@ def sell(user, *, shop=None, units, item=None, unit_price=None, prices=None, cli
             if price <= 0:
                 raise BusinessError(_("Set the price of %(i)s.") % {"i": it.name}, "units")
             total = price * len(its)
-            serials = ", ".join(u.serial for u in its)
+            serials = ", ".join(u.ident for u in its)
             spec = _spec(TxType.SHOP_SALE, shop, [(shop.account(K.CASH_DRAWER), total),
                                                   (Account.system(K.SHOP_SALES), -total)], total,
                          client_phone=_phone(phone), payment_group=group,

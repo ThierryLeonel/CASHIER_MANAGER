@@ -194,7 +194,8 @@ class StockUnit(models.Model):
 
     shop = models.ForeignKey(Shop, on_delete=models.PROTECT, related_name="units")
     item = models.ForeignKey(ShopItem, on_delete=models.PROTECT, related_name="units")
-    serial = models.CharField(_("IMEI / serial number"), max_length=60, unique=True)
+    serial = models.CharField(_("serial number"), max_length=60, unique=True, null=True, blank=True)
+    imei = models.CharField(_("IMEI"), max_length=20, unique=True, null=True, blank=True)
     status = models.CharField(max_length=10, choices=Status.choices, default=Status.IN_STOCK, db_index=True)
     sale = models.ForeignKey(ItemSale, null=True, blank=True, on_delete=models.PROTECT, related_name="units")
     received_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name="+")
@@ -202,10 +203,22 @@ class StockUnit(models.Model):
     note = models.CharField(max_length=255, blank=True)
 
     class Meta:
-        ordering = ["item__name", "serial"]
+        ordering = ["item__name", "imei", "serial"]
+        constraints = [models.CheckConstraint(name="unit_has_imei_or_serial",
+                                              condition=Q(imei__isnull=False) | Q(serial__isnull=False))]
 
     def __str__(self):
-        return f"{self.item.name} · {self.serial}"
+        return f"{self.item.name} · {self.ident}"
+
+    @property
+    def ident(self):
+        """How the unit is shown: IMEI and / or serial number."""
+        parts = []
+        if self.imei:
+            parts.append(f"IMEI {self.imei}")
+        if self.serial:
+            parts.append(f"S/N {self.serial}" if self.imei else self.serial)
+        return " · ".join(parts)
 
 
 class StockMove(models.Model):

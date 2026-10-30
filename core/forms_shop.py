@@ -141,7 +141,7 @@ class SaleForm(ShopForm):
     def catalogue(self):
         """[(category, [(item, [units])])] of what is in stock, for the picker."""
         cats = {}
-        for u in self.stock.order_by("item__category__sort", "item__category__name", "item__name", "serial"):
+        for u in self.stock.order_by("item__category__sort", "item__category__name", "item__name", "imei", "serial"):
             c = cats.setdefault(u.item.category_id, (u.item.category, {}))
             c[1].setdefault(u.item_id, (u.item, []))[1].append(u)
         return [(cat, list(items.values())) for cat, items in cats.values()]
@@ -221,11 +221,17 @@ class RetrievalForm(ShopForm):
 
 
 class StockForm(forms.Form):
+    """Receive units: say how many arrive, then type each unit's IMEI and / or serial number (unit_imei_N,
+    unit_serial_N for N = 1..quantity)."""
+
+    MAX_UNITS = 200
     shop = forms.ModelChoiceField(label=_("Shop"), queryset=Shop.objects.filter(active=True))
     category = forms.ModelChoiceField(label=_("Category"), queryset=ItemCategory.objects.filter(active=True))
     item = forms.ModelChoiceField(label=_("Item"), queryset=ShopItem.objects.filter(active=True), widget=ItemWidget)
-    serials = forms.CharField(label=_("IMEI / serial numbers"), widget=forms.Textarea(attrs={"rows": 5}),
-                              help_text=_("One unit per line (or separated by commas). Each number is registered once."))
+    quantity = forms.IntegerField(label=_("Number of units received"), min_value=1, max_value=MAX_UNITS,
+                                  widget=forms.NumberInput(attrs={"min": 1, "max": MAX_UNITS, "inputmode": "numeric"}),
+                                  help_text=_("A line appears for each unit: type its IMEI and / or its serial "
+                                              "number."))
     note = forms.CharField(label=_("Note (supplier, delivery…)"), required=False, max_length=255)
 
     def __init__(self, user, *args, **kwargs):
@@ -234,9 +240,25 @@ class StockForm(forms.Form):
             self.fields["shop"].queryset = Shop.objects.filter(pk=user.shop_id)
             self.fields["shop"].initial = user.shop_id
 
+    def unit_rows(self):
+        """[(n, imei, serial)] typed so far (to show the lines again after an error)."""
+        if not self.is_bound:
+            return []
+        try:
+            n = max(0, min(int(self.data.get("quantity") or 0), self.MAX_UNITS))
+        except ValueError:
+            n = 0
+        return [(i, self.data.get(f"unit_imei_{i}", ""), self.data.get(f"unit_serial_{i}", ""))
+                for i in range(1, n + 1)]
+
+    def clean(self):
+        cd = super().clean()
+        cd["units"] = [(imei, ser) for _i, imei, ser in self.unit_rows()]
+        return cd
+
 
 class RemoveUnitForm(forms.Form):
-    serial = forms.CharField(label=_("IMEI / serial number"), max_length=60)
+    serial = forms.CharField(label=_("IMEI or serial number"), max_length=60)
     note = forms.CharField(label=_("Reason (returned, damaged, lost…)"), max_length=255)
 
 

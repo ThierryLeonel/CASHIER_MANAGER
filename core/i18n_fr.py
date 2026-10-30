@@ -1711,6 +1711,22 @@ FR = {
     'its cash drawer, UVE and ER accounts are created automatically.': 'sa caisse et ses comptes UVE et ER sont créés automatiquement.',
     'the agent owes the shop': "l'agent doit à la boutique",
     'the shop owes the agent': "la boutique doit à l'agent",
+    'A line appears for each unit: type its IMEI and / or its serial number.': 'Une ligne apparaît pour chaque unité : saisissez son IMEI et / ou son numéro de série.',
+    'Enter the IMEI or serial number of each unit.': "Saisissez l'IMEI ou le numéro de série de chaque unité.",
+    'For each unit, type its IMEI, its serial number, or both. A number already registered is refused.': 'Pour chaque unité, saisissez son IMEI, son numéro de série, ou les deux. Un numéro déjà enregistré est refusé.',
+    'IMEI': 'IMEI',
+    'IMEI %(v)s: an IMEI has 15 digits.': 'IMEI %(v)s : un IMEI a 15 chiffres.',
+    'IMEI (15 digits)': 'IMEI (15 chiffres)',
+    'IMEI or serial number': 'IMEI ou numéro de série',
+    'Number of units received': "Nombre d'unités reçues",
+    'Serial number': 'Numéro de série',
+    'Unit': 'Unité',
+    'Unit %(n)s: enter its IMEI or its serial number.': 'Unité %(n)s : saisissez son IMEI ou son numéro de série.',
+    'serial number': 'numéro de série',
+    'Admin': 'Admin',
+    'Data': 'Données',
+    'Settings': 'Paramètres',
+    'Shops setup': 'Configuration des boutiques',
 }
 
 FR_PLURAL = {

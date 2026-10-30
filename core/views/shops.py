@@ -353,7 +353,7 @@ def shop_stock(request):
                 cd = form.cleaned_data
                 if cd["item"].category_id != cd["category"].pk:
                     raise BusinessError(_("This item is not in the chosen category."), "item")
-                units = sh.receive_stock(user, shop=cd["shop"], item=cd["item"], serials=cd["serials"],
+                units = sh.receive_stock(user, shop=cd["shop"], item=cd["item"], units=cd["units"],
                                          note=cd["note"])
                 messages.success(request, _("%(n)s unit(s) received into stock.") % {"n": len(units)})
                 return redirect("shop_stock")
@@ -367,7 +367,8 @@ def shop_stock(request):
     q = (request.GET.get("q") or "").strip()
     units = StockUnit.objects.filter(shop__in=shops_qs).select_related("shop", "item", "sale")
     if q:
-        units = units.filter(Q(serial__icontains=q) | Q(item__name__icontains=q) | Q(sale__client_name__icontains=q))
+        units = units.filter(Q(serial__icontains=q) | Q(imei__icontains=q.replace(" ", "")) | Q(item__name__icontains=q)
+                             | Q(sale__client_name__icontains=q))
     else:
         units = units.filter(status=StockUnit.Status.IN_STOCK)
     return render(request, "core/shop/stock.html", {"shops": shops_qs, "table": table, "form": form,

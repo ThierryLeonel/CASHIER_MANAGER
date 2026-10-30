@@ -397,10 +397,10 @@ class ItemCategoryAdmin(SuperAdminOnly):
 
 @admin.register(StockUnit)
 class StockUnitAdmin(SuperAdminOnly):
-    list_display = ("serial", "item", "shop", "status", "received_at")
+    list_display = ("imei", "serial", "item", "shop", "status", "received_at")
     list_filter = ("status", "shop", "item__category")
-    search_fields = ("serial", "item__name")
-    readonly_fields = ("serial", "item", "shop", "status", "sale", "received_by", "received_at")
+    search_fields = ("imei", "serial", "item__name")
+    readonly_fields = ("imei", "serial", "item", "shop", "status", "sale", "received_by", "received_at")
 
     def has_add_permission(self, request):
         return False

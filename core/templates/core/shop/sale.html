@@ -20,7 +20,7 @@
   {% for cat, items in form.catalogue %}<div class="pick-cat" data-cat="{{ cat.pk }}"><div class="pick-cat-name">{{ cat }}</div>
     {% for item, units in items %}<div class="pick-item" data-item="{{ item.pk }}" data-name="{{ item.name|lower }}" data-price="{{ item.price|floatformat:0 }}" data-label="{{ item.name }}">
       <div class="pick-item-head"><strong>{{ item.name }}</strong> <span class="muted small">{{ item.price|fcfa }} FCFA · <span class="n-stock">{{ units|length }}</span> {% trans "in stock" %}</span></div>
-      <div class="pick-units">{% for u in units %}<label class="unit" data-shop="{{ u.shop_id }}" data-serial="{{ u.serial|lower }}"><input type="checkbox" name="units" value="{{ u.pk }}"{% if u.pk|stringformat:"d" in chosen %} checked{% endif %}><span class="mono">{{ u.serial }}</span></label>{% endfor %}</div>
+      <div class="pick-units">{% for u in units %}<label class="unit" data-shop="{{ u.shop_id }}" data-serial="{{ u.imei|default:"" }} {{ u.serial|default:""|lower }}"><input type="checkbox" name="units" value="{{ u.pk }}"{% if u.pk|stringformat:"d" in chosen %} checked{% endif %}><span class="mono">{{ u.ident }}</span></label>{% endfor %}</div>
     </div>{% endfor %}
   </div>{% empty %}<p class="muted">{% trans "Nothing in stock. Receive units into stock first." %}</p>{% endfor %}
   {% endwith %}

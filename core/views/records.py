@@ -148,7 +148,7 @@ def receipt_rows(t):
         n_units, total = 0, Decimal(0)
         for p in parts:
             ps = p.item_sale
-            units = list(ps.units.order_by("serial").values_list("serial", flat=True))
+            units = [u.ident for u in ps.units.order_by("imei", "serial")]
             n_units += len(units)
             total += p.amount
             note = " — " + _("CORRECTED") if hasattr(p, "correction") else ""
