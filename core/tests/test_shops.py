@@ -1,6 +1,8 @@
 """Shops: separate from the cashiers, own capital (cash, UVE, ER), services, sales, agents and visibility."""
 import uuid
 
+from django.utils.html import escape
+
 from django.test import TestCase
 
 from core.models import Account, ServiceCount, Shop, ShopService, SimRetrieval, Transaction, TxType, User
@@ -207,9 +209,17 @@ class ShopPages(OrgMixin, TestCase):
     def test_services_retrieval_sale_pages(self):
         c = self.client_for("shop.molyko")
         svc = ShopService.objects.get(name__startswith="OTT")
-        r = c.post("/shops/services/new/", {"idem": str(uuid.uuid4()), "service": svc.pk, "count": "4",
-                                            "business_date": "2026-10-30"})
+        maxit = ShopService.objects.get(name__startswith="MAX IT")
+        page = c.get("/shops/services/new/")
+        for x in ShopService.objects.filter(active=True, kind=ShopService.Kind.COUNT):
+            self.assertContains(page, escape(x.name))  # every service is listed, no drop-down
+        r = c.post("/shops/services/new/", {"idem": str(uuid.uuid4()), "business_date": "2026-10-30"})
+        self.assertContains(r, "at least one service")
+        r = c.post("/shops/services/new/", {"idem": str(uuid.uuid4()), f"svc_{svc.pk}": "4",
+                                            f"svc_{maxit.pk}": "2", "business_date": "2026-10-30"})
         self.assertEqual(r.status_code, 302, r.content[:1500])
+        self.assertEqual(sorted(ServiceCount.objects.values_list("service__name", "count")),
+                         sorted([(svc.name, 4), (maxit.name, 2)]))
         r = c.post("/shops/retrieve/new/", {"idem": str(uuid.uuid4()), "sim_number": "699887766",
                                             "holder_name": "Ebai Joseph", "id_type": "CNI", "id_number": "123",
                                             "business_date": "2026-10-30"})
@@ -265,9 +275,17 @@ class ShopPages(OrgMixin, TestCase):
         r = adm.post("/setup/conversion-rate/", {"action": "shop", "shop-percent": "4.5"})
         self.assertEqual(r.status_code, 302, r.content[:1500])
         self.assertEqual(ShopConversionRate.current().percent, D("4.50"))
-        # the finance reconciliation includes the shops in the company total
-        rep = self.client_for("finance").get("/reports/reconciliation/?preset=all")
-        self.assertContains(rep, "SHOPS")
+        # finance and the senior manager see cashiers and shops in two separate spaces
+        fin = self.client_for("finance")
+        rep = fin.get("/reports/reconciliation/?preset=all")
+        self.assertContains(rep, "CASHIERS TOTAL")
+        self.assertNotContains(rep, "Shop Molyko")  # shops are not mixed into the cashiers' reports
+        self.assertContains(rep, 'class="space-switch"')
+        self.assertNotContains(rep, "/shops/attendance/")  # cashiers' space: no shop menu
+        shops_page = fin.get("/shops/")
+        self.assertContains(shops_page, "/shops/attendance/")
+        self.assertNotContains(shops_page, "/closings/")  # shops' space: no cashier menu
+        self.assertEqual(self.client_for("junior.fako").get("/reports/").status_code, 200)
         # opening grid has the shop row
         self.assertContains(self.client_for("admin").get("/setup/opening-balances/"), "Shop Molyko")
 

@@ -1,0 +1,22 @@
+{% extends "core/base.html" %}{% load i18n cashier %}
+{% block title %}{% trans "Record services done" %}{% endblock %}
+{% block topbar %}{% trans "Record services done" %}{% endblock %}
+{% block content %}
+<div class="form-head"><span class="form-ic">{% icon "list" 26 %}</span><div><h1>{% trans "Record services done" %}</h1>
+<p class="muted">{% trans "Type how many of each service were done, then record them all at once. Leave a service empty if none was done." %}</p></div></div>
+<div class="panel"><form method="post" class="entry" novalidate>{% csrf_token %}
+{% if form.non_field_errors %}<div class="nonfield">{% for e in form.non_field_errors %}<div>{{ e }}</div>{% endfor %}</div>{% endif %}
+{% for f in form.hidden_fields %}{{ f }}{% endfor %}
+{% if form.shop %}<div class="field" id="fld-shop"><label for="{{ form.shop.id_for_label }}">{{ form.shop.label }} *</label>{{ form.shop }}{% if form.shop.errors %}<ul class="err">{% for e in form.shop.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}</div>{% endif %}
+<div class="field" id="fld-business_date"><label for="{{ form.business_date.id_for_label }}">{{ form.business_date.label }} *</label>{{ form.business_date }}{% if form.business_date.errors %}<ul class="err">{% for e in form.business_date.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}</div>
+<div class="svc-grid">
+{% for svc, f in form.service_rows %}<label class="svc-row" for="{{ f.id_for_label }}"><span class="svc-name">{{ svc.name }}</span>{{ f }}{% if f.errors %}<span class="err small">{{ f.errors.0 }}</span>{% endif %}</label>
+{% empty %}<p class="muted">{% trans "No counted service is set up yet." %}</p>{% endfor %}
+</div>
+<div class="field" id="fld-note"><label for="{{ form.note.id_for_label }}">{{ form.note.label }}</label>{{ form.note }}</div>
+<div class="form-foot"><button class="btn primary" type="submit" id="submit-btn">{% trans "Record" %}</button> <a class="btn" href="{% url 'shops' %}">{% trans "Cancel" %}</a><span class="small muted">{% trans "Only record transactions that are completed and confirmed." %}</span></div>
+</form></div>
+{% if today %}<h2>{% trans "Already recorded today" %}</h2>
+<div class="tbl-wrap"><table class="t"><thead><tr><th>{% trans "Service" %}</th><th class="money">{% trans "Count" %}</th></tr></thead>
+<tbody>{% for r in today %}<tr><td>{{ r.service__name }}</td><td class="money">{{ r.n }}</td></tr>{% endfor %}</tbody></table></div>{% endif %}
+{% endblock %}

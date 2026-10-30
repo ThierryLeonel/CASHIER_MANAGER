@@ -84,9 +84,9 @@ class ManagersAndReconciliation(OrgMixin, TestCase):
         rep = reconciliation(Filters(None, None, user=self.finance))
         zt = rep.tables[0]
         names = [r["zone"].strip() for r in zt.rows]
-        for n in ("Fako", "Fako 2", "Meme", "COMPANY TOTAL"):
+        for n in ("Fako", "Fako 2", "Meme", "CASHIERS TOTAL"):
             self.assertIn(n, names)
-        company = next(r for r in zt.rows if r["zone"] == "COMPANY TOTAL")
+        company = next(r for r in zt.rows if r["zone"] == "CASHIERS TOTAL")
         self.assertEqual(company["UVE_c"], self.bal(self.uve_f1) + self.bal(self.uve_f2) + self.bal(self.uve_me))
         fako = next(r for r in zt.rows if r["zone"] == "Fako")
         self.assertEqual(fako["UVE_c"], self.bal(self.uve_f1) + self.bal(self.uve_f2))
@@ -100,8 +100,8 @@ class ManagersAndReconciliation(OrgMixin, TestCase):
         jnames = [r["zone"].strip() for r in reconciliation(jf).tables[0].rows]
         self.assertIn("Fako", jnames)
         self.assertNotIn("Meme", jnames)
-        self.assertNotIn("COMPANY TOTAL", jnames)
-        self.assertContains(self.login("finance").get("/reports/reconciliation/?preset=all"), "COMPANY TOTAL")
+        self.assertNotIn("CASHIERS TOTAL", jnames)
+        self.assertContains(self.login("finance").get("/reports/reconciliation/?preset=all"), "CASHIERS TOTAL")
 
     def test_closings_visible_by_zone(self):
         from core.services import closing as cl

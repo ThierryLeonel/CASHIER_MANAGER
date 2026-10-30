@@ -417,6 +417,16 @@ def count_service(user, *, shop=None, service, count, business_date=None, note="
                                        business_date=business_date or douala_today())
 
 
+def count_services(user, *, shop=None, counts, business_date=None, note=""):
+    """Record several counted services in one go ({service: how many}); services at 0 are skipped."""
+    chosen = [(svc, int(n or 0)) for svc, n in counts.items() if int(n or 0) > 0]
+    if not chosen:
+        raise BusinessError(_("Type how many of at least one service were done."))
+    with transaction.atomic():
+        return [count_service(user, shop=shop, service=svc, count=n, business_date=business_date, note=note)
+                for svc, n in chosen]
+
+
 def retrieve_sim(user, *, shop=None, service=None, sim_number, holder_name, id_type, id_number, phone="", iccid="",
                  note="", business_date=None):
     shop = shop_for(user, shop, "SERVICES")

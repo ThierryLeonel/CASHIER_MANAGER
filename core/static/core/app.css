@@ -454,3 +454,16 @@ input.auto { background: var(--soft); font-weight: 700; }
 .shift-chip { display: inline-flex; align-items: center; gap: 6px; font-size: .78rem; }
 .shift-chip .dot { width: 8px; height: 8px; border-radius: 50%; background: #9a948c; }
 .shift-chip.on .dot { background: #2e9d5b; }
+/* services done: every counted service with its own count box */
+.svc-grid { display: grid; gap: 8px; margin: 4px 0 16px; max-width: 680px; }
+.svc-row { display: grid; grid-template-columns: 1fr 120px; align-items: center; gap: 12px; padding: 10px 12px;
+  border: 1px solid var(--line); border-radius: 12px; background: var(--soft); cursor: text; }
+.svc-row .svc-name { font-weight: 600; }
+.svc-row input { width: 100%; text-align: right; font-size: 1.05rem; font-variant-numeric: tabular-nums; }
+.svc-row .err { grid-column: 1 / -1; color: var(--bad); }
+/* finance / senior manager: cashiers and shops are two separate workspaces */
+.space-switch { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; margin: 0 0 12px;
+  background: rgba(255,255,255,.06); border-radius: 12px; }
+.side-nav .space-switch a { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 6px;
+  border-radius: 9px; font-weight: 600; font-size: .9rem; margin: 0; }
+.side-nav .space-switch a.on { background: var(--accent); color: #fff; }

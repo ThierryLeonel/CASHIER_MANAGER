@@ -516,6 +516,9 @@ msgstr ""
 msgid "All zones"
 msgstr "Toutes les zones"
 
+msgid "Already recorded today"
+msgstr "Déjà enregistré aujourd'hui"
+
 msgid "Already recorded."
 msgstr "Déjà enregistré."
 
@@ -723,6 +726,9 @@ msgstr "Par"
 msgid "CANCELLED"
 msgstr "ANNULÉ"
 
+msgid "CASHIERS TOTAL"
+msgstr "TOTAL CAISSIERS"
+
 msgid "COMPANY TOTAL"
 msgstr "TOTAL ENTREPRISE"
 
@@ -891,6 +897,9 @@ msgstr "Signature du caissier"
 
 msgid "Cashier: transfer to a shop"
 msgstr "Caissier : transfert vers une boutique"
+
+msgid "Cashiers"
+msgstr "Caissiers"
 
 msgid ""
 "Cashiers and shops each have their own rate. A change applies to future "
@@ -2441,6 +2450,9 @@ msgstr "Aucune clôture pour l'instant."
 msgid "No correction found for %(ref)s."
 msgstr "Aucune correction trouvée pour %(ref)s."
 
+msgid "No counted service is set up yet."
+msgstr "Aucun service compté n'est encore configuré."
+
 msgid "No custodian"
 msgstr "Aucun détenteur"
 
@@ -3500,6 +3512,10 @@ msgstr "Services rendus"
 msgid "Services done:"
 msgstr "Services réalisés :"
 
+#, python-format
+msgid "Services recorded: %(list)s."
+msgstr "Services enregistrés : %(list)s."
+
 msgid "Services, items & rate"
 msgstr "Services, articles et taux"
 
@@ -4293,6 +4309,9 @@ msgstr ""
 msgid "Transfers between company accounts"
 msgstr "Transferts entre comptes de l'entreprise"
 
+msgid "Transfers with shops"
+msgstr "Transferts avec les boutiques"
+
 msgid "Type"
 msgstr "Type"
 
@@ -4304,6 +4323,16 @@ msgstr "Tapez DELETE (ou SUPPRIMER) pour confirmer."
 
 msgid "Type at least one opening amount."
 msgstr "Saisissez au moins un montant d'ouverture."
+
+msgid "Type how many of at least one service were done."
+msgstr "Indiquez combien ont été faits pour au moins un service."
+
+msgid ""
+"Type how many of each service were done, then record them all at once. Leave"
+" a service empty if none was done."
+msgstr ""
+"Indiquez combien de chaque service ont été faits, puis enregistrez tout en "
+"une fois. Laissez vide un service non réalisé."
 
 msgid "Type its name if the microzone is not in the list yet."
 msgstr "Saisissez son nom si la microzone n'est pas encore dans la liste."
@@ -4612,6 +4641,9 @@ msgstr "Avec agents et caissiers"
 
 msgid "Work attendance (shifts)"
 msgstr "Présences au travail (services)"
+
+msgid "Workspace"
+msgstr "Espace de travail"
 
 msgid "Write the investigation note."
 msgstr "Rédigez la note d'enquête."

@@ -241,15 +241,17 @@ def shop_service(request):
     form = SF.ServiceCountForm(request.user, request.POST or None)
     if request.method == "POST" and form.is_valid():
         try:
-            sh.count_service(request.user, **{k: v for k, v in form.params().items()})
+            done = sh.count_services(request.user, **form.params())
         except BusinessError as e:
             form.add_error(e.field if e.field in form.fields else None, e.message)
         else:
-            messages.success(request, _("Service recorded."))
+            messages.success(request, _("Services recorded: %(list)s.") % {
+                "list": ", ".join(f"{c.service.name} × {c.count}" for c in done)})
             return redirect("shop_service")
-    return render(request, "core/entry_form.html", {"form": form, "title": _("Record services done"),
-                                                 "intro": _("Only the number of services is recorded (e.g. OTT, MAX IT, "
-                                                            "identification updates, tickets)."), "icon": "list"})
+    shop = request.user.shop if request.user.is_shop_manager else None
+    today = (ServiceCount.objects.filter(shop=shop, business_date=douala_today()).values("service__name")
+             .annotate(n=Sum("count")).order_by("service__name")) if shop else []
+    return render(request, "core/shop/services_new.html", {"form": form, "today": today})
 
 
 @roles_required(*SHOP_DESK)

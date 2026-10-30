@@ -1544,6 +1544,15 @@ FR = {
     'open': 'ouvert',
     'signed off by %(u)s on %(t)s': 'validé par %(u)s le %(t)s',
     'since %(t)s at %(shop)s': 'depuis %(t)s à %(shop)s',
+    'Already recorded today': "Déjà enregistré aujourd'hui",
+    'CASHIERS TOTAL': 'TOTAL CAISSIERS',
+    'Cashiers': 'Caissiers',
+    'No counted service is set up yet.': "Aucun service compté n'est encore configuré.",
+    'Services recorded: %(list)s.': 'Services enregistrés : %(list)s.',
+    'Transfers with shops': 'Transferts avec les boutiques',
+    'Type how many of at least one service were done.': 'Indiquez combien ont été faits pour au moins un service.',
+    'Type how many of each service were done, then record them all at once. Leave a service empty if none was done.': 'Indiquez combien de chaque service ont été faits, puis enregistrez tout en une fois. Laissez vide un service non réalisé.',
+    'Workspace': 'Espace de travail',
 }
 
 FR_PLURAL = {

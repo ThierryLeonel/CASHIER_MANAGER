@@ -19,9 +19,13 @@
   </div>
 
   <nav class="side-nav">
-    <a href="{% url 'dashboard' %}" class="{% if u == 'dashboard' %}on{% endif %}">{% icon "home" %}<span>{% trans "Home" %}</span></a>
+    {% if can_switch %}<div class="space-switch" role="tablist" aria-label="{% trans 'Workspace' %}">
+      <a href="{% url 'dashboard' %}" role="tab" class="{% if space == 'cash' %}on{% endif %}" aria-selected="{% if space == 'cash' %}true{% else %}false{% endif %}">{% icon "bank" 16 %}<span>{% trans "Cashiers" %}</span></a>
+      <a href="{% url 'shops' %}" role="tab" class="{% if space == 'shops' %}on{% endif %}" aria-selected="{% if space == 'shops' %}true{% else %}false{% endif %}">{% icon "store" 16 %}<span>{% trans "Shops" %}</span></a>
+    </div>{% endif %}
+    {% if show_cash %}<a href="{% url 'dashboard' %}" class="{% if u == 'dashboard' %}on{% endif %}">{% icon "home" %}<span>{% trans "Home" %}</span></a>{% endif %}
 
-    {% if user.is_cashier or user.is_superadmin %}
+    {% if show_cash and user.is_cashier or show_cash and user.is_superadmin %}
     <div class="side-group">{% trans "Record" %}</div>
     {% if user.is_superadmin %}<a href="{% url 'act_as' %}" class="acting{% if u == 'act_as' %} on{% endif %}">{% icon "users" %}<span>{% if acting_cashier %}{% blocktrans with c=acting_cashier %}For: {{ c }}{% endblocktrans %}{% else %}{% trans "Choose a cashier…" %}{% endif %}</span></a>{% endif %}
     <a href="{% url 'supply_agent' %}" class="{% if u == 'supply_agent' %}on{% endif %}">{% icon "supply" %}<span>{% trans "Supply to agent" %}</span></a>
@@ -63,7 +67,7 @@
     {% endif %}
     {% endwith %}{% endif %}
 
-    {% if user.is_shop_user or user.sees_all_zones %}
+    {% if show_shops %}
     <div class="side-group">{% if user.is_shop_user %}{% trans "Follow-up" %}{% else %}{% trans "Shops" %}{% endif %}</div>
     <a href="{% url 'shops' %}" class="{% if u == 'shops' or u == 'shop_detail' %}on{% endif %}">{% icon "store" %}<span>{% if user.is_shop_manager %}{% trans "My shop" %}{% else %}{% trans "Shops overview" %}{% endif %}</span></a>
     <a href="{% url 'shop_transactions' %}" class="{% if u == 'shop_transactions' %}on{% endif %}">{% icon "list" %}<span>{% trans "Shop transactions" %}</span></a>
@@ -76,7 +80,7 @@
     <a href="{% url 'shop_setup' %}" class="{% if u == 'shop_setup' %}on{% endif %}">{% icon "settings" %}<span>{% trans "Services, items & rate" %}</span></a>{% endif %}
     {% endif %}
 
-    {% if not user.is_agent and not user.is_shop_user %}
+    {% if show_cash and not user.is_agent %}
     <div class="side-group">{% trans "Follow-up" %}</div>
     <a href="{% url 'customers' %}" class="{% if u == 'customers' or u == 'customer_new' or u == 'customer_edit' %}on{% endif %}">{% icon "users" %}<span>{% trans "Agents & POS" %}</span></a>
     <a href="{% url 'txn_list' %}" class="{% if u == 'txn_list' or u == 'txn_detail' or u == 'receipt' or u == 'txn_correct' or u == 'txn_transfer' %}on{% endif %}">{% icon "list" %}<span>{% trans "Transactions" %}</span></a>
@@ -88,7 +92,7 @@
     <a href="{% url 'discrepancies' %}" class="{% if u == 'discrepancies' or u == 'discrepancy_detail' %}on{% endif %}">{% icon "alert" %}<span>{% trans "Differences" %}</span></a>
     {% endif %}
 
-    {% if not user.is_shop_user %}
+    {% if show_cash %}
     <div class="side-group">{% trans "Analysis" %}</div>
     <a href="{% url 'reports' %}" class="{% if u == 'reports' or u == 'report' %}on{% endif %}">{% if user.is_agent %}{% icon "statement" %}<span>{% trans "My statement" %}</span>{% else %}{% icon "chart" %}<span>{% trans "Reports" %}</span>{% endif %}</a>
     {% endif %}

@@ -155,8 +155,8 @@ class SaleForm(ShopForm):
 
 
 class ServiceCountForm(ShopForm):
-    service = forms.ModelChoiceField(label=_("Service"), queryset=ShopService.objects.none())
-    count = forms.IntegerField(label=_("How many"), min_value=1)
+    """All the shop's counted services on one form: type how many of each were done, record them together."""
+
     business_date = forms.DateField(label=_("Date"), widget=forms.DateInput(attrs={"type": "date"}))
     note = forms.CharField(label=_("Note"), required=False, max_length=255)
 
@@ -164,8 +164,30 @@ class ServiceCountForm(ShopForm):
         super().__init__(user, *args, **kwargs)
         from core.services.days import douala_today
 
-        self.fields["service"].queryset = ShopService.objects.filter(active=True, kind=ShopService.Kind.COUNT)
+        self.services = list(ShopService.objects.filter(active=True, kind=ShopService.Kind.COUNT))
+        for svc in self.services:
+            self.fields[f"svc_{svc.pk}"] = forms.IntegerField(
+                label=svc.name, min_value=0, max_value=100000, required=False,
+                widget=forms.NumberInput(attrs={"min": 0, "inputmode": "numeric", "placeholder": "0",
+                                                "class": "svc-count"}))
         self.initial.setdefault("business_date", douala_today())
+
+    def service_rows(self):
+        return [(svc, self[f"svc_{svc.pk}"]) for svc in self.services]
+
+    def clean(self):
+        cd = super().clean()
+        if not any(cd.get(f"svc_{svc.pk}") for svc in self.services):
+            raise forms.ValidationError(_("Type how many of at least one service were done."))
+        return cd
+
+    def params(self):
+        cd = self.cleaned_data
+        out = {"counts": {svc: cd.get(f"svc_{svc.pk}") or 0 for svc in self.services},
+               "business_date": cd["business_date"], "note": cd["note"]}
+        if "shop" in cd:
+            out["shop"] = cd["shop"]
+        return out
 
 
 class RetrievalForm(ShopForm):
