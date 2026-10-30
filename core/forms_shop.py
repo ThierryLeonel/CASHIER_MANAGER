@@ -6,7 +6,7 @@ from django.utils.translation import gettext_lazy as _
 
 from core.forms import CustomerField, MoneyField
 from core.models import (
-    Account, Counterparty, ItemCategory, ItemSale, Shop, ShopItem, ShopService, SimRetrieval, StockUnit,
+    SHOP_DUTIES, SHOP_DUTY_CODES, Account, User, Zone, Counterparty, ItemCategory, ItemSale, Shop, ShopItem, ShopService, SimRetrieval, StockUnit,
 )
 
 K = Account.Kind
@@ -247,3 +247,57 @@ class ItemForm(forms.ModelForm):
 class ShopRateForm(forms.Form):
     percent = forms.DecimalField(label=_("Shop UVE→ER uplift (%)"), min_value=0, max_value=99, decimal_places=4)
     note = forms.CharField(label=_("Note"), required=False, max_length=255)
+
+
+class ShopDefForm(forms.ModelForm):
+    """Add / edit a shop (senior shop manager, super admin)."""
+
+    class Meta:
+        model = Shop
+        fields = ["name", "code", "zone", "sim_number", "address", "active"]
+        help_texts = {"code": _("Short unique code, e.g. shop-molyko (letters, digits, dashes)."),
+                      "active": _("Untick to close the shop: it disappears from the lists, its history stays.")}
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["zone"].required = False
+        self.fields["zone"].queryset = Zone.objects.order_by("name")
+
+    def clean_sim_number(self):
+        from core.simnumbers import SimNumberError, normalize_sim
+
+        v = self.cleaned_data.get("sim_number") or ""
+        if not v:
+            return ""
+        try:
+            return normalize_sim(v)
+        except SimNumberError as exc:
+            raise forms.ValidationError(str(exc))
+
+
+class StaffForm(forms.Form):
+    """A shop staff login: which shop, which duties (segmented shops)."""
+
+    username = forms.CharField(label=_("Username"), max_length=150)
+    first_name = forms.CharField(label=_("First name"), max_length=150)
+    last_name = forms.CharField(label=_("Last name"), max_length=150, required=False)
+    shop = forms.ModelChoiceField(label=_("Shop"), queryset=Shop.objects.filter(active=True))
+    duties = forms.MultipleChoiceField(
+        label=_("Duties"), choices=SHOP_DUTIES, widget=forms.CheckboxSelectMultiple, required=False,
+        help_text=_("Tick what this person handles, e.g. only Orange Money for the cash-in / cash-out desk, and "
+                    "the others for the airtime desk. Tick all (or none) for a manager who does everything."))
+
+    def __init__(self, *args, instance=None, **kwargs):
+        self.instance = instance
+        if instance is not None and not kwargs.get("data") and not (args and args[0]):
+            kwargs["initial"] = {"username": instance.username, "first_name": instance.first_name,
+                                 "last_name": instance.last_name, "shop": instance.shop_id,
+                                 "duties": sorted(instance.shop_duty_set)}
+        super().__init__(*args, **kwargs)
+        if instance is not None:
+            self.fields["username"].disabled = True
+            self.fields["username"].required = False
+            self.fields["shop"].queryset = Shop.objects.filter(active=True) | Shop.objects.filter(
+                pk=instance.shop_id)
+        else:
+            self.initial.setdefault("duties", SHOP_DUTY_CODES)

@@ -118,6 +118,23 @@ msgid "%(s)s removed from stock."
 msgstr "%(s)s retiré du stock."
 
 #, python-format
+msgid ""
+"%(shop)s has recorded operations, stock or services, so it cannot be "
+"deleted. Untick Active to close it; its history stays in the reports."
+msgstr ""
+"%(shop)s a des opérations, du stock ou des services enregistrés : elle ne "
+"peut pas être supprimée. Décochez Active pour la fermer ; son historique "
+"reste dans les rapports."
+
+#, python-format
+msgid ""
+"%(shop)s still has %(n)s staff account(s). Move them to another shop first, "
+"or deactivate the shop."
+msgstr ""
+"%(shop)s a encore %(n)s compte(s) du personnel. Affectez-les d'abord à une "
+"autre boutique, ou désactivez la boutique."
+
+#, python-format
 msgid "%(type)s %(ref)s recorded: %(amt)s FCFA."
 msgstr "%(type)s %(ref)s enregistré(e) : %(amt)s FCFA."
 
@@ -126,8 +143,28 @@ msgid "%(u)s can sign in again."
 msgstr "%(u)s peut de nouveau se connecter."
 
 #, python-format
+msgid ""
+"%(u)s has recorded operations, so the account cannot be deleted. Deactivate "
+"it instead; the records keep the name."
+msgstr ""
+"%(u)s a enregistré des opérations : le compte ne peut pas être supprimé. "
+"Désactivez-le ; les enregistrements gardent le nom."
+
+#, python-format
 msgid "%(u)s is deactivated and can no longer sign in."
 msgstr "%(u)s est désactivé et ne peut plus se connecter."
+
+#, python-format
+msgid "%(x)s deleted."
+msgstr "%(x)s supprimé."
+
+#, python-format
+msgid ""
+"%(x)s is already used in records, so it cannot be deleted. Untick Active to "
+"remove it from the lists."
+msgstr ""
+"%(x)s est déjà utilisé dans des enregistrements : impossible de le "
+"supprimer. Décochez Active pour le retirer des listes."
 
 #, python-format
 msgid "%(z)s desk · entries go to business day %(d)s"
@@ -236,12 +273,32 @@ msgstr "Reçu A4 / imprimer"
 msgid "AG"
 msgstr "AG"
 
+#, python-format
+msgid "Access of %(u)s"
+msgstr "Accès de %(u)s"
+
+#, python-format
+msgid "Access of %(u)s saved."
+msgstr "Accès de %(u)s enregistré."
+
 msgid "Account"
 msgstr "Compte"
 
 #, python-format
 msgid "Account %(acct)s is inactive."
 msgstr "Le compte %(acct)s est inactif."
+
+#, python-format
+msgid ""
+"Account %(u)s created. Give the temporary password below; it must be changed"
+" at the first sign-in."
+msgstr ""
+"Compte %(u)s créé. Donnez le mot de passe temporaire ci-dessous ; il devra "
+"être changé à la première connexion."
+
+#, python-format
+msgid "Account %(u)s deleted."
+msgstr "Compte %(u)s supprimé."
 
 msgid "Account status"
 msgstr "Statut du compte"
@@ -292,6 +349,12 @@ msgstr "Ajouter une catégorie"
 msgid "Add a service"
 msgstr "Ajouter un service"
 
+msgid "Add a shop"
+msgstr "Ajouter une boutique"
+
+msgid "Add a staff member"
+msgstr "Ajouter un membre du personnel"
+
 msgid "Add an item"
 msgstr "Ajouter un article"
 
@@ -300,6 +363,27 @@ msgstr "Ajouter des articles"
 
 msgid "Add note"
 msgstr "Ajouter une note"
+
+msgid ""
+"Add, edit or delete services, item categories and items. Anything already "
+"used in records cannot be deleted: untick Active to remove it from the "
+"lists."
+msgstr ""
+"Ajoutez, modifiez ou supprimez les services, catégories et articles. Ce qui "
+"est déjà utilisé dans des enregistrements ne peut pas être supprimé : "
+"décochez Active pour le retirer des listes."
+
+msgid ""
+"Add, edit or delete shops; give each staff member a shop and their duties. A"
+" shop can be segmented: for example one person on Orange Money (cash-in / "
+"cash-out) and another on airtime and all the other activities. To transfer "
+"someone, change their shop."
+msgstr ""
+"Ajoutez, modifiez ou supprimez les boutiques ; donnez à chaque membre du "
+"personnel une boutique et ses tâches. Une boutique peut être segmentée : par"
+" exemple une personne sur Orange Money (dépôt / retrait) et une autre sur le"
+" crédit et toutes les autres activités. Pour muter quelqu'un, changez sa "
+"boutique."
 
 msgid "Address"
 msgstr "Adresse"
@@ -378,6 +462,9 @@ msgstr "Montant convenu (FCFA, 1:1)"
 msgid "Airtime"
 msgstr "Crédit de communication"
 
+msgid "Airtime and UVE→ER conversion"
+msgstr "Crédit et conversion UVE→ER"
+
 msgid "Airtime kind"
 msgstr "Type de crédit"
 
@@ -398,6 +485,9 @@ msgstr "Tous les comptes de contrôle ont leur solde d'ouverture."
 
 msgid "All dates"
 msgstr "Toutes les dates"
+
+msgid "All duties"
+msgstr "Toutes les tâches"
 
 msgid "All transactions of this shop"
 msgstr "Toutes les opérations de cette boutique"
@@ -830,6 +920,9 @@ msgstr "Choisissez un mode de paiement."
 msgid "Choose a resolution."
 msgstr "Choisissez une résolution."
 
+msgid "Choose a username."
+msgstr "Choisissez un nom d'utilisateur."
+
 msgid "Choose an active cashier to record for."
 msgstr "Choisissez un caissier actif pour qui enregistrer."
 
@@ -991,6 +1084,9 @@ msgstr "Lignes de clôture (le solde comptable est reporté)"
 msgid "Closings"
 msgstr "Clôtures"
 
+msgid "Code"
+msgstr "Code"
+
 msgid "Collect a payment"
 msgstr "Encaisser un paiement"
 
@@ -1021,6 +1117,9 @@ msgstr "Agent commercial qui assume cette dette (facultatif)"
 msgid "Commercial agents and POS"
 msgstr "Agents commerciaux et PDV"
 
+msgid "Commercial agents and transfers to cashiers"
+msgstr "Agents commerciaux et transferts aux caissiers"
+
 msgid "Commercial agents who owe the shop"
 msgstr "Agents commerciaux qui doivent à la boutique"
 
@@ -1042,6 +1141,9 @@ msgstr "Entreprise"
 #, python-format
 msgid "Company %(kind)s account not found: %(v)s"
 msgstr "Compte entreprise %(kind)s introuvable : %(v)s"
+
+msgid "Company SIM"
+msgstr "SIM de l'entreprise"
 
 msgid "Company account"
 msgstr "Compte de l'entreprise"
@@ -1230,6 +1332,9 @@ msgstr ""
 msgid "Counted service (count only)"
 msgstr "Service compté (nombre uniquement)"
 
+msgid "Counted services and SIM retrieval"
+msgstr "Services comptés et récupération de SIM"
+
 msgid ""
 "Counted services only record how many were done. A SIM retrieval registers "
 "the person and the SIM. Untick Active to remove a service no longer offered."
@@ -1246,6 +1351,9 @@ msgstr "Erreur de comptage/lecture – aucune écriture"
 
 msgid "Country of origin"
 msgstr "Pays d'origine"
+
+msgid "Create the account"
+msgstr "Créer le compte"
 
 msgid "Credit (−)"
 msgstr "Crédit (−)"
@@ -1394,6 +1502,13 @@ msgstr "Dette par produit (UVE, espèces, ER)"
 msgid "Delete"
 msgstr "Supprimer"
 
+msgid ""
+"Delete it? Something already used in records cannot be deleted — untick "
+"Active instead."
+msgstr ""
+"Supprimer ? Ce qui est déjà utilisé dans des enregistrements ne peut pas "
+"être supprimé — décochez plutôt Active."
+
 msgid "Delete permanently"
 msgstr "Supprimer définitivement"
 
@@ -1405,6 +1520,18 @@ msgstr ""
 #, python-format
 msgid "Delete the responsibility transfer(s) %(refs)s first."
 msgstr "Supprimez d'abord le(s) transfert(s) de responsabilité %(refs)s."
+
+msgid ""
+"Delete this account? Only an account that never recorded anything can be "
+"deleted."
+msgstr ""
+"Supprimer ce compte ? Seul un compte qui n'a jamais rien enregistré peut "
+"être supprimé."
+
+msgid "Delete this shop? Only a shop that was never used can be deleted."
+msgstr ""
+"Supprimer cette boutique ? Seule une boutique jamais utilisée peut être "
+"supprimée."
 
 #, python-format
 msgid "Deleted: %(refs)s. A full copy is kept in the audit log."
@@ -1464,6 +1591,9 @@ msgstr "Mouvements des caisses et portefeuilles SIM"
 msgid "Drawers and wallets you can use (book balances)"
 msgstr "Caisses et portefeuilles utilisables (soldes comptables)"
 
+msgid "Duties"
+msgstr "Tâches"
+
 msgid "ER"
 msgstr "ER"
 
@@ -1511,8 +1641,21 @@ msgstr ""
 "auditable contre les capitaux d'ouverture. Pour le modifier ensuite, un "
 "responsable ou un responsable financier le corrige."
 
+msgid ""
+"Each new shop gets its own cash drawer, UVE and ER accounts automatically."
+msgstr ""
+"Chaque nouvelle boutique reçoit automatiquement sa caisse, son compte UVE et"
+" son compte ER."
+
 msgid "Edit"
 msgstr "Modifier"
+
+#, python-format
+msgid "Edit %(s)s"
+msgstr "Modifier %(s)s"
+
+msgid "Edit / transfer"
+msgstr "Modifier / muter"
 
 msgid "Edit category"
 msgstr "Modifier la catégorie"
@@ -1722,6 +1865,9 @@ msgstr "Responsable financier"
 msgid "Find a unit (IMEI / serial, item or client)"
 msgstr "Trouver une unité (IMEI / série, article ou client)"
 
+msgid "First name"
+msgstr "Prénom"
+
 msgid "Floating-point money values are not allowed"
 msgstr "Les montants en virgule flottante ne sont pas autorisés"
 
@@ -1919,6 +2065,9 @@ msgstr "Article"
 msgid "Item categories"
 msgstr "Catégories d'articles"
 
+msgid "Item sales and stock"
+msgstr "Ventes d'articles et stock"
+
 msgid "Item saved."
 msgstr "Article enregistré."
 
@@ -1930,6 +2079,9 @@ msgstr "Articles en vente"
 
 msgid "Junior manager"
 msgstr "Manager junior"
+
+msgid "Last name"
+msgstr "Nom"
 
 msgid "Last sign-in"
 msgstr "Dernière connexion"
@@ -2015,6 +2167,9 @@ msgstr "Float MTN → servi en UVE"
 
 msgid "Main menu"
 msgstr "Menu principal"
+
+msgid "Manage staff and duties"
+msgstr "Gérer le personnel et les tâches"
 
 msgid "Manager"
 msgstr "Responsable"
@@ -2217,6 +2372,12 @@ msgstr ""
 "Aucun taux boutique défini : les boutiques ne peuvent pas convertir l'UVE en"
 " ER avant qu'il soit fixé."
 
+msgid "No shop staff yet."
+msgstr "Aucun personnel de boutique pour l'instant."
+
+msgid "No shop yet."
+msgstr "Aucune boutique pour l'instant."
+
 msgid ""
 "No shop yet. The super administrator adds shops in Configuration › Shops."
 msgstr ""
@@ -2369,6 +2530,9 @@ msgid "Only shop managers record shop operations."
 msgstr ""
 "Seuls les gérants de boutique enregistrent les opérations de boutique."
 
+msgid "Only shop staff accounts are managed here."
+msgstr "Seuls les comptes du personnel des boutiques sont gérés ici."
+
 msgid ""
 "Only supplies, destockages and opening debts can change responsibility."
 msgstr ""
@@ -2381,6 +2545,12 @@ msgid ""
 msgstr ""
 "Seul le nombre de services est enregistré (par ex. OTT, MAX IT, mises à jour"
 " d'identification, tickets)."
+
+msgid ""
+"Only the senior shop manager or the super administrator manages the shops."
+msgstr ""
+"Seul le responsable principal des boutiques ou le super administrateur gère "
+"les boutiques."
 
 msgid "Only the super administrator manages user accounts."
 msgstr "Seul le super administrateur gère les comptes utilisateurs."
@@ -2472,11 +2642,17 @@ msgstr ""
 "Les rapports opérationnels sont limités à votre poste ; les soldes clients "
 "sont communs."
 
+msgid "Operations"
+msgstr "Opérations"
+
 msgid "Or create a new microzone"
 msgstr "Ou créer une nouvelle microzone"
 
 msgid "Orange Money cash-in"
 msgstr "Orange Money : dépôt (cash-in)"
+
+msgid "Orange Money cash-in / cash-out"
+msgstr "Orange Money dépôt / retrait"
 
 msgid "Orange Money cash-out"
 msgstr "Orange Money : retrait (cash-out)"
@@ -2935,6 +3111,9 @@ msgstr "Remplace %(ref)s"
 msgid "Reports"
 msgstr "Rapports"
 
+msgid "Reset password"
+msgstr "Réinitialiser le mot de passe"
+
 msgid "Reset passwords, activate or deactivate accounts"
 msgstr "Réinitialiser les mots de passe, activer ou désactiver les comptes"
 
@@ -3108,6 +3287,9 @@ msgstr "Manager senior"
 msgid "Senior shop manager"
 msgstr "Gérant principal des boutiques"
 
+msgid "Senior shop manager(s):"
+msgstr "Responsable(s) principal(aux) des boutiques :"
+
 msgid "Sent from company account"
 msgstr "Envoyé depuis le compte de l'entreprise"
 
@@ -3150,6 +3332,14 @@ msgstr "Règle ce que la boutique doit à un agent."
 msgid "Shop"
 msgstr "Boutique"
 
+#, python-format
+msgid "Shop %(s)s deleted."
+msgstr "Boutique %(s)s supprimée."
+
+#, python-format
+msgid "Shop %(s)s saved."
+msgstr "Boutique %(s)s enregistrée."
+
 msgid "Shop UVE→ER conversion rate"
 msgstr "Taux de conversion UVE→ER des boutiques"
 
@@ -3180,6 +3370,9 @@ msgstr "Ventes des boutiques"
 
 msgid "Shop services, items and conversion rate"
 msgstr "Services, articles et taux de conversion des boutiques"
+
+msgid "Shop staff and their access"
+msgstr "Personnel des boutiques et accès"
 
 msgid "Shop transactions"
 msgstr "Opérations des boutiques"
@@ -3226,6 +3419,12 @@ msgstr "Boutique : transfert vers un caissier"
 msgid "Shops"
 msgstr "Boutiques"
 
+msgid "Shops & staff"
+msgstr "Boutiques et personnel"
+
+msgid "Shops and staff access"
+msgstr "Boutiques et accès du personnel"
+
 msgid "Shops overview"
 msgstr "Vue des boutiques"
 
@@ -3234,6 +3433,9 @@ msgstr "Taux des boutiques"
 
 msgid "Short line under the name in the menu. Leave empty for none."
 msgstr "Courte ligne sous le nom dans le menu. Laissez vide pour aucune."
+
+msgid "Short unique code, e.g. shop-molyko (letters, digits, dashes)."
+msgstr "Code court unique, par ex. shop-molyko (lettres, chiffres, tirets)."
 
 msgid "Shortage"
 msgstr "Manquant"
@@ -3267,8 +3469,14 @@ msgstr "La source et la destination doivent être différentes."
 msgid "Spending by category"
 msgstr "Dépenses par catégorie"
 
+msgid "Staff"
+msgstr "Personnel"
+
 msgid "Staff ID"
 msgstr "Matricule"
+
+msgid "Staff and duties"
+msgstr "Personnel et tâches"
 
 msgid "Statement"
 msgstr "Relevé"
@@ -3404,6 +3612,12 @@ msgstr "Contact téléphonique"
 
 msgid "Templates"
 msgstr "Modèles"
+
+msgid ""
+"Temporary password — give it to the person now. It will not be shown again."
+msgstr ""
+"Mot de passe temporaire — donnez-le à la personne maintenant. Il ne sera "
+"plus affiché."
 
 msgid ""
 "The account follows the exchange: cash or MTN float given, UVE served; UVE "
@@ -3658,6 +3872,14 @@ msgstr ""
 msgid "This entry reverses"
 msgstr "Cette écriture contre-passe"
 
+#, python-format
+msgid ""
+"This is not one of your duties in the shop (%(d)s). Ask the senior shop "
+"manager."
+msgstr ""
+"Ce n'est pas une de vos tâches dans la boutique (%(d)s). Adressez-vous au "
+"responsable principal des boutiques."
+
 msgid "This item is not in the chosen category."
 msgstr "Cet article n'est pas dans la catégorie choisie."
 
@@ -3699,11 +3921,23 @@ msgstr "Ce type d'écriture ne peut pas être modifié."
 msgid "This unit is not in stock (%(s)s)."
 msgstr "Cette unité n'est pas en stock (%(s)s)."
 
+msgid "This username is already taken."
+msgstr "Ce nom d'utilisateur est déjà pris."
+
 msgid "This zone has subzones, so it must stay a master zone."
 msgstr "Cette zone a des sous-zones, elle doit donc rester une zone master."
 
 msgid "Tick the confirmation box to close the day."
 msgstr "Cochez la case de confirmation pour clôturer la journée."
+
+msgid ""
+"Tick what this person handles, e.g. only Orange Money for the cash-in / "
+"cash-out desk, and the others for the airtime desk. Tick all (or none) for a"
+" manager who does everything."
+msgstr ""
+"Cochez ce que cette personne gère, par ex. seulement Orange Money pour le "
+"guichet dépôt / retrait, et le reste pour le guichet crédit. Cochez tout (ou"
+" rien) pour un gérant qui fait tout."
 
 msgid "To"
 msgstr "Vers"
@@ -3987,6 +4221,12 @@ msgid "Unresolved differences (all dates)"
 msgstr "Écarts non résolus (toutes dates)"
 
 msgid ""
+"Untick to close the shop: it disappears from the lists, its history stays."
+msgstr ""
+"Décochez pour fermer la boutique : elle disparaît des listes, son historique"
+" reste."
+
+msgid ""
 "Until a logo is uploaded, the first letter of the company name is shown."
 msgstr ""
 "Tant qu'aucun logo n'est chargé, la première lettre du nom de l'entreprise "
@@ -4092,6 +4332,12 @@ msgstr ""
 
 msgid "Who changed what, and the deleted data"
 msgstr "Qui a modifié quoi, et les données supprimées"
+
+msgid ""
+"Who handles what in this shop, and what each person recorded in the period."
+msgstr ""
+"Qui gère quoi dans cette boutique, et ce que chacun a enregistré sur la "
+"période."
 
 msgid "With agents & cashiers"
 msgstr "Avec agents et caissiers"
@@ -4342,6 +4588,9 @@ msgstr "inactif"
 msgid "into %(acct)s"
 msgstr "vers %(acct)s"
 
+msgid "it must be changed at the first sign-in."
+msgstr "il devra être changé à la première connexion."
+
 msgid "kind"
 msgstr "type"
 
@@ -4354,6 +4603,9 @@ msgstr "libellé"
 
 msgid "language"
 msgstr "langue"
+
+msgid "managed by the super administrator."
+msgstr "géré(s) par le super administrateur."
 
 msgid "master SIM of the zone"
 msgstr "SIM maître de la zone"
@@ -4468,6 +4720,9 @@ msgstr "usage partagé"
 
 msgid "shop"
 msgstr "boutique"
+
+msgid "shop duties"
+msgstr "tâches en boutique"
 
 msgid "staff ID"
 msgstr "ID employé"

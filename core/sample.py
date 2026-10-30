@@ -102,6 +102,11 @@ def build_sample_org(password="Sample-Pass-2026!"):
     shop_mgr = _user("shop.molyko", User.Role.SHOP_MANAGER, password, first_name=S + "Shop manager Molyko",
                      shop=shop)
     shop_senior = _user("shop.senior", User.Role.SHOP_SENIOR, password, first_name=S + "Senior shop manager")
+    # a segmented shop desk: one person on Orange Money, one on airtime and everything else
+    shop_om = _user("shop.molyko.om", User.Role.SHOP_MANAGER, password, first_name=S + "Molyko Orange Money desk",
+                    shop=shop, shop_duties="OM")
+    shop_air = _user("shop.molyko.airtime", User.Role.SHOP_MANAGER, password, first_name=S + "Molyko airtime desk",
+                     shop=shop, shop_duties="AIRTIME,SALES,SERVICES,AGENTS")
     ShopConversionRate.objects.create(rate="0.035", set_by=admin, note="[SAMPLE] shop rate 3.5 %")
     cat = {n: ItemCategory.objects.get_or_create(name=n)[0] for n in ("Phones", "Internet boxes", "Orange energy kits")}
     items = {"phone": ShopItem.objects.create(name=S + "Smartphone A12", category=cat["Phones"], price=65000),
@@ -109,7 +114,7 @@ def build_sample_org(password="Sample-Pass-2026!"):
              "kit": ShopItem.objects.create(name=S + "Orange Energie kit S", category=cat["Orange energy kits"],
                                             price=45000)}
     return dict(
-        shop=shop, shop_mgr=shop_mgr, shop_senior=shop_senior, items=items,
+        shop=shop, shop_mgr=shop_mgr, shop_senior=shop_senior, shop_om=shop_om, shop_air=shop_air, items=items,
         microzones=mzs,
         zones=dict(fako=fako, fako1=fako1, fako2=fako2, meme=meme, meme_sub=meme_sub),
         admin=admin, manager=manager, finance=finance, junior=junior, c_f1=c_f1, c_f2=c_f2, c_me=c_me,

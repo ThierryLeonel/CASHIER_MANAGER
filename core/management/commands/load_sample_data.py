@@ -30,7 +30,7 @@ class Command(BaseCommand):
         o = build_sample_org(opts["password"])
         self.stdout.write(self.style.SUCCESS("Sample organisation created. Users (password: %s):" % opts["password"]))
         for u in ("admin", "manager", "junior.fako", "finance", "cashier.fako1", "cashier.fako2", "cashier.meme", "agent.ndive",
-                  "agent.ekane", "shop.molyko", "shop.senior"):
+                  "agent.ekane", "shop.molyko", "shop.molyko.om", "shop.molyko.airtime", "shop.senior"):
             self.stdout.write(f"  {u}")
         if opts["activity"]:
             self._activity(o)
@@ -83,9 +83,9 @@ class Command(BaseCommand):
         sh.receive_stock(o["shop_senior"], shop=shop, item=o["items"]["kit"],
                          serials="OEK-S-0001, OEK-S-0002, OEK-S-0003")
         sh.cash_in(smgr, amount=D(50_000), commission=D(250), client_phone="677123456")
-        sh.cash_out(smgr, amount=D(20_000), commission=D(200))
+        sh.cash_out(o["shop_om"], amount=D(20_000), commission=D(200))
         sh.airtime(smgr, amount=D(5_000))
-        sh.airtime(smgr, amount=D(10_000), kind="GOOD_DEAL")
+        sh.airtime(o["shop_air"], amount=D(10_000), kind="GOOD_DEAL")
         sh.convert(smgr, amount=D(100_000))
         sh.appro(smgr, agent=a1, amount=D(200_000), pay="CASH")
         sh.er_supply(smgr, agent=a2, amount=D(50_000), pay="CREDIT")

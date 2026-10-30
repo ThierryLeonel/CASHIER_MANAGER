@@ -21,14 +21,16 @@ def generate_password(length=12):
             return pw
 
 
-def _require_admin(admin):
+def _require_admin(admin, user=None):
+    if admin.is_authenticated and admin.is_shop_senior and user is not None and user.is_shop_manager:
+        return  # the senior shop manager manages the shop staff
     if not (admin.is_authenticated and admin.is_superadmin):
         raise PermissionDenied(_("Only the super administrator manages user accounts."))
 
 
 def reset_password(admin, user, *, new_password=None, must_change=True):
     """Replace a user's password. Returns the new password so it can be shown once."""
-    _require_admin(admin)
+    _require_admin(admin, user)
     pw = new_password or generate_password()
     try:
         validate_password(pw, user)
@@ -43,7 +45,7 @@ def reset_password(admin, user, *, new_password=None, must_change=True):
 
 
 def set_active(admin, user, active):
-    _require_admin(admin)
+    _require_admin(admin, user)
     if user.pk == admin.pk and not active:
         raise BusinessError(_("You cannot deactivate your own account."))
     if not active and user.is_superadmin and not User.objects.filter(

@@ -114,6 +114,16 @@ class SubZone(Zone):
         ordering = ["parent__name", "name"]
 
 
+SHOP_DUTIES = [
+    ("OM", _("Orange Money cash-in / cash-out")),
+    ("AIRTIME", _("Airtime and UVE→ER conversion")),
+    ("SALES", _("Item sales and stock")),
+    ("SERVICES", _("Counted services and SIM retrieval")),
+    ("AGENTS", _("Commercial agents and transfers to cashiers")),
+]
+SHOP_DUTY_CODES = [c for c, _l in SHOP_DUTIES]
+
+
 class User(AbstractUser):
     class Role(models.TextChoices):
         SUPERADMIN = "SUPERADMIN", _("Super administrator")
@@ -128,6 +138,9 @@ class User(AbstractUser):
     role = models.CharField(_("role"), max_length=12, choices=Role.choices, default=Role.CASHIER)
     shop = models.ForeignKey("Shop", null=True, blank=True, on_delete=models.PROTECT, related_name="managers",
                              verbose_name=_("shop"), help_text="Shop managers: the shop they run.")
+    shop_duties = models.CharField(
+        _("shop duties"), max_length=80, blank=True,
+        help_text="Shop managers: comma-separated duties (OM, AIRTIME, SALES, SERVICES, AGENTS). Empty = all duties.")
     must_change_password = models.BooleanField(
         _("must change password at next sign-in"), default=False,
         help_text="Set when an administrator resets the password; cleared when the user chooses a new one.")
@@ -207,6 +220,24 @@ class User(AbstractUser):
     @property
     def is_shop_user(self):
         return self.role in (self.Role.SHOP_MANAGER, self.Role.SHOP_SENIOR)
+
+    @property
+    def shop_duty_set(self):
+        """Duties this user may perform in a shop. Seniors, admins and unrestricted managers: all of them."""
+        if not self.is_shop_manager:
+            return set(SHOP_DUTY_CODES)
+        chosen = {d for d in (self.shop_duties or "").split(",") if d in SHOP_DUTY_CODES}
+        return chosen or set(SHOP_DUTY_CODES)
+
+    def has_shop_duty(self, duty):
+        return duty in self.shop_duty_set
+
+    @property
+    def shop_duties_display(self):
+        chosen = self.shop_duty_set
+        if len(chosen) == len(SHOP_DUTY_CODES):
+            return _("All duties")
+        return ", ".join(str(label) for code, label in SHOP_DUTIES if code in chosen)
 
     @property
     def sees_all_shops(self):

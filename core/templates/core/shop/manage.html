@@ -1,0 +1,42 @@
+{% extends "core/base.html" %}{% load i18n cashier %}
+{% block title %}{% trans "Shops & staff" %}{% endblock %}
+{% block content %}
+<h1>{% trans "Shops and staff access" %}</h1>
+<p class="muted">{% trans "Add, edit or delete shops; give each staff member a shop and their duties. A shop can be segmented: for example one person on Orange Money (cash-in / cash-out) and another on airtime and all the other activities. To transfer someone, change their shop." %}</p>
+
+{% if new_pw %}
+<div class="panel pw-shown">
+  <p><strong>{% trans "Temporary password — give it to the person now. It will not be shown again." %}</strong></p>
+  <div class="pw-box"><code id="new-pw">{{ new_pw.1 }}</code><button type="button" class="btn small" onclick="navigator.clipboard && navigator.clipboard.writeText(document.getElementById('new-pw').textContent); this.textContent='✓';">{% trans "Copy" %}</button></div>
+  <p class="small muted">{% blocktrans with name=new_pw.0.username %}Username: {{ name }}{% endblocktrans %} — {% trans "it must be changed at the first sign-in." %}</p>
+</div>
+{% endif %}
+
+<h2 id="shops">{% trans "Shops" %}</h2>
+<div class="tbl-wrap"><table class="t"><thead><tr><th>{% trans "Shop" %}</th><th>{% trans "Code" %}</th><th>{% trans "Zone" %}</th><th>{% trans "Company SIM" %}</th><th>{% trans "Staff" %}</th><th>{% trans "Status" %}</th><th></th></tr></thead>
+<tbody>{% for s in shops %}<tr>
+  <td><a href="{% url 'shop_detail' s.pk %}">{{ s.name }}</a>{% if s.address %}<br><span class="muted small">{{ s.address }}</span>{% endif %}</td>
+  <td>{{ s.code }}</td><td>{{ s.zone|default:"—" }}</td><td>{% if s.sim_number %}{{ s.sim_number|sim }}{% else %}—{% endif %}</td><td>{{ s.n_staff }}</td>
+  <td>{% if s.active %}<span class="badge ok">{% trans "Active" %}</span>{% else %}<span class="badge">{% trans "Closed" %}</span>{% endif %}</td>
+  <td class="row-actions"><a href="?shop={{ s.pk }}#shop-form">{% trans "Edit" %}</a>
+    <form method="post" class="inline" onsubmit="return confirm('{% trans "Delete this shop? Only a shop that was never used can be deleted." %}');">{% csrf_token %}<input type="hidden" name="action" value="shop_delete"><input type="hidden" name="pk" value="{{ s.pk }}"><button class="linkbtn danger" type="submit">{% trans "Delete" %}</button></form></td>
+</tr>{% empty %}<tr><td colspan="7" class="muted">{% trans "No shop yet." %}</td></tr>{% endfor %}</tbody></table></div>
+<div class="panel" id="shop-form"><h3>{% if shop_form.instance.pk %}{% blocktrans with s=shop_form.instance.name %}Edit {{ s }}{% endblocktrans %}{% else %}{% trans "Add a shop" %}{% endif %}</h3>
+<p class="muted small">{% trans "Each new shop gets its own cash drawer, UVE and ER accounts automatically." %}</p>
+<form method="post" class="entry" novalidate>{% csrf_token %}<input type="hidden" name="action" value="shop_save">{% include "core/inc/fields.html" with form=shop_form %}<button class="btn primary" type="submit">{% trans "Save" %}</button>{% if shop_form.instance.pk %} <a class="btn" href="{% url 'shop_manage' %}">{% trans "Cancel" %}</a>{% endif %}</form></div>
+
+<h2 id="staff">{% trans "Shop staff and their access" %}</h2>
+<div class="tbl-wrap"><table class="t"><thead><tr><th>{% trans "Name" %}</th><th>{% trans "Username" %}</th><th>{% trans "Shop" %}</th><th>{% trans "Duties" %}</th><th>{% trans "Status" %}</th><th></th></tr></thead>
+<tbody>{% for u in staff %}<tr>
+  <td>{{ u.get_full_name|default:u.username }}<br><span class="muted small">{{ u.staff_code }}</span></td>
+  <td>{{ u.username }}</td><td>{{ u.shop|default:"—" }}</td><td class="small">{{ u.shop_duties_display }}</td>
+  <td>{% if u.is_active %}<span class="badge ok">{% trans "Active" %}</span>{% else %}<span class="badge">{% trans "Deactivated" %}</span>{% endif %}</td>
+  <td class="row-actions"><a href="?staff={{ u.pk }}#staff-form">{% trans "Edit / transfer" %}</a>
+    <form method="post" class="inline">{% csrf_token %}<input type="hidden" name="action" value="staff_reset"><input type="hidden" name="pk" value="{{ u.pk }}"><button class="linkbtn" type="submit">{% trans "Reset password" %}</button></form>
+    <form method="post" class="inline">{% csrf_token %}<input type="hidden" name="action" value="staff_toggle"><input type="hidden" name="pk" value="{{ u.pk }}"><button class="linkbtn" type="submit">{% if u.is_active %}{% trans "Deactivate" %}{% else %}{% trans "Activate" %}{% endif %}</button></form>
+    <form method="post" class="inline" onsubmit="return confirm('{% trans "Delete this account? Only an account that never recorded anything can be deleted." %}');">{% csrf_token %}<input type="hidden" name="action" value="staff_delete"><input type="hidden" name="pk" value="{{ u.pk }}"><button class="linkbtn danger" type="submit">{% trans "Delete" %}</button></form></td>
+</tr>{% empty %}<tr><td colspan="6" class="muted">{% trans "No shop staff yet." %}</td></tr>{% endfor %}</tbody></table></div>
+{% if seniors %}<p class="muted small">{% trans "Senior shop manager(s):" %} {% for s in seniors %}{{ s }}{% if not forloop.last %}, {% endif %}{% endfor %} — {% trans "managed by the super administrator." %}</p>{% endif %}
+<div class="panel" id="staff-form"><h3>{% if staff_form.instance %}{% blocktrans with u=staff_form.instance.username %}Access of {{ u }}{% endblocktrans %}{% else %}{% trans "Add a staff member" %}{% endif %}</h3>
+<form method="post" class="entry" novalidate>{% csrf_token %}<input type="hidden" name="action" value="staff_save">{% include "core/inc/fields.html" with form=staff_form %}<button class="btn primary" type="submit">{% if staff_form.instance %}{% trans "Save" %}{% else %}{% trans "Create the account" %}{% endif %}</button>{% if staff_form.instance %} <a class="btn" href="{% url 'shop_manage' %}">{% trans "Cancel" %}</a>{% endif %}</form></div>
+{% endblock %}

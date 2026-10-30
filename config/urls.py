@@ -70,6 +70,7 @@ urlpatterns = [
     path("shops/services/", v.shop_services_report, name="shop_services_report"),
     path("shops/stock/", v.shop_stock, name="shop_stock"),
     path("shops/setup/", v.shop_setup, name="shop_setup"),
+    path("shops/manage/", v.shop_manage, name="shop_manage"),
     path("transfer/to-shop/", v.desk_to_shop, name="desk_to_shop"),
     path("admin/", admin.site.urls),
 ]

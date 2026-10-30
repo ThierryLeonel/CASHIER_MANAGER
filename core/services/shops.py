@@ -24,7 +24,7 @@ from django.db import transaction
 from django.utils.translation import gettext as _
 
 from core.models import (
-    Account, Counterparty, ItemSale, ServiceCount, Shop, ShopConversionRate, ShopItem, SimRetrieval, StockMove,
+    SHOP_DUTIES, Account, Counterparty, ItemSale, ServiceCount, Shop, ShopConversionRate, ShopItem, SimRetrieval, StockMove,
     StockUnit, TxType, User,
 )
 from core.money import MoneyError, conversion_er_amount, fmt, to_money
@@ -39,11 +39,26 @@ PAY_KINDS = {"CASH": K.CASH_DRAWER, "UVE": K.UVE}
 
 
 # ---------------------------------------------------------------- who may do what
-def shop_for(user, shop=None):
-    """The shop a user records for: a shop manager's own shop; a senior shop manager / super admin choose one."""
+DUTY_LABEL = dict(SHOP_DUTIES)
+# shop page / operation -> duty needed (segmented shops: each staff member has some of the duties)
+OP_DUTY = {"cashin": "OM", "cashout": "OM", "airtime": "AIRTIME", "convert": "AIRTIME", "sale": "SALES",
+           "stock": "SALES", "service": "SERVICES", "retrieve": "SERVICES", "appro": "AGENTS", "er_supply": "AGENTS",
+           "destockage": "AGENTS", "pay_agent": "AGENTS", "agent_repay": "AGENTS", "to_cashier": "AGENTS"}
+
+
+def check_duty(user, duty):
+    if duty and not user.has_shop_duty(duty):
+        raise PermissionDenied(_("This is not one of your duties in the shop (%(d)s). Ask the senior shop manager.")
+                               % {"d": DUTY_LABEL[duty]})
+
+
+def shop_for(user, shop=None, duty=None):
+    """The shop a user records for: a shop manager's own shop; a senior shop manager / super admin choose one.
+    `duty` is checked for shop managers whose duties are restricted (segmented shops)."""
     if not user.is_authenticated:
         raise PermissionDenied(_("Sign in first."))
     if user.is_shop_manager:
+        check_duty(user, duty)
         if shop is not None and shop.pk != user.shop_id:
             raise PermissionDenied(_("You can only record for your own shop."))
         if not user.shop_id:
@@ -105,7 +120,7 @@ def _record(user, specs, idem):
 
 # ---------------------------------------------------------------- Orange Money, airtime, conversion
 def cash_in(user, *, shop=None, amount, commission=None, client_phone="", description="", idempotency_key=None):
-    shop = shop_for(user, shop)
+    shop = shop_for(user, shop, "OM")
     a = _amt(amount)
     com = _amt(commission, "commission", allow_zero=True) if commission not in (None, "") else None
     return _record(user, [_spec(TxType.SHOP_CASHIN, shop, [(shop.account(K.CASH_DRAWER), a), (shop.account(K.UVE), -a)],
@@ -114,7 +129,7 @@ def cash_in(user, *, shop=None, amount, commission=None, client_phone="", descri
 
 
 def cash_out(user, *, shop=None, amount, commission=None, client_phone="", description="", idempotency_key=None):
-    shop = shop_for(user, shop)
+    shop = shop_for(user, shop, "OM")
     a = _amt(amount)
     com = _amt(commission, "commission", allow_zero=True) if commission not in (None, "") else None
     return _record(user, [_spec(TxType.SHOP_CASHOUT, shop, [(shop.account(K.UVE), a), (shop.account(K.CASH_DRAWER), -a)],
@@ -126,7 +141,7 @@ AIRTIME_KINDS = {"NORMAL": _("Normal airtime"), "GOOD_DEAL": _("Good deal")}
 
 
 def airtime(user, *, shop=None, amount, kind="NORMAL", client_phone="", description="", idempotency_key=None):
-    shop = shop_for(user, shop)
+    shop = shop_for(user, shop, "AIRTIME")
     a = _amt(amount)
     if kind not in AIRTIME_KINDS:
         raise BusinessError(_("Choose good deal or normal airtime."), "kind")
@@ -136,7 +151,7 @@ def airtime(user, *, shop=None, amount, kind="NORMAL", client_phone="", descript
 
 
 def convert(user, *, shop=None, amount, description="", idempotency_key=None):
-    shop = shop_for(user, shop)
+    shop = shop_for(user, shop, "AIRTIME")
     a = _amt(amount)
     rate = ShopConversionRate.current()
     if rate is None:
@@ -162,7 +177,7 @@ def _paid_with(shop, agent, pay, amount):
 
 def appro(user, *, shop=None, agent, amount, pay="CASH", description="", idempotency_key=None):
     """The agent supplies UVE to the shop; the shop pays cash, or owes the agent (credit)."""
-    shop, agent, a = shop_for(user, shop), _agent(agent), _amt(amount)
+    shop, agent, a = shop_for(user, shop, "AGENTS"), _agent(agent), _amt(amount)
     if pay == "UVE":
         raise BusinessError(_("An UVE supply is paid in cash or taken on credit."), "pay")
     src, credit = _paid_with(shop, agent, pay, a)
@@ -173,7 +188,7 @@ def appro(user, *, shop=None, agent, amount, pay="CASH", description="", idempot
 
 def er_supply(user, *, shop=None, agent, amount, pay="CASH", description="", idempotency_key=None):
     """The agent supplies ER to the shop; the shop pays cash or UVE, or owes the agent (credit)."""
-    shop, agent, a = shop_for(user, shop), _agent(agent), _amt(amount)
+    shop, agent, a = shop_for(user, shop, "AGENTS"), _agent(agent), _amt(amount)
     src, credit = _paid_with(shop, agent, pay, a)
     return _record(user, [_spec(TxType.SHOP_ER_SUPPLY, shop, [(shop.account(K.ER), a), (src, -a)], a,
                                 counterparty=agent, on_credit=credit, product="ER", description=description)],
@@ -183,7 +198,7 @@ def er_supply(user, *, shop=None, agent, amount, pay="CASH", description="", ide
 def destockage(user, *, shop=None, agent, amount, pay="CASH", description="", idempotency_key=None):
     """Cash supply from the agent: the shop sends the agent UVE and receives cash — or, on credit, the agent owes
     the shop the cash."""
-    shop, agent, a = shop_for(user, shop), _agent(agent), _amt(amount)
+    shop, agent, a = shop_for(user, shop, "AGENTS"), _agent(agent), _amt(amount)
     if pay not in ("CASH", "CREDIT"):
         raise BusinessError(_("Choose cash received or on credit."), "pay")
     dest = shop.account(K.CASH_DRAWER) if pay == "CASH" else shop.payable_to(agent)
@@ -194,7 +209,7 @@ def destockage(user, *, shop=None, agent, amount, pay="CASH", description="", id
 
 def agent_repay(user, *, shop=None, agent, amount, pay="CASH", description="", idempotency_key=None):
     """The agent pays back what he owes the shop, in cash or UVE."""
-    shop, agent, a = shop_for(user, shop), _agent(agent), _amt(amount)
+    shop, agent, a = shop_for(user, shop, "AGENTS"), _agent(agent), _amt(amount)
     if pay not in PAY_KINDS:
         raise BusinessError(_("Choose how it was paid: cash or UVE."), "pay")
     owes = owed_by_agent(shop, agent)
@@ -208,7 +223,7 @@ def agent_repay(user, *, shop=None, agent, amount, pay="CASH", description="", i
 
 def pay_agent(user, *, shop=None, agent, amount, pay="CASH", description="", idempotency_key=None):
     """Settle what the shop owes an agent for supplies taken on credit."""
-    shop, agent, a = shop_for(user, shop), _agent(agent), _amt(amount)
+    shop, agent, a = shop_for(user, shop, "AGENTS"), _agent(agent), _amt(amount)
     if pay not in PAY_KINDS:
         raise BusinessError(_("Choose how it was paid: cash or UVE."), "pay")
     owed = owed_to_agent(shop, agent)
@@ -242,7 +257,7 @@ def to_cashier(user, *, shop=None, destination, amount, description="", idempote
     so it shows on the cashier side too (lists, closing)."""
     from .days import zone_day
 
-    shop, a = shop_for(user, shop), _amt(amount)
+    shop, a = shop_for(user, shop, "AGENTS"), _amt(amount)
     if destination is None or destination.kind != K.UVE or destination.shop_id or not destination.zone_id \
             or not destination.active:
         raise BusinessError(_("Choose the cashier UVE wallet that receives it."), "destination")
@@ -291,6 +306,8 @@ def _clean_serials(text):
 
 
 def _can_stock(user, shop):
+    if user.is_shop_manager:
+        check_duty(user, "SALES")
     if not (user.is_shop_senior or user.is_superadmin or (user.is_shop_manager and user.shop_id == shop.pk)):
         raise PermissionDenied(_("You cannot change this shop's stock."))
 
@@ -337,7 +354,7 @@ CLIENT_FIELDS = ("client_name", "client_address", "client_country", "id_type", "
 def sell(user, *, shop=None, item, units, unit_price=None, client_name, client_address, client_country, id_type,
          id_number, phone, whatsapp="", description="", idempotency_key=None):
     """Sell one or more units (chosen by IMEI / serial) to an identified client."""
-    shop = shop_for(user, shop)
+    shop = shop_for(user, shop, "SALES")
     if item is None or not item.active:
         raise BusinessError(_("Choose an item."), "item")
     units = list(units or [])
@@ -377,7 +394,7 @@ def sell(user, *, shop=None, item, units, unit_price=None, client_name, client_a
 
 # ---------------------------------------------------------------- counted services and SIM retrievals
 def count_service(user, *, shop=None, service, count, business_date=None, note=""):
-    shop = shop_for(user, shop)
+    shop = shop_for(user, shop, "SERVICES")
     if service is None or not service.active or service.kind != service.Kind.COUNT:
         raise BusinessError(_("Choose a counted service."), "service")
     n = int(count or 0)
@@ -389,7 +406,7 @@ def count_service(user, *, shop=None, service, count, business_date=None, note="
 
 def retrieve_sim(user, *, shop=None, service=None, sim_number, holder_name, id_type, id_number, phone="", iccid="",
                  note="", business_date=None):
-    shop = shop_for(user, shop)
+    shop = shop_for(user, shop, "SERVICES")
     try:
         sim = normalize_sim(sim_number)
     except SimNumberError as exc:

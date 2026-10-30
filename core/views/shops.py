@@ -6,16 +6,18 @@ from decimal import Decimal
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Count, Q, Sum
+from django.core.exceptions import PermissionDenied as DjangoPermissionDenied
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.translation import gettext as _
 
 from core import forms_shop as SF
 from core.models import (
-    Account, ItemCategory, ServiceCount, Shop, ShopConversionRate, ShopItem, ShopService, SimRetrieval,
+    User, Account, ItemCategory, ServiceCount, Shop, ShopConversionRate, ShopItem, ShopService, SimRetrieval,
     StockUnit, Transaction, TxType,
 )
 from core.money import fmt
+from core.services import shop_admin as sa
 from core.services import shops as sh
 from core.services.days import douala_today
 from core.services.errors import BusinessError
@@ -58,6 +60,13 @@ OPS = {
              _("Choose the category, the item and the unit(s) by IMEI / serial, then the client's details."),
              "store"),
 }
+
+
+def _need_duty(user, key):
+    """403 when a shop staff member opens a page outside their duties (segmented shops)."""
+    duty = sh.OP_DUTY.get(key)
+    if duty and not user.has_shop_duty(duty):
+        raise DjangoPermissionDenied
 
 
 def _period(request, default_days=0):
@@ -148,11 +157,18 @@ def shop_detail(request, pk):
     positions = [(a.shop_agent, sum((e.amount for e in a.entries.all()), Decimal(0)))
                  for a in Account.objects.filter(kind=K.SHOP_PAYABLE, shop=shop).select_related("shop_agent")
                  .prefetch_related("entries")]
+    per_user = {r["entered_by_id"]: r for r in Transaction.objects.filter(
+        shop=shop, business_date__gte=d_from, business_date__lte=d_to, correction__isnull=True)
+        .exclude(type=TxType.REVERSAL).values("entered_by_id").annotate(n=Count("id"), amt=Sum("amount"),
+                                                                         com=Sum("commission"))}
+    staff_rows = [dict(user=u, n=(per_user.get(u.pk) or {}).get("n") or 0,
+                       amt=(per_user.get(u.pk) or {}).get("amt") or 0, com=(per_user.get(u.pk) or {}).get("com"))
+                  for u in User.objects.filter(shop=shop).order_by("-is_active", "username")]
     owed = [(ag, -v) for ag, v in positions if v < 0]
     owed_by = [(ag, v) for ag, v in positions if v > 0]
     return render(request, "core/shop/detail.html", {
         "shop": shop, "bal": b, "summary": summary, "svc_rows": svc_rows, "retrievals": ret.get(shop.pk, 0),
-        "recent": recent, "owed": owed, "owed_by": owed_by, "d_from": d_from, "d_to": d_to,
+        "recent": recent, "staff_rows": staff_rows, "owed": owed, "owed_by": owed_by, "d_from": d_from, "d_to": d_to,
         "can_record": request.user.role in SHOP_DESK and (not request.user.is_shop_manager
                                                           or request.user.shop_id == shop.pk),
         "rate": ShopConversionRate.current()})
@@ -162,6 +178,7 @@ def shop_detail(request, pk):
 def shop_op(request, op):
     if op not in OPS:
         raise Http404
+    _need_duty(request.user, op)
     form_class, fn, title, intro, icon = OPS[op]
     kwargs = {"op": op} if form_class is SF.AgentDealForm else {}
     form = form_class(request.user, request.POST or None, **kwargs)
@@ -206,6 +223,7 @@ def desk_to_shop(request):
 
 @roles_required(*SHOP_DESK)
 def shop_service(request):
+    _need_duty(request.user, "service")
     form = SF.ServiceCountForm(request.user, request.POST or None)
     if request.method == "POST" and form.is_valid():
         try:
@@ -222,6 +240,7 @@ def shop_service(request):
 
 @roles_required(*SHOP_DESK)
 def shop_retrieve(request):
+    _need_duty(request.user, "retrieve")
     form = SF.RetrievalForm(request.user, request.POST or None)
     if request.method == "POST" and form.is_valid():
         try:
@@ -288,7 +307,7 @@ def shop_stock(request):
               StockUnit.objects.filter(shop__in=shops_qs, status=StockUnit.Status.IN_STOCK)
               .values("shop_id", "item_id").annotate(n=Count("id"))}
     table = [dict(item=i, cells=[levels.get((s.pk, i.pk), 0) for s in shops_qs]) for i in items]
-    can_edit = user.role in SHOP_CONFIG or user.is_shop_manager
+    can_edit = user.role in SHOP_CONFIG or (user.is_shop_manager and user.has_shop_duty("SALES"))
     form = SF.StockForm(user, request.POST if request.POST.get("action") == "receive" else None) if can_edit else None
     rm_form = SF.RemoveUnitForm(request.POST if request.POST.get("action") == "remove" else None) if can_edit else None
     if request.method == "POST" and can_edit:
@@ -331,6 +350,16 @@ def shop_setup(request):
                                instance=ItemCategory.objects.filter(pk=request.GET.get("cat") or 0).first())
     if request.method == "POST":
         action = request.POST.get("action")
+        models_by = {"delete_service": ShopService, "delete_item": ShopItem, "delete_category": ItemCategory}
+        if action in models_by:
+            obj = get_object_or_404(models_by[action], pk=request.POST.get("pk"))
+            try:
+                label = sa.delete_definition(request.user, obj)
+            except BusinessError as e:
+                messages.error(request, e.message)
+            else:
+                messages.success(request, _("%(x)s deleted.") % {"x": label})
+            return redirect("shop_setup")
         if action == "category" and cat_form.is_valid():
             cat_form.save()
             messages.success(request, _("Category saved."))
@@ -356,3 +385,66 @@ def shop_setup(request):
         "categories": ItemCategory.objects.all(), "cat_form": cat_form, "svc_form": svc_form,
         "item_form": item_form, "rate_form": rate_form, "rate": ShopConversionRate.current(), "what": what,
         "rates": ShopConversionRate.objects.select_related("set_by")[:10]})
+
+
+@roles_required(*SHOP_CONFIG)
+def shop_manage(request):
+    """Shops and shop staff access (senior shop manager, super administrator): add, edit, transfer, delete."""
+    user = request.user
+    shop_inst = Shop.objects.filter(pk=request.GET.get("shop") or 0).first()
+    staff_inst = User.objects.filter(pk=request.GET.get("staff") or 0, role=User.Role.SHOP_MANAGER).first()
+    action = request.POST.get("action") if request.method == "POST" else None
+    shop_form = SF.ShopDefForm(request.POST if action == "shop_save" else None, prefix="shop", instance=shop_inst)
+    staff_form = SF.StaffForm(request.POST if action == "staff_save" else None, prefix="staff", instance=staff_inst)
+    new_pw = None
+    try:
+        if action == "shop_save" and shop_form.is_valid():
+            s = sa.save_shop(user, shop_form)
+            messages.success(request, _("Shop %(s)s saved.") % {"s": s.name})
+            return redirect("shop_manage")
+        if action == "shop_delete":
+            shop = get_object_or_404(Shop, pk=request.POST.get("pk"))
+            name = shop.name
+            sa.delete_shop(user, shop)
+            messages.success(request, _("Shop %(s)s deleted.") % {"s": name})
+            return redirect("shop_manage")
+        if action == "staff_save" and staff_form.is_valid():
+            cd = staff_form.cleaned_data
+            if staff_inst:
+                sa.update_staff(user, staff_inst, first_name=cd["first_name"], last_name=cd["last_name"],
+                                shop=cd["shop"], duties=cd["duties"])
+                messages.success(request, _("Access of %(u)s saved.") % {"u": staff_inst.username})
+                return redirect("shop_manage")
+            u, new_pw = sa.create_staff(user, username=cd["username"], first_name=cd["first_name"],
+                                        last_name=cd["last_name"], shop=cd["shop"], duties=cd["duties"])
+            messages.success(request, _("Account %(u)s created. Give the temporary password below; it must be "
+                                        "changed at the first sign-in.") % {"u": u.username})
+            staff_form = SF.StaffForm(prefix="staff")
+            new_pw = (u, new_pw)
+        if action in ("staff_toggle", "staff_reset", "staff_delete"):
+            target = get_object_or_404(User, pk=request.POST.get("pk"))
+            if action == "staff_toggle":
+                sa.set_staff_active(user, target, not target.is_active)
+                messages.success(request, (_("%(u)s can sign in again.") if target.is_active else
+                                           _("%(u)s is deactivated and can no longer sign in."))
+                                 % {"u": target.username})
+                return redirect("shop_manage")
+            if action == "staff_reset":
+                new_pw = (target, sa.reset_staff_password(user, target))
+                messages.success(request, _("Password of %(u)s replaced.") % {"u": target.username})
+            if action == "staff_delete":
+                name = target.username
+                sa.delete_staff(user, target)
+                messages.success(request, _("Account %(u)s deleted.") % {"u": name})
+                return redirect("shop_manage")
+    except BusinessError as e:
+        form = staff_form if action == "staff_save" else shop_form if action == "shop_save" else None
+        if form is not None:
+            form.add_error(e.field if e.field in form.fields else None, e.message)
+        else:
+            messages.error(request, e.message)
+    shops_qs = Shop.objects.select_related("zone").annotate(n_staff=Count("managers", distinct=True))
+    staff = User.objects.filter(role=User.Role.SHOP_MANAGER).select_related("shop").order_by("shop__name", "username")
+    return render(request, "core/shop/manage.html", {
+        "shops": shops_qs, "staff": staff, "shop_form": shop_form, "staff_form": staff_form, "new_pw": new_pw,
+        "seniors": User.objects.filter(role=User.Role.SHOP_SENIOR)})

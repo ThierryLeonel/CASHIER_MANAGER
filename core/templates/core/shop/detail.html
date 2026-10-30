@@ -11,17 +11,22 @@
   <div class="bal k-MTN"><span class="bal-label">{% trans "Owed to agents" %}</span><span class="bal-value">{{ bal.owed_agents|fcfa }}</span><span class="bal-unit">FCFA</span></div>
   <div class="bal k-BANK"><span class="bal-label">{% trans "Agents owe the shop" %}</span><span class="bal-value">{{ bal.owed_by_agents|fcfa }}</span><span class="bal-unit">FCFA</span></div>
 </div>
-{% if can_record %}
+{% if can_record %}{% with duties=user.shop_duty_set %}
 <div class="quick">
+  {% if "OM" in duties %}
   <a class="qa main" href="{% url 'shop_op' 'cashin' %}"><span class="qa-ic">{% icon "payment" 22 %}</span><strong>{% trans "Cash-in" %}</strong><span class="d">{% trans "UVE − · cash +" %}</span></a>
   <a class="qa main" href="{% url 'shop_op' 'cashout' %}"><span class="qa-ic">{% icon "supply" 22 %}</span><strong>{% trans "Cash-out" %}</strong><span class="d">{% trans "UVE + · cash −" %}</span></a>
+  {% endif %}{% if "AIRTIME" in duties %}
   <a class="qa" href="{% url 'shop_op' 'airtime' %}"><span class="qa-ic">{% icon "clock" 22 %}</span><strong>{% trans "Airtime" %}</strong><span class="d">{% trans "ER − · cash +" %}</span></a>
   <a class="qa" href="{% url 'shop_op' 'convert' %}"><span class="qa-ic">{% icon "convert" 22 %}</span><strong>{% trans "UVE→ER" %}</strong><span class="d">{% if rate %}{% blocktrans with p=rate.percent %}Shop rate {{ p }} %{% endblocktrans %}{% else %}{% trans "Rate not set" %}{% endif %}</span></a>
+  {% endif %}{% if "SALES" in duties %}
   <a class="qa" href="{% url 'shop_op' 'sale' %}"><span class="qa-ic">{% icon "store" 22 %}</span><strong>{% trans "Sell an item" %}</strong><span class="d">{% trans "Gadgets and energy kits" %}</span></a>
+  {% endif %}{% if "SERVICES" in duties %}
   <a class="qa" href="{% url 'shop_service' %}"><span class="qa-ic">{% icon "list" 22 %}</span><strong>{% trans "Services done" %}</strong><span class="d">{% trans "OTT, MAX IT, ID update, tickets…" %}</span></a>
   <a class="qa" href="{% url 'shop_retrieve' %}"><span class="qa-ic">{% icon "users" 22 %}</span><strong>{% trans "SIM retrieval" %}</strong><span class="d">{% trans "Person and SIM registered" %}</span></a>
+  {% endif %}
 </div>
-{% endif %}
+{% endwith %}{% endif %}
 <h2>{% trans "Activity" %}</h2>
 {% include "core/shop/_period.html" %}
 <div class="tbl-wrap"><table class="t"><thead><tr><th>{% trans "Operation" %}</th><th class="money">{% trans "Count" %}</th><th class="money">{% trans "Amount" %}</th><th class="money">{% trans "Commission" %}</th></tr></thead>
@@ -39,4 +44,11 @@
 <h2>{% trans "Latest entries" %}</h2>
 {% include "core/shop/_txns.html" with txns=recent %}
 <p><a href="{% url 'shop_transactions' %}?shop={{ shop.pk }}">{% trans "All transactions of this shop" %} →</a></p>
+{% if staff_rows %}
+<h2>{% trans "Staff and duties" %}</h2>
+<p class="muted small">{% trans "Who handles what in this shop, and what each person recorded in the period." %}</p>
+<div class="tbl-wrap"><table class="t"><thead><tr><th>{% trans "Staff" %}</th><th>{% trans "Duties" %}</th><th class="money">{% trans "Operations" %}</th><th class="money">{% trans "Amount" %}</th><th class="money">{% trans "Commission" %}</th></tr></thead>
+<tbody>{% for r in staff_rows %}<tr><td>{{ r.user.label_with_id }}{% if not r.user.is_active %} <span class="badge">{% trans "Deactivated" %}</span>{% endif %}</td><td class="small">{{ r.user.shop_duties_display }}</td><td class="money">{{ r.n }}</td><td class="money">{{ r.amt|fcfa }}</td><td class="money">{% if r.com %}{{ r.com|fcfa }}{% endif %}</td></tr>{% endfor %}</tbody></table></div>
+{% if user.is_shop_senior or user.is_superadmin %}<p><a href="{% url 'shop_manage' %}#staff">{% trans "Manage staff and duties" %} →</a></p>{% endif %}
+{% endif %}
 {% endblock %}

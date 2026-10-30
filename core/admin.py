@@ -191,7 +191,7 @@ class UserAdmin(BaseUserAdmin, SuperAdminOnly):
     list_display = ("username", "first_name", "last_name", "role", "subzone", "shop", "counterparty", "is_active")
     list_filter = ("role", "is_active", "subzone")
     fieldsets = BaseUserAdmin.fieldsets[:2] + (
-        ("Role", {"fields": ("role", "subzone", "shop", "counterparty", "is_active", "is_staff")}),
+        ("Role", {"fields": ("role", "subzone", "shop", "shop_duties", "counterparty", "is_active", "is_staff")}),
         ("Dates", {"fields": ("last_login", "date_joined")}),
     )
     add_fieldsets = BaseUserAdmin.add_fieldsets + (("Role", {"fields": ("role", "subzone", "shop", "counterparty",

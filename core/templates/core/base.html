@@ -34,15 +34,24 @@
     <a href="{% url 'desk_to_shop' %}" class="{% if u == 'desk_to_shop' %}on{% endif %}">{% icon "store" %}<span>{% trans "Transfer to shop" %}</span></a>
     {% endif %}
 
-    {% if user.is_shop_user %}
+    {% if user.is_shop_user %}{% with duties=user.shop_duty_set %}
     <div class="side-group">{% trans "Shop" %}</div>
+    {% if "OM" in duties %}
     <a href="{% url 'shop_op' 'cashin' %}" class="{% if request.path == '/shops/do/cashin/' %}on{% endif %}">{% icon "payment" %}<span>{% trans "Cash-in" %}</span></a>
     <a href="{% url 'shop_op' 'cashout' %}" class="{% if request.path == '/shops/do/cashout/' %}on{% endif %}">{% icon "supply" %}<span>{% trans "Cash-out" %}</span></a>
+    {% endif %}
+    {% if "AIRTIME" in duties %}
     <a href="{% url 'shop_op' 'airtime' %}" class="{% if request.path == '/shops/do/airtime/' %}on{% endif %}">{% icon "clock" %}<span>{% trans "Airtime" %}</span></a>
     <a href="{% url 'shop_op' 'convert' %}" class="{% if request.path == '/shops/do/convert/' %}on{% endif %}">{% icon "convert" %}<span>{% trans "UVE→ER" %}</span></a>
+    {% endif %}
+    {% if "SALES" in duties %}
     <a href="{% url 'shop_op' 'sale' %}" class="{% if request.path == '/shops/do/sale/' %}on{% endif %}">{% icon "store" %}<span>{% trans "Sell an item" %}</span></a>
+    {% endif %}
+    {% if "SERVICES" in duties %}
     <a href="{% url 'shop_service' %}" class="{% if u == 'shop_service' %}on{% endif %}">{% icon "list" %}<span>{% trans "Services done" %}</span></a>
     <a href="{% url 'shop_retrieve' %}" class="{% if u == 'shop_retrieve' %}on{% endif %}">{% icon "users" %}<span>{% trans "SIM retrieval" %}</span></a>
+    {% endif %}
+    {% if "AGENTS" in duties %}
     <div class="side-group">{% trans "With agents & cashiers" %}</div>
     <a href="{% url 'shop_op' 'appro' %}" class="{% if request.path == '/shops/do/appro/' %}on{% endif %}">{% icon "supply" %}<span>{% trans "Appro (UVE)" %}</span></a>
     <a href="{% url 'shop_op' 'er_supply' %}" class="{% if request.path == '/shops/do/er_supply/' %}on{% endif %}">{% icon "supply" %}<span>{% trans "ER supply" %}</span></a>
@@ -51,6 +60,7 @@
     <a href="{% url 'shop_op' 'agent_repay' %}" class="{% if request.path == '/shops/do/agent_repay/' %}on{% endif %}">{% icon "payment" %}<span>{% trans "Agent pays the shop" %}</span></a>
     <a href="{% url 'shop_op' 'to_cashier' %}" class="{% if request.path == '/shops/do/to_cashier/' %}on{% endif %}">{% icon "transfer" %}<span>{% trans "UVE to a cashier" %}</span></a>
     {% endif %}
+    {% endwith %}{% endif %}
 
     {% if user.is_shop_user or user.sees_all_zones %}
     <div class="side-group">{% if user.is_shop_user %}{% trans "Follow-up" %}{% else %}{% trans "Shops" %}{% endif %}</div>
@@ -59,7 +69,8 @@
     <a href="{% url 'shop_retrievals' %}" class="{% if u == 'shop_retrievals' %}on{% endif %}">{% icon "users" %}<span>{% trans "SIM retrievals" %}</span></a>
     <a href="{% url 'shop_services_report' %}" class="{% if u == 'shop_services_report' %}on{% endif %}">{% icon "chart" %}<span>{% trans "Services count" %}</span></a>
     <a href="{% url 'shop_stock' %}" class="{% if u == 'shop_stock' %}on{% endif %}">{% icon "wallet" %}<span>{% trans "Stock" %}</span></a>
-    {% if user.is_shop_senior or user.is_superadmin %}<a href="{% url 'shop_setup' %}" class="{% if u == 'shop_setup' %}on{% endif %}">{% icon "settings" %}<span>{% trans "Services, items & rate" %}</span></a>{% endif %}
+    {% if user.is_shop_senior or user.is_superadmin %}<a href="{% url 'shop_manage' %}" class="{% if u == 'shop_manage' %}on{% endif %}">{% icon "users" %}<span>{% trans "Shops & staff" %}</span></a>
+    <a href="{% url 'shop_setup' %}" class="{% if u == 'shop_setup' %}on{% endif %}">{% icon "settings" %}<span>{% trans "Services, items & rate" %}</span></a>{% endif %}
     {% endif %}
 
     {% if not user.is_agent and not user.is_shop_user %}

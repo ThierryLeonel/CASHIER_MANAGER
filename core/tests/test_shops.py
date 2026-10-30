@@ -265,3 +265,123 @@ class ShopPages(OrgMixin, TestCase):
         u = User(username="x", role=User.Role.SHOP_MANAGER)
         with self.assertRaises(ValidationError):
             u.clean()
+
+
+class ShopDutiesAndAdministration(OrgMixin, TestCase):
+    """Segmented shops (staff duties) and the senior shop manager's administration of shops and staff."""
+
+    def setUp(self):
+        self.make_org()
+        self.fund_all()
+        self.shop = self.o["shop"]
+        for kind, amt in ((K.CASH_DRAWER, 300000), (K.UVE, 800000), (K.ER, 150000)):
+            self.fund(self.shop.account(kind), amt)
+
+    def client_for(self, u):
+        c = self.client_class()
+        self.assertTrue(c.login(username=u, password=PW))
+        return c
+
+    def test_duties_are_enforced(self):
+        om, air = self.o["shop_om"], self.o["shop_air"]
+        self.assertEqual(om.shop_duty_set, {"OM"})
+        sh.cash_in(om, amount=D(1000))
+        with self.assertRaises(PermissionDenied):
+            sh.airtime(om, amount=D(1000))
+        with self.assertRaises(PermissionDenied):
+            sh.appro(om, agent=self.a1, amount=D(1000))
+        with self.assertRaises(PermissionDenied):
+            sh.receive_stock(om, shop=self.shop, item=self.o["items"]["kit"], serials="Z1")
+        with self.assertRaises(PermissionDenied):
+            sh.cash_out(air, amount=D(1000))
+        sh.airtime(air, amount=D(1000))
+        sh.count_service(air, service=ShopService.objects.get(name__startswith="OTT"), count=1)
+        # pages: the Orange Money desk sees only its own entries in the menu
+        c = self.client_for("shop.molyko.om")
+        self.assertEqual(c.get("/shops/do/cashin/").status_code, 200)
+        self.assertEqual(c.get("/shops/do/airtime/").status_code, 403)
+        self.assertEqual(c.get("/shops/services/new/").status_code, 403)
+        page = c.get(f"/shops/{self.shop.pk}/")
+        self.assertContains(page, "/shops/do/cashin/")
+        self.assertNotContains(page, "/shops/do/airtime/")
+        self.assertNotContains(page, "/shops/do/appro/")
+        # the shop page lists each staff member with their duties and activity
+        senior_page = self.client_for("shop.senior").get(f"/shops/{self.shop.pk}/")
+        self.assertContains(senior_page, "Staff and duties")
+        self.assertContains(senior_page, "Molyko Orange Money desk")
+
+    def test_senior_manages_shops(self):
+        from core.models import Account
+        c = self.client_for("shop.senior")
+        self.assertEqual(c.get("/shops/manage/").status_code, 200)
+        r = c.post("/shops/manage/", {"action": "shop_save", "shop-name": "Shop Mile 17", "shop-code": "shop-mile17",
+                                      "shop-sim_number": "690000123", "shop-address": "Mile 17", "shop-active": "on"})
+        self.assertEqual(r.status_code, 302, r.content[:2000])
+        new = Shop.objects.get(code="shop-mile17")
+        self.assertEqual(Account.objects.filter(shop=new).count(), 3)
+        r = c.post(f"/shops/manage/?shop={new.pk}", {"action": "shop_save", "shop-name": "Shop Mile 17 Buea",
+                                                    "shop-code": "shop-mile17", "shop-active": "on"})
+        self.assertEqual(r.status_code, 302)
+        new.refresh_from_db()
+        self.assertEqual(new.name, "Shop Mile 17 Buea")
+        # a used shop cannot be deleted (staff, operations) — an unused one can
+        c.post("/shops/manage/", {"action": "shop_delete", "pk": self.shop.pk})
+        self.assertTrue(Shop.objects.filter(pk=self.shop.pk).exists())
+        c.post("/shops/manage/", {"action": "shop_delete", "pk": new.pk})
+        self.assertFalse(Shop.objects.filter(pk=new.pk).exists())
+        # other roles cannot
+        self.assertEqual(self.client_for("shop.molyko").get("/shops/manage/").status_code, 403)
+        self.assertEqual(self.client_for("finance").get("/shops/manage/").status_code, 403)
+
+    def test_senior_manages_staff_access(self):
+        c = self.client_for("shop.senior")
+        other = Shop.objects.create(name="Shop Limbe", code="shop-limbe")
+        r = c.post("/shops/manage/", {"action": "staff_save", "staff-username": "limbe.om", "staff-first_name": "Ayuk",
+                                      "staff-shop": other.pk, "staff-duties": ["OM"]})
+        self.assertEqual(r.status_code, 200, r.content[:2000])
+        self.assertContains(r, "Temporary password")
+        u = User.objects.get(username="limbe.om")
+        self.assertEqual((u.role, u.shop, u.shop_duties, u.must_change_password),
+                         (User.Role.SHOP_MANAGER, other, "OM", True))
+        # transfer to Molyko with all duties
+        r = c.post(f"/shops/manage/?staff={u.pk}", {"action": "staff_save", "staff-first_name": "Ayuk",
+                                                   "staff-shop": self.shop.pk,
+                                                   "staff-duties": ["OM", "AIRTIME", "SALES", "SERVICES", "AGENTS"]})
+        self.assertEqual(r.status_code, 302, r.content[:2000])
+        u.refresh_from_db()
+        self.assertEqual((u.shop, u.shop_duties, u.username), (self.shop, "", "limbe.om"))
+        r = c.post("/shops/manage/", {"action": "staff_reset", "pk": u.pk})
+        self.assertContains(r, "Temporary password")
+        c.post("/shops/manage/", {"action": "staff_toggle", "pk": u.pk})
+        u.refresh_from_db()
+        self.assertFalse(u.is_active)
+        # someone who recorded operations is only deactivated, never deleted
+        sh.cash_in(self.o["shop_om"], amount=D(1000))
+        c.post("/shops/manage/", {"action": "staff_delete", "pk": self.o["shop_om"].pk})
+        self.assertTrue(User.objects.filter(pk=self.o["shop_om"].pk).exists())
+        c.post("/shops/manage/", {"action": "staff_delete", "pk": u.pk})
+        self.assertFalse(User.objects.filter(pk=u.pk).exists())
+        # the senior cannot touch non-shop accounts
+        c.post("/shops/manage/", {"action": "staff_toggle", "pk": self.c_f1.pk})
+        self.c_f1.refresh_from_db()
+        self.assertTrue(self.c_f1.is_active)
+
+    def test_senior_deletes_unused_definitions(self):
+        from core.models import ItemCategory, ShopItem
+        c = self.client_for("shop.senior")
+        cat = ItemCategory.objects.create(name="Solar lamps")
+        item = ShopItem.objects.create(name="Lamp", category=cat, price=5000)
+        svc = ShopService.objects.create(name="Unused service", kind=ShopService.Kind.COUNT)
+        c.post("/shops/setup/", {"action": "delete_category", "pk": cat.pk})  # has an item: refused
+        self.assertTrue(ItemCategory.objects.filter(pk=cat.pk).exists())
+        c.post("/shops/setup/", {"action": "delete_item", "pk": item.pk})
+        c.post("/shops/setup/", {"action": "delete_category", "pk": cat.pk})
+        c.post("/shops/setup/", {"action": "delete_service", "pk": svc.pk})
+        self.assertFalse(ShopItem.objects.filter(pk=item.pk).exists())
+        self.assertFalse(ItemCategory.objects.filter(pk=cat.pk).exists())
+        self.assertFalse(ShopService.objects.filter(pk=svc.pk).exists())
+        used = ShopService.objects.get(name__startswith="OTT")
+        sh.count_service(self.o["shop_mgr"], service=used, count=1)
+        r = c.post("/shops/setup/", {"action": "delete_service", "pk": used.pk}, follow=True)
+        self.assertContains(r, "cannot be deleted")
+        self.assertTrue(ShopService.objects.filter(pk=used.pk).exists())

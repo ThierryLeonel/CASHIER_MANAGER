@@ -439,3 +439,13 @@ input.auto { background: var(--soft); font-weight: 700; }
 #fld-units > div > div label { display: inline-flex; align-items: center; gap: 6px; font-variant-numeric: tabular-nums;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .9rem; }
 .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+/* shop duties (checkbox list) and inline row actions */
+#fld-duties > div { display: grid; gap: 6px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px;
+  background: var(--soft); }
+#fld-duties > div > div label { display: inline-flex; align-items: center; gap: 8px; font-weight: 500; }
+.row-actions { min-width: 150px; line-height: 1.9; }
+.row-actions a, .row-actions form.inline { display: inline-block; margin-right: 10px; white-space: nowrap; }
+.linkbtn { background: none; border: 0; padding: 0; color: inherit; text-decoration: underline; cursor: pointer;
+  font: inherit; }
+.linkbtn.danger { color: #c0392b; }
+
