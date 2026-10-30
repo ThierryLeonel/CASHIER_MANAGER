@@ -113,7 +113,12 @@ def _customer_balance_after(t):
     cp = t.counterparty
     if not cp:
         return None
-    return Entry.objects.filter(account=cp.account, transaction_id__lte=t.id).aggregate(s=Sum("amount"))["s"] or 0
+    last_id = max(p.id for p in t.payment_parts) if t.payment_group else t.id
+    return Entry.objects.filter(account=cp.account, transaction_id__lte=last_id).aggregate(s=Sum("amount"))["s"] or 0
+
+
+def _receipt_amount(t):
+    return sum(p.amount for p in t.payment_parts) if t.payment_group else t.amount
 
 
 def receipt_rows(t):
@@ -145,10 +150,20 @@ def receipt_rows(t):
     elif t.type == T.COLLECTION:
         rows.append((_("Paid by"), f"{t.counterparty.name} — {_('business SIM')} "
                                    f"{display_sim(t.counterparty.business_sim)} ({t.counterparty.get_kind_display()})"))
-        rows.append((_("Payment method"), t.get_payment_method_display()))
-        rows.append((_("Received into"), str(t.dest_account)))
-        if t.bank_reference:
-            rows.append((_("Bank deposit reference"), t.bank_reference))
+        parts = t.payment_parts
+        if len(parts) > 1:  # one payment made with several methods
+            for p in parts:
+                note = " — " + _("CORRECTED") if hasattr(p, "correction") else ""
+                rows.append((_("Paid in %(m)s") % {"m": p.get_payment_method_display()},
+                             f"{fmt(p.amount)} FCFA → {p.dest_account} ({p.reference}){note}"))
+                if p.bank_reference:
+                    rows.append((_("Bank deposit reference"), p.bank_reference))
+            rows.append((_("Total payment"), f"{fmt(sum(p.amount for p in parts))} FCFA"))
+        else:
+            rows.append((_("Payment method"), t.get_payment_method_display()))
+            rows.append((_("Received into"), str(t.dest_account)))
+            if t.bank_reference:
+                rows.append((_("Bank deposit reference"), t.bank_reference))
     else:
         if t.counterparty_id:
             rows.append((_("Customer"), str(t.counterparty)))
@@ -190,19 +205,19 @@ def txn_detail(request, pk):
 
 @roles_required(*STAFF, R.AGENT)
 def receipt(request, pk):
-    t = _get_visible_txn(request, pk)
+    t = _get_visible_txn(request, pk).receipt_txn
     if not t.receipt_no:
         raise Http404
-    return render(request, "core/receipt.html", {"t": t, "rows": receipt_rows(t),
+    return render(request, "core/receipt.html", {"t": t, "rows": receipt_rows(t), "amount": _receipt_amount(t),
                                                  "balance_after": _customer_balance_after(t)})
 
 
 @roles_required(*STAFF, R.AGENT)
 def receipt_pdf_view(request, pk):
-    t = _get_visible_txn(request, pk)
+    t = _get_visible_txn(request, pk).receipt_txn
     if not t.receipt_no:
         raise Http404
-    pdf = receipt_pdf(t, receipt_rows(t), _customer_balance_after(t))
+    pdf = receipt_pdf(t, receipt_rows(t), _customer_balance_after(t), amount=_receipt_amount(t))
     resp = HttpResponse(pdf, content_type="application/pdf")
     disp = "attachment" if request.GET.get("download") else "inline"
     resp["Content-Disposition"] = f'{disp}; filename="receipt-{t.receipt_no}.pdf"'

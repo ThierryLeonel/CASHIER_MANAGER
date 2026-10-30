@@ -424,3 +424,12 @@ input.auto { background: var(--soft); font-weight: 700; }
 .pw-box code { font-size: 1.35rem; font-weight: 800; letter-spacing: .06em; background: var(--soft); padding: 8px 14px; border-radius: 10px; user-select: all; }
 .side-foot .mypw { display: block; color: var(--side-muted); font-size: .76rem; text-decoration: none; margin-top: 2px; }
 .side-foot .mypw:hover { color: #fff; }
+/* payment with several methods: amounts side by side and the total */
+.pay-row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.pay-row .field { margin-bottom: 4px; }
+.pay-row .help { display: none; }
+.help.pay-help { margin: 0 0 12px; font-size: .78rem; color: var(--muted); line-height: 1.4; }
+.pay-total { display: flex; justify-content: space-between; align-items: center; background: var(--accent-soft);
+  border: 1px solid var(--line); border-radius: 12px; padding: 12px 16px; margin: 6px 0 16px; }
+.pay-total strong { font-size: 1.35rem; color: var(--accent-strong); font-variant-numeric: tabular-nums; }
+@media (max-width: 700px) { .pay-row { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

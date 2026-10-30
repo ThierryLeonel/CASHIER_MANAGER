@@ -704,6 +704,9 @@ msgstr "Choisissez le compte qui a reçu ce qui a été servi."
 msgid "Choose the account."
 msgstr "Choisissez le compte."
 
+msgid "Choose the bank account."
+msgstr "Choisissez le compte bancaire."
+
 msgid ""
 "Choose the cash drawer or UVE wallet that actually gave or received the "
 "value."
@@ -1263,6 +1266,9 @@ msgstr ""
 msgid "Enter the actual balance for %(acct)s."
 msgstr "Saisissez le solde réel de %(acct)s."
 
+msgid "Enter the amount received in at least one payment method."
+msgstr "Saisissez le montant reçu dans au moins un mode de paiement."
+
 msgid "Enter the bank deposit reference."
 msgstr "Saisissez la référence du versement bancaire."
 
@@ -1386,6 +1392,14 @@ msgstr "Expliqué par la correction d'une transaction"
 
 msgid "File (.xlsx or .csv)"
 msgstr "Fichier (.xlsx ou .csv)"
+
+msgid ""
+"Fill every way the customer paid. The total is added up for you; each part "
+"goes into your subzone's account for that method."
+msgstr ""
+"Remplissez chaque mode de paiement utilisé par le client. Le total se "
+"calcule tout seul ; chaque part va dans le compte de votre sous-zone pour ce"
+" mode."
 
 msgid "Filled automatically from the parts above."
 msgstr "Rempli automatiquement à partir des parts ci-dessus."
@@ -1784,6 +1798,10 @@ msgid "No single %(kind)s account for your subzone: choose one."
 msgstr ""
 "Pas de compte %(kind)s unique pour votre sous-zone : choisissez-en un."
 
+#, python-format
+msgid "No single %(kind)s account is set up for your subzone."
+msgstr "Aucun compte %(kind)s unique n'est configuré pour votre sous-zone."
+
 msgid ""
 "No subzone exists yet. The super administrator creates zones in "
 "Configuration › Zones (a master zone first, then its subzones)."
@@ -1843,6 +1861,13 @@ msgstr "Enregistrement en cours pour %(c)s"
 
 msgid "OK"
 msgstr "OK"
+
+msgid ""
+"One payment can be made in cash, UVE, MTN float and bank deposit at the same"
+" time. It reduces the customer's single combined balance."
+msgstr ""
+"Un même paiement peut être fait en espèces, UVE, float MTN et versement "
+"bancaire à la fois. Il réduit le solde unique et combiné du client."
 
 #, python-format
 msgid ""
@@ -2058,6 +2083,10 @@ msgstr ""
 "Payé depuis votre caisse, votre portefeuille UVE ou votre float MTN. Les "
 "dépenses ne réduisent jamais la dette d'un agent."
 
+#, python-format
+msgid "Paid in %(m)s"
+msgstr "Payé en %(m)s"
+
 msgid "Paid in cash, UVE or MTN float"
 msgstr "Payé en espèces, UVE ou float MTN"
 
@@ -2098,6 +2127,10 @@ msgstr "Client payeur (SIM business)"
 
 msgid "Payment"
 msgstr "Paiement"
+
+#, python-format
+msgid "Payment %(ref)s recorded: %(amt)s FCFA."
+msgstr "Paiement %(ref)s enregistré : %(amt)s FCFA."
 
 msgid "Payment method"
 msgstr "Mode de paiement"
@@ -2832,6 +2865,9 @@ msgstr "Total"
 msgid "Total (FCFA)"
 msgstr "Total (FCFA)"
 
+msgid "Total payment"
+msgstr "Total du paiement"
+
 msgid "Totals by category"
 msgstr "Totaux par catégorie"
 
@@ -2910,6 +2946,9 @@ msgstr ""
 
 msgid "Type the new password."
 msgstr "Saisissez le nouveau mot de passe."
+
+msgid "UVE"
+msgstr "UVE"
 
 #, python-format
 msgid "UVE + Cash + ER (%(sum)s FCFA) must equal the amount (%(amt)s FCFA)."
@@ -3344,6 +3383,9 @@ msgstr "dû à l'entreprise"
 
 msgid "owes"
 msgstr "doit"
+
+msgid "part of a payment made with several methods"
+msgstr "partie d'un paiement fait avec plusieurs modes"
 
 msgid "phone"
 msgstr "téléphone"

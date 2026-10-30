@@ -223,6 +223,9 @@ class Transaction(models.Model):
     original_business_date = models.DateField(null=True, blank=True)
     # Customer openings and payments: how the amount splits over the products, e.g. {"UVE": 300000, "ER": 100000}
     product_split = models.JSONField(null=True, blank=True)
+    # One payment made with several methods (cash + UVE + MTN + bank) is recorded as one collection per method,
+    # posted together and sharing this id and one receipt.
+    payment_group = models.UUIDField(null=True, blank=True, db_index=True)
 
     class Meta:
         ordering = ["-posted_at", "-id"]
@@ -261,6 +264,21 @@ class Transaction(models.Model):
         if src.counterparty_2_id or (src.counterparty_id and src.counterparty.kind == "POS"):
             return "POS"
         return "AGENT"
+
+    @property
+    def payment_parts(self):
+        """All collections of the same multi-method payment (just this one otherwise), in posting order."""
+        if not self.payment_group:
+            return [self]
+        return list(Transaction.objects.filter(payment_group=self.payment_group).select_related("dest_account")
+                    .order_by("id"))
+
+    @property
+    def receipt_txn(self):
+        """The part holding the receipt number of this payment (itself for ordinary transactions)."""
+        if self.receipt_no or not self.payment_group:
+            return self
+        return Transaction.objects.filter(payment_group=self.payment_group).exclude(receipt_no=None).first() or self
 
     @property
     def display_type(self):

@@ -209,6 +209,43 @@ def build_collection(ctx, *, payer, method, amount, account, bank_reference="", 
     )
 
 
+PAYMENT_METHODS = (PaymentMethod.CASH, PaymentMethod.UVE, PaymentMethod.MTN, PaymentMethod.BANK)
+
+
+def record_payment(user, *, payer, parts, accounts=None, bank_reference="", description="", idempotency_key=None,
+                   acting_for=None):
+    """One payment made with one or several methods at once, e.g. {"CASH": 200000, "UVE": 150000, "BANK": 50000}.
+
+    Each method is a collection into the subzone's account for that method; all are posted together (all or
+    nothing), share one payment group and one receipt number. Returns the collections, first one first."""
+    ctx = cashier_ctx(user, acting_for)
+    accounts = accounts or {}
+    todo = []
+    for m in PAYMENT_METHODS:
+        amt = _money(parts.get(m) or 0)
+        if amt < 0:
+            raise BusinessError(_("Amounts cannot be negative."), m.lower())
+        if amt:
+            todo.append((m, amt))
+    if not todo:
+        raise BusinessError(_("Enter the amount received in at least one payment method."), "cash")
+    group = uuid.uuid5(idempotency_key, "payment") if idempotency_key else uuid.uuid4()
+    specs = []
+    for i, (m, amt) in enumerate(todo):
+        acct = accounts.get(m) or _desk_account(ctx, METHOD_ACCOUNT_KIND[m], receiving=True)
+        if acct is None:
+            raise BusinessError(_("No single %(kind)s account is set up for your subzone.")
+                                % {"kind": Account.Kind(METHOD_ACCOUNT_KIND[m]).label}, m.lower())
+        spec = build_collection(ctx, payer=payer, method=m, amount=amt, account=acct,
+                                bank_reference=bank_reference if m == PaymentMethod.BANK else "",
+                                description=description)
+        spec.fields["payment_group"] = group if len(todo) > 1 else None
+        spec.receipt = i == 0  # one receipt for the whole payment
+        specs.append(spec)
+    with transaction.atomic():
+        return post(specs, ctx, idempotency_key)
+
+
 def record_collection(user, idempotency_key=None, acting_for=None, **params):
     ctx = cashier_ctx(user, acting_for)
     return post([build_collection(ctx, **params)], ctx, idempotency_key)[0]

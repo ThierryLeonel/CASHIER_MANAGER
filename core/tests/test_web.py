@@ -137,13 +137,11 @@ class WebFlows(WebBase):
 
     def test_validation_messages(self):
         c = self.client_for("cashier.fako1")
-        r = c.post("/collection/new/", {"idem": str(uuid.uuid4()), "payer": "699999999", "method": "BANK",
-                                        "amount": "12.5", "account": self.bank.pk})
+        r = c.post("/collection/new/", {"idem": str(uuid.uuid4()), "payer": "699999999", "bank": "12.5"})
         self.assertContains(r, "No agent or POS is registered")
         self.assertContains(r, "whole FCFA")
         c_fr = self.client_for("cashier.fako1", "fr")
-        r = c_fr.post("/collection/new/", {"idem": str(uuid.uuid4()), "payer": "691000001", "method": "BANK",
-                                           "amount": "5000", "account": self.bank.pk})
+        r = c_fr.post("/collection/new/", {"idem": str(uuid.uuid4()), "payer": "691000001", "bank": "5000"})
         self.assertContains(r, "Saisissez la référence du versement bancaire")
 
     def test_french_interface(self):

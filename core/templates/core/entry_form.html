@@ -100,6 +100,29 @@
   }
   function syncGive() { if (!gk) return; var s = sides[gk.value] || []; onlyKind(gAcct, s[0]); onlyKind(rAcct, s[1]); }
   if (gk) { gk.addEventListener('change', syncGive); syncGive(); }
+  // payment: total of all methods; bank fields only when there is a bank deposit
+  var pays = form.querySelectorAll('input[data-pay]');
+  if (pays.length) {
+    var row = document.createElement('div'); row.className = 'pay-row';
+    var firstF = pays[0].closest('.field'); firstF.parentNode.insertBefore(row, firstF);
+    var ph = firstF.querySelector('.help');
+    pays.forEach(function (p) { row.appendChild(p.closest('.field')); });
+    if (ph) { ph.classList.add('pay-help'); row.parentNode.insertBefore(ph, row.nextSibling); }
+    var bankFlds = ['fld-bank_account', 'fld-bank_reference'].map(function (id) { return document.getElementById(id); });
+    var last = document.getElementById('fld-bank');
+    var tot = document.createElement('div'); tot.className = 'pay-total';
+    var host = (bankFlds[1] || last); host.parentNode.insertBefore(tot, host.nextSibling);
+    var pn = function (v) { return parseInt(String(v || '').replace(/\D/g, ''), 10) || 0; };
+    var pf = function (v) { return String(v).replace(/\B(?=(\d{3})+(?!\d))/g, ' '); };
+    var syncPay = function () {
+      var t = 0; pays.forEach(function (p) { t += pn(p.value); });
+      tot.innerHTML = '<span>{{ _("Total payment")|escapejs }}</span><strong>' + pf(t) + ' FCFA</strong>';
+      var bank = pn(form.querySelector('[name=bank]').value) > 0;
+      bankFlds.forEach(function (f) { if (f) f.hidden = !bank; });
+      if (bank) autoPick(form.querySelector('[name=bank_account]'));
+    };
+    pays.forEach(function (p) { p.addEventListener('input', syncPay); }); syncPay();
+  }
   autoAll();
   // cash-manager exchange: balance still to be served, as you type
   var exAmt = form.querySelector('[name=amount]'), exServed = form.querySelector('[name=amount_served]');

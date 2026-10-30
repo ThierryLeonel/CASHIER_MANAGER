@@ -1075,6 +1075,16 @@ FR = {
     '%(z)s still has zones under it (%(names)s). A subzone cannot have subzones: open each of them and choose a master zone or make it a master zone, then come back.': "%(z)s a encore des zones en dessous (%(names)s). Une sous-zone ne peut pas avoir de sous-zones : ouvrez chacune d'elles et choisissez une zone master ou faites-en une zone master, puis revenez.",
     'recorded entries': 'des écritures enregistrées',
     "It reduces the customer's single combined debt.": 'Il réduit la dette unique et combinée du client.',
+    'Choose the bank account.': 'Choisissez le compte bancaire.',
+    'Enter the amount received in at least one payment method.': 'Saisissez le montant reçu dans au moins un mode de paiement.',
+    "Fill every way the customer paid. The total is added up for you; each part goes into your subzone's account for that method.": 'Remplissez chaque mode de paiement utilisé par le client. Le total se calcule tout seul ; chaque part va dans le compte de votre sous-zone pour ce mode.',
+    'No single %(kind)s account is set up for your subzone.': "Aucun compte %(kind)s unique n'est configuré pour votre sous-zone.",
+    "One payment can be made in cash, UVE, MTN float and bank deposit at the same time. It reduces the customer's single combined balance.": 'Un même paiement peut être fait en espèces, UVE, float MTN et versement bancaire à la fois. Il réduit le solde unique et combiné du client.',
+    'Paid in %(m)s': 'Payé en %(m)s',
+    'Payment %(ref)s recorded: %(amt)s FCFA.': 'Paiement %(ref)s enregistré : %(amt)s FCFA.',
+    'Total payment': 'Total du paiement',
+    'UVE': 'UVE',
+    'part of a payment made with several methods': "partie d'un paiement fait avec plusieurs modes",
 }
 
 FR_PLURAL = {

@@ -77,7 +77,7 @@ def _company_name():
     return str(company().display_name)
 
 
-def receipt_pdf(txn, rows, balance_after=None):
+def receipt_pdf(txn, rows, balance_after=None, amount=None):
     """rows: [(label, value)] already localised."""
     _fonts()
     st = _styles()
@@ -114,7 +114,7 @@ def receipt_pdf(txn, rows, balance_after=None):
         Paragraph(f"{_('Receipt no.')} <b>{txn.receipt_no or '—'}</b> &nbsp;&nbsp; {_('Reference')} "
                   f"<b>{txn.reference}</b>", st["n"]),
         Spacer(1, 4 * mm),
-        Paragraph(f"{fmt(txn.amount)} FCFA", st["big"]),
+        Paragraph(f"{fmt(amount if amount is not None else txn.amount)} FCFA", st["big"]),
         Spacer(1, 4 * mm),
     ]
     data = [[Paragraph(f"<b>{k}</b>", st["n"]), Paragraph(str(v), st["n"])] for k, v in rows]

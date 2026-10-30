@@ -74,8 +74,28 @@ def destockage_new(request):
 
 @roles_required(*DESK)
 def collection_new(request):
-    return _entry(request, F.CollectionForm, ops.record_collection, _("Collect a payment"),
-                  _("Record a confirmed payment. It reduces the customer's single combined balance."), extra={"icon": "payment"})
+    desk, acting = _desk(request)
+    if desk is None:
+        from django.contrib import messages
+
+        messages.info(request, _("Choose the cashier you are recording for."))
+        return redirect(f"/act-as/?next={request.path}")
+    form = F.CollectionForm(desk, request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        resp = run_service(
+            request, form,
+            lambda: ops.record_payment(request.user, idempotency_key=form.cleaned_data["idem"], acting_for=acting,
+                                       **form.params()),
+            success=lambda ts: _("Payment %(ref)s recorded: %(amt)s FCFA.") % {
+                "ref": ts[0].receipt_no or ts[0].reference, "amt": fmt(sum(t.amount for t in ts))},
+            on_success=lambda ts: redirect("txn_detail", pk=(ts[0] if isinstance(ts, list) else ts).pk))
+        if resp:
+            return resp
+    return render(request, "core/entry_form.html", {
+        "form": form, "title": _("Collect a payment"), "icon": "payment", "payment_form": True,
+        "intro": _("One payment can be made in cash, UVE, MTN float and bank deposit at the same time. It reduces "
+                   "the customer's single combined balance."),
+        "customers": Counterparty.objects.filter(active=True)})
 
 
 @roles_required(*DESK)

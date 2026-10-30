@@ -186,17 +186,54 @@ class DestockageForm(BaseEntryForm):
 
 
 class CollectionForm(BaseEntryForm):
+    """One payment, possibly made with several methods at once; the total is the sum of the methods."""
+
     payer = CustomerField(label=_("Paying customer (business SIM)"))
-    method = forms.ChoiceField(label=_("Payment method"), choices=PaymentMethod.choices)
-    amount = MoneyField(label=_("Amount received (FCFA)"))
-    account = AccountChoiceField(label=_("Received into"), queryset=Account.objects.none())
+    cash = MoneyField(label=_("Cash"), required=False)
+    uve = MoneyField(label=_("UVE"), required=False)
+    mtn = MoneyField(label=_("MTN float"), required=False)
+    bank = MoneyField(label=_("Bank deposit"), required=False)
+    bank_account = AccountChoiceField(label=_("Bank account"), queryset=Account.objects.none(), required=False)
     bank_reference = forms.CharField(label=_("Bank deposit reference"), required=False, max_length=60)
     description = forms.CharField(label=_("Note"), required=False, max_length=255)
 
+    METHOD_FIELDS = (("cash", PaymentMethod.CASH), ("uve", PaymentMethod.UVE), ("mtn", PaymentMethod.MTN),
+                     ("bank", PaymentMethod.BANK))
+
     def __init__(self, user, *args, **kwargs):
         super().__init__(user, *args, **kwargs)
-        self.fields["account"].queryset = self.accounts([K.CASH_DRAWER, K.UVE, K.MTN, K.BANK], receiving=True)
-        self.fields["amount"].help_text = _("It reduces the customer's single combined debt.")
+        for name, _m in self.METHOD_FIELDS:
+            self.fields[name].widget.attrs.update({"data-pay": name, "placeholder": "0"})
+        self.fields["cash"].help_text = _("Fill every way the customer paid. The total is added up for you; each "
+                                          "part goes into your subzone's account for that method.")
+        self.fields["bank_account"].queryset = self.accounts([K.BANK], receiving=True)
+
+    def clean(self):
+        cd = super().clean()
+        if not any(cd.get(n) for n, _m in self.METHOD_FIELDS):
+            self.add_error("cash", _("Enter the amount received in at least one payment method."))
+        if cd.get("bank"):
+            if not (cd.get("bank_reference") or "").strip():
+                self.add_error("bank_reference", _("Enter the bank deposit reference."))
+            if not cd.get("bank_account"):
+                qs = self.fields["bank_account"].queryset
+                if qs.count() == 1:
+                    cd["bank_account"] = qs.first()
+                else:
+                    self.add_error("bank_account", _("Choose the bank account."))
+        return cd
+
+    def params(self):
+        cd = self.cleaned_data
+        parts = {m: cd.get(n) for n, m in self.METHOD_FIELDS if cd.get(n)}
+        accounts = {PaymentMethod.BANK: cd["bank_account"]} if cd.get("bank_account") else {}
+        return dict(payer=cd["payer"], parts=parts, accounts=accounts, bank_reference=cd.get("bank_reference", ""),
+                    description=cd.get("description", ""))
+
+    @property
+    def total(self):
+        cd = getattr(self, "cleaned_data", {}) or {}
+        return sum((cd.get(n) or 0) for n, _m in self.METHOD_FIELDS)
 
 
 EXPENSE_SOURCE_KINDS = (K.CASH_DRAWER, K.UVE, K.MTN)

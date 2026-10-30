@@ -19,7 +19,7 @@
   </div>
   <div style="margin-top:8mm;font-weight:700;font-size:12pt">{% trans "RECEIPT" %} / {{ t.display_type|upper }}</div>
   <div>{% trans "Receipt no." %} <strong>{{ t.receipt_no }}</strong> &nbsp; {% trans "Reference" %} <strong>{{ t.reference }}</strong></div>
-  <div class="amount">{{ t.amount|fcfa }} FCFA</div>
+  <div class="amount">{{ amount|default:t.amount|fcfa }} FCFA</div>
   <table>
     {% for k, v in rows %}<tr><td>{{ k }}</td><td>{{ v }}</td></tr>{% endfor %}
     {% if balance_after is not None %}<tr><td>{% trans "Customer balance after this transaction" %}</td><td>{{ balance_after|absval|fcfa }} FCFA {% if balance_after|negative %}{% trans "supply due to customer" %}{% elif balance_after %}{% trans "owed to the company" %}{% endif %}</td></tr>{% endif %}
