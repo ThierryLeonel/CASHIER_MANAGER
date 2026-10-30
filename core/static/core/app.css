@@ -425,7 +425,7 @@ input.auto { background: var(--soft); font-weight: 700; }
 .side-foot .mypw { display: block; color: var(--side-muted); font-size: .76rem; text-decoration: none; margin-top: 2px; }
 .side-foot .mypw:hover { color: #fff; }
 /* payment with several methods: amounts side by side and the total */
-.pay-row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.pay-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; }
 .pay-row .field { margin-bottom: 4px; }
 .pay-row .help { display: none; }
 .help.pay-help { margin: 0 0 12px; font-size: .78rem; color: var(--muted); line-height: 1.4; }

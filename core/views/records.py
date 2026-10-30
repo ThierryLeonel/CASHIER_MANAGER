@@ -133,14 +133,23 @@ def receipt_rows(t):
     if t.entered_by_id != cashier.id:
         rows.append((_("Entered by"), t.entered_by.label_with_id))
     if t.type in (T.SUPPLY,):
-        rows.append((_("Product"), t.get_product_display()))
+        parts = t.payment_parts
+        if len(parts) <= 1:
+            rows.append((_("Product"), t.get_product_display()))
         rows.append((_("Responsible customer"), f"{t.counterparty.name} — {_('business SIM')} "
                                                 f"{display_sim(t.counterparty.business_sim)} "
                                                 f"({t.counterparty.get_kind_display()})"))
         if t.counterparty_2_id:
             rows.append((_("Received by POS"), f"{t.counterparty_2.name} — {_('business SIM')} "
                                                f"{display_sim(t.counterparty_2.business_sim)}"))
-        rows.append((_("Sent from company account"), str(t.source_account)))
+        if len(parts) > 1:  # one supply made of several products
+            for p in parts:
+                note = " — " + _("CORRECTED") if hasattr(p, "correction") else ""
+                rows.append((_("Supplied %(p)s") % {"p": p.get_product_display()},
+                             f"{fmt(p.amount)} FCFA ← {p.source_account} ({p.reference}){note}"))
+            rows.append((_("Total supplied"), f"{fmt(sum(p.amount for p in parts))} FCFA"))
+        else:
+            rows.append((_("Sent from company account"), str(t.source_account)))
     elif t.type == T.DESTOCKAGE:
         rows.append((_("Cash given to POS"), f"{t.counterparty_2.name} — {_('business SIM')} "
                                              f"{display_sim(t.counterparty_2.business_sim)}"))

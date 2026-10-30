@@ -1085,6 +1085,13 @@ FR = {
     'Total payment': 'Total du paiement',
     'UVE': 'UVE',
     'part of a payment made with several methods': "partie d'un paiement fait avec plusieurs modes",
+    "Cash, UVE and ER given to a commercial agent, in one record. The agent's balance increases by the total.": "Espèces, UVE et ER remis à un agent commercial, en un seul enregistrement. Le solde de l'agent augmente du total.",
+    'ER': 'ER',
+    'ER is supplied from the master SIM of %(zone)s by its cashier in charge.': "L'ER est fourni depuis la SIM master de %(zone)s par son caissier responsable.",
+    'Enter the amount supplied in cash, UVE and/or ER.': 'Saisissez le montant fourni en espèces, UVE et/ou ER.',
+    'Fill what was supplied. Cash leaves your drawer, UVE your UVE wallet and ER the master SIM; the total is added up for you.': "Remplissez ce qui a été fourni. Les espèces sortent de votre caisse, l'UVE de votre portefeuille UVE et l'ER de la SIM master ; le total se calcule tout seul.",
+    'Supplied %(p)s': 'Fourni en %(p)s',
+    'Total supplied': 'Total fourni',
 }
 
 FR_PLURAL = {

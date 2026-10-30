@@ -76,7 +76,33 @@ class AutoAccounts(OrgMixin, TestCase):
 
     def test_supply_takes_the_subzone_wallet_of_the_product(self):
         before = self.bal(self.uve_f2)
-        r = self.c.post("/supply/agent/", {"idem": str(uuid.uuid4()), "product": "UVE", "agent": "691000002",
-                                           "amount": "2 000"})
+        r = self.c.post("/supply/agent/", {"idem": str(uuid.uuid4()), "agent": "691000002", "uve": "2 000"})
         self.assertEqual(r.status_code, 302, r.content[:1500])
         self.assertEqual(self.bal(self.uve_f2), before - 2000)
+
+    def test_one_supply_of_cash_uve_and_er(self):
+        from core.models import Transaction, TxType
+
+        c1 = self.client_class()
+        c1.login(username="cashier.fako1", password=PW)  # in charge of the Fako master SIM (ER)
+        before = (self.bal(self.d_f1), self.bal(self.uve_f1), self.bal(self.er_f1), self.bal(self.a2.account))
+        r = c1.post("/supply/agent/", {"idem": str(uuid.uuid4()), "agent": "691000002", "cash": "100 000",
+                                       "uve": "500 000", "er": "120 000"})
+        self.assertEqual(r.status_code, 302, r.content[:1500])
+        parts = list(Transaction.objects.filter(type=TxType.SUPPLY).order_by("-id")[:3])[::-1]
+        self.assertEqual([p.product for p in parts], ["CASH", "UVE", "ER"])
+        self.assertEqual(len({p.payment_group for p in parts}), 1)
+        self.assertEqual(sum(1 for p in parts if p.receipt_no), 1)
+        self.assertEqual((self.bal(self.d_f1), self.bal(self.uve_f1), self.bal(self.er_f1), self.bal(self.a2.account)),
+                         (before[0] - 100000, before[1] - 500000, before[2] - 120000, before[3] + 720000))
+        self.assertEqual(parts[2].source_account, self.er_f1)  # ER from the master SIM
+        rc = c1.get(f"/transactions/{parts[1].pk}/receipt/")
+        self.assertContains(rc, "720 000 FCFA")
+        self.assertContains(rc, "Supplied ER")
+        # a POS supply made of several products, with an agent assuming the debt
+        r = c1.post("/supply/pos/", {"idem": str(uuid.uuid4()), "pos": "692000001", "assign_agent": "691000001",
+                                     "cash": "10 000", "uve": "20 000"})
+        self.assertEqual(r.status_code, 302, r.content[:1500])
+        pos_parts = Transaction.objects.filter(type=TxType.SUPPLY, counterparty_2__business_sim="692000001")
+        self.assertEqual(sorted(p.amount for p in pos_parts), [D(10000), D(20000)])
+        self.assertTrue(all(p.counterparty == self.a1 for p in pos_parts))

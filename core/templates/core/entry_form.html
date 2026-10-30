@@ -111,13 +111,13 @@
     var bankFlds = ['fld-bank_account', 'fld-bank_reference'].map(function (id) { return document.getElementById(id); });
     var last = document.getElementById('fld-bank');
     var tot = document.createElement('div'); tot.className = 'pay-total';
-    var host = (bankFlds[1] || last); host.parentNode.insertBefore(tot, host.nextSibling);
+    var host = bankFlds[1] || last || form.querySelector(".pay-help") || row; host.parentNode.insertBefore(tot, host.nextSibling);
     var pn = function (v) { return parseInt(String(v || '').replace(/\D/g, ''), 10) || 0; };
     var pf = function (v) { return String(v).replace(/\B(?=(\d{3})+(?!\d))/g, ' '); };
     var syncPay = function () {
       var t = 0; pays.forEach(function (p) { t += pn(p.value); });
-      tot.innerHTML = '<span>{{ _("Total payment")|escapejs }}</span><strong>' + pf(t) + ' FCFA</strong>';
-      var bank = pn(form.querySelector('[name=bank]').value) > 0;
+      tot.innerHTML = '<span>' + (form.querySelector('[name=bank]') ? '{{ _("Total payment")|escapejs }}' : '{{ _("Total supplied")|escapejs }}') + '</span><strong>' + pf(t) + ' FCFA</strong>';
+      var bankIn = form.querySelector('[name=bank]'), bank = bankIn ? pn(bankIn.value) > 0 : false;
       bankFlds.forEach(function (f) { if (f) f.hidden = !bank; });
       if (bank) autoPick(form.querySelector('[name=bank_account]'));
     };

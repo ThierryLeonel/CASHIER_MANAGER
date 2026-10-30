@@ -124,6 +124,53 @@ def record_supply(user, idempotency_key=None, acting_for=None, **params):
     return post([build_supply(ctx, **params)], ctx, idempotency_key)[0]
 
 
+SUPPLY_PRODUCTS = (Product.CASH, Product.UVE, Product.ER)
+
+
+def _supply_account(ctx, product):
+    """The account a product leaves from: the subzone's drawer / UVE wallet, or the master SIM for ER."""
+    kind = PRODUCT_ACCOUNT_KIND[product]
+    qs = perm.usable_accounts(ctx.cashier, [kind])
+    if product == Product.ER:
+        mz = ctx.cashier.master_zone
+        qs = qs.filter(sim__is_master=True, sim__master_zone=mz) if mz is not None else qs.none()
+        if not qs.exists():
+            raise BusinessError(_("ER is supplied from the master SIM of %(zone)s by its cashier in charge.")
+                                % {"zone": mz}, "er")
+    if qs.count() != 1:
+        raise BusinessError(_("No single %(kind)s account is set up for your subzone.")
+                            % {"kind": Account.Kind(kind).label}, product.lower())
+    return qs.first()
+
+
+def record_supplies(user, *, customer, parts, recipient=None, description="", idempotency_key=None,
+                    acting_for=None):
+    """One supply made of several products at once, e.g. {"CASH": 100000, "UVE": 500000, "ER": 120000}.
+
+    Each product leaves from its account automatically and is posted as its own supply, all together (all or
+    nothing), sharing one group and one receipt. Returns the supplies, first one first."""
+    ctx = cashier_ctx(user, acting_for)
+    todo = []
+    for prod in SUPPLY_PRODUCTS:
+        amt = _money(parts.get(prod) or 0)
+        if amt < 0:
+            raise BusinessError(_("Amounts cannot be negative."), prod.lower())
+        if amt:
+            todo.append((prod, amt))
+    if not todo:
+        raise BusinessError(_("Enter the amount supplied in cash, UVE and/or ER."), "cash")
+    group = uuid.uuid5(idempotency_key, "supply") if idempotency_key else uuid.uuid4()
+    specs = []
+    for i, (prod, amt) in enumerate(todo):
+        spec = build_supply(ctx, product=prod, customer=customer, amount=amt, recipient=recipient,
+                            source_account=_supply_account(ctx, prod), description=description)
+        spec.fields["payment_group"] = group if len(todo) > 1 else None
+        spec.receipt = i == 0
+        specs.append(spec)
+    with transaction.atomic():
+        return post(specs, ctx, idempotency_key)
+
+
 def build_destockage(ctx, *, pos, agent, amount, drawer, description=""):
     amount = _positive(amount)
     _active_party(pos, _("POS"))

@@ -110,8 +110,7 @@ class AdminPowers(OrgMixin, TestCase):
         self.assertEqual(r.status_code, 302)
         self.assertIn("/act-as/", r["Location"])
         c.post("/act-as/", {"cashier": self.c_f2.pk})
-        r = c.post("/supply/agent/", {"idem": str(uuid.uuid4()), "product": "CASH", "agent": "691000001",
-                                      "amount": "12 000", "source_account": self.d_f2.pk})
+        r = c.post("/supply/agent/", {"idem": str(uuid.uuid4()), "agent": "691000001", "cash": "12 000"})
         self.assertEqual(r.status_code, 302, r.content[:500])
         t = Transaction.objects.get(type=TxType.SUPPLY)
         self.assertEqual((t.cashier, t.entered_by, t.cashier_day.cashier), (self.c_f2, self.admin, self.c_f2))

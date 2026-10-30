@@ -270,8 +270,8 @@ class Transaction(models.Model):
         """All collections of the same multi-method payment (just this one otherwise), in posting order."""
         if not self.payment_group:
             return [self]
-        return list(Transaction.objects.filter(payment_group=self.payment_group).select_related("dest_account")
-                    .order_by("id"))
+        return list(Transaction.objects.filter(payment_group=self.payment_group)
+                    .select_related("dest_account", "source_account").order_by("id"))
 
     @property
     def receipt_txn(self):

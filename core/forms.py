@@ -128,48 +128,60 @@ class BaseEntryForm(forms.Form):
         return d
 
 
-class AgentSupplyForm(BaseEntryForm):
-    """Supply to a commercial agent (the normal case)."""
+class _SupplyAmounts(BaseEntryForm):
+    """Amounts supplied in cash, UVE and ER; each leaves from its account automatically."""
 
-    product = forms.ChoiceField(label=_("Product"), choices=Product.choices)
-    agent = CustomerField(label=_("Commercial agent (business SIM)"), kind=Counterparty.Kind.AGENT)
-    amount = MoneyField(label=_("Amount (FCFA)"))
-    source_account = AccountChoiceField(label=_("Company account sending"), queryset=Account.objects.none())
+    cash = MoneyField(label=_("Cash"), required=False)
+    uve = MoneyField(label=_("UVE"), required=False)
+    er = MoneyField(label=_("ER"), required=False)
     description = forms.CharField(label=_("Note"), required=False, max_length=255)
+
+    PRODUCT_FIELDS = (("cash", Product.CASH), ("uve", Product.UVE), ("er", Product.ER))
 
     def __init__(self, user, *args, **kwargs):
         super().__init__(user, *args, **kwargs)
-        self.fields["source_account"].queryset = self.accounts([K.UVE, K.ER, K.CASH_DRAWER])
+        for name, _p in self.PRODUCT_FIELDS:
+            self.fields[name].widget.attrs.update({"data-pay": name, "placeholder": "0"})
+        self.fields["cash"].help_text = _("Fill what was supplied. Cash leaves your drawer, UVE your UVE wallet and "
+                                          "ER the master SIM; the total is added up for you.")
+
+    def clean(self):
+        cd = super().clean()
+        if not any(cd.get(n) for n, _p in self.PRODUCT_FIELDS):
+            self.add_error("cash", _("Enter the amount supplied in cash, UVE and/or ER."))
+        return cd
+
+    def parts(self):
+        return {p: self.cleaned_data.get(n) for n, p in self.PRODUCT_FIELDS if self.cleaned_data.get(n)}
+
+
+class AgentSupplyForm(_SupplyAmounts):
+    """Supply to a commercial agent (the normal case)."""
+
+    agent = CustomerField(label=_("Commercial agent (business SIM)"), kind=Counterparty.Kind.AGENT)
+    field_order = ["agent", "cash", "uve", "er", "description"]
 
     def params(self):
-        d = super().params()
-        d["customer"] = d.pop("agent")
-        return d
+        return dict(customer=self.cleaned_data["agent"], parts=self.parts(),
+                    description=self.cleaned_data.get("description", ""))
 
 
-class PosSupplyForm(BaseEntryForm):
+class PosSupplyForm(_SupplyAmounts):
     """Exceptional direct supply to a point of sale. The POS owes, unless an
     agent explicitly assumes the obligation at entry."""
 
-    product = forms.ChoiceField(label=_("Product"), choices=Product.choices)
     pos = CustomerField(label=_("Point of sale (business SIM)"), kind=Counterparty.Kind.POS)
     assign_agent = CustomerField(label=_("Commercial agent who assumes this debt (optional)"), required=False,
                                  kind=Counterparty.Kind.AGENT,
                                  help_text=_("Leave empty: the POS owes. Fill only if an agent explicitly takes "
                                              "responsibility now."))
-    amount = MoneyField(label=_("Amount (FCFA)"))
-    source_account = AccountChoiceField(label=_("Company account sending"), queryset=Account.objects.none())
-    description = forms.CharField(label=_("Note"), required=False, max_length=255)
-
-    def __init__(self, user, *args, **kwargs):
-        super().__init__(user, *args, **kwargs)
-        self.fields["source_account"].queryset = self.accounts([K.UVE, K.ER, K.CASH_DRAWER])
+    field_order = ["pos", "assign_agent", "cash", "uve", "er", "description"]
 
     def params(self):
-        d = super().params()
-        pos, agent = d.pop("pos"), d.pop("assign_agent")
-        d["customer"], d["recipient"] = (agent, pos) if agent else (pos, None)
-        return d
+        pos, agent = self.cleaned_data["pos"], self.cleaned_data.get("assign_agent")
+        customer, recipient = (agent, pos) if agent else (pos, None)
+        return dict(customer=customer, recipient=recipient, parts=self.parts(),
+                    description=self.cleaned_data.get("description", ""))
 
 
 class DestockageForm(BaseEntryForm):

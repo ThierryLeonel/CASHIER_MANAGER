@@ -22,6 +22,10 @@ def _desk(request):
     return request.user, None
 
 
+def _first(t):
+    return t[0] if isinstance(t, list) else t
+
+
 def _entry(request, form_class, op, title, intro="", template="core/entry_form.html", extra=None):
     desk, acting = _desk(request)
     if desk is None:
@@ -36,8 +40,9 @@ def _entry(request, form_class, op, title, intro="", template="core/entry_form.h
             request, form, lambda: op(request.user, idempotency_key=form.cleaned_data["idem"], acting_for=acting,
                                       **params),
             success=lambda t: _("%(type)s %(ref)s recorded: %(amt)s FCFA.") % {
-                "type": t.display_type, "ref": t.reference, "amt": fmt(t.amount)},
-            on_success=lambda t: redirect("txn_detail", pk=t.pk),
+                "type": _first(t).display_type, "ref": _first(t).receipt_no or _first(t).reference,
+                "amt": fmt(sum(x.amount for x in t) if isinstance(t, list) else t.amount)},
+            on_success=lambda t: redirect("txn_detail", pk=_first(t).pk),
         )
         if resp:
             return resp
@@ -53,14 +58,14 @@ def supply_new(request):
 
 @roles_required(*DESK)
 def supply_agent(request):
-    return _entry(request, F.AgentSupplyForm, ops.record_supply, _("Supply to a commercial agent"),
-                  _("UVE, ER or cash given to a commercial agent. The agent's balance increases. ER must come from "
-                    "your master zone's master SIM."), extra={"icon": "supply"})
+    return _entry(request, F.AgentSupplyForm, ops.record_supplies, _("Supply to a commercial agent"),
+                  _("Cash, UVE and ER given to a commercial agent, in one record. The agent's balance increases by "
+                    "the total."), extra={"icon": "supply"})
 
 
 @roles_required(*DESK)
 def supply_pos(request):
-    return _entry(request, F.PosSupplyForm, ops.record_supply, _("Supply to a point of sale (POS)"),
+    return _entry(request, F.PosSupplyForm, ops.record_supplies, _("Supply to a point of sale (POS)"),
                   _("Exceptional direct supply to a POS. The POS owes the company, unless you name an agent who "
                     "explicitly assumes the debt."), extra={"icon": "store"})
 

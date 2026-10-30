@@ -607,6 +607,13 @@ msgstr "Espèces au PDV, UVE à l'agent"
 msgid "Cash → served in UVE"
 msgstr "Espèces → servi en UVE"
 
+msgid ""
+"Cash, UVE and ER given to a commercial agent, in one record. The agent's "
+"balance increases by the total."
+msgstr ""
+"Espèces, UVE et ER remis à un agent commercial, en un seul enregistrement. "
+"Le solde de l'agent augmente du total."
+
 #, python-format
 msgid "Cash, UVE, ER and MTN · zone %(z)s"
 msgstr "Espèces, UVE, ER et MTN · zone %(z)s"
@@ -1212,8 +1219,18 @@ msgstr "Mouvements des caisses et portefeuilles SIM"
 msgid "Drawers and wallets you can use (book balances)"
 msgstr "Caisses et portefeuilles utilisables (soldes comptables)"
 
+msgid "ER"
+msgstr "ER"
+
 msgid "ER can only be transferred between SIMs of the same master zone."
 msgstr "L'ER ne peut être transféré qu'entre SIM d'une même zone principale."
+
+#, python-format
+msgid ""
+"ER is supplied from the master SIM of %(zone)s by its cashier in charge."
+msgstr ""
+"L'ER est fourni depuis la SIM master de %(zone)s par son caissier "
+"responsable."
 
 msgid "ER received"
 msgstr "ER reçu"
@@ -1268,6 +1285,9 @@ msgstr "Saisissez le solde réel de %(acct)s."
 
 msgid "Enter the amount received in at least one payment method."
 msgstr "Saisissez le montant reçu dans au moins un mode de paiement."
+
+msgid "Enter the amount supplied in cash, UVE and/or ER."
+msgstr "Saisissez le montant fourni en espèces, UVE et/ou ER."
 
 msgid "Enter the bank deposit reference."
 msgstr "Saisissez la référence du versement bancaire."
@@ -1400,6 +1420,14 @@ msgstr ""
 "Remplissez chaque mode de paiement utilisé par le client. Le total se "
 "calcule tout seul ; chaque part va dans le compte de votre sous-zone pour ce"
 " mode."
+
+msgid ""
+"Fill what was supplied. Cash leaves your drawer, UVE your UVE wallet and ER "
+"the master SIM; the total is added up for you."
+msgstr ""
+"Remplissez ce qui a été fourni. Les espèces sortent de votre caisse, l'UVE "
+"de votre portefeuille UVE et l'ER de la SIM master ; le total se calcule "
+"tout seul."
 
 msgid "Filled automatically from the parts above."
 msgstr "Rempli automatiquement à partir des parts ci-dessus."
@@ -2553,6 +2581,10 @@ msgstr "Super administrateur"
 msgid "Supplied"
 msgstr "Approvisionné"
 
+#, python-format
+msgid "Supplied %(p)s"
+msgstr "Fourni en %(p)s"
+
 msgid "Supplied / owed +"
 msgstr "Approvisionné / dû +"
 
@@ -2867,6 +2899,9 @@ msgstr "Total (FCFA)"
 
 msgid "Total payment"
 msgstr "Total du paiement"
+
+msgid "Total supplied"
+msgstr "Total fourni"
 
 msgid "Totals by category"
 msgstr "Totaux par catégorie"

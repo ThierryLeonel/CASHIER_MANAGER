@@ -140,6 +140,6 @@ class EmptyAccountWarning(OrgMixin, TestCase):
         u.save()
         c = self.client_class()
         c.login(username="cashier.fako3", password=PW)
-        r = c.get("/supply/agent/")
+        r = c.get("/expense/new/")
         self.assertContains(r, "No account of this kind is set up for subzone Fako 3 yet.")
         self.assertFalse(Account.objects.filter(zone=z).exists())

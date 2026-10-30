@@ -87,9 +87,9 @@ class RolePermissions(WebBase):
 
     def test_cashier_cannot_post_from_unauthorised_wallet(self):
         c = self.client_for("cashier.fako2")
-        r = c.post("/supply/agent/", {"idem": uuid.uuid4(), "product": "UVE", "agent": "691000001",
-                                    "amount": "1000", "source_account": self.uve_f1.pk})
-        self.assertEqual(r.status_code, 200)  # form re-rendered with an error
+        r = c.post("/supply/agent/", {"idem": uuid.uuid4(), "agent": "691000001", "er": "1000"})
+        self.assertEqual(r.status_code, 200)  # ER only from the master SIM by its cashier in charge
+        self.assertContains(r, "master SIM")
         self.assertFalse(Transaction.objects.filter(type=TxType.SUPPLY).exists())
 
     def test_cashier_reports_are_scoped(self):
@@ -124,8 +124,7 @@ class WebFlows(WebBase):
         c = self.client_for("cashier.fako1")
         self.assertEqual(c.get("/supply/new/").status_code, 302)
         self.assertEqual(c.get("/supply/agent/").status_code, 200)
-        data = {"idem": str(uuid.uuid4()), "product": "UVE", "agent": "+237 691 00 00 01", "amount": "100 000",
-                "source_account": self.uve_f1.pk, "description": "web"}
+        data = {"idem": str(uuid.uuid4()), "agent": "+237 691 00 00 01", "uve": "100 000", "description": "web"}
         r1 = c.post("/supply/agent/", data)
         r2 = c.post("/supply/agent/", data)
         self.assertEqual(r1.status_code, 302)
@@ -241,29 +240,25 @@ class ReconciliationColumns(WebBase):
 class AgentAndPosSupplies(WebBase):
     def test_agent_supply_rejects_pos_and_pos_supply_rejects_agent(self):
         c = self.client_for("cashier.fako1")
-        r = c.post("/supply/agent/", {"idem": str(uuid.uuid4()), "product": "UVE", "agent": "692000001",
-                                      "amount": "1000", "source_account": self.uve_f1.pk})
+        r = c.post("/supply/agent/", {"idem": str(uuid.uuid4()), "agent": "692000001", "uve": "1000"})
         self.assertContains(r, "is not a")
-        r = c.post("/supply/pos/", {"idem": str(uuid.uuid4()), "product": "UVE", "pos": "691000001",
-                                    "amount": "1000", "source_account": self.uve_f1.pk})
+        r = c.post("/supply/pos/", {"idem": str(uuid.uuid4()), "pos": "691000001", "uve": "1000"})
         self.assertContains(r, "is not a")
         self.assertFalse(Transaction.objects.filter(type=TxType.SUPPLY).exists())
 
     def test_pos_supply_owed_by_pos_or_assigned_agent(self):
         c = self.client_for("cashier.fako1")
-        r = c.post("/supply/pos/", {"idem": str(uuid.uuid4()), "product": "CASH", "pos": "692000001",
-                                    "amount": "50 000", "source_account": self.d_f1.pk})
+        r = c.post("/supply/pos/", {"idem": str(uuid.uuid4()), "pos": "692000001", "cash": "50 000"})
         self.assertEqual(r.status_code, 302)
         t1 = Transaction.objects.get(type=TxType.SUPPLY)
         self.assertEqual((t1.counterparty, t1.supply_channel, str(t1.display_type)), (self.p1, "POS", "Supply to POS"))
         self.assertEqual(self.cbal(self.p1), D(50000))
-        c.post("/supply/pos/", {"idem": str(uuid.uuid4()), "product": "UVE", "pos": "692000002",
-                                "assign_agent": "691000002", "amount": "30000", "source_account": self.uve_f1.pk})
+        c.post("/supply/pos/", {"idem": str(uuid.uuid4()), "pos": "692000002", "assign_agent": "691000002",
+                                "uve": "30000"})
         t2 = Transaction.objects.filter(type=TxType.SUPPLY).latest("id")
         self.assertEqual((t2.counterparty, t2.counterparty_2, t2.supply_channel), (self.a2, self.p2, "POS"))
         self.assertEqual((self.cbal(self.a2), self.cbal(self.p2)), (D(30000), D(0)))
-        c.post("/supply/agent/", {"idem": str(uuid.uuid4()), "product": "UVE", "agent": "691000001",
-                                  "amount": "20000", "source_account": self.uve_f1.pk})
+        c.post("/supply/agent/", {"idem": str(uuid.uuid4()), "agent": "691000001", "uve": "20000"})
         t3 = Transaction.objects.filter(type=TxType.SUPPLY).latest("id")
         self.assertEqual(t3.supply_channel, "AGENT")
         rep = self.client_for("manager").get("/reports/supplies/?preset=all")
