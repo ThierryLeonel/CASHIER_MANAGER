@@ -9,9 +9,15 @@
 <div class="panel" id="svc"><h3>{% if svc_form.instance.pk %}{% trans "Edit service" %}{% else %}{% trans "Add a service" %}{% endif %}</h3>
 <form method="post" class="entry" novalidate>{% csrf_token %}<input type="hidden" name="action" value="service">{% include "core/inc/fields.html" with form=svc_form %}<button class="btn primary" type="submit">{% trans "Save" %}</button>{% if svc_form.instance.pk %} <a class="btn" href="{% url 'shop_setup' %}">{% trans "Cancel" %}</a>{% endif %}</form></div>
 
+<h2>{% trans "Item categories" %}</h2>
+<div class="tbl-wrap"><table class="t"><thead><tr><th>{% trans "Category" %}</th><th>{% trans "Items" %}</th><th>{% trans "Status" %}</th><th></th></tr></thead>
+<tbody>{% for c in categories %}<tr><td>{{ c.name }}</td><td>{{ c.items.count }}</td><td>{% if c.active %}<span class="badge ok">{% trans "Active" %}</span>{% else %}<span class="badge">{% trans "Removed" %}</span>{% endif %}</td><td><a href="?cat={{ c.pk }}#cat">{% trans "Edit" %}</a></td></tr>{% endfor %}</tbody></table></div>
+<div class="panel" id="cat"><h3>{% if cat_form.instance.pk %}{% trans "Edit category" %}{% else %}{% trans "Add a category" %}{% endif %}</h3>
+<form method="post" class="entry" novalidate>{% csrf_token %}<input type="hidden" name="action" value="category">{% include "core/inc/fields.html" with form=cat_form %}<button class="btn primary" type="submit">{% trans "Save" %}</button>{% if cat_form.instance.pk %} <a class="btn" href="{% url 'shop_setup' %}">{% trans "Cancel" %}</a>{% endif %}</form></div>
+
 <h2>{% trans "Items for sale" %}</h2>
 <div class="tbl-wrap"><table class="t"><thead><tr><th>{% trans "Item" %}</th><th>{% trans "Category" %}</th><th class="money">{% trans "Price" %}</th><th>{% trans "Status" %}</th><th></th></tr></thead>
-<tbody>{% for i in items %}<tr><td>{{ i.name }}</td><td>{{ i.get_category_display }}</td><td class="money">{{ i.price|fcfa }}</td><td>{% if i.active %}<span class="badge ok">{% trans "Active" %}</span>{% else %}<span class="badge">{% trans "Removed" %}</span>{% endif %}</td><td><a href="?item={{ i.pk }}#item">{% trans "Edit" %}</a></td></tr>{% empty %}<tr><td colspan="5" class="muted">{% trans "No item yet." %}</td></tr>{% endfor %}</tbody></table></div>
+<tbody>{% for i in items %}<tr><td>{{ i.name }}</td><td>{{ i.category }}</td><td class="money">{{ i.price|fcfa }}</td><td>{% if i.active %}<span class="badge ok">{% trans "Active" %}</span>{% else %}<span class="badge">{% trans "Removed" %}</span>{% endif %}</td><td><a href="?item={{ i.pk }}#item">{% trans "Edit" %}</a></td></tr>{% empty %}<tr><td colspan="5" class="muted">{% trans "No item yet." %}</td></tr>{% endfor %}</tbody></table></div>
 <div class="panel" id="item"><h3>{% if item_form.instance.pk %}{% trans "Edit item" %}{% else %}{% trans "Add an item" %}{% endif %}</h3>
 <form method="post" class="entry" novalidate>{% csrf_token %}<input type="hidden" name="action" value="item">{% include "core/inc/fields.html" with form=item_form %}<button class="btn primary" type="submit">{% trans "Save" %}</button>{% if item_form.instance.pk %} <a class="btn" href="{% url 'shop_setup' %}">{% trans "Cancel" %}</a>{% endif %}</form></div>
 

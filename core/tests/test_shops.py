@@ -56,19 +56,75 @@ class ShopMoney(OrgMixin, TestCase):
         self.assertEqual(self.bal(self.a1.account), D(0))
         self.assertEqual(self.bal(self.a2.account), D(0))
 
-    def test_transfer_to_cashier_sale_services_retrieval(self):
-        before = self.bal(self.d_f1)
-        sh.to_cashier(self.m, kind="CASH", destination=self.d_f1, amount=D(100000))
-        self.assertEqual(self.bal(self.d_f1), before + 100000)
-        with self.assertRaises(BusinessError):  # cash must go to a drawer
-            sh.to_cashier(self.m, kind="CASH", destination=self.uve_f1, amount=D(1))
+    CLIENT = dict(client_name="Ngwa Peter", client_address="Molyko, Buea", client_country="Cameroon",
+                  id_type="CNI", id_number="998877", phone="677445566", whatsapp="677445566")
+
+    def test_airtime_kinds(self):
+        n = sh.airtime(self.m, amount=D(5000))
+        g = sh.airtime(self.m, amount=D(3000), kind="GOOD_DEAL")
+        self.assertEqual((n.subtype, g.subtype), ("NORMAL", "GOOD_DEAL"))
+        with self.assertRaises(BusinessError):
+            sh.airtime(self.m, amount=D(1), kind="BAD")
+
+    def test_transfer_to_cashier_is_uve_and_on_cashier_side(self):
+        before, sbefore = self.bal(self.uve_f1), self.b()[1]
+        t = sh.to_cashier(self.m, destination=self.uve_f1, amount=D(100000))
+        self.assertEqual(self.bal(self.uve_f1), before + 100000)
+        self.assertEqual(self.b()[1], sbefore - 100000)
+        self.assertIsNotNone(t.cashier_day_id)  # recorded in the cashier subzone's day
+        self.assertEqual(t.zone, t.cashier_day.zone)
+        with self.assertRaises(BusinessError):  # only UVE: never into a cash drawer
+            sh.to_cashier(self.m, destination=self.d_f1, amount=D(1))
+
+    def test_cashier_transfers_uve_to_shop(self):
+        sbefore, before = self.b()[1], self.bal(self.uve_f1)
+        t = sh.desk_to_shop(self.c_f1, shop=self.shop, amount=D(40000))
+        self.assertEqual((t.type, t.shop, t.cashier), (TxType.DESK_TO_SHOP, self.shop, self.c_f1))
+        self.assertEqual(self.b()[1], sbefore + 40000)
+        self.assertEqual(self.bal(self.uve_f1), before - 40000)
+        with self.assertRaises(PermissionDenied):
+            sh.desk_to_shop(self.m, shop=self.shop, amount=D(1))  # shop managers are not cashiers
+
+    def test_agent_owes_the_shop(self):
+        sh.destockage(self.m, agent=self.a1, amount=D(30000), pay="CREDIT")
+        x = sh.shop_balances(self.shop)
+        self.assertEqual((x[K.CASH_DRAWER], x[K.UVE], x["owed_by_agents"]), (D(300000), D(770000), D(30000)))
+        with self.assertRaises(BusinessError):
+            sh.agent_repay(self.m, agent=self.a1, amount=D(40000), pay="CASH")  # owes only 30 000
+        sh.agent_repay(self.m, agent=self.a1, amount=D(20000), pay="CASH")
+        sh.agent_repay(self.m, agent=self.a1, amount=D(10000), pay="UVE")
+        x = sh.shop_balances(self.shop)
+        self.assertEqual((x[K.CASH_DRAWER], x[K.UVE], x["owed_by_agents"]), (D(320000), D(780000), D(0)))
+        self.assertEqual(self.bal(self.a1.account), D(0))  # the cashier-side balance is untouched
+
+    def test_stock_by_serial_and_sale_with_client(self):
+        from core.models import ItemSale, StockUnit
+
         phone = self.o["items"]["phone"]
-        with self.assertRaises(BusinessError):  # nothing in stock yet
-            sh.sell(self.m, item=phone, quantity=1)
-        sh.receive_stock(self.o["shop_senior"], shop=self.shop, item=phone, quantity=3)
-        t = sh.sell(self.m, item=phone, quantity=2)
+        units = sh.receive_stock(self.o["shop_senior"], shop=self.shop, item=phone,
+                                 serials="356000000000011\n356000000000029, 356000000000037")
+        self.assertEqual((len(units), phone.stock_at(self.shop)), (3, 3))
+        with self.assertRaises(BusinessError):  # already in stock
+            sh.receive_stock(self.o["shop_senior"], shop=self.shop, item=phone, serials="356000000000011")
+        with self.assertRaises(BusinessError):  # typed twice
+            sh.receive_stock(self.o["shop_senior"], shop=self.shop, item=phone, serials="A1\nA1")
+        with self.assertRaises(BusinessError):  # no unit chosen
+            sh.sell(self.m, item=phone, units=[], **self.CLIENT)
+        bad = dict(self.CLIENT, client_name="")
+        with self.assertRaises(BusinessError):  # the client must be identified
+            sh.sell(self.m, item=phone, units=units[:1], **bad)
+        t = sh.sell(self.m, item=phone, units=units[:2], **self.CLIENT)
         self.assertEqual((t.amount, phone.stock_at(self.shop)), (D(130000), 1))
-        self.assertEqual(self.b()[0], D(330000))
+        self.assertEqual(self.b()[0], D(430000))
+        s = ItemSale.objects.get(transaction=t)
+        self.assertEqual((s.client_name, s.id_number, s.units.count()), ("Ngwa Peter", "998877", 2))
+        with self.assertRaises(BusinessError):  # cannot sell the same unit twice
+            sh.sell(self.m, item=phone, units=units[:1], **self.CLIENT)
+        sh.remove_unit(self.o["shop_senior"], serial="356000000000037", note="damaged")
+        self.assertEqual(StockUnit.objects.get(serial="356000000000037").status, StockUnit.Status.REMOVED)
+        self.assertEqual(phone.stock_at(self.shop), 0)
+
+    def test_services_and_retrieval(self):
         sh.count_service(self.m, service=ShopService.objects.get(name__startswith="MAX IT"), count=6)
         self.assertEqual(ServiceCount.objects.get().count, 6)
         r = sh.retrieve_sim(self.m, sim_number="+237 699 88 77 66", holder_name="Ebai Joseph", id_type="CNI",
@@ -121,6 +177,17 @@ class ShopPages(OrgMixin, TestCase):
         self.assertEqual(c.get(f"/transactions/{cashier_txn.pk}/").status_code, 404)
         shop_txn = Transaction.objects.filter(shop=self.shop).first()
         self.assertEqual(c.get(f"/transactions/{shop_txn.pk}/").status_code, 200)
+        # a UVE transfer to a cashier shows on both sides
+        c.post("/shops/do/to_cashier/", {"idem": str(uuid.uuid4()), "destination": self.uve_f1.pk, "amount": "5000"})
+        tr = Transaction.objects.get(type=TxType.SHOP_TO_DESK)
+        self.assertEqual(self.client_for("cashier.fako1").get(f"/transactions/{tr.pk}/").status_code, 200)
+        self.assertEqual(c.get(f"/transactions/{tr.pk}/").status_code, 200)
+        # the cashier's transfer to the shop page
+        cf = self.client_for("cashier.fako1")
+        self.assertEqual(cf.get("/transfer/to-shop/").status_code, 200)
+        r = cf.post("/transfer/to-shop/", {"idem": str(uuid.uuid4()), "shop": self.shop.pk, "amount": "7 000"})
+        self.assertEqual(r.status_code, 302, r.content[:1500])
+        self.assertTrue(Transaction.objects.filter(type=TxType.DESK_TO_SHOP, amount=7000).exists())
         # and cashiers do not see shop dealings
         self.assertEqual(self.client_for("cashier.fako1").get(f"/transactions/{shop_txn.pk}/").status_code, 404)
         self.assertEqual(self.client_for("cashier.fako1").get("/shops/").status_code, 403)
@@ -137,9 +204,27 @@ class ShopPages(OrgMixin, TestCase):
         self.assertEqual(r.status_code, 302, r.content[:1500])
         self.assertEqual(SimRetrieval.objects.count(), 1)
         self.assertContains(c.get("/shops/retrievals/"), "Ebai Joseph")
-        sh.receive_stock(self.o["shop_senior"], shop=self.shop, item=self.o["items"]["kit"], quantity=2)
-        r = c.post("/shops/do/sale/", {"idem": str(uuid.uuid4()), "item": self.o["items"]["kit"].pk, "quantity": "1"})
+        kit = self.o["items"]["kit"]
+        units = sh.receive_stock(self.o["shop_senior"], shop=self.shop, item=kit, serials="OEK-1\nOEK-2")
+        form = c.get("/shops/do/sale/")
+        self.assertContains(form, 'data-category="%s"' % kit.category_id)
+        self.assertContains(form, "OEK-1")
+        r = c.post("/shops/do/sale/", {"idem": str(uuid.uuid4()), "category": kit.category_id, "item": kit.pk,
+                                       "units": [units[0].pk], "client_name": "Ngwa Peter",
+                                       "client_address": "Molyko", "client_country": "Cameroon", "id_type": "PASSPORT",
+                                       "id_number": "P123", "phone": "677445566", "whatsapp": ""})
         self.assertEqual(r.status_code, 302, r.content[:1500])
+        sale = Transaction.objects.get(type=TxType.SHOP_SALE)
+        rec = c.get(f"/transactions/{sale.pk}/")
+        for txt in ("Ngwa Peter", "P123", "OEK-1", "Cameroon"):
+            self.assertContains(rec, txt)
+        # a mismatched category is refused
+        r = c.post("/shops/do/sale/", {"idem": str(uuid.uuid4()), "category": self.o["items"]["phone"].category_id,
+                                       "item": kit.pk, "units": [units[1].pk], "client_name": "X",
+                                       "client_address": "Y", "client_country": "Z", "id_type": "CNI",
+                                       "id_number": "1", "phone": "677445566"})
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(c.get("/shops/stock/?q=OEK-1"), "Ngwa Peter")
         self.assertContains(c.get("/shops/stock/"), "Orange Energie kit S")
         self.assertEqual(c.get("/shops/setup/").status_code, 403)  # only the senior shop manager / admin
 
@@ -157,6 +242,17 @@ class ShopPages(OrgMixin, TestCase):
         self.assertTrue(ShopService.objects.filter(name="Internet bundle activation").exists())
         r = senior.post("/shops/setup/", {"action": "rate", "rate-percent": "3"})
         self.assertEqual(r.status_code, 302)
+        r = senior.post("/shops/setup/", {"action": "category", "cat-name": "Solar lamps", "cat-active": "on",
+                                          "cat-sort": "9"})
+        self.assertEqual(r.status_code, 302, r.content[:1500])
+        from core.models import ItemCategory, ShopConversionRate
+        self.assertTrue(ItemCategory.objects.filter(name="Solar lamps").exists())
+        # the admin sets the shop rate from the main conversion-rate page too
+        adm = self.client_for("admin")
+        self.assertContains(adm.get("/setup/conversion-rate/"), "Shops")
+        r = adm.post("/setup/conversion-rate/", {"action": "shop", "shop-percent": "4.5"})
+        self.assertEqual(r.status_code, 302, r.content[:1500])
+        self.assertEqual(ShopConversionRate.current().percent, D("4.50"))
         # the finance reconciliation includes the shops in the company total
         rep = self.client_for("finance").get("/reports/reconciliation/?preset=all")
         self.assertContains(rep, "SHOPS")

@@ -8,10 +8,15 @@ Effects on the shop's balances (agreed with the owner):
   conversion     UVE −, ER + (UVE × (1 + shop rate))
   appro (agent)  UVE +, cash −  — or owed to the agent when on credit
   ER supply      ER +,  cash − or UVE −  — or owed to the agent when on credit
-  destockage     UVE −, cash +           (UVE sent to the agent, cash received)
-  agent payment  owed to the agent −, cash − or UVE −
-  to a cashier   shop cash/UVE −, the cashier subzone's drawer/UVE wallet +
-  item sale      cash +, shop sales −; stock − quantity
+  destockage     UVE −, cash +           (or the agent owes the shop when on credit)
+  shop pays agent  position +, cash − or UVE −
+  agent pays shop  cash + or UVE +, position −
+  to a cashier   shop UVE −, the cashier subzone's UVE wallet + (in that subzone's business day)
+  cashier → shop the cashier subzone's UVE wallet −, shop UVE +
+  item sale      cash +, shop sales −; each unit sold (IMEI/serial) leaves the stock
+
+The position with an agent (one account per shop and agent): negative = the shop owes the agent,
+positive = the agent owes the shop.
 """
 from decimal import Decimal
 
@@ -19,7 +24,8 @@ from django.db import transaction
 from django.utils.translation import gettext as _
 
 from core.models import (
-    Account, Counterparty, ServiceCount, Shop, ShopConversionRate, ShopItem, SimRetrieval, StockMove, TxType, User,
+    Account, Counterparty, ItemSale, ServiceCount, Shop, ShopConversionRate, ShopItem, SimRetrieval, StockMove,
+    StockUnit, TxType, User,
 )
 from core.money import MoneyError, conversion_er_amount, fmt, to_money
 from core.simnumbers import SimNumberError, normalize_sim
@@ -116,11 +122,17 @@ def cash_out(user, *, shop=None, amount, commission=None, client_phone="", descr
                    idempotency_key)[0]
 
 
-def airtime(user, *, shop=None, amount, client_phone="", description="", idempotency_key=None):
+AIRTIME_KINDS = {"NORMAL": _("Normal airtime"), "GOOD_DEAL": _("Good deal")}
+
+
+def airtime(user, *, shop=None, amount, kind="NORMAL", client_phone="", description="", idempotency_key=None):
     shop = shop_for(user, shop)
     a = _amt(amount)
+    if kind not in AIRTIME_KINDS:
+        raise BusinessError(_("Choose good deal or normal airtime."), "kind")
     return _record(user, [_spec(TxType.SHOP_AIRTIME, shop, [(shop.account(K.CASH_DRAWER), a), (shop.account(K.ER), -a)],
-                                a, client_phone=_phone(client_phone), description=description)], idempotency_key)[0]
+                                a, subtype=kind, client_phone=_phone(client_phone), description=description)],
+                   idempotency_key)[0]
 
 
 def convert(user, *, shop=None, amount, description="", idempotency_key=None):
@@ -128,7 +140,7 @@ def convert(user, *, shop=None, amount, description="", idempotency_key=None):
     a = _amt(amount)
     rate = ShopConversionRate.current()
     if rate is None:
-        raise BusinessError(_("The shop conversion rate is not set yet (Administration › Shop conversion rate)."))
+        raise BusinessError(_("The shop conversion rate is not set yet (Conversion rate page › Shops' rate)."))
     er = conversion_er_amount(a, rate.rate)
     uplift = Account.system(K.CONVERSION_UPLIFT)
     lines = [(shop.account(K.ER), er), (shop.account(K.UVE), -a)]
@@ -168,11 +180,30 @@ def er_supply(user, *, shop=None, agent, amount, pay="CASH", description="", ide
                    idempotency_key)[0]
 
 
-def destockage(user, *, shop=None, agent, amount, description="", idempotency_key=None):
-    """Cash supply from the agent: the shop sends the agent UVE and receives cash."""
+def destockage(user, *, shop=None, agent, amount, pay="CASH", description="", idempotency_key=None):
+    """Cash supply from the agent: the shop sends the agent UVE and receives cash — or, on credit, the agent owes
+    the shop the cash."""
     shop, agent, a = shop_for(user, shop), _agent(agent), _amt(amount)
-    return _record(user, [_spec(TxType.SHOP_DESTOCK, shop, [(shop.account(K.CASH_DRAWER), a), (shop.account(K.UVE), -a)],
-                                a, counterparty=agent, product="CASH", description=description)], idempotency_key)[0]
+    if pay not in ("CASH", "CREDIT"):
+        raise BusinessError(_("Choose cash received or on credit."), "pay")
+    dest = shop.account(K.CASH_DRAWER) if pay == "CASH" else shop.payable_to(agent)
+    return _record(user, [_spec(TxType.SHOP_DESTOCK, shop, [(dest, a), (shop.account(K.UVE), -a)], a,
+                                counterparty=agent, on_credit=pay == "CREDIT", product="CASH",
+                                description=description)], idempotency_key)[0]
+
+
+def agent_repay(user, *, shop=None, agent, amount, pay="CASH", description="", idempotency_key=None):
+    """The agent pays back what he owes the shop, in cash or UVE."""
+    shop, agent, a = shop_for(user, shop), _agent(agent), _amt(amount)
+    if pay not in PAY_KINDS:
+        raise BusinessError(_("Choose how it was paid: cash or UVE."), "pay")
+    owes = owed_by_agent(shop, agent)
+    if a > owes:
+        raise BusinessError(_("%(agent)s owes the shop only %(owed)s FCFA.") % {"agent": agent.name, "owed": fmt(owes)},
+                            "amount")
+    return _record(user, [_spec(TxType.SHOP_AGENT_REPAY, shop, [(shop.account(PAY_KINDS[pay]), a),
+                                                                (shop.payable_to(agent), -a)], a,
+                                counterparty=agent, description=description)], idempotency_key)[0]
 
 
 def pay_agent(user, *, shop=None, agent, amount, pay="CASH", description="", idempotency_key=None):
@@ -189,62 +220,159 @@ def pay_agent(user, *, shop=None, agent, amount, pay="CASH", description="", ide
                                 counterparty=agent, description=description)], idempotency_key)[0]
 
 
-def owed_to_agent(shop, agent):
+def agent_position(shop, agent):
+    """Positive = the agent owes the shop; negative = the shop owes the agent."""
     from .ledger import balance
 
     acct = Account.objects.filter(kind=K.SHOP_PAYABLE, shop=shop, shop_agent=agent).first()
-    return -balance(acct) if acct else Decimal(0)
+    return balance(acct) if acct else Decimal(0)
 
 
-# ---------------------------------------------------------------- transfers to cashiers
-def to_cashier(user, *, shop=None, kind, destination, amount, description="", idempotency_key=None):
-    """Move cash or UVE from the shop to a cashier subzone's drawer / UVE wallet."""
+def owed_to_agent(shop, agent):
+    return max(-agent_position(shop, agent), Decimal(0))
+
+
+def owed_by_agent(shop, agent):
+    return max(agent_position(shop, agent), Decimal(0))
+
+
+# ---------------------------------------------------------------- transfers between shops and cashiers (UVE only)
+def to_cashier(user, *, shop=None, destination, amount, description="", idempotency_key=None):
+    """Send UVE from the shop to a cashier subzone's UVE wallet. The entry belongs to that subzone's business day,
+    so it shows on the cashier side too (lists, closing)."""
+    from .days import zone_day
+
     shop, a = shop_for(user, shop), _amt(amount)
-    if kind not in PAY_KINDS:
-        raise BusinessError(_("Choose cash or UVE."), "kind")
-    if destination is None or destination.kind != PAY_KINDS[kind] or destination.shop_id or not destination.zone_id \
+    if destination is None or destination.kind != K.UVE or destination.shop_id or not destination.zone_id \
             or not destination.active:
-        raise BusinessError(_("Choose the cashier account that receives it."), "destination")
-    return _record(user, [_spec(TxType.SHOP_TO_DESK, shop, [(destination, a), (shop.account(PAY_KINDS[kind]), -a)], a,
-                                dest_account=destination, source_account=shop.account(PAY_KINDS[kind]),
-                                description=description)], idempotency_key)[0]
+        raise BusinessError(_("Choose the cashier UVE wallet that receives it."), "destination")
+    zone = destination.custodian.subzone if destination.custodian_id else destination.zone
+    day = zone_day(zone)
+    ctx = Ctx(entered_by=user, cashier=None, day=day, business_date=day.business_date)
+    src = shop.account(K.UVE)
+    with transaction.atomic():
+        return post([_spec(TxType.SHOP_TO_DESK, shop, [(destination, a), (src, -a)], a, dest_account=destination,
+                           source_account=src, product="UVE", description=description)], ctx, idempotency_key)[0]
 
 
-# ---------------------------------------------------------------- sales and stock
-def sell(user, *, shop=None, item, quantity, unit_price=None, client_phone="", description="", idempotency_key=None):
+def desk_to_shop(user, *, shop, amount, source=None, description="", idempotency_key=None, acting_for=None):
+    """A cashier sends UVE from the subzone's UVE wallet to a shop."""
+    from . import permissions as perm
+    from .operations import cashier_ctx
+
+    ctx = cashier_ctx(user, acting_for)
+    a = _amt(amount)
+    if shop is None or not shop.active:
+        raise BusinessError(_("Choose the shop."), "shop")
+    if source is None:
+        qs = perm.usable_accounts(ctx.cashier, [K.UVE]).filter(shop__isnull=True)
+        if qs.count() != 1:
+            raise BusinessError(_("Choose the UVE wallet the UVE leaves from."), "source")
+        source = qs.first()
+    if source.kind != K.UVE or not perm.can_send_from(ctx.cashier, source):
+        raise BusinessError(_("Choose the UVE wallet the UVE leaves from."), "source")
+    dest = shop.account(K.UVE)
+    with transaction.atomic():
+        return post([TxSpec(type=TxType.DESK_TO_SHOP, lines=[(dest, a), (source, -a)],
+                            fields=dict(amount=a, shop=shop, source_account=source, dest_account=dest, product="UVE",
+                                        description=description), receipt=True)], ctx, idempotency_key)[0]
+
+
+# ---------------------------------------------------------------- sales and stock (units by IMEI / serial)
+def _clean_serials(text):
+    raw = [x.strip() for chunk in (text or "").replace(",", "\n").replace(";", "\n").splitlines()
+           for x in [chunk] if x.strip()]
+    seen, dup = set(), set()
+    for x in raw:
+        (dup if x.upper() in seen else seen).add(x.upper())
+    if dup:
+        raise BusinessError(_("Typed twice: %(s)s") % {"s": ", ".join(sorted(dup))}, "serials")
+    return raw
+
+
+def _can_stock(user, shop):
+    if not (user.is_shop_senior or user.is_superadmin or (user.is_shop_manager and user.shop_id == shop.pk)):
+        raise PermissionDenied(_("You cannot change this shop's stock."))
+
+
+def receive_stock(user, *, shop, item, serials, note=""):
+    """Receive units into a shop's stock, each with its IMEI / serial number."""
+    _can_stock(user, shop)
+    if item is None or not item.active:
+        raise BusinessError(_("Choose an item."), "item")
+    found = _clean_serials(serials)
+    if not found:
+        raise BusinessError(_("Enter the IMEI or serial number of each unit, one per line."), "serials")
+    taken = list(StockUnit.objects.filter(serial__in=found).values_list("serial", flat=True))
+    if taken:
+        raise BusinessError(_("Already registered: %(s)s") % {"s": ", ".join(taken)}, "serials")
+    with transaction.atomic():
+        units = [StockUnit.objects.create(shop=shop, item=item, serial=x, received_by=user, note=note) for x in found]
+        for u in units:
+            StockMove.objects.create(shop=shop, item=item, unit=u, kind=StockMove.Kind.RECEIVED, quantity=1,
+                                     recorded_by=user, note=note)
+    return units
+
+
+def remove_unit(user, *, serial, note):
+    """Take a unit out of stock (returned, damaged, lost…)."""
+    u = StockUnit.objects.filter(serial__iexact=(serial or "").strip()).select_related("shop", "item").first()
+    if u is None:
+        raise BusinessError(_("No unit with this IMEI / serial number."), "serial")
+    _can_stock(user, u.shop)
+    if u.status != StockUnit.Status.IN_STOCK:
+        raise BusinessError(_("This unit is not in stock (%(s)s).") % {"s": u.get_status_display()}, "serial")
+    if not (note or "").strip():
+        raise BusinessError(_("Give the reason."), "note")
+    with transaction.atomic():
+        StockUnit.objects.filter(pk=u.pk).update(status=StockUnit.Status.REMOVED, note=note.strip())
+        StockMove.objects.create(shop=u.shop, item=u.item, unit=u, kind=StockMove.Kind.ADJUST, quantity=-1,
+                                 recorded_by=user, note=note.strip())
+    return u
+
+
+CLIENT_FIELDS = ("client_name", "client_address", "client_country", "id_type", "id_number", "phone")
+
+
+def sell(user, *, shop=None, item, units, unit_price=None, client_name, client_address, client_country, id_type,
+         id_number, phone, whatsapp="", description="", idempotency_key=None):
+    """Sell one or more units (chosen by IMEI / serial) to an identified client."""
     shop = shop_for(user, shop)
     if item is None or not item.active:
         raise BusinessError(_("Choose an item."), "item")
-    q = int(quantity or 0)
-    if q <= 0:
-        raise BusinessError(_("Quantity must be at least 1."), "quantity")
+    units = list(units or [])
+    if not units:
+        raise BusinessError(_("Choose the unit(s) sold by IMEI / serial number."), "units")
+    for f, v in (("client_name", client_name), ("client_address", client_address), ("client_country", client_country),
+                 ("id_number", id_number), ("phone", phone)):
+        if not (v or "").strip():
+            raise BusinessError(_("This client information is required."), f)
+    if id_type not in ItemSale.IdType.values:
+        raise BusinessError(_("Choose the type of identification."), "id_type")
     price = _amt(unit_price, "unit_price") if unit_price not in (None, "") else Decimal(item.price)
-    in_stock = item.stock_at(shop)
-    if q > in_stock:
-        raise BusinessError(_("Only %(n)s × %(item)s in stock at %(shop)s.") % {"n": in_stock, "item": item.name,
-                                                                              "shop": shop.name}, "quantity")
-    total = price * q
     with transaction.atomic():
+        locked = list(StockUnit.objects.select_for_update().filter(pk__in=[u.pk for u in units]))
+        for u in locked:
+            if u.shop_id != shop.pk or u.item_id != item.pk or u.status != StockUnit.Status.IN_STOCK:
+                raise BusinessError(_("%(s)s is not in stock at %(shop)s for this item.")
+                                    % {"s": u.serial, "shop": shop.name}, "units")
+        total = price * len(locked)
+        serials = ", ".join(u.serial for u in locked)
         t = post([_spec(TxType.SHOP_SALE, shop, [(shop.account(K.CASH_DRAWER), total),
                                                  (Account.system(K.SHOP_SALES), -total)], total,
-                        client_phone=_phone(client_phone),
-                        description=(f"{q} × {item.name}" + (f" — {description}" if description else "")))],
+                        client_phone=_phone(phone),
+                        description=(f"{len(locked)} × {item.name} ({serials})"
+                                     + (f" — {description}" if description else "")))],
                  _ctx(user), idempotency_key)[0]
-        StockMove.objects.create(shop=shop, item=item, kind=StockMove.Kind.SALE, quantity=-q, transaction=t,
-                                 recorded_by=user, note=f"{q} × {fmt(price)}")
+        sale = ItemSale.objects.create(transaction=t, shop=shop, item=item, unit_price=price,
+                                       client_name=client_name.strip(), client_address=client_address.strip(),
+                                       client_country=client_country.strip(), id_type=id_type,
+                                       id_number=id_number.strip(), phone=_phone(phone), whatsapp=_phone(whatsapp))
+        StockUnit.objects.filter(pk__in=[u.pk for u in locked]).update(status=StockUnit.Status.SOLD, sale=sale)
+        for u in locked:
+            StockMove.objects.create(shop=shop, item=item, unit=u, kind=StockMove.Kind.SALE, quantity=-1,
+                                     transaction=t, recorded_by=user, note=fmt(price))
     return t
-
-
-def receive_stock(user, *, shop, item, quantity, note=""):
-    if not (user.is_shop_senior or user.is_superadmin or (user.is_shop_manager and user.shop_id == shop.pk)):
-        raise PermissionDenied(_("You cannot change this shop's stock."))
-    q = int(quantity or 0)
-    if q == 0:
-        raise BusinessError(_("Enter a quantity."), "quantity")
-    kind = StockMove.Kind.RECEIVED if q > 0 else StockMove.Kind.ADJUST
-    if q < 0 and item.stock_at(shop) + q < 0:
-        raise BusinessError(_("Stock cannot go below zero."), "quantity")
-    return StockMove.objects.create(shop=shop, item=item, kind=kind, quantity=q, recorded_by=user, note=note)
 
 
 # ---------------------------------------------------------------- counted services and SIM retrievals
@@ -281,8 +409,9 @@ def shop_balances(shop):
     from .ledger import balance
 
     out = {k: balance(shop.account(k)) for k in (K.CASH_DRAWER, K.UVE, K.ER)}
-    out["owed_agents"] = -sum((balance(a) for a in Account.objects.filter(kind=K.SHOP_PAYABLE, shop=shop)),
-                              Decimal(0))
+    pos = [balance(a) for a in Account.objects.filter(kind=K.SHOP_PAYABLE, shop=shop)]
+    out["owed_agents"] = sum((-p for p in pos if p < 0), Decimal(0))
+    out["owed_by_agents"] = sum((p for p in pos if p > 0), Decimal(0))
     return out
 
 

@@ -126,12 +126,34 @@ def receipt_rows(t):
     rows = [(_("Type"), t.display_type),
             (_("Recorded at (Africa/Douala)"), timezone.localtime(t.posted_at).strftime("%d/%m/%Y %H:%M:%S")),
             (_("Business date"), t.business_date.strftime("%d/%m/%Y"))]
-    cashier = t.cashier or (t.cashier_day.cashier if t.cashier_day_id else t.entered_by)
-    station = f" ({cashier.subzone})" if getattr(cashier, "subzone_id", None) else ""
-    rows.append((_("Cashier"), f"{cashier}{station}"))
-    rows.append((_("Cashier ID"), cashier.staff_code or str(cashier.pk)))
+    cashier = t.cashier or (t.cashier_day.cashier if t.cashier_day_id else None) or t.entered_by
+    if getattr(cashier, "is_shop_user", False):
+        rows.append((_("Recorded by"), cashier.label_with_id))
+    else:
+        station = f" ({cashier.subzone})" if getattr(cashier, "subzone_id", None) else ""
+        rows.append((_("Cashier"), f"{cashier}{station}"))
+        rows.append((_("Cashier ID"), cashier.staff_code or str(cashier.pk)))
     if t.entered_by_id != cashier.id:
         rows.append((_("Entered by"), t.entered_by.label_with_id))
+    if getattr(t, "shop_id", None):
+        rows.append((_("Shop"), str(t.shop)))
+    if t.subtype in ("NORMAL", "GOOD_DEAL"):
+        rows.append((_("Airtime kind"), _("Good deal") if t.subtype == "GOOD_DEAL" else _("Normal airtime")))
+    if t.on_credit:
+        rows.append((_("On credit"), _("Yes")))
+    if t.type == T.SHOP_SALE and hasattr(t, "item_sale"):
+        s = t.item_sale
+        units = list(s.units.order_by("serial").values_list("serial", flat=True))
+        rows += [(_("Item"), f"{s.item} ({s.item.category})"),
+                 (_("Quantity"), str(len(units) or 1)),
+                 (_("Unit price"), f"{fmt(s.unit_price)} FCFA"),
+                 (_("IMEI / serial"), ", ".join(units) or "—"),
+                 (_("Client full name"), s.client_name),
+                 (_("Address"), s.client_address),
+                 (_("Country of origin"), s.client_country),
+                 (_("Identification"), f"{s.get_id_type_display()} — {s.id_number}"),
+                 (_("Telephone"), display_sim(s.phone) if s.phone else "—"),
+                 (_("WhatsApp"), display_sim(s.whatsapp) if s.whatsapp else "—")]
     if t.type in (T.SUPPLY,):
         parts = t.payment_parts
         if len(parts) <= 1:

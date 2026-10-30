@@ -18,5 +18,5 @@ from .base import act_as, idle_logout, keepalive, set_lang  # noqa: F401,E402
 from .accounts import my_password, user_detail, user_toggle, users  # noqa: F401
 from .shops import (  # noqa: F401,E402
     shop_detail, shop_op, shop_retrievals, shop_retrieve, shop_service, shop_services_report, shop_setup,
-    shop_stock, shop_transactions, shops,
+    shop_stock, shop_transactions, shops, desk_to_shop,
 )

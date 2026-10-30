@@ -2,9 +2,16 @@
 {% block title %}{% trans "Conversion rate" %}{% endblock %}
 {% block content %}
 <h1>{% trans "UVE → ER conversion rate" %}</h1>
-<p class="muted">{% if current %}{% blocktrans with p=current.percent %}Current uplift: +{{ p }}%. 100,000 UVE gives 100,000 × (1 + rate) ER, rounded half-up to whole FCFA.{% endblocktrans %}{% endif %} {% trans "A change applies to future conversions only; each conversion stores the rate it used." %}</p>
-<div class="panel"><form method="post" class="entry" novalidate>{% csrf_token %}{% include "core/inc/fields.html" %}<button class="btn primary" type="submit">{% trans "Set new rate" %}</button></form></div>
-<h2>{% trans "History" %}</h2>
+<p class="muted">{% trans "Cashiers and shops each have their own rate. A change applies to future conversions only; each conversion stores the rate it used." %} <a href="#shops">{% trans "Shop rate" %} ↓</a></p>
+<h2>{% trans "Cashiers' rate" %}</h2>
+<p class="muted">{% if current %}{% blocktrans with p=current.percent %}Current uplift: +{{ p }}%. 100,000 UVE gives 100,000 × (1 + rate) ER, rounded half-up to whole FCFA.{% endblocktrans %}{% endif %}</p>
+<div class="panel"><form method="post" class="entry" novalidate>{% csrf_token %}<input type="hidden" name="action" value="cashier">{% include "core/inc/fields.html" %}<button class="btn primary" type="submit">{% trans "Set new rate" %}</button></form></div>
 <div class="tbl-wrap"><table class="t"><thead><tr><th>{% trans "Effective from" %}</th><th>{% trans "Uplift" %}</th><th>{% trans "Set by" %}</th><th>{% trans "Note" %}</th></tr></thead>
 <tbody>{% for r in rates %}<tr><td>{{ r.effective_from|date:"d/m/Y H:i" }}</td><td>+{{ r.percent }}%</td><td>{{ r.created_by }}</td><td>{{ r.note }}</td></tr>{% endfor %}</tbody></table></div>
+
+<h2 id="shops">{% trans "Shops' rate" %}</h2>
+<p class="muted">{% if shop_current %}{% blocktrans with p=shop_current.percent %}Current shop uplift: +{{ p }}%.{% endblocktrans %}{% else %}{% trans "No shop rate set yet: shops cannot convert UVE to ER until one is set." %}{% endif %}</p>
+<div class="panel"><form method="post" class="entry" novalidate>{% csrf_token %}<input type="hidden" name="action" value="shop">{% include "core/inc/fields.html" with form=shop_form %}<button class="btn primary" type="submit">{% trans "Set new shop rate" %}</button></form></div>
+<div class="tbl-wrap"><table class="t"><thead><tr><th>{% trans "Effective from" %}</th><th>{% trans "Uplift" %}</th><th>{% trans "Set by" %}</th><th>{% trans "Note" %}</th></tr></thead>
+<tbody>{% for r in shop_rates %}<tr><td>{{ r.effective_from|date:"d/m/Y H:i" }}</td><td>+{{ r.percent }}%</td><td>{{ r.set_by }}</td><td>{{ r.note }}</td></tr>{% empty %}<tr><td colspan="4" class="muted">—</td></tr>{% endfor %}</tbody></table></div>
 {% endblock %}

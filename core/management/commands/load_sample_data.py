@@ -72,22 +72,30 @@ class Command(BaseCommand):
         ops.record_exchange(f1, cash_manager=o["cm2"], amount=D(400_000), give_kind="CASH",
                             amount_served=D(250_000), external_ref="SAMPLE-CM-01")  # 150,000 still to be served
         # shop: opening capital, then a day of shop activity
-        from core.models import ShopService
+        from core.models import ShopService, StockUnit
         from core.services import shops as sh
 
         shop, smgr = o["shop"], o["shop_mgr"]
         for kind, amt in (("CASH_DRAWER", 300_000), ("UVE", 800_000), ("ER", 150_000)):
             ops.record_opening_balance(admin, account=shop.account(kind), amount=D(amt), description="[SAMPLE] shop launch")
-        sh.receive_stock(o["shop_senior"], shop=shop, item=o["items"]["phone"], quantity=5)
-        sh.receive_stock(o["shop_senior"], shop=shop, item=o["items"]["kit"], quantity=3)
+        sh.receive_stock(o["shop_senior"], shop=shop, item=o["items"]["phone"],
+                         serials="356000000000011\n356000000000029\n356000000000037\n356000000000045\n356000000000052")
+        sh.receive_stock(o["shop_senior"], shop=shop, item=o["items"]["kit"],
+                         serials="OEK-S-0001, OEK-S-0002, OEK-S-0003")
         sh.cash_in(smgr, amount=D(50_000), commission=D(250), client_phone="677123456")
         sh.cash_out(smgr, amount=D(20_000), commission=D(200))
         sh.airtime(smgr, amount=D(5_000))
+        sh.airtime(smgr, amount=D(10_000), kind="GOOD_DEAL")
         sh.convert(smgr, amount=D(100_000))
         sh.appro(smgr, agent=a1, amount=D(200_000), pay="CASH")
         sh.er_supply(smgr, agent=a2, amount=D(50_000), pay="CREDIT")
         sh.destockage(smgr, agent=a1, amount=D(30_000))
-        sh.sell(smgr, item=o["items"]["phone"], quantity=1)
+        sh.destockage(smgr, agent=a1, amount=D(20_000), pay="CREDIT")  # the agent owes the shop
+        sh.agent_repay(smgr, agent=a1, amount=D(5_000), pay="CASH")
+        sh.desk_to_shop(o["c_f1"], shop=shop, amount=D(100_000), description="[SAMPLE] UVE top-up from Fako 1")
+        sh.sell(smgr, item=o["items"]["phone"], units=list(StockUnit.objects.filter(serial="356000000000011")), client_name="[SAMPLE] Client Ngwa Peter",
+                client_address="Molyko, Buea", client_country="Cameroon", id_type="CNI", id_number="SAMPLE-998877",
+                phone="677445566", whatsapp="677445566")
         sh.count_service(smgr, service=ShopService.objects.get(name__startswith="OTT"), count=4)
         sh.retrieve_sim(smgr, sim_number="699887766", holder_name="[SAMPLE] Client Ebai", id_type="CNI",
                         id_number="SAMPLE-1234567")

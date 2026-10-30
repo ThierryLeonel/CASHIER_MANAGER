@@ -6,5 +6,6 @@ from .ledger import (  # noqa: F401
 )
 from .control import AuditEvent, Closing, ClosingLine, Correction, Discrepancy, DiscrepancyNote  # noqa: F401
 from .shops import (  # noqa: F401,E402
-    ServiceCount, Shop, ShopConversionRate, ShopItem, ShopService, SimRetrieval, StockMove,
+    ItemCategory, ItemSale, ServiceCount, Shop, ShopConversionRate, ShopItem, ShopService, SimRetrieval, StockMove,
+    StockUnit,
 )

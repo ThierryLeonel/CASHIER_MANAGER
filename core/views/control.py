@@ -273,8 +273,14 @@ def opening_balances(request):
 
 @roles_required(R.SUPERADMIN)
 def conversion_rate(request):
-    form = F.RateForm(request.POST or None)
-    if request.method == "POST" and form.is_valid():
+    from core import forms_shop as SF
+    from core.models import ShopConversionRate
+    from core.services import shops as shop_svc
+
+    action = request.POST.get("action", "cashier") if request.method == "POST" else None
+    form = F.RateForm(request.POST if action == "cashier" else None)
+    shop_form = SF.ShopRateForm(request.POST if action == "shop" else None, prefix="shop")
+    if action == "cashier" and form.is_valid():
         try:
             r = ops.set_conversion_rate(request.user, percent=form.cleaned_data["percent"],
                                         note=form.cleaned_data["note"])
@@ -282,8 +288,19 @@ def conversion_rate(request):
             return redirect("conversion_rate")
         except BusinessError as exc:
             form.add_error(None, exc.message)
-    return render(request, "core/rate.html", {"form": form, "rates": ConversionRate.objects.select_related(
-        "created_by")[:50], "current": ConversionRate.current()})
+    if action == "shop" and shop_form.is_valid():
+        try:
+            r = shop_svc.set_shop_rate(request.user, **shop_form.cleaned_data)
+            messages.success(request, _("New shop uplift +%(p)s%% applies to future shop conversions only.")
+                             % {"p": r.percent})
+            return redirect("conversion_rate")
+        except BusinessError as exc:
+            shop_form.add_error("percent", exc.message)
+    return render(request, "core/rate.html", {
+        "form": form, "rates": ConversionRate.objects.select_related("created_by")[:50],
+        "current": ConversionRate.current(),
+        "shop_form": shop_form, "shop_current": ShopConversionRate.current(),
+        "shop_rates": ShopConversionRate.objects.select_related("set_by")[:50]})
 
 
 # ---------------------------------------------------------------- reports

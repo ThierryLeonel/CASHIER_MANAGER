@@ -9,6 +9,7 @@
   <div class="bal k-UVE"><span class="bal-label">{% trans "UVE" %}</span><span class="bal-value">{{ bal.UVE|fcfa }}</span><span class="bal-unit">FCFA</span></div>
   <div class="bal k-ER"><span class="bal-label">{% trans "ER" %}</span><span class="bal-value">{{ bal.ER|fcfa }}</span><span class="bal-unit">FCFA</span></div>
   <div class="bal k-MTN"><span class="bal-label">{% trans "Owed to agents" %}</span><span class="bal-value">{{ bal.owed_agents|fcfa }}</span><span class="bal-unit">FCFA</span></div>
+  <div class="bal k-BANK"><span class="bal-label">{% trans "Agents owe the shop" %}</span><span class="bal-value">{{ bal.owed_by_agents|fcfa }}</span><span class="bal-unit">FCFA</span></div>
 </div>
 {% if can_record %}
 <div class="quick">
@@ -32,6 +33,9 @@
 {% if owed %}<h2>{% trans "Owed to commercial agents" %}</h2>
 <div class="tbl-wrap"><table class="t"><thead><tr><th>{% trans "Agent" %}</th><th class="money">{% trans "Owed" %}</th></tr></thead>
 <tbody>{% for ag, v in owed %}<tr><td>{{ ag.name }}</td><td class="money">{{ v|fcfa }}</td></tr>{% endfor %}</tbody></table></div>{% endif %}
+{% if owed_by %}<h2>{% trans "Commercial agents who owe the shop" %}</h2>
+<div class="tbl-wrap"><table class="t"><thead><tr><th>{% trans "Agent" %}</th><th class="money">{% trans "Owes the shop" %}</th></tr></thead>
+<tbody>{% for ag, v in owed_by %}<tr><td>{{ ag.name }}</td><td class="money">{{ v|fcfa }}</td></tr>{% endfor %}</tbody></table></div>{% endif %}
 <h2>{% trans "Latest entries" %}</h2>
 {% include "core/shop/_txns.html" with txns=recent %}
 <p><a href="{% url 'shop_transactions' %}?shop={{ shop.pk }}">{% trans "All transactions of this shop" %} →</a></p>

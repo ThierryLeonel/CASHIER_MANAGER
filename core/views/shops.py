@@ -12,8 +12,8 @@ from django.utils.translation import gettext as _
 
 from core import forms_shop as SF
 from core.models import (
-    Account, ServiceCount, Shop, ShopConversionRate, ShopItem, ShopService, SimRetrieval, StockMove, Transaction,
-    TxType,
+    Account, ItemCategory, ServiceCount, Shop, ShopConversionRate, ShopItem, ShopService, SimRetrieval,
+    StockUnit, Transaction, TxType,
 )
 from core.money import fmt
 from core.services import shops as sh
@@ -26,7 +26,7 @@ SHOP_ROLES = (R.SHOP_MANAGER, R.SHOP_SENIOR, R.MANAGER, R.FINANCE, R.SUPERADMIN)
 SHOP_DESK = (R.SHOP_MANAGER, R.SHOP_SENIOR, R.SUPERADMIN)  # who records shop operations
 SHOP_CONFIG = (R.SHOP_SENIOR, R.SUPERADMIN)  # who manages services, items, stock and the shop rate
 K = Account.Kind
-SHOP_TYPES = [t for t in TxType.values if t.startswith("SHOP_")]
+SHOP_TYPES = [t for t in TxType.values if t.startswith("SHOP_")] + [TxType.DESK_TO_SHOP]
 
 # op -> (form class, service, title, intro, icon)
 OPS = {
@@ -45,13 +45,18 @@ OPS = {
                   _("The agent supplies ER: the shop's ER goes up, paid in cash or UVE, or owed to the agent if on "
                     "credit."), "supply"),
     "destockage": (SF.AgentDealForm, sh.destockage, _("Destockage with an agent (cash supply)"),
-                   _("The shop sends UVE to the agent and receives cash: UVE goes down, cash goes up."), "destock"),
+                   _("The shop sends UVE to the agent and receives cash — or the agent owes the shop if on credit."),
+                   "destock"),
     "pay_agent": (SF.AgentDealForm, sh.pay_agent, _("Pay an agent (supplies taken on credit)"),
                   _("Settles what the shop owes an agent."), "payment"),
-    "to_cashier": (SF.ToCashierForm, sh.to_cashier, _("Transfer to a cashier"),
-                   _("Cash or UVE sent from the shop to a cashier's drawer or UVE wallet."), "transfer"),
+    "agent_repay": (SF.AgentDealForm, sh.agent_repay, _("An agent pays the shop"),
+                    _("The agent pays back what he owes the shop (e.g. a destockage taken on credit)."), "payment"),
+    "to_cashier": (SF.ToCashierForm, sh.to_cashier, _("Transfer UVE to a cashier"),
+                   _("UVE sent from the shop to a cashier's UVE wallet. It is recorded on the cashier side too."),
+                   "transfer"),
     "sale": (SF.SaleForm, sh.sell, _("Sale of an item"),
-             _("Gadget or Orange energy kit sold: stock goes down, the cash drawer goes up."), "store"),
+             _("Choose the category, the item and the unit(s) by IMEI / serial, then the client's details."),
+             "store"),
 }
 
 
@@ -103,7 +108,8 @@ def shops(request):
     d_from, d_to = _period(request)
     qs = list(Shop.objects.filter(active=True).select_related("zone"))
     by, svc, ret = _activity(qs, d_from, d_to)
-    rows, tot = [], {"cash": Decimal(0), "uve": Decimal(0), "er": Decimal(0), "owed": Decimal(0), "com": Decimal(0),
+    rows, tot = [], {"cash": Decimal(0), "uve": Decimal(0), "er": Decimal(0), "owed": Decimal(0),
+                     "owed_by": Decimal(0), "com": Decimal(0),
                      "cashin": Decimal(0), "cashout": Decimal(0), "airtime": Decimal(0), "sales": Decimal(0)}
     for s in qs:
         b = sh.shop_balances(s)
@@ -113,7 +119,8 @@ def shops(request):
             return (a.get(t) or {}).get(key) or Decimal(0)
 
         com = g(TxType.SHOP_CASHIN, "com") + g(TxType.SHOP_CASHOUT, "com")
-        r = dict(shop=s, cash=b[K.CASH_DRAWER], uve=b[K.UVE], er=b[K.ER], owed=b["owed_agents"], com=com,
+        r = dict(shop=s, cash=b[K.CASH_DRAWER], uve=b[K.UVE], er=b[K.ER], owed=b["owed_agents"],
+                 owed_by=b["owed_by_agents"], com=com,
                  cashin=g(TxType.SHOP_CASHIN), cashout=g(TxType.SHOP_CASHOUT), airtime=g(TxType.SHOP_AIRTIME),
                  sales=g(TxType.SHOP_SALE), services=svc.get(s.pk, 0), retrievals=ret.get(s.pk, 0))
         rows.append(r)
@@ -138,13 +145,14 @@ def shop_detail(request, pk):
         .values("service__name").annotate(n=Sum("count")).order_by("service__name")
     recent = Transaction.objects.filter(shop=shop).select_related("counterparty", "entered_by", "correction") \
         .order_by("-posted_at")[:25]
-    owed = [(a.shop_agent, -sum((e.amount for e in a.entries.all()), Decimal(0)))
-            for a in Account.objects.filter(kind=K.SHOP_PAYABLE, shop=shop).select_related("shop_agent")
-            .prefetch_related("entries")]
-    owed = [(ag, v) for ag, v in owed if v]
+    positions = [(a.shop_agent, sum((e.amount for e in a.entries.all()), Decimal(0)))
+                 for a in Account.objects.filter(kind=K.SHOP_PAYABLE, shop=shop).select_related("shop_agent")
+                 .prefetch_related("entries")]
+    owed = [(ag, -v) for ag, v in positions if v < 0]
+    owed_by = [(ag, v) for ag, v in positions if v > 0]
     return render(request, "core/shop/detail.html", {
         "shop": shop, "bal": b, "summary": summary, "svc_rows": svc_rows, "retrievals": ret.get(shop.pk, 0),
-        "recent": recent, "owed": owed, "d_from": d_from, "d_to": d_to,
+        "recent": recent, "owed": owed, "owed_by": owed_by, "d_from": d_from, "d_to": d_to,
         "can_record": request.user.role in SHOP_DESK and (not request.user.is_shop_manager
                                                           or request.user.shop_id == shop.pk),
         "rate": ShopConversionRate.current()})
@@ -171,6 +179,29 @@ def shop_op(request, op):
         intro = f"{intro} " + (_("Current shop rate: %(p)s %%.") % {"p": r.percent} if r else
                                 _("The shop rate is not set yet."))
     return render(request, "core/entry_form.html", {"form": form, "title": title, "intro": intro, "icon": icon})
+
+
+@roles_required(R.CASHIER, R.SUPERADMIN)
+def desk_to_shop(request):
+    """Cashier side: send UVE from the subzone's UVE wallet to a shop."""
+    from .base import acting_cashier
+
+    acting = acting_cashier(request) if request.user.is_superadmin else None
+    if request.user.is_superadmin and acting is None:
+        return redirect(f"/act-as/?next={request.path}")
+    form = SF.DeskToShopForm(request.user, request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        resp = run_service(
+            request, form, lambda: sh.desk_to_shop(request.user, idempotency_key=form.cleaned_data["idem"],
+                                                   acting_for=acting, **form.params()),
+            success=lambda t: _("%(type)s %(ref)s recorded: %(amt)s FCFA.") % {
+                "type": t.get_type_display(), "ref": t.reference, "amt": fmt(t.amount)},
+            on_success=lambda t: redirect("txn_detail", pk=t.pk))
+        if resp:
+            return resp
+    return render(request, "core/entry_form.html", {
+        "form": form, "title": _("Transfer UVE to a shop"), "icon": "transfer",
+        "intro": _("UVE sent from your subzone's UVE wallet to a shop. The shop sees it in its entries.")})
 
 
 @roles_required(*SHOP_DESK)
@@ -252,24 +283,39 @@ def shop_services_report(request):
 def shop_stock(request):
     user = request.user
     shops_qs = list(sh.visible_shops(user).filter(active=True))
-    items = list(ShopItem.objects.filter(active=True))
-    levels = {(m["shop_id"], m["item_id"]): m["q"] for m in
-              StockMove.objects.filter(shop__in=shops_qs).values("shop_id", "item_id").annotate(q=Sum("quantity"))}
+    items = list(ShopItem.objects.filter(active=True).select_related("category"))
+    levels = {(m["shop_id"], m["item_id"]): m["n"] for m in
+              StockUnit.objects.filter(shop__in=shops_qs, status=StockUnit.Status.IN_STOCK)
+              .values("shop_id", "item_id").annotate(n=Count("id"))}
     table = [dict(item=i, cells=[levels.get((s.pk, i.pk), 0) for s in shops_qs]) for i in items]
-    form = None
-    if user.role in SHOP_CONFIG or user.is_shop_manager:
-        form = SF.StockForm(user, request.POST or None)
-        if request.method == "POST" and form.is_valid():
-            cd = form.cleaned_data
-            try:
-                sh.receive_stock(user, shop=cd["shop"], item=cd["item"], quantity=cd["quantity"], note=cd["note"])
-            except BusinessError as e:
-                form.add_error("quantity", e.message)
-            else:
-                messages.success(request, _("Stock updated."))
+    can_edit = user.role in SHOP_CONFIG or user.is_shop_manager
+    form = SF.StockForm(user, request.POST if request.POST.get("action") == "receive" else None) if can_edit else None
+    rm_form = SF.RemoveUnitForm(request.POST if request.POST.get("action") == "remove" else None) if can_edit else None
+    if request.method == "POST" and can_edit:
+        try:
+            if request.POST.get("action") == "receive" and form.is_valid():
+                cd = form.cleaned_data
+                if cd["item"].category_id != cd["category"].pk:
+                    raise BusinessError(_("This item is not in the chosen category."), "item")
+                units = sh.receive_stock(user, shop=cd["shop"], item=cd["item"], serials=cd["serials"],
+                                         note=cd["note"])
+                messages.success(request, _("%(n)s unit(s) received into stock.") % {"n": len(units)})
                 return redirect("shop_stock")
-    moves = StockMove.objects.filter(shop__in=shops_qs).select_related("shop", "item", "recorded_by")[:30]
-    return render(request, "core/shop/stock.html", {"shops": shops_qs, "table": table, "form": form, "moves": moves})
+            if request.POST.get("action") == "remove" and rm_form.is_valid():
+                u = sh.remove_unit(user, **rm_form.cleaned_data)
+                messages.success(request, _("%(s)s removed from stock.") % {"s": u.serial})
+                return redirect("shop_stock")
+        except BusinessError as e:
+            target = form if request.POST.get("action") == "receive" else rm_form
+            target.add_error(e.field if e.field in target.fields else None, e.message)
+    q = (request.GET.get("q") or "").strip()
+    units = StockUnit.objects.filter(shop__in=shops_qs).select_related("shop", "item", "sale")
+    if q:
+        units = units.filter(Q(serial__icontains=q) | Q(item__name__icontains=q) | Q(sale__client_name__icontains=q))
+    else:
+        units = units.filter(status=StockUnit.Status.IN_STOCK)
+    return render(request, "core/shop/stock.html", {"shops": shops_qs, "table": table, "form": form,
+                                                     "rm_form": rm_form, "units": units[:200], "q": q})
 
 
 @roles_required(*SHOP_CONFIG)
@@ -281,8 +327,14 @@ def shop_setup(request):
     item_form = SF.ItemForm(request.POST or None, prefix="item",
                             instance=ShopItem.objects.filter(pk=request.GET.get("item") or 0).first())
     rate_form = SF.ShopRateForm(request.POST or None, prefix="rate")
+    cat_form = SF.CategoryForm(request.POST or None, prefix="cat",
+                               instance=ItemCategory.objects.filter(pk=request.GET.get("cat") or 0).first())
     if request.method == "POST":
         action = request.POST.get("action")
+        if action == "category" and cat_form.is_valid():
+            cat_form.save()
+            messages.success(request, _("Category saved."))
+            return redirect("shop_setup")
         if action == "service" and svc_form.is_valid():
             svc_form.save()
             messages.success(request, _("Service saved."))
@@ -300,6 +352,7 @@ def shop_setup(request):
                 messages.success(request, _("Shop conversion rate saved."))
                 return redirect("shop_setup")
     return render(request, "core/shop/setup.html", {
-        "services": ShopService.objects.all(), "items": ShopItem.objects.all(), "svc_form": svc_form,
+        "services": ShopService.objects.all(), "items": ShopItem.objects.select_related("category"),
+        "categories": ItemCategory.objects.all(), "cat_form": cat_form, "svc_form": svc_form,
         "item_form": item_form, "rate_form": rate_form, "rate": ShopConversionRate.current(), "what": what,
         "rates": ShopConversionRate.objects.select_related("set_by")[:10]})

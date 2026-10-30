@@ -96,7 +96,7 @@ def can_view_txn(user, t):
         return True
     if user.is_shop_user:  # shops see only their own shop's entries
         return bool(t.shop_id) and (user.is_shop_senior or t.shop_id == user.shop_id)
-    if t.shop_id and t.type != "SHOP_TO_DESK":
+    if t.shop_id and t.type not in ("SHOP_TO_DESK", "DESK_TO_SHOP"):
         return False  # shop dealings are not visible to cashiers, junior managers or agents
     if user.is_agent:
         return Entry.objects.filter(transaction=t, account__counterparty=user.counterparty).exists()

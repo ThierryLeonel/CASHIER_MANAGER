@@ -31,6 +31,7 @@
     <a href="{% url 'expense_new' %}" class="{% if u == 'expense_new' %}on{% endif %}">{% icon "expense" %}<span>{% trans "Expense" %}</span></a>
     <a href="{% url 'transfer_new' %}" class="{% if u == 'transfer_new' %}on{% endif %}">{% icon "transfer" %}<span>{% trans "Transfer" %}</span></a>
     <a href="{% url 'conversion_new' %}" class="{% if u == 'conversion_new' %}on{% endif %}">{% icon "convert" %}<span>{% trans "UVE→ER" %}</span></a>
+    <a href="{% url 'desk_to_shop' %}" class="{% if u == 'desk_to_shop' %}on{% endif %}">{% icon "store" %}<span>{% trans "Transfer to shop" %}</span></a>
     {% endif %}
 
     {% if user.is_shop_user %}
@@ -47,7 +48,8 @@
     <a href="{% url 'shop_op' 'er_supply' %}" class="{% if request.path == '/shops/do/er_supply/' %}on{% endif %}">{% icon "supply" %}<span>{% trans "ER supply" %}</span></a>
     <a href="{% url 'shop_op' 'destockage' %}" class="{% if request.path == '/shops/do/destockage/' %}on{% endif %}">{% icon "destock" %}<span>{% trans "Destockage" %}</span></a>
     <a href="{% url 'shop_op' 'pay_agent' %}" class="{% if request.path == '/shops/do/pay_agent/' %}on{% endif %}">{% icon "payment" %}<span>{% trans "Pay an agent" %}</span></a>
-    <a href="{% url 'shop_op' 'to_cashier' %}" class="{% if request.path == '/shops/do/to_cashier/' %}on{% endif %}">{% icon "transfer" %}<span>{% trans "Transfer to cashier" %}</span></a>
+    <a href="{% url 'shop_op' 'agent_repay' %}" class="{% if request.path == '/shops/do/agent_repay/' %}on{% endif %}">{% icon "payment" %}<span>{% trans "Agent pays the shop" %}</span></a>
+    <a href="{% url 'shop_op' 'to_cashier' %}" class="{% if request.path == '/shops/do/to_cashier/' %}on{% endif %}">{% icon "transfer" %}<span>{% trans "UVE to a cashier" %}</span></a>
     {% endif %}
 
     {% if user.is_shop_user or user.sees_all_zones %}
@@ -140,7 +142,7 @@ document.querySelectorAll('[data-back]').forEach(function (a) {
 });
 </script>
 {% block scripts %}{% endblock %}
-<script>window.CM_I18N = {search: "{% trans 'Search…' %}", choose: "{% trans 'Choose…' %}", noresult: "{% trans 'No match' %}",
+<script>window.CM_I18N = {search: "{% trans 'Search…' %}", nounits: "{% trans 'No unit of this item in stock.' %}", choose: "{% trans 'Choose…' %}", noresult: "{% trans 'No match' %}",
   nocustomer: "{% trans 'No agent or POS found' %}", pos: "{% trans 'POS' %}", agent: "{% trans 'AG' %}",
   cash: "{% trans 'Cash' %}", bank: "{% trans 'Bank' %}"};</script>
 <script src="{% static 'core/ui.js' %}"></script>

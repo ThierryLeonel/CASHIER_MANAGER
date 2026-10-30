@@ -228,7 +228,44 @@
     fmt();
   }
 
+  /* shop items: category -> item -> unit(s) by IMEI/serial (and the shop, when chosen on the form) */
+  function enhanceItemPick(form) {
+    var cat = form.querySelector('select[name=category]'), item = form.querySelector('select[name=item]');
+    if (!cat || !item || form.dataset.itemPick) return;
+    form.dataset.itemPick = '1';
+    var shop = form.querySelector('select[name=shop]');
+    var units = form.querySelectorAll('input[name=units]');
+    var price = form.querySelector('input[name=unit_price]');
+    var none = null;
+    if (units.length || form.querySelector('#fld-units')) {
+      none = el('div', 'muted small', t('nounits', 'No unit of this item in stock.'));
+      var fu = form.querySelector('#fld-units'); if (fu) fu.insertBefore(none, fu.querySelector('.help, .err'));
+    }
+    function syncItems() {
+      Array.prototype.forEach.call(item.options, function (o) {
+        if (!o.value) return;
+        var ok = !cat.value || o.dataset.category === cat.value; o.hidden = !ok; o.disabled = !ok;
+      });
+      if (item.selectedOptions.length && item.selectedOptions[0].disabled) item.value = '';
+      syncUnits();
+    }
+    function syncUnits() {
+      var shown = 0;
+      units.forEach(function (u) {
+        var ok = item.value && u.dataset.item === item.value && (!shop || !shop.value || u.dataset.shop === shop.value);
+        var box = u.closest('div') || u.parentNode; box.hidden = !ok; if (!ok) u.checked = false; else shown++;
+      });
+      if (none) none.hidden = !item.value || shown > 0;
+      var o = item.selectedOptions[0];
+      if (price) price.placeholder = o && o.dataset.price ? String(o.dataset.price).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') : '0';
+    }
+    cat.addEventListener('change', syncItems); item.addEventListener('change', syncUnits);
+    if (shop) shop.addEventListener('change', syncUnits);
+    syncItems();
+  }
+
   function init(scope) {
+    scope.querySelectorAll('form').forEach(enhanceItemPick);
     scope.querySelectorAll('main select').forEach(enhanceSelect);
     scope.querySelectorAll('input[data-customer-search]').forEach(enhanceCustomer);
     scope.querySelectorAll('input.money').forEach(enhanceMoney);

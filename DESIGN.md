@@ -62,16 +62,18 @@ Shop operations go through the same double-entry ledger, on the shop's accounts 
 |---|---|
 | Orange Money cash-in | UVE −, cash + (commission recorded, not posted) |
 | Orange Money cash-out | UVE +, cash − (commission recorded) |
-| Airtime sale | ER −, cash + |
-| UVE→ER conversion | at the **shop rate** (separate from the cashiers' rate; set by the senior shop manager / super admin) |
+| Airtime sale (**normal** or **good deal**, stored as the subtype) | ER −, cash + |
+| UVE→ER conversion | at the **shop rate** (separate from the cashiers' rate; set by the super admin on the main Conversion rate page — Shops' rate section — or by the senior shop manager in shop setup) |
 | Appro (UVE from an agent) | UVE +; cash −, or owed to the agent if on credit |
 | ER supply from an agent | ER +; cash − or UVE −, or owed to the agent if on credit |
-| Destockage with an agent | UVE −, cash + |
+| Destockage with an agent | UVE −; cash +, or **the agent owes the shop** if on credit |
+| Agent pays the shop | the agent's debt to the shop −; cash + or UVE + |
 | Pay an agent | owed to the agent −; cash − or UVE − |
-| Transfer to a cashier | shop cash/UVE −; the cashier subzone's drawer/UVE wallet + |
-| Item sale (gadgets, energy kits) | cash +, shop sales −; stock − |
+| Transfer to a cashier (**UVE only**) | shop UVE −; the cashier's UVE wallet + — posted in that subzone's business day, so it shows on the cashier side too |
+| Cashier: transfer to a shop | the cashier's UVE wallet −; shop UVE + (recorded by the cashier, visible to both sides) |
+| Item sale | cash +, shop sales −; the chosen units (by IMEI / serial) become SOLD |
 
-Counted services (OTT, MAX IT, identification update, ticket creation, … — added or removed by the senior shop manager / super admin) record only their number per day. A **SIM retrieval** registers the SIM, the new SIM serial, the person's name, ID type and number and contact. Items have a price and a stock per shop (received / sold / adjusted). Shop dealings with agents use a per-shop, per-agent "owed to the agent" account and never touch the agent's balance with the company. Shop accounts appear in the opening grid (Shops group) and in the finance reconciliation (SHOPS rows, included in the company total).
+Counted services (OTT, MAX IT, identification update, ticket creation, … — added or removed by the senior shop manager / super admin) record only their number per day. A **SIM retrieval** registers the SIM, the new SIM serial, the person's name, ID type and number and contact. Items belong to **categories** (managed in shop setup) and have a price. Stock is kept **unit by unit with an IMEI / serial number** (`StockUnit`: in stock / sold / removed, each number registered once); a sale picks category → item → units and records the **client's full name, address, country of origin, identification type (national ID, passport, residence permit, receipt, other) and number, telephone and WhatsApp** (`ItemSale`), all shown on the receipt. Stock counted before serials were introduced must be re-entered with serials. Shop dealings with agents use a per-shop, per-agent **position** account (negative: the shop owes the agent; positive: the agent owes the shop) and never touch the agent's balance with the company. Shop accounts appear in the opening grid (Shops group) and in the finance reconciliation (SHOPS rows, included in the company total).
 
 ### Users & passwords
 

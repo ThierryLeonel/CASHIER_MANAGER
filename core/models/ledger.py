@@ -37,7 +37,7 @@ class Account(models.Model):
         CONVERSION_UPLIFT = "CONVERSION_UPLIFT", _("Conversion uplift")
         RECON_ADJUSTMENT = "RECON_ADJUSTMENT", _("Reconciliation adjustments")
         OPENING_EQUITY = "OPENING_EQUITY", _("Opening balance equity")
-        SHOP_PAYABLE = "SHOP_PAYABLE", _("Shop: owed to a commercial agent")
+        SHOP_PAYABLE = "SHOP_PAYABLE", _("Shop: position with a commercial agent")
         SHOP_SALES = "SHOP_SALES", _("Shop sales")
 
     ASSET_KINDS = (Kind.CASH_DRAWER, Kind.UVE, Kind.ER, Kind.MTN, Kind.BANK)
@@ -180,6 +180,8 @@ class TxType(models.TextChoices):
     SHOP_AGENT_PAY = "SHOP_AGENT_PAY", _("Shop: payment to agent (credit)")
     SHOP_TO_DESK = "SHOP_TO_DESK", _("Shop: transfer to a cashier")
     SHOP_SALE = "SHOP_SALE", _("Shop: item sale")
+    SHOP_AGENT_REPAY = "SHOP_AGENT_REPAY", _("Shop: agent pays the shop")
+    DESK_TO_SHOP = "DESK_TO_SHOP", _("Cashier: transfer to a shop")
 
 
 class Product(models.TextChoices):
@@ -198,7 +200,7 @@ class PaymentMethod(models.TextChoices):
 class Transaction(models.Model):
     reference = models.CharField(max_length=20, unique=True)
     receipt_no = models.CharField(max_length=20, unique=True, null=True, blank=True)
-    type = models.CharField(max_length=14, choices=TxType.choices, db_index=True)
+    type = models.CharField(max_length=20, choices=TxType.choices, db_index=True)
     business_date = models.DateField(db_index=True)
     posted_at = models.DateTimeField(default=timezone.now, db_index=True)
     entered_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name="entered_transactions")
@@ -251,6 +253,7 @@ class Transaction(models.Model):
     commission = models.DecimalField(_("commission"), **MONEY, null=True, blank=True)
     client_phone = models.CharField(_("client phone"), max_length=30, blank=True)
     on_credit = models.BooleanField(default=False)
+    subtype = models.CharField(_("kind"), max_length=12, blank=True)  # airtime: GOOD_DEAL / NORMAL
 
     class Meta:
         ordering = ["-posted_at", "-id"]

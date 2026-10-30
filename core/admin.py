@@ -9,7 +9,7 @@ from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
 from core.models import (
     Account, AccountAccess, AuditEvent, BankAccount, CashManager, CompanySim, Counterparty, ExpenseCategory, MasterZone,
-    MicroZone, Shop, ShopItem, ShopService, SubZone, User, Zone,
+    ItemCategory, MicroZone, Shop, ShopItem, ShopService, StockUnit, SubZone, User, Zone,
 )
 
 
@@ -387,3 +387,20 @@ class ShopServiceAdmin(SuperAdminOnly):
 class ShopItemAdmin(SuperAdminOnly):
     list_display = ("name", "category", "price", "active")
     list_filter = ("category", "active")
+
+
+@admin.register(ItemCategory)
+class ItemCategoryAdmin(SuperAdminOnly):
+    list_display = ("name", "sort", "active")
+    list_editable = ("sort", "active")
+
+
+@admin.register(StockUnit)
+class StockUnitAdmin(SuperAdminOnly):
+    list_display = ("serial", "item", "shop", "status", "received_at")
+    list_filter = ("status", "shop", "item__category")
+    search_fields = ("serial", "item__name")
+    readonly_fields = ("serial", "item", "shop", "status", "sale", "received_by", "received_at")
+
+    def has_add_permission(self, request):
+        return False

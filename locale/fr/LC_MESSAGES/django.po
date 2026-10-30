@@ -18,6 +18,10 @@ msgid "%(acct)s: enter a whole FCFA amount."
 msgstr "%(acct)s : saisissez un montant entier en FCFA."
 
 #, python-format
+msgid "%(agent)s owes the shop only %(owed)s FCFA."
+msgstr "%(agent)s ne doit à la boutique que %(owed)s FCFA."
+
+#, python-format
 msgid "%(cp)s is inactive."
 msgstr "%(cp)s est inactif."
 
@@ -66,6 +70,10 @@ msgid "%(n)s rows imported."
 msgstr "%(n)s lignes importées."
 
 #, python-format
+msgid "%(n)s unit(s) received into stock."
+msgstr "%(n)s unité(s) reçue(s) en stock."
+
+#, python-format
 msgid ""
 "%(party)s currently owes %(owed)s FCFA, less than the %(amt)s FCFA of "
 "%(ref)s. Part of it is already settled, so the full supply cannot be "
@@ -96,6 +104,18 @@ msgid "%(ref)s updated. The previous values are kept in the audit log."
 msgstr ""
 "%(ref)s modifiée. Les anciennes valeurs sont conservées dans le journal "
 "d'audit."
+
+#, python-format
+msgid "%(s)s is not a %(item)s."
+msgstr "%(s)s n'est pas un(e) %(item)s."
+
+#, python-format
+msgid "%(s)s is not in stock at %(shop)s for this item."
+msgstr "%(s)s n'est pas en stock à %(shop)s pour cet article."
+
+#, python-format
+msgid "%(s)s removed from stock."
+msgstr "%(s)s retiré du stock."
 
 #, python-format
 msgid "%(type)s %(ref)s recorded: %(amt)s FCFA."
@@ -266,6 +286,9 @@ msgstr "Les soldes réels ne peuvent pas être négatifs."
 msgid "Actual counted/read"
 msgstr "Réel compté/lu"
 
+msgid "Add a category"
+msgstr "Ajouter une catégorie"
+
 msgid "Add a service"
 msgstr "Ajouter un service"
 
@@ -277,6 +300,9 @@ msgstr "Ajouter des articles"
 
 msgid "Add note"
 msgstr "Ajouter une note"
+
+msgid "Address"
+msgstr "Adresse"
 
 msgid "Adjustment"
 msgstr "Ajustement"
@@ -302,6 +328,9 @@ msgstr "Dette des agents et PDV par produit (UVE, espèces, ER)"
 msgid "Agent in charge"
 msgstr "Agent responsable"
 
+msgid "Agent pays the shop"
+msgstr "L'agent paie la boutique"
+
 msgid "Agent who received the UVE and owes (business SIM)"
 msgstr "Agent qui a reçu l'UVE et doit (SIM business)"
 
@@ -325,6 +354,12 @@ msgstr ""
 "Agents et PDV : ce qu'ils doivent en UVE, espèces et ER. Le total se calcule"
 " tout seul (une part négative = approvisionnement dû à eux)."
 
+msgid "Agents owe"
+msgstr "Dû par les agents"
+
+msgid "Agents owe the shop"
+msgstr "Les agents doivent à la boutique"
+
 msgid "Agents versus POS"
 msgstr "Agents ou PDV"
 
@@ -342,6 +377,9 @@ msgstr "Montant convenu (FCFA, 1:1)"
 
 msgid "Airtime"
 msgstr "Crédit de communication"
+
+msgid "Airtime kind"
+msgstr "Type de crédit"
 
 msgid "Airtime sale"
 msgstr "Vente de crédit de communication"
@@ -376,6 +414,10 @@ msgstr "Toutes les zones"
 
 msgid "Already recorded."
 msgstr "Déjà enregistré."
+
+#, python-format
+msgid "Already registered: %(s)s"
+msgstr "Déjà enregistré : %(s)s"
 
 msgid "Amount"
 msgstr "Montant"
@@ -421,6 +463,9 @@ msgstr ""
 
 msgid "An agent login must be linked to an agent account."
 msgstr "Un accès agent doit être lié à un compte agent."
+
+msgid "An agent pays the shop"
+msgstr "Un agent paie la boutique"
 
 msgid ""
 "An agreement moves no money. Company balances change only when you record "
@@ -658,6 +703,9 @@ msgstr ""
 "Espèces sorties de votre caisse. Les dépenses ne réduisent jamais la dette "
 "d'un agent."
 
+msgid "Cash received now"
+msgstr "Espèces reçues maintenant"
+
 msgid "Cash to POS, UVE to agents"
 msgstr "Espèces aux PDV, UVE aux agents"
 
@@ -710,6 +758,9 @@ msgstr "ID caissier"
 msgid "Cashier Manager"
 msgstr "Gestion de caisse"
 
+msgid "Cashier UVE wallet receiving it"
+msgstr "Portefeuille UVE caissier qui reçoit"
+
 msgid "Cashier account receiving it"
 msgstr "Compte du caissier qui reçoit"
 
@@ -719,8 +770,25 @@ msgstr "Poste caissier"
 msgid "Cashier signature"
 msgstr "Signature du caissier"
 
+msgid "Cashier: transfer to a shop"
+msgstr "Caissier : transfert vers une boutique"
+
+msgid ""
+"Cashiers and shops each have their own rate. A change applies to future "
+"conversions only; each conversion stores the rate it used."
+msgstr ""
+"Les caissiers et les boutiques ont chacun leur taux. Un changement ne "
+"s'applique qu'aux conversions futures ; chaque conversion garde le taux "
+"utilisé."
+
+msgid "Cashiers' rate"
+msgstr "Taux des caissiers"
+
 msgid "Category"
 msgstr "Catégorie"
+
+msgid "Category saved."
+msgstr "Catégorie enregistrée."
 
 msgid "Change my password"
 msgstr "Changer mon mot de passe"
@@ -782,6 +850,12 @@ msgstr "Choisissez un article."
 msgid "Choose cash or UVE."
 msgstr "Choisissez espèces ou UVE."
 
+msgid "Choose cash received or on credit."
+msgstr "Choisissez espèces reçues ou à crédit."
+
+msgid "Choose good deal or normal airtime."
+msgstr "Choisissez bon plan ou crédit normal."
+
 msgid "Choose how it was paid: cash or UVE."
 msgstr "Choisissez le mode de paiement : espèces ou UVE."
 
@@ -791,6 +865,9 @@ msgstr "Choisissez le mode de paiement : espèces, UVE ou à crédit."
 #, python-format
 msgid "Choose the %(kind)s account the company gives from."
 msgstr "Choisissez le compte %(kind)s depuis lequel l'entreprise donne."
+
+msgid "Choose the UVE wallet the UVE leaves from."
+msgstr "Choisissez le portefeuille UVE d'où part l'UVE."
 
 msgid "Choose the account that received what was served."
 msgstr "Choisissez le compte qui a reçu ce qui a été servi."
@@ -808,6 +885,9 @@ msgstr ""
 "Choisissez la caisse ou le portefeuille UVE qui a réellement donné ou reçu "
 "la valeur."
 
+msgid "Choose the cashier UVE wallet that receives it."
+msgstr "Choisissez le portefeuille UVE caissier qui le reçoit."
+
 msgid "Choose the cashier account that receives it."
 msgstr "Choisissez le compte du caissier qui reçoit."
 
@@ -816,6 +896,13 @@ msgstr "Choisissez le caissier responsable de la SIM master."
 
 msgid "Choose the cashier you are recording for."
 msgstr "Choisissez le caissier pour qui vous enregistrez."
+
+msgid ""
+"Choose the category, the item and the unit(s) by IMEI / serial, then the "
+"client's details."
+msgstr ""
+"Choisissez la catégorie, l'article et la ou les unités par IMEI / série, "
+"puis les informations du client."
 
 msgid "Choose the correction type."
 msgstr "Choisissez le type de correction."
@@ -831,6 +918,12 @@ msgstr "Choisissez la sous-zone de la nouvelle microzone."
 
 msgid "Choose the subzone that uses this SIM."
 msgstr "Choisissez la sous-zone qui utilise cette SIM."
+
+msgid "Choose the type of identification."
+msgstr "Choisissez le type de pièce d'identité."
+
+msgid "Choose the unit(s) sold by IMEI / serial number."
+msgstr "Choisissez la ou les unités vendues par numéro IMEI / série."
 
 msgid "Choose what the company gives: cash, MTN float or UVE."
 msgstr "Choisissez ce que l'entreprise donne : espèces, float MTN ou UVE."
@@ -852,6 +945,9 @@ msgstr "Effacer les données"
 
 msgid "Clear the data"
 msgstr "Effacer les données"
+
+msgid "Client full name"
+msgstr "Nom complet du client"
 
 msgid "Client phone (optional)"
 msgstr "Téléphone du client (facultatif)"
@@ -924,6 +1020,9 @@ msgstr "Agent commercial qui assume cette dette (facultatif)"
 
 msgid "Commercial agents and POS"
 msgstr "Agents commerciaux et PDV"
+
+msgid "Commercial agents who owe the shop"
+msgstr "Agents commerciaux qui doivent à la boutique"
 
 msgid "Commission"
 msgstr "Commission"
@@ -1145,6 +1244,9 @@ msgstr "Compté contre attendu, et écarts ouverts"
 msgid "Counting/reading error – no posting"
 msgstr "Erreur de comptage/lecture – aucune écriture"
 
+msgid "Country of origin"
+msgstr "Pays d'origine"
+
 msgid "Credit (−)"
 msgstr "Crédit (−)"
 
@@ -1167,6 +1269,10 @@ msgstr "Taux boutique actuel : %(p)s %%"
 #, python-format
 msgid "Current shop rate: %(p)s %%."
 msgstr "Taux boutique actuel : %(p)s %%."
+
+#, python-format
+msgid "Current shop uplift: +%(p)s%%."
+msgstr "Majoration actuelle des boutiques : +%(p)s %%."
 
 #, python-format
 msgid ""
@@ -1408,6 +1514,9 @@ msgstr ""
 msgid "Edit"
 msgstr "Modifier"
 
+msgid "Edit category"
+msgstr "Modifier la catégorie"
+
 msgid "Edit item"
 msgstr "Modifier l'article"
 
@@ -1447,6 +1556,9 @@ msgstr ""
 
 msgid "Enter the ID number."
 msgstr "Saisissez le numéro de la pièce."
+
+msgid "Enter the IMEI or serial number of each unit, one per line."
+msgstr "Saisissez le numéro IMEI ou de série de chaque unité, un par ligne."
 
 #, python-format
 msgid "Enter the actual balance for %(acct)s."
@@ -1607,6 +1719,9 @@ msgstr "Rempli automatiquement à partir des parts ci-dessus."
 msgid "Finance manager"
 msgstr "Responsable financier"
 
+msgid "Find a unit (IMEI / serial, item or client)"
+msgstr "Trouver une unité (IMEI / série, article ou client)"
+
 msgid "Floating-point money values are not allowed"
 msgstr "Les montants en virgule flottante ne sont pas autorisés"
 
@@ -1672,9 +1787,15 @@ msgstr "Indiquez le motif de la modification."
 msgid "Give the reason for the responsibility change."
 msgstr "Indiquez le motif du changement de responsabilité."
 
+msgid "Give the reason."
+msgstr "Indiquez le motif."
+
 #, python-format
 msgid "Give the subzone of microzone %(v)s"
 msgstr "Indiquez la sous-zone de la microzone %(v)s"
+
+msgid "Good deal"
+msgstr "Bon plan"
 
 #, python-format
 msgid "Hello, %(name)s"
@@ -1707,6 +1828,21 @@ msgstr "Récépissé"
 msgid "ID type"
 msgstr "Type de pièce"
 
+msgid "IMEI / serial"
+msgstr "IMEI / série"
+
+msgid "IMEI / serial number"
+msgstr "Numéro IMEI / série"
+
+msgid "IMEI / serial numbers"
+msgstr "Numéros IMEI / série"
+
+msgid "Identification"
+msgstr "Pièce d'identité"
+
+msgid "Identification number"
+msgstr "Numéro de pièce"
+
 msgid ""
 "Identified by business SIM number. Balances are shared across all cashiers."
 msgstr ""
@@ -1724,6 +1860,9 @@ msgstr "Entrées"
 
 msgid "In and out of every drawer, SIM wallet and bank"
 msgstr "Entrées et sorties de chaque caisse, portefeuille SIM et banque"
+
+msgid "In stock"
+msgstr "En stock"
 
 #, python-format
 msgid "Incompatible asset types: %(a)s cannot be transferred to %(b)s."
@@ -1777,8 +1916,14 @@ msgstr "Il réduit la dette unique et combinée du client."
 msgid "Item"
 msgstr "Article"
 
+msgid "Item categories"
+msgstr "Catégories d'articles"
+
 msgid "Item saved."
 msgstr "Article enregistré."
+
+msgid "Items"
+msgstr "Articles"
 
 msgid "Items for sale"
 msgstr "Articles en vente"
@@ -1982,6 +2127,12 @@ msgstr "Nouveau responsable"
 msgid "New responsible party (business SIM)"
 msgstr "Nouveau responsable (SIM business)"
 
+#, python-format
+msgid "New shop uplift +%(p)s%% applies to future shop conversions only."
+msgstr ""
+"La nouvelle majoration boutique +%(p)s %% s'applique aux conversions futures"
+" uniquement."
+
 msgid "New supply"
 msgstr "Nouvel approvisionnement"
 
@@ -2061,6 +2212,11 @@ msgstr "Aucune note pour l'instant."
 msgid "No password set"
 msgstr "Aucun mot de passe défini"
 
+msgid "No shop rate set yet: shops cannot convert UVE to ER until one is set."
+msgstr ""
+"Aucun taux boutique défini : les boutiques ne peuvent pas convertir l'UVE en"
+" ER avant qu'il soit fixé."
+
 msgid ""
 "No shop yet. The super administrator adds shops in Configuration › Shops."
 msgstr ""
@@ -2086,6 +2242,12 @@ msgstr ""
 msgid "No transactions."
 msgstr "Aucune transaction."
 
+msgid "No unit of this item in stock."
+msgstr "Aucune unité de cet article en stock."
+
+msgid "No unit with this IMEI / serial number."
+msgstr "Aucune unité avec ce numéro IMEI / série."
+
 msgid "No value was changed."
 msgstr "Aucune valeur n'a été modifiée."
 
@@ -2097,6 +2259,9 @@ msgstr ""
 msgid "None yet."
 msgstr "Aucun pour l'instant."
 
+msgid "Normal airtime"
+msgstr "Crédit normal"
+
 msgid "Not split"
 msgstr "Non réparti"
 
@@ -2105,6 +2270,9 @@ msgstr "Non réparti par produit"
 
 msgid "Note"
 msgstr "Note"
+
+msgid "Note (supplier, delivery…)"
+msgstr "Note (fournisseur, livraison…)"
 
 msgid "Note added."
 msgstr "Note ajoutée."
@@ -2145,8 +2313,14 @@ msgstr "OK"
 msgid "OTT, MAX IT, ID update, tickets…"
 msgstr "OTT, MAX IT, mise à jour d'identification, tickets…"
 
+msgid "On credit"
+msgstr "À crédit"
+
 msgid "On credit (owed to the agent)"
 msgstr "À crédit (dû à l'agent)"
+
+msgid "On credit (the agent owes the shop)"
+msgstr "À crédit (l'agent doit à la boutique)"
 
 msgid ""
 "One payment can be made in cash, UVE, MTN float and bank deposit at the same"
@@ -2154,6 +2328,12 @@ msgid ""
 msgstr ""
 "Un même paiement peut être fait en espèces, UVE, float MTN et versement "
 "bancaire à la fois. Il réduit le solde unique et combiné du client."
+
+msgid ""
+"One unit per line (or separated by commas). Each number is registered once."
+msgstr ""
+"Une unité par ligne (ou séparées par des virgules). Chaque numéro n'est "
+"enregistré qu'une fois."
 
 #, python-format
 msgid "Only %(n)s × %(item)s in stock at %(shop)s."
@@ -2366,6 +2546,9 @@ msgstr "Dû à l'entreprise"
 msgid "Owes company"
 msgstr "Doit à l'entreprise"
 
+msgid "Owes the shop"
+msgstr "Doit à la boutique"
+
 msgid ""
 "PNG, JPEG or WEBP, up to 3 MB. A square or wide logo on a transparent or "
 "white background looks best."
@@ -2567,6 +2750,9 @@ msgstr "Taux non défini"
 msgid "Reason"
 msgstr "Motif"
 
+msgid "Reason (returned, damaged, lost…)"
+msgstr "Motif (retourné, endommagé, perdu…)"
+
 msgid "Reason (shown on the CORRECTED stamp)"
 msgstr "Motif (affiché sur le tampon CORRIGÉ)"
 
@@ -2585,8 +2771,17 @@ msgstr "Reçu"
 msgid "Receipt no."
 msgstr "Reçu n°"
 
+msgid "Receive"
+msgstr "Recevoir"
+
 msgid "Receive stock or adjust"
 msgstr "Recevoir du stock ou ajuster"
+
+msgid "Receive units into stock"
+msgstr "Recevoir des unités en stock"
+
+msgid "Received"
+msgstr "Reçu"
 
 msgid "Received by POS"
 msgstr "Reçu par le PDV"
@@ -2706,6 +2901,12 @@ msgstr "Enregistrer un agent ou un PDV"
 msgid "Register the person retrieving the SIM and the SIM."
 msgstr "Enregistrez la personne qui retire la SIM, et la SIM."
 
+msgid "Remove"
+msgstr "Retirer"
+
+msgid "Remove a unit from stock"
+msgstr "Retirer une unité du stock"
+
 msgid "Remove all transactions, or everything"
 msgstr "Supprimer toutes les transactions, ou tout"
 
@@ -2714,6 +2915,9 @@ msgstr "Supprimer le logo actuel"
 
 msgid "Removed"
 msgstr "Retiré"
+
+msgid "Removed from stock"
+msgstr "Retiré du stock"
 
 msgid "Replace the password"
 msgstr "Remplacer le mot de passe"
@@ -2937,6 +3141,9 @@ msgstr "Défini par"
 msgid "Set new rate"
 msgstr "Définir le nouveau taux"
 
+msgid "Set new shop rate"
+msgstr "Fixer le nouveau taux boutique"
+
 msgid "Settles what the shop owes an agent."
 msgstr "Règle ce que la boutique doit à un agent."
 
@@ -2958,9 +3165,15 @@ msgstr "Gérant de boutique"
 msgid "Shop operations"
 msgstr "Opérations des boutiques"
 
+msgid "Shop rate"
+msgstr "Taux boutique"
+
 #, python-format
 msgid "Shop rate %(p)s %%"
 msgstr "Taux boutique %(p)s %%"
+
+msgid "Shop receiving the UVE"
+msgstr "Boutique qui reçoit l'UVE"
 
 msgid "Shop sales"
 msgstr "Ventes des boutiques"
@@ -2986,6 +3199,9 @@ msgstr "Boutique : appro UVE par agent"
 msgid "Shop: UVE → ER conversion"
 msgstr "Boutique : conversion UVE → ER"
 
+msgid "Shop: agent pays the shop"
+msgstr "Boutique : l'agent paie la boutique"
+
 msgid "Shop: airtime sale"
 msgstr "Boutique : vente de crédit"
 
@@ -3001,6 +3217,9 @@ msgstr "Boutique : dû à un agent commercial"
 msgid "Shop: payment to agent (credit)"
 msgstr "Boutique : paiement à un agent (crédit)"
 
+msgid "Shop: position with a commercial agent"
+msgstr "Boutique : position avec un agent commercial"
+
 msgid "Shop: transfer to a cashier"
 msgstr "Boutique : transfert vers un caissier"
 
@@ -3009,6 +3228,9 @@ msgstr "Boutiques"
 
 msgid "Shops overview"
 msgstr "Vue des boutiques"
+
+msgid "Shops' rate"
+msgstr "Taux des boutiques"
 
 msgid "Short line under the name in the menu. Leave empty for none."
 msgstr "Courte ligne sous le nom dans le menu. Laissez vide pour aucune."
@@ -3029,6 +3251,12 @@ msgstr "Connexion"
 
 msgid "Sign in first."
 msgstr "Connectez-vous d'abord."
+
+msgid "Sold"
+msgstr "Vendu"
+
+msgid "Sold to"
+msgstr "Vendu à"
 
 msgid "Some rows have errors: nothing was imported"
 msgstr "Certaines lignes contiennent des erreurs : rien n'a été importé"
@@ -3070,6 +3298,9 @@ msgstr "Le stock ne peut pas être négatif."
 
 msgid "Stock of gadgets and energy kits"
 msgstr "Stock de gadgets et kits énergie"
+
+msgid "Stock of items"
+msgstr "Stock d'articles"
 
 msgid "Stock updated."
 msgstr "Stock mis à jour."
@@ -3165,6 +3396,12 @@ msgstr "TOTAL"
 msgid "TOTAL OPENING"
 msgstr "TOTAL OUVERTURE"
 
+msgid "Telephone"
+msgstr "Téléphone"
+
+msgid "Telephone contact"
+msgstr "Contact téléphonique"
+
 msgid "Templates"
 msgstr "Modèles"
 
@@ -3174,6 +3411,13 @@ msgid ""
 msgstr ""
 "Le compte suit l'échange : espèces ou float MTN donnés, UVE servie ; UVE "
 "donnée, espèces servies."
+
+msgid ""
+"The agent pays back what he owes the shop (e.g. a destockage taken on "
+"credit)."
+msgstr ""
+"L'agent rembourse ce qu'il doit à la boutique (par ex. un déstockage pris à "
+"crédit)."
 
 msgid ""
 "The agent supplies ER: the shop's ER goes up, paid in cash or UVE, or owed "
@@ -3282,12 +3526,26 @@ msgstr ""
 "Le taux de conversion boutique n'est pas encore défini (Services, articles "
 "et taux)."
 
+msgid ""
+"The shop conversion rate is not set yet (Conversion rate page › Shops' "
+"rate)."
+msgstr ""
+"Le taux de conversion boutique n'est pas encore fixé (page Taux de "
+"conversion › Taux des boutiques)."
+
 #, python-format
 msgid "The shop owes %(agent)s only %(owed)s FCFA."
 msgstr "La boutique ne doit que %(owed)s FCFA à %(agent)s."
 
 msgid "The shop rate is not set yet."
 msgstr "Le taux boutique n'est pas encore défini."
+
+msgid ""
+"The shop sends UVE to the agent and receives cash — or the agent owes the "
+"shop if on credit."
+msgstr ""
+"La boutique envoie de l'UVE à l'agent et reçoit des espèces — ou l'agent "
+"doit à la boutique si c'est à crédit."
 
 msgid ""
 "The shop sends UVE to the agent and receives cash: UVE goes down, cash goes "
@@ -3373,6 +3631,9 @@ msgstr ""
 "Cette modification rendrait %(acct)s négatif (%(bal)s FCFA). Rien n'a été "
 "modifié."
 
+msgid "This client information is required."
+msgstr "Cette information du client est obligatoire."
+
 msgid "This day is earlier than today: close it when you are ready."
 msgstr ""
 "Cette journée est antérieure à aujourd'hui : clôturez-la dès que possible."
@@ -3396,6 +3657,9 @@ msgstr ""
 
 msgid "This entry reverses"
 msgstr "Cette écriture contre-passe"
+
+msgid "This item is not in the chosen category."
+msgstr "Cet article n'est pas dans la catégorie choisie."
 
 msgid "This microzone already exists: choose it in the list."
 msgstr "Cette microzone existe déjà : choisissez-la dans la liste."
@@ -3430,6 +3694,10 @@ msgstr "Ce type d'écriture ne peut pas être corrigé directement."
 
 msgid "This type of entry cannot be edited."
 msgstr "Ce type d'écriture ne peut pas être modifié."
+
+#, python-format
+msgid "This unit is not in stock (%(s)s)."
+msgstr "Cette unité n'est pas en stock (%(s)s)."
 
 msgid "This zone has subzones, so it must stay a master zone."
 msgstr "Cette zone a des sous-zones, elle doit donc rester une zone master."
@@ -3505,6 +3773,12 @@ msgstr ""
 msgid "Transfer"
 msgstr "Transfert"
 
+msgid "Transfer UVE to a cashier"
+msgstr "Transférer de l'UVE à un caissier"
+
+msgid "Transfer UVE to a shop"
+msgstr "Transférer de l'UVE à une boutique"
+
 msgid "Transfer responsibility"
 msgstr "Transférer la responsabilité"
 
@@ -3513,6 +3787,9 @@ msgstr "Transfert vers un caissier"
 
 msgid "Transfer to cashier"
 msgstr "Transfert vers caissier"
+
+msgid "Transfer to shop"
+msgstr "Transfert vers boutique"
 
 msgid ""
 "Transfers are only between active company cash, wallet or bank accounts."
@@ -3553,6 +3830,10 @@ msgstr ""
 msgid "Type the new password."
 msgstr "Saisissez le nouveau mot de passe."
 
+#, python-format
+msgid "Typed twice: %(s)s"
+msgstr "Saisi deux fois : %(s)s"
+
 msgid "UVE"
 msgstr "UVE"
 
@@ -3582,8 +3863,28 @@ msgstr "UVE en boutiques"
 msgid "UVE received by agent (owes)"
 msgstr "UVE reçue par l'agent (redevable)"
 
+msgid "UVE sent (FCFA)"
+msgstr "UVE envoyée (FCFA)"
+
+msgid ""
+"UVE sent from the shop to a cashier's UVE wallet. It is recorded on the "
+"cashier side too."
+msgstr ""
+"UVE envoyée de la boutique au portefeuille UVE d'un caissier. Elle est aussi"
+" enregistrée côté caissier."
+
+msgid ""
+"UVE sent from your subzone's UVE wallet to a shop. The shop sees it in its "
+"entries."
+msgstr ""
+"UVE envoyée du portefeuille UVE de votre sous-zone vers une boutique. La "
+"boutique la voit dans ses opérations."
+
 msgid "UVE supply from an agent (appro)"
 msgstr "Approvisionnement UVE par un agent (appro)"
+
+msgid "UVE to a cashier"
+msgstr "UVE vers un caissier"
 
 msgid "UVE to convert (FCFA)"
 msgstr "UVE à convertir (FCFA)"
@@ -3637,8 +3938,20 @@ msgstr "Bonus UVE→ER (%)"
 msgid "UVE→ER uplift for future conversions"
 msgstr "Bonus UVE→ER pour les conversions futures"
 
+msgid "Unit price"
+msgstr "Prix unitaire"
+
 msgid "Unit price (FCFA)"
 msgstr "Prix unitaire (FCFA)"
+
+msgid "Unit(s) sold — IMEI / serial"
+msgstr "Unité(s) vendue(s) — IMEI / série"
+
+msgid "Units found"
+msgstr "Unités trouvées"
+
+msgid "Units in stock"
+msgstr "Unités en stock"
 
 #, python-format
 msgid "Unknown cash manager %(v)s"
@@ -3760,6 +4073,12 @@ msgstr ""
 
 msgid "What to clear"
 msgstr "Ce qu'il faut effacer"
+
+msgid "WhatsApp"
+msgstr "WhatsApp"
+
+msgid "WhatsApp contact"
+msgstr "Contact WhatsApp"
 
 msgid "When"
 msgstr "Quand"
@@ -3954,6 +4273,9 @@ msgstr "téléphone de contact"
 msgid "count"
 msgstr "nombre"
 
+msgid "country of origin"
+msgstr "pays d'origine"
+
 #, python-format
 msgid "created %(cp)s"
 msgstr "créé : %(cp)s"
@@ -3998,8 +4320,17 @@ msgstr "de %(a)s à %(b)s"
 msgid "from %(acct)s"
 msgstr "depuis %(acct)s"
 
+msgid "full name"
+msgstr "nom complet"
+
 msgid "has login"
 msgstr "a un accès"
+
+msgid "identification"
+msgstr "pièce d'identité"
+
+msgid "identification number"
+msgstr "numéro de pièce"
 
 msgid "in charge"
 msgstr "responsable"
@@ -4010,6 +4341,9 @@ msgstr "inactif"
 #, python-format
 msgid "into %(acct)s"
 msgstr "vers %(acct)s"
+
+msgid "kind"
+msgstr "type"
 
 msgid "kind must be CUSTOMER, CASH_MANAGER, CASH_DRAWER, UVE, ER, MTN or BANK"
 msgstr ""
@@ -4062,6 +4396,9 @@ msgstr "une caisse par sous-zone."
 
 msgid "opening"
 msgstr "ouverture"
+
+msgid "order in lists"
+msgstr "ordre dans les listes"
 
 msgid "other phone"
 msgstr "autre téléphone"
@@ -4150,6 +4487,9 @@ msgstr "slogan (facultatif)"
 msgid "taxpayer number (NIU)"
 msgstr "numéro de contribuable (NIU)"
 
+msgid "telephone contact"
+msgstr "contact téléphonique"
+
 msgid "trade register (RCCM)"
 msgstr "registre du commerce (RCCM)"
 
@@ -4162,6 +4502,9 @@ msgstr "type doit être AGENT ou POS"
 #, python-format
 msgid "type must be one of %(v)s"
 msgstr "type doit être l'un de %(v)s"
+
+msgid "unit price"
+msgstr "prix unitaire"
 
 #, python-format
 msgid "updated %(cp)s"

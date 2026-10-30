@@ -56,12 +56,13 @@ class Shop(models.Model):
         return Account.objects.get(kind=kind, shop=self, shop_agent=None)
 
     def payable_to(self, agent):
-        """What the shop owes a commercial agent (supplies taken on credit)."""
+        """The shop's position with a commercial agent: negative = the shop owes the agent (supplies on credit),
+        positive = the agent owes the shop (e.g. destockage on credit)."""
         from .ledger import Account
 
         acct, _c = Account.objects.get_or_create(
             kind=Account.Kind.SHOP_PAYABLE, shop=self, shop_agent=agent,
-            defaults=dict(name=f"{self.name} · owed to {agent.name}"))
+            defaults=dict(name=f"{self.name} · position with {agent.name}"))
         return acct
 
 
@@ -124,25 +125,87 @@ class SimRetrieval(models.Model):
         ordering = ["-business_date", "-recorded_at"]
 
 
-class ShopItem(models.Model):
-    class Category(models.TextChoices):
-        GADGET = "GADGET", _("Gadget (phone, tablet, internet box)")
-        ENERGY = "ENERGY", _("Orange energy kit")
-        OTHER = "OTHER", _("Other item")
+class ItemCategory(models.Model):
+    """Category of items sold in the shops (phones, tablets, internet boxes, energy kits…)."""
 
+    name = models.CharField(_("name"), max_length=80, unique=True)
+    active = models.BooleanField(default=True)
+    sort = models.PositiveSmallIntegerField(_("order in lists"), default=100)
+
+    class Meta:
+        ordering = ["sort", "name"]
+        verbose_name_plural = "item categories"
+
+    def __str__(self):
+        return self.name
+
+
+class ShopItem(models.Model):
     name = models.CharField(_("name"), max_length=120)
-    category = models.CharField(_("category"), max_length=10, choices=Category.choices, default=Category.GADGET)
+    category = models.ForeignKey(ItemCategory, on_delete=models.PROTECT, related_name="items",
+                                 verbose_name=_("category"))
     price = models.DecimalField(_("selling price (FCFA)"), **MONEY)
     active = models.BooleanField(default=True)
 
     class Meta:
-        ordering = ["category", "name"]
+        ordering = ["category__sort", "category__name", "name"]
 
     def __str__(self):
         return self.name
 
     def stock_at(self, shop):
-        return self.moves.filter(shop=shop).aggregate(s=Sum("quantity"))["s"] or 0
+        return self.units.filter(shop=shop, status=StockUnit.Status.IN_STOCK).count()
+
+
+class ItemSale(models.Model):
+    """Client details of an item sale (the money is the SHOP_SALE transaction; the units sold point here)."""
+
+    class IdType(models.TextChoices):
+        CNI = "CNI", _("National ID card")
+        PASSPORT = "PASSPORT", _("Passport")
+        RESIDENCE = "RESIDENCE", _("Residence permit")
+        RECEIPT = "RECEIPT", _("ID receipt")
+        OTHER = "OTHER", _("Other")
+
+    transaction = models.OneToOneField("Transaction", on_delete=models.PROTECT, related_name="item_sale")
+    shop = models.ForeignKey(Shop, on_delete=models.PROTECT, related_name="item_sales")
+    item = models.ForeignKey(ShopItem, on_delete=models.PROTECT, related_name="sales")
+    unit_price = models.DecimalField(_("unit price"), **MONEY)
+    client_name = models.CharField(_("full name"), max_length=150)
+    client_address = models.CharField(_("address"), max_length=255)
+    client_country = models.CharField(_("country of origin"), max_length=80)
+    id_type = models.CharField(_("identification"), max_length=10, choices=IdType.choices)
+    id_number = models.CharField(_("identification number"), max_length=60)
+    phone = models.CharField(_("telephone contact"), max_length=30)
+    whatsapp = models.CharField(_("WhatsApp contact"), max_length=30, blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+
+class StockUnit(models.Model):
+    """One physical unit in stock, identified by its IMEI or serial number."""
+
+    class Status(models.TextChoices):
+        IN_STOCK = "IN_STOCK", _("In stock")
+        SOLD = "SOLD", _("Sold")
+        REMOVED = "REMOVED", _("Removed from stock")
+
+    shop = models.ForeignKey(Shop, on_delete=models.PROTECT, related_name="units")
+    item = models.ForeignKey(ShopItem, on_delete=models.PROTECT, related_name="units")
+    serial = models.CharField(_("IMEI / serial number"), max_length=60, unique=True)
+    status = models.CharField(max_length=10, choices=Status.choices, default=Status.IN_STOCK, db_index=True)
+    sale = models.ForeignKey(ItemSale, null=True, blank=True, on_delete=models.PROTECT, related_name="units")
+    received_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name="+")
+    received_at = models.DateTimeField(default=timezone.now)
+    note = models.CharField(max_length=255, blank=True)
+
+    class Meta:
+        ordering = ["item__name", "serial"]
+
+    def __str__(self):
+        return f"{self.item.name} · {self.serial}"
 
 
 class StockMove(models.Model):
@@ -155,6 +218,7 @@ class StockMove(models.Model):
 
     shop = models.ForeignKey(Shop, on_delete=models.PROTECT, related_name="stock_moves")
     item = models.ForeignKey(ShopItem, on_delete=models.PROTECT, related_name="moves")
+    unit = models.ForeignKey("StockUnit", null=True, blank=True, on_delete=models.PROTECT, related_name="moves")
     kind = models.CharField(max_length=10, choices=Kind.choices)
     quantity = models.IntegerField()
     transaction = models.ForeignKey("Transaction", null=True, blank=True, on_delete=models.PROTECT,
