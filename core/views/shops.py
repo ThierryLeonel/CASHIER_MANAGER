@@ -544,7 +544,15 @@ def shop_shift(request):
         except BusinessError as e:
             form.add_error(e.field if e.field in form.fields else None, e.message)
     recent = ShopShift.objects.filter(user=user).select_related("shop")[:15]
+    from core.services import settlements as st
+
+    shop = shift.shop if shift else user.shop
+    expected = ss.expected_now(shop) if shop else {}
+    unpaid = st.unpaid_for_shop(shop) if shop else []
     return render(request, "core/shop/shift.html", {"shift": shift, "form": form, "required": required,
+                                                     "expected": expected, "unpaid": unpaid,
+                                                     "expected_json": {k: int(v) for k, v in expected.items()},
+                                                     "unpaid_total": sum((o for _h, o in unpaid), Decimal(0)),
                                                      "recent": recent, "others": ss.others_open(user.shop, exclude=shift)
                                                      .select_related("user") if user.shop_id else []})
 

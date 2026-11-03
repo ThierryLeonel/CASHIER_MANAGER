@@ -19,6 +19,7 @@ from django.db import IntegrityError, transaction
 from django.db.models import Count, Q, Sum
 from django.utils import timezone
 from django.utils.translation import gettext as _
+from django.utils.translation import gettext_lazy as _l
 
 from core.models import Account, Entry, ServiceCount, ShopDayReview, ShopShift, Transaction, TxType
 from core.money import MoneyError, to_money
@@ -95,6 +96,33 @@ def open_shift(user, *, cash=None, uve=None, er=None, note=""):
     return s
 
 
+def _label(k):
+    return {"cash": _("cash"), "uve": "UVE", "er": "ER"}[k]
+
+
+def fmt_signed(v):
+    from core.money import fmt
+
+    return ("+" if v > 0 else "−") + fmt(abs(v))
+
+
+def expected_now(shop):
+    """The running (system) balances of the shop now: what the counts are compared with."""
+    return _system(shop)
+
+
+def _closing_note(shop, note):
+    """The note typed, plus — automatically — the transfers received and not paid back yet, with the reason."""
+    from .settlements import summary_line, unpaid_for_shop
+
+    lines = [(note or "").strip()] if (note or "").strip() else []
+    unpaid = unpaid_for_shop(shop)
+    if unpaid:
+        lines.append(str(_("Transfers received not paid back yet:")))
+        lines += ["• " + summary_line(h, o) for h, o in unpaid]
+    return "\n".join(lines)
+
+
 def close_shift(user, *, shift=None, cash=None, uve=None, er=None, note=""):
     """Close one's own shift, or (senior shop manager / super admin) a shift someone forgot to close."""
     own = shift is None or shift.user_id == user.pk
@@ -113,11 +141,16 @@ def close_shift(user, *, shift=None, cash=None, uve=None, er=None, note=""):
     with transaction.atomic():
         counts = _counts({"cash": cash, "uve": uve, "er": er}, required=own and last)
         system = _system(shift.shop)
+        diffs = {k: counts[k] - system[k] for k, _kind in KINDS if counts[k] is not None and counts[k] != system[k]}
+        if diffs and not (note or "").strip():
+            raise BusinessError(_("Your count differs from the expected balance (%(d)s). Explain the difference in "
+                                  "the note.") % {"d": ", ".join(f"{_label(k)} {fmt_signed(v)}"
+                                                                   for k, v in diffs.items())}, "note")
         for k, _kind in KINDS:
             setattr(shift, f"close_{k}", counts[k])
             setattr(shift, f"expected_close_{k}", system[k] if counts[k] is not None else None)
         shift.status, shift.closed_at, shift.closed_by, shift.close_note = (
-            ShopShift.Status.CLOSED, timezone.now(), user, note)
+            ShopShift.Status.CLOSED, timezone.now(), user, _closing_note(shift.shop, note))
         shift.save()
     log_event(user, "shop_shift_closed", shift_id=shift.pk, shop=shift.shop.name, own=own)
     return shift
@@ -197,8 +230,8 @@ def day_reconciliation(shop, day, viewer=None):
                     "reviewed_by").first())
 
 
-STATUS_LABELS = {"OPEN": _("Shift(s) still open"), "NOT_COUNTED": _("No closing count"),
-                 "DIFFERENCE": _("Difference"), "BALANCED": _("Balanced")}
+STATUS_LABELS = {"OPEN": _l("Shift(s) still open"), "NOT_COUNTED": _l("No closing count"),
+                 "DIFFERENCE": _l("Difference"), "BALANCED": _l("Balanced")}
 
 
 def review_day(user, *, shop, day, note=""):

@@ -496,3 +496,8 @@ input.auto { background: var(--soft); font-weight: 700; }
 .tbl-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px; }
 .tbl-dl { font-size: .8rem; font-weight: 500; color: var(--muted); }
 .tbl-dl a { color: inherit; }
+/* shift: expected balance under each count, note required on a difference */
+.expect { font-size: .85rem; color: var(--muted); margin-top: 4px; }
+.expect .ok-txt { color: #2e9d5b; font-weight: 600; }
+label.req::after { content: " *"; }
+.unpaid-box { border-left: 4px solid var(--accent); }

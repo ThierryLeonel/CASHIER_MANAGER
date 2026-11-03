@@ -300,7 +300,7 @@ class ShopShift(models.Model):
     expected_close_uve = models.DecimalField(**MONEY, null=True, blank=True)
     expected_close_er = models.DecimalField(**MONEY, null=True, blank=True)
     open_note = models.CharField(max_length=255, blank=True)
-    close_note = models.CharField(max_length=255, blank=True)
+    close_note = models.TextField(blank=True)  # may carry the unpaid transfers received, listed automatically
     closed_by = models.ForeignKey(User, null=True, blank=True, on_delete=models.PROTECT, related_name="+",
                                   help_text="Who closed it (the senior shop manager may close a forgotten shift).")
 

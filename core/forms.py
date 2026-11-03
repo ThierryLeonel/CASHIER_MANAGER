@@ -702,3 +702,22 @@ class CashManagerForm(forms.ModelForm):
             return normalize_sim(v)
         except SimNumberError as exc:
             raise forms.ValidationError(str(exc))
+
+
+class TransferPaymentForm(forms.Form):
+    """Pay a received transfer back to its sender: cash, UVE (and MTN float between cashiers)."""
+
+    idem = forms.UUIDField(widget=forms.HiddenInput)
+    cash = MoneyField(label=_("Cash"), required=False)
+    uve = MoneyField(label=_("UVE"), required=False)
+    mtn = MoneyField(label=_("MTN float"), required=False)
+    description = forms.CharField(label=_("Note"), required=False, max_length=255)
+
+    def __init__(self, *args, with_mtn=False, **kwargs):
+        super().__init__(*args, **kwargs)
+        if not self.is_bound:
+            self.initial.setdefault("idem", uuid.uuid4())
+        if not with_mtn:
+            del self.fields["mtn"]
+        names = [n for n in ("cash", "uve", "mtn") if n in self.fields]
+        amount_boxes(self, names, _("Fill what you pay back, in one or several products."), str(_("Total paid")))

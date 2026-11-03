@@ -318,7 +318,7 @@ def _group(idempotency_key, n, salt):
     return uuid.uuid5(idempotency_key, salt) if isinstance(idempotency_key, uuid.UUID) else uuid.uuid4()
 
 
-def to_cashier(user, *, shop=None, desk, cash=None, uve=None, description="", idempotency_key=None):
+def to_cashier(user, *, shop=None, desk, cash=None, uve=None, description="", idempotency_key=None, settles=None):
     """The shop sends cash and / or UVE to a cashier desk (subzone). Each product leaves the shop's account and
     arrives in the desk's account of the same kind; the entries belong to that desk's business day, so they show
     on the cashier side too (lists, closing). One group, one receipt."""
@@ -336,14 +336,15 @@ def to_cashier(user, *, shop=None, desk, cash=None, uve=None, description="", id
     for i, (prod, kind, a) in enumerate(todo):
         dest, src = desk_account(desk, kind, prod.lower()), shop.account(kind)
         spec = _spec(TxType.SHOP_TO_DESK, shop, [(dest, a), (src, -a)], a, dest_account=dest, source_account=src,
-                     product=prod, payment_group=group, description=description)
+                     product=prod, payment_group=group, description=description, settles=settles,
+                     to_settle=settles is None)
         spec.receipt = i == 0
         specs.append(spec)
     with transaction.atomic():
         return post(specs, ctx, idempotency_key)[0]
 
 
-def desk_to_shop(user, *, shop, cash=None, uve=None, amount=None, description="", idempotency_key=None,
+def desk_to_shop(user, *, shop, cash=None, uve=None, amount=None, description="", idempotency_key=None, settles=None,
                  acting_for=None):
     """A cashier sends cash and / or UVE from the subzone's accounts to a shop (`amount` = UVE, kept for older
     callers). One group, one receipt."""
@@ -361,12 +362,13 @@ def desk_to_shop(user, *, shop, cash=None, uve=None, amount=None, description=""
         src, dest = own_account(ctx.cashier, kind, prod.lower()), shop.account(kind)
         specs.append(TxSpec(type=TxType.DESK_TO_SHOP, lines=[(dest, a), (src, -a)], receipt=i == 0,
                             fields=dict(amount=a, shop=shop, source_account=src, dest_account=dest, product=prod,
-                                        payment_group=group, description=description)))
+                                        payment_group=group, description=description, settles=settles,
+                                        to_settle=settles is None)))
     with transaction.atomic():
         return post(specs, ctx, idempotency_key)[0]
 
 
-def to_shop(user, *, shop=None, dest_shop, cash=None, uve=None, description="", idempotency_key=None):
+def to_shop(user, *, shop=None, dest_shop, cash=None, uve=None, description="", idempotency_key=None, settles=None):
     """One shop sends cash and / or UVE to another shop: shop drawer -> other shop's drawer, UVE -> UVE. Every staff
     member may do it. Both shops see it; one group, one receipt."""
     from .operations import transfer_parts
@@ -382,7 +384,8 @@ def to_shop(user, *, shop=None, dest_shop, cash=None, uve=None, description="", 
     for i, (prod, kind, a) in enumerate(todo):
         src, dest = shop.account(kind), dest_shop.account(kind)
         spec = _spec(TxType.SHOP_TO_SHOP, shop, [(dest, a), (src, -a)], a, source_account=src, dest_account=dest,
-                     product=prod, payment_group=group, description=description)
+                     product=prod, payment_group=group, description=description, settles=settles,
+                     to_settle=settles is None)
         spec.receipt = i == 0
         specs.append(spec)
     with transaction.atomic():

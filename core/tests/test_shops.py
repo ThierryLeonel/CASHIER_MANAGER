@@ -480,7 +480,9 @@ class ShopShiftsAndReconciliation(OrgMixin, TestCase):
         ss.close_shift(self.o["shop_om"])  # others still on shift: counts optional
         with self.assertRaises(BusinessError):  # last to leave counts the till
             ss.close_shift(self.m)
-        done = ss.close_shift(self.m, cash=D(354000), uve=D(750000), er=D(144000))
+        with self.assertRaises(BusinessError):  # a difference must be explained
+            ss.close_shift(self.m, cash=D(354000), uve=D(750000), er=D(144000))
+        done = ss.close_shift(self.m, cash=D(354000), uve=D(750000), er=D(144000), note="1 000 short, recounting")
         self.assertEqual(done.close_diffs, {"cash": D(-1000), "uve": D(0), "er": D(-1000)})
         with self.assertRaises(PermissionDenied):
             sh.cash_in(self.m, amount=D(1))  # closed again
@@ -1071,3 +1073,83 @@ class TransferReconciliation(OrgMixin, TestCase):
         self.assertNotContains(sr, "80 000")  # cashier-to-cashier transfers are not the shops'
         om = self.client_for("shop.molyko.om").get("/shops/reports/?kind=transfers&period=day")
         self.assertEqual(om.status_code, 200)
+
+
+class ShiftClosingAndTransferPayments(OrgMixin, TestCase):
+    def setUp(self):
+        self.make_org()
+        self.fund_all()
+        self.shop = self.o["shop"]
+        self.m = self.o["shop_mgr"]
+        for kind, amt in ((K.CASH_DRAWER, 300000), (K.UVE, 800000), (K.ER, 150000)):
+            self.fund(self.shop.account(kind), amt)
+
+    def client_for(self, u):
+        c = self.client_class()
+        self.assertTrue(c.login(username=u, password=PW))
+        return c
+
+    def test_expected_shown_and_note_required_on_difference(self):
+        from core.services import shop_shifts as ss
+
+        ss.open_shift(self.m, cash=D(300000), uve=D(800000), er=D(150000))
+        c = self.client_for("shop.molyko")
+        page = c.get("/shops/shift/")
+        self.assertContains(page, '"cash": 300000')  # the expected running balances are on the page
+        self.assertContains(page, "Expected now")
+        r = c.post("/shops/shift/", {"cash": "299 000", "uve": "800 000", "er": "150 000", "note": ""})
+        self.assertContains(r, "Explain the difference in the note")
+        self.assertIsNotNone(ss.current_shift(self.m))
+        r = c.post("/shops/shift/", {"cash": "299 000", "uve": "800 000", "er": "150 000",
+                                     "note": "1 000 given back to a client"})
+        self.assertEqual(r.status_code, 302)
+        self.assertIsNone(ss.current_shift(self.m))
+
+    def test_pay_back_a_received_transfer_and_automatic_note(self):
+        from core.services import settlements as st
+        from core.services import shop_shifts as ss
+
+        t = sh.desk_to_shop(self.c_f1, shop=self.shop, cash=D(20000), uve=D(50000))
+        self.assertTrue(t.to_settle)
+        self.assertEqual(st.outstanding(t), D(70000))
+        ss.open_shift(self.m, cash=D(320000), uve=D(850000), er=D(150000))
+        c = self.client_for("shop.molyko")
+        detail = c.get(f"/transactions/{t.pk}/")
+        self.assertContains(detail, "Pay the sender")
+        self.assertContains(detail, "still owed")
+        self.assertContains(c.get("/shops/shift/"), "Transfers received not paid back yet")
+        # the cashier who sent it cannot "pay" it; too much is refused
+        self.assertFalse(st.can_pay(self.c_f1, t))
+        r = c.post(f"/transactions/{t.pk}/pay/", {"idem": str(uuid.uuid4()), "cash": "80 000"})
+        self.assertContains(r, "Only 70 000 FCFA is still owed")
+        d1 = self.bal(self.d_f1)
+        r = c.post(f"/transactions/{t.pk}/pay/", {"idem": str(uuid.uuid4()), "cash": "50 000"})
+        self.assertEqual(r.status_code, 302, r.content[:1500])
+        self.assertEqual(self.bal(self.d_f1), d1 + 50000)  # paid back to the sender's desk
+        p = Transaction.objects.get(settles=t)
+        self.assertEqual((p.type, p.to_settle), (TxType.SHOP_TO_DESK, False))  # a payment is not paid back again
+        self.assertEqual(st.outstanding(t), D(20000))
+        # closing with 20 000 still owed: listed automatically in the closing note, with the reason
+        b = sh.shop_balances(self.shop)
+        done = ss.close_shift(self.m, cash=b[K.CASH_DRAWER], uve=b[K.UVE], er=b[K.ER])
+        self.assertIn("Transfers received not paid back yet", done.close_note)
+        self.assertIn(t.reference, done.close_note)
+        self.assertIn("20 000", done.close_note)
+        # pay the rest: nothing owed any more
+        ss.open_shift(self.m, cash=b[K.CASH_DRAWER], uve=b[K.UVE], er=b[K.ER])
+        st.pay(self.m, t, uve=D(20000))
+        self.assertEqual(st.outstanding(t), D(0))
+        self.assertEqual(st.unpaid_for_shop(self.shop), [])
+        self.assertContains(c.get(f"/transactions/{t.pk}/"), "Fully paid back")
+
+    def test_cashier_pays_back_a_cashier(self):
+        from core.services import operations as ops
+        from core.services import settlements as st
+
+        t = ops.record_desk_transfer(self.c_f1, desk=self.zones["fako2"], cash=D(30000))[0]
+        self.assertTrue(st.can_pay(self.c_f2, t))
+        self.assertEqual([h.pk for h, _o in st.unpaid_for_desk(self.zones["fako2"])], [t.pk])
+        c = self.client_for("cashier.fako2")
+        r = c.post(f"/transactions/{t.pk}/pay/", {"idem": str(uuid.uuid4()), "uve": "30 000"})
+        self.assertEqual(r.status_code, 302, r.content[:1500])
+        self.assertEqual(st.outstanding(t), D(0))

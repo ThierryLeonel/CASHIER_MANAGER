@@ -370,7 +370,7 @@ def transfer_parts(parts, allowed=("CASH", "UVE", "MTN")):
 
 
 def record_desk_transfer(user, *, desk, cash=None, uve=None, mtn=None, description="", idempotency_key=None,
-                         acting_for=None):
+                         acting_for=None, settles=None):
     """Transfer from the cashier's desk to another desk, in cash, UVE and / or MTN float at once. Each product
     leaves from the cashier's own account and arrives in the other desk's account of the same kind; the parts are
     posted together, sharing one group and one receipt."""
@@ -388,6 +388,8 @@ def record_desk_transfer(user, *, desk, cash=None, uve=None, mtn=None, descripti
                                        destination=desk_account(desk, kind, prod.lower()), amount=amt,
                                        description=description)
         spec.fields["payment_group"] = group
+        spec.fields["settles"] = settles
+        spec.fields["to_settle"] = settles is None  # the other desk pays it back (unless this is that payment)
         spec.receipt = i == 0
         specs.append(spec)
     with transaction.atomic():

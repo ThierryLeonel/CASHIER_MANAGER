@@ -79,6 +79,7 @@ urlpatterns = [
     path("shops/attendance/", v.shop_attendance, name="shop_attendance"),
     path("shops/reports/", v.shop_reports, name="shop_reports"),
     path("shops/purchase/", v.shop_purchase, name="shop_purchase"),
+    path("transactions/<int:pk>/pay/", v.transfer_pay, name="transfer_pay"),
     path("shops/opening-balances/", v.shop_opening_balances, name="shop_opening_balances"),
     path("transfer/to-shop/", v.desk_to_shop, name="desk_to_shop"),
     path("admin/", admin.site.urls),

@@ -6,11 +6,18 @@
 <div class="actions">
   {% if rt.receipt_no %}<a class="btn primary" href="{% url 'receipt' rt.pk %}">{% trans "A4 receipt / print" %}</a>
   <a class="btn" href="{% url 'receipt_pdf' rt.pk %}?download=1">{% trans "Download PDF" %}</a>{% endif %}
+  {% if settle.can_pay %}<a class="btn primary" href="{% url 'transfer_pay' settle.head.pk %}">{% icon "payment" 16 %} {% trans "Pay the sender" %}</a>{% endif %}
   {% if can_transfer %}<a class="btn" href="{% url 'txn_transfer' t.pk %}">{% trans "Transfer responsibility" %}</a>{% endif %}
   {% if can_correct %}<a class="btn" href="{% url 'txn_correct' t.pk %}">{% trans "Correct" %}</a>{% endif %}
   {% if can_edit %}<a class="btn" href="{% url 'txn_edit' t.pk %}">{% icon "edit" 16 %} {% trans "Edit" %}</a>{% endif %}
   {% if can_admin %}<a class="btn danger" href="{% url 'txn_delete' t.pk %}">{% icon "trash" 16 %} {% trans "Delete" %}</a>{% endif %}
 </div>{% endwith %}
+{% if settle %}<div class="panel settle-box">
+  <p><strong>{% trans "Payment back to the sender" %}</strong> — {% trans "transferred" %} {{ settle.total|fcfa }} FCFA · {% trans "paid back" %} {{ settle.paid|fcfa }} FCFA ·
+  {% if settle.outstanding %}<span class="neg">{% trans "still owed" %} {{ settle.outstanding|fcfa }} FCFA</span>{% else %}<span class="badge ok">{% trans "Fully paid back" %}</span>{% endif %}</p>
+  {% if settle.payments %}<p class="small muted">{% for p in settle.payments %}<a href="{% url 'txn_detail' p.pk %}">{{ p.reference }}</a> {{ p.amount|fcfa }} ({{ p.business_date|date:"d/m/Y" }}){% if not forloop.last %} · {% endif %}{% endfor %}</p>{% endif %}
+</div>{% endif %}
+{% if t.settles_id %}<p class="small muted">{% trans "This transfer pays back" %} <a href="{% url 'txn_detail' t.settles_id %}">{{ t.settles.reference }}</a>.</p>{% endif %}
 {% if t.is_corrected %}
 <div class="msg error"><strong>{% trans "CORRECTED" %}</strong> — {{ t.correction.reason }}<br>
 <span class="small">{{ t.correction.get_kind_display }} · {{ t.correction.corrected_by }} · {{ t.correction.created_at|date:"d/m/Y H:i" }} ·

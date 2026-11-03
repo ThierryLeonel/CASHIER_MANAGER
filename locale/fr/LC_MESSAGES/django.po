@@ -114,6 +114,10 @@ msgstr ""
 "décider comment traiter ce cas."
 
 #, python-format
+msgid "%(ref)s from %(who)s on %(date)s: %(amt)s FCFA not paid back yet"
+msgstr "%(ref)s de %(who)s du %(date)s : %(amt)s FCFA pas encore remboursés"
+
+#, python-format
 msgid "%(ref)s has already been corrected."
 msgstr "%(ref)s a déjà été corrigée."
 
@@ -193,6 +197,16 @@ msgstr "%(u)s est désactivé et ne peut plus se connecter."
 #, python-format
 msgid "%(u)s is not a shop staff account."
 msgstr "%(u)s n'est pas un compte du personnel de boutique."
+
+#, python-format
+msgid ""
+"%(who)s sent you %(total)s FCFA on %(date)s. Already paid back: %(paid)s "
+"FCFA. Still owed: %(left)s FCFA. The payment goes back from your accounts to"
+" the sender's accounts."
+msgstr ""
+"%(who)s vous a envoyé %(total)s FCFA le %(date)s. Déjà remboursé : %(paid)s "
+"FCFA. Reste dû : %(left)s FCFA. Le paiement part de vos comptes vers les "
+"comptes de l'expéditeur."
 
 #, python-format
 msgid "%(x)s deleted."
@@ -322,8 +336,14 @@ msgid "A responsibility transfer can only be cancelled, then recorded again."
 msgstr ""
 "Un transfert de responsabilité peut seulement être annulé, puis ressaisi."
 
+msgid "A shop is paid back in cash and / or UVE."
+msgstr "Une boutique est remboursée en espèces et / ou UVE."
+
 msgid "A shop manager must be assigned a shop."
 msgstr "Un gérant de boutique doit être affecté à une boutique."
+
+msgid "A shop pays back in cash and / or UVE."
+msgstr "Une boutique rembourse en espèces et / ou UVE."
 
 msgid "A subzone's parent must be a master zone."
 msgstr "Le parent d'une sous-zone doit être une zone principale."
@@ -2116,6 +2136,9 @@ msgstr "Saisissez l'IMEI ou le numéro de série de chaque unité."
 msgid "Enter the actual balance for %(acct)s."
 msgstr "Saisissez le solde réel de %(acct)s."
 
+msgid "Enter the amount paid in cash and / or UVE."
+msgstr "Saisissez le montant payé en espèces et / ou UVE."
+
 msgid "Enter the amount received in at least one payment method."
 msgstr "Saisissez le montant reçu dans au moins un mode de paiement."
 
@@ -2229,6 +2252,9 @@ msgstr "Attendu"
 msgid "Expected (book)"
 msgstr "Attendu (comptable)"
 
+msgid "Expected now"
+msgstr "Attendu maintenant"
+
 msgid "Expense"
 msgstr "Dépense"
 
@@ -2290,6 +2316,9 @@ msgstr ""
 "Remplissez ce qui a été fourni. Les espèces sortent de votre caisse, l'UVE "
 "de votre portefeuille UVE et l'ER de la SIM master ; le total se calcule "
 "tout seul."
+
+msgid "Fill what you pay back, in one or several products."
+msgstr "Remplissez ce que vous remboursez, en un ou plusieurs produits."
 
 msgid ""
 "Fill what you send. Cash leaves your drawer and arrives in the other desk's "
@@ -2390,6 +2419,9 @@ msgstr ""
 
 msgid "Full statement"
 msgstr "Relevé complet"
+
+msgid "Fully paid back"
+msgstr "Entièrement remboursé"
 
 msgid "Gadget (phone, tablet, internet box)"
 msgstr "Gadget (téléphone, tablette, box internet)"
@@ -3098,6 +3130,10 @@ msgstr ""
 "avec les valeurs corrigées) est passée sur la journée ouverte du caissier. "
 "Les journées clôturées ne sont pas réécrites."
 
+msgid "Nothing is owed on this transfer, or you are not its receiver."
+msgstr ""
+"Rien n'est dû sur ce transfert, ou vous n'en êtes pas le destinataire."
+
 msgid "Nothing recorded in this period."
 msgstr "Rien d'enregistré sur cette période."
 
@@ -3155,6 +3191,10 @@ msgstr ""
 "enregistré qu'une fois."
 
 #, python-format
+msgid "Only %(amt)s FCFA is still owed on %(ref)s."
+msgstr "Il ne reste que %(amt)s FCFA dû sur %(ref)s."
+
+#, python-format
 msgid "Only %(n)s × %(item)s in stock at %(shop)s."
 msgstr "Seulement %(n)s × %(item)s en stock à %(shop)s."
 
@@ -3206,6 +3246,13 @@ msgid ""
 msgstr ""
 "Seul le nombre de services est enregistré (par ex. OTT, MAX IT, mises à jour"
 " d'identification, tickets)."
+
+msgid ""
+"Only the receiver of this transfer pays it back, while something is still "
+"owed."
+msgstr ""
+"Seul le destinataire de ce transfert le rembourse, tant qu'il reste quelque "
+"chose de dû."
 
 msgid "Only the senior shop manager closes someone else's shift."
 msgstr ""
@@ -3573,6 +3620,20 @@ msgstr "Payer un agent"
 msgid "Pay an agent (supplies taken on credit)"
 msgstr "Payer un agent (approvisionnements à crédit)"
 
+msgid "Pay the sender"
+msgstr "Payer l'expéditeur"
+
+msgid ""
+"Pay the sender now, or they will be written automatically into your closing "
+"note as unpaid."
+msgstr ""
+"Payez l'expéditeur maintenant, sinon ces transferts seront inscrits "
+"automatiquement comme impayés dans votre note de clôture."
+
+#, python-format
+msgid "Pay the sender — %(ref)s"
+msgstr "Payer l'expéditeur — %(ref)s"
+
 msgid "Paying customer"
 msgstr "Client payeur"
 
@@ -3583,11 +3644,22 @@ msgid "Payment"
 msgstr "Paiement"
 
 #, python-format
+msgid "Payment %(ref)s recorded. Still owed on %(orig)s: %(left)s FCFA."
+msgstr "Paiement %(ref)s enregistré. Reste dû sur %(orig)s : %(left)s FCFA."
+
+#, python-format
 msgid "Payment %(ref)s recorded: %(amt)s FCFA."
 msgstr "Paiement %(ref)s enregistré : %(amt)s FCFA."
 
+msgid "Payment back to the sender"
+msgstr "Remboursement à l'expéditeur"
+
 msgid "Payment method"
 msgstr "Mode de paiement"
+
+#, python-format
+msgid "Payment of transfer %(ref)s"
+msgstr "Paiement du transfert %(ref)s"
 
 msgid "Payments received: cash, UVE, MTN, bank"
 msgstr "Paiements reçus : espèces, UVE, MTN, banque"
@@ -4459,6 +4531,9 @@ msgstr ""
 msgid "Still open"
 msgstr "Encore ouverts"
 
+msgid "Still owed"
+msgstr "Reste dû"
+
 msgid "Stock"
 msgstr "Stock"
 
@@ -4828,6 +4903,11 @@ msgid "Their current balance"
 msgstr "Son solde actuel"
 
 msgid ""
+"There is a difference: the note is required. Explain it before closing."
+msgstr ""
+"Il y a un écart : la note est obligatoire. Expliquez-le avant de clôturer."
+
+msgid ""
 "These were posted on a later open business day; this closing was not "
 "rewritten."
 msgstr ""
@@ -4920,6 +5000,9 @@ msgstr ""
 msgid "This transaction has no customer obligation."
 msgstr "Cette transaction ne comporte aucune obligation client."
 
+msgid "This transfer pays back"
+msgstr "Ce transfert rembourse"
+
 msgid "This type of entry cannot be corrected directly."
 msgstr "Ce type d'écriture ne peut pas être corrigé directement."
 
@@ -5010,6 +5093,9 @@ msgstr "Total des produits"
 
 msgid "Total of the sale"
 msgstr "Total de la vente"
+
+msgid "Total paid"
+msgstr "Total payé"
 
 msgid "Total payment"
 msgstr "Total du paiement"
@@ -5113,6 +5199,12 @@ msgstr ""
 
 msgid "Transfers between company accounts"
 msgstr "Transferts entre comptes de l'entreprise"
+
+msgid "Transfers received not paid back yet"
+msgstr "Transferts reçus pas encore remboursés"
+
+msgid "Transfers received not paid back yet:"
+msgstr "Transferts reçus pas encore remboursés :"
 
 msgid "Transfers with shops"
 msgstr "Transferts avec les boutiques"
@@ -5624,6 +5716,14 @@ msgstr "Votre compte n'est pas lié à une boutique."
 msgid "Your account is not linked to an open shop."
 msgstr "Votre compte n'est lié à aucune boutique ouverte."
 
+#, python-format
+msgid ""
+"Your count differs from the expected balance (%(d)s). Explain the difference"
+" in the note."
+msgstr ""
+"Votre comptage diffère du solde attendu (%(d)s). Expliquez l'écart dans la "
+"note."
+
 msgid "Your drawers and wallets (book balances)"
 msgstr "Vos caisses et portefeuilles (soldes comptables)"
 
@@ -5826,6 +5926,9 @@ msgstr "date de service"
 msgid "diff."
 msgstr "écart"
 
+msgid "difference"
+msgstr "écart"
+
 msgid "due to customer"
 msgstr "dû au client"
 
@@ -5904,6 +6007,9 @@ msgstr "SIM maître de la zone"
 msgid "master zone"
 msgstr "zone principale"
 
+msgid "matches"
+msgstr "correspond"
+
 msgid "microzone"
 msgstr "microzone"
 
@@ -5957,6 +6063,9 @@ msgstr "dû à l'entreprise"
 
 msgid "owes"
 msgstr "doit"
+
+msgid "paid back"
+msgstr "remboursé"
 
 msgid "part of a payment made with several methods"
 msgstr "partie d'un paiement fait avec plusieurs modes"
@@ -6066,6 +6175,9 @@ msgstr "source des fonds"
 msgid "staff ID"
 msgstr "ID employé"
 
+msgid "still owed"
+msgstr "reste dû"
+
 msgid "subzone"
 msgstr "sous-zone"
 
@@ -6098,6 +6210,9 @@ msgstr "total"
 
 msgid "trade register (RCCM)"
 msgstr "registre du commerce (RCCM)"
+
+msgid "transferred"
+msgstr "transféré"
 
 msgid "type"
 msgstr "type"

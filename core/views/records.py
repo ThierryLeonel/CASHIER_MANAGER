@@ -17,6 +17,7 @@ from core.pdf import receipt_pdf
 from core.reports.engine import FilterForm, Filters
 from core.services import corrections as corr
 from core.services import operations as ops
+from core.services.errors import BusinessError
 from core.services.ledger import balance
 from core.simnumbers import display_sim
 
@@ -257,7 +258,15 @@ def txn_detail(request, pk):
     entries = t.entries.select_related("account__sim", "account__counterparty").order_by("id") \
         if not request.user.is_agent else None
     transfers = t.responsibility_transfers.select_related("counterparty", "counterparty_2", "entered_by")
+    from core.services import settlements as st
+
+    sh_ = st.head(t) if t.type in st.SETTLE_TYPES else None
     ctx = {"t": t, "entries": entries, "rows": receipt_rows(t), "transfers": transfers,
+           "settle": ({"outstanding": st.outstanding(sh_), "paid": st.paid(sh_), "total": st.total(sh_),
+                       "can_pay": st.can_pay(request.user, sh_), "head": sh_,
+                       "payments": list(Transaction.objects.filter(settles=sh_, correction__isnull=True)
+                                        .order_by("posted_at"))}
+                      if sh_ is not None and sh_.to_settle else None),
            "current_responsible": ops.current_responsible(t) if t.type in ops.TRANSFERABLE_TYPES else None,
            "can_correct": request.user.role in SUPERVISORS and t.type not in corr.NOT_CORRECTABLE
            and not hasattr(t, "correction"),
@@ -370,3 +379,43 @@ def customer_search(request):
                     "balance_label": str(_("owes") if bal > 0 else _("supply due") if bal < 0 else _("settled")),
                     "hide_balance": shop_user})
     return JsonResponse({"results": out})
+
+
+@roles_required(R.CASHIER, R.SHOP_MANAGER, R.SHOP_SENIOR, R.SUPERADMIN)
+def transfer_pay(request, pk):
+    """The receiver of a transfer pays it back to the sender."""
+    from core.services import settlements as st
+    from core.services import shop_shifts as ss
+
+    t = _get_visible_txn(request, pk)
+    h = st.head(t)
+    if h.type not in st.SETTLE_TYPES or not st.can_pay(request.user, h):
+        messages.info(request, _("Nothing is owed on this transfer, or you are not its receiver."))
+        return redirect("txn_detail", pk=t.pk)
+    if request.user.is_shop_manager and ss.current_shift(request.user) is None:
+        messages.info(request, _("Open your shift first: count the till, then you can record."))
+        return redirect(f"/shops/shift/?next={request.path}")
+    o = st.outstanding(h)
+    between_cashiers = not h.source_account.shop_id and not h.dest_account.shop_id
+    form = F.TransferPaymentForm(request.POST or None, with_mtn=between_cashiers)
+    nxt = request.GET.get("next") or ""
+    nxt = nxt if nxt.startswith("/") and not nxt.startswith("//") else ""
+    if request.method == "POST" and form.is_valid():
+        cd = dict(form.cleaned_data)
+        idem = cd.pop("idem")
+        try:
+            p = st.pay(request.user, h, idempotency_key=idem, **cd)
+        except BusinessError as e:
+            form.add_error(e.field if e.field in form.fields else None, e.message)
+        else:
+            left = st.outstanding(h)
+            messages.success(request, _("Payment %(ref)s recorded. Still owed on %(orig)s: %(left)s FCFA.")
+                             % {"ref": p.reference, "orig": h.reference, "left": fmt(left)})
+            return redirect(nxt or "txn_detail", **({} if nxt else {"pk": p.pk}))
+    return render(request, "core/entry_form.html", {
+        "form": form, "icon": "payment",
+        "title": _("Pay the sender — %(ref)s") % {"ref": h.reference},
+        "intro": _("%(who)s sent you %(total)s FCFA on %(date)s. Already paid back: %(paid)s FCFA. Still owed: "
+                   "%(left)s FCFA. The payment goes back from your accounts to the sender's accounts.")
+        % {"who": st.party(h.source_account), "total": fmt(st.total(h)), "date": h.business_date.strftime("%d/%m/%Y"),
+           "paid": fmt(st.paid(h)), "left": fmt(o)}})

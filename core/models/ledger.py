@@ -250,6 +250,10 @@ class Transaction(models.Model):
                                              "it goes to.")
     fund_purpose = models.CharField(_("purpose"), max_length=255, blank=True)
     supplier = models.CharField(_("supplier"), max_length=120, blank=True)
+    # transfers between desks and shops: the receiver pays the sender back
+    to_settle = models.BooleanField(default=False, help_text="A transfer the receiver must pay back to the sender.")
+    settles = models.ForeignKey("self", null=True, blank=True, on_delete=models.PROTECT, related_name="settlements",
+                                help_text="This transfer pays back that received transfer.")
     description = models.CharField(max_length=255, blank=True)
     idempotency_key = models.UUIDField(null=True, blank=True, unique=True)
     reverses = models.OneToOneField("self", null=True, blank=True, on_delete=models.PROTECT,

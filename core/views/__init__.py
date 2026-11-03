@@ -21,3 +21,4 @@ from .shops import (  # noqa: F401,E402
     shop_stock, shop_transactions, shops, desk_to_shop,
 )
 from .capital import capital, capital_op  # noqa: F401,E402
+from .records import transfer_pay  # noqa: F401,E402
