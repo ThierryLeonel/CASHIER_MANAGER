@@ -338,10 +338,96 @@ def expenses(f):
     return rep
 
 
+TRANSFER_TYPES = (TxType.INTERNAL_TRANSFER, TxType.DESK_TO_SHOP, TxType.SHOP_TO_DESK, TxType.SHOP_TO_SHOP,
+                  TxType.CAPITAL_MOVE)
+
+
+def _party(a):
+    """Who holds an account: a shop, a cashier desk (subzone; a master SIM counts for its cashier in charge's desk),
+    or the bank."""
+    if a is None:
+        return "—"
+    if a.shop_id:
+        return str(_("Shop %(s)s") % {"s": a.shop.name})
+    if a.custodian_id and a.custodian.subzone_id:
+        return str(a.custodian.subzone)
+    if a.zone_id:
+        return str(a.zone)
+    return str(Account.Kind(a.kind).label) if a.kind == K.BANK else str(a)
+
+
 def transfers(f):
-    rep = Report("transfers", _("Internal transfers"), f.text())
-    qs = txns(f, [TxType.INTERNAL_TRANSFER])
-    rep.tables.append(Table(_("Transfers between company accounts"), TX_COLUMNS, [txn_row(t) for t in qs]))
+    """Transfer reconciliation: every internal transfer (cashier <-> cashier, cashier <-> shop, shop <-> shop and
+    capital transfers) in the period — who sent what to whom, what each desk or shop sent and received, and the
+    check that what was sent equals what was received, per product."""
+    qs = Transaction.objects.filter(f.date_q(), type__in=TRANSFER_TYPES, correction__isnull=True) \
+        .select_related("source_account__shop", "source_account__zone", "source_account__custodian__subzone",
+                        "dest_account__shop", "dest_account__zone", "dest_account__custodian__subzone", "entered_by") \
+        .order_by("business_date", "posted_at", "id")
+    if f.cashier or f.subzone or f.master_zone:  # a desk or a zone: transfers it sent or received
+        ids = list(scoped_asset_accounts(f).values_list("id", flat=True))
+        qs = qs.filter(Q(source_account_id__in=ids) | Q(dest_account_id__in=ids))
+    return transfer_reconciliation(qs, f.text())
+
+
+def transfer_reconciliation(qs, filters_text):
+    """The report itself, for any set of transfers (the cashiers' reports, or the shops' reports)."""
+    from collections import OrderedDict
+
+    rep = Report("transfers", _("Transfer reconciliation"), filters_text)
+    qs = qs.prefetch_related("entries")
+    rows, pairs, parties = [], OrderedDict(), OrderedDict()
+    products = []
+    sent_total, received_total = Z, Z
+    for t in qs:
+        src, dst = t.source_account, t.dest_account
+        prod = str(Account.Kind(src.kind).label) if src else "—"
+        if prod not in products:
+            products.append(prod)
+        a, b = _party(src), _party(dst)
+        rows.append(dict(business_date=t.business_date, reference=t.reference, _id=t.pk, type=t.display_type,
+                         sender=a, receiver=b, product=prod, amount=t.amount, by=str(t.entered_by),
+                         description=t.description))
+        key = (a, b, prod)
+        pr = pairs.setdefault(key, {"sender": a, "receiver": b, "product": prod, "n": 0, "amount": Z})
+        pr["n"] += 1
+        pr["amount"] += t.amount
+        for who, side in ((a, "sent"), (b, "received")):
+            p = parties.setdefault(who, defaultdict(Decimal))
+            p[f"{side}_{prod}"] += t.amount
+            p[side] += t.amount
+        # each transfer is one balanced entry: what leaves the sender's account arrives in the receiver's
+        sent_total += -sum((e.amount for e in t.entries.all() if e.account_id == t.source_account_id), Z)
+        received_total += sum((e.amount for e in t.entries.all() if e.account_id == t.dest_account_id), Z)
+    by_party = []
+    for who, p in sorted(parties.items()):
+        r = {"party": who}
+        for prod in products:
+            r[f"sent_{prod}"] = p.get(f"sent_{prod}", Z)
+            r[f"received_{prod}"] = p.get(f"received_{prod}", Z)
+        r.update(sent=p["sent"], received=p["received"], net=p["received"] - p["sent"])
+        by_party.append(r)
+    cols = [Col("party", _("Desk / shop"))]
+    for prod in products:
+        cols += [Col(f"sent_{prod}", f"{prod} · " + str(_("sent")), "money", True),
+                 Col(f"received_{prod}", f"{prod} · " + str(_("received")), "money", True)]
+    cols += [Col("sent", _("Total sent"), "money", True), Col("received", _("Total received"), "money", True),
+             Col("net", _("Net (received − sent)"), "money", True)]
+    rep.tables.append(Table(_("By desk and shop"), cols, by_party,
+                            note=_("Across the whole company, total sent equals total received for each product.")))
+    rep.tables.append(Table(_("Who sent what to whom"),
+                            [Col("sender", _("From")), Col("receiver", _("To")), Col("product", _("Product")),
+                             Col("n", _("Transfers"), "int", True), Col("amount", _("Amount"), "money", True)],
+                            list(pairs.values())))
+    rep.tables.append(Table(_("All transfers"),
+                            [Col("business_date", _("Date"), "date"), Col("reference", _("Reference")),
+                             Col("type", _("Type")), Col("sender", _("From")), Col("receiver", _("To")),
+                             Col("product", _("Product")), Col("amount", _("Amount"), "money", True),
+                             Col("by", _("Recorded by")), Col("description", _("Note"))], rows))
+    ok = sent_total == received_total
+    rep.summary = [(_("Transfers"), str(len(rows)), "text"), (_("Total sent"), sent_total, "money"),
+                   (_("Total received"), received_total, "money"),
+                   (_("Check"), _("OK — sent equals received") if ok else _("MISMATCH"), "text")]
     return rep
 
 
@@ -653,7 +739,7 @@ REPORTS = {
     "cash_managers": (_l("Cash-manager exchanges"), cash_managers),
     "expenses": (_l("Expenses by category"), expenses),
     "accounts": (_l("Drawer and SIM wallet movements"), accounts),
-    "transfers": (_l("Internal transfers"), transfers),
+    "transfers": (_l("Transfer reconciliation"), transfers),
     "conversions": (_l("Conversions and rates"), conversions),
     "supply_due": (_l("Supply due to customers"), supply_due),
     "corrections": (_l("Corrections and responsibility transfers"), corrections),
@@ -673,7 +759,7 @@ REPORT_CARDS = {
     "cash_managers": ("bank", _l("Exchanges and what is owed either way")),
     "expenses": ("expense", _l("Spending by category")),
     "accounts": ("wallet", _l("In and out of every drawer, SIM wallet and bank")),
-    "transfers": ("transfer", _l("Moves between company accounts")),
+    "transfers": ("transfer", _l("Every transfer between desks, shops and banks: who sent what to whom, sent = received")),
     "conversions": ("convert", _l("UVE converted to ER and the rates used")),
     "supply_due": ("percent", _l("Customers who paid in advance")),
     "corrections": ("edit", _l("Corrected entries and changes of responsibility")),

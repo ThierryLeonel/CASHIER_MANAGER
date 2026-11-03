@@ -55,8 +55,9 @@ TEMPLATES = {
     "shop_stock": (["shop", "item", "serials", "note"],
                    [["shop-molyko", "Smartphone A12", "356000000000011, 356000000000029", "delivery 12"],
                     ["shop-molyko", "Energie kit S", "OEK-S-0001", ""]]),
-    "shop_transactions": (["date", "shop", "type", "amount", "commission", "service", "client_phone", "note"],
-                          [["2026-11-02", "shop-molyko", "CASHIN", "50000", "250", "", "677123456", ""],
+    "shop_transactions": (["date", "shop", "type", "amount", "commission", "service", "client_phone", "note",
+                           "account_name"],
+                          [["2026-11-02", "shop-molyko", "CASHIN", "50000", "250", "", "677123456", "", "Ngwa Peter"],
                            ["2026-11-02", "shop-molyko", "CASHOUT", "20000", "200", "", "", ""],
                            ["2026-11-02", "shop-molyko", "AIRTIME", "5000", "", "", "", ""],
                            ["2026-11-02", "shop-molyko", "GOOD_DEAL", "10000", "", "", "", ""],
@@ -485,9 +486,11 @@ def _row_shop_transaction(user, r):
         amount = _money(r.get("amount"))
         com = _money(r.get("commission")) if _s(r.get("commission")) else None
         if ttype == "CASHIN":
-            t = sh.cash_in(user, shop=shop, amount=amount, commission=com, client_phone=phone, description=note)
+            t = sh.cash_in(user, shop=shop, amount=amount, commission=com, client_phone=phone, description=note,
+                           account_name=_s(r.get("account_name")))
         elif ttype == "CASHOUT":
-            t = sh.cash_out(user, shop=shop, amount=amount, commission=com, client_phone=phone, description=note)
+            t = sh.cash_out(user, shop=shop, amount=amount, commission=com, client_phone=phone, description=note,
+                            account_name=_s(r.get("account_name")))
         elif ttype in ("AIRTIME", "GOOD_DEAL"):
             t = sh.airtime(user, shop=shop, amount=amount, kind="GOOD_DEAL" if ttype == "GOOD_DEAL" else "NORMAL",
                            client_phone=phone, description=note)

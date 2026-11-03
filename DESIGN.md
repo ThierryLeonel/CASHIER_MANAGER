@@ -137,6 +137,12 @@ Transfers between desks no longer pick a product from a list; like the supply fo
 * **Shop → cashier** (Transfer to a cashier, agents duty): choose the cashier desk, then Cash and / or UVE; posted in that desk's business day so it shows on the cashier side and in its closing.
 Shop reports' columns are now "To cashiers" / "From cashiers" (cash and UVE together).
 
+#### Transfers for every shop staff member, shop-to-shop, account name, transfer reconciliation (04/11/2026)
+* **Transfers are open to every shop staff member**, whatever their duties (e.g. the Orange Money desk): a "Transfers" menu group and two buttons on the shop page — **Transfer to a cashier** and **Transfer to another shop**. Transfer entries (to / from cashiers, between shops) are visible to all staff of the shop.
+* **Shop → shop** (`SHOP_TO_SHOP`): choose the receiving shop, then Cash and / or UVE (drawer → drawer, UVE → UVE); one group, one receipt. Both shops see it (the receiving shop in its transaction list, its page — line "transfer received from another shop" — and its reports' "From other shops" column); cashiers do not.
+* **Cash-in / cash-out** record the **account name** (the name on the client's Orange Money account; required in the form) next to the optional client phone; shown on the receipt and in the shop lists; importable (`account_name` column).
+* **Transfer reconciliation** (replaces the "Internal transfers" report; also in Shop reports › Which report): every internal transfer — cashier ↔ cashier, cashier ↔ shop, shop ↔ shop, capital transfers — over the period: by desk / shop (sent and received per product, totals, net), who sent what to whom (pairs per product), the full list, and the check that total sent equals total received. A desk or zone filter keeps the transfers it sent or received; the shops' version keeps transfers touching the shops.
+
 ### Users & passwords
 
 - Passwords are stored hashed: nobody — not even the super administrator — can read them. The super administrator's **Users & passwords** page (Administration) lists every user with role, zone, staff ID, last sign-in and status, and lets them **reset** a password (a strong one generated and shown once, or one they type, checked against the password rules), optionally forcing the user to choose their own at next sign-in, and **deactivate / activate** accounts (deactivation signs the user out at once; you cannot deactivate yourself or the last active super administrator). Every action is in the audit log.

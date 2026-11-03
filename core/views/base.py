@@ -97,7 +97,9 @@ def can_view_txn(user, t):
     if user.is_shop_user:  # shops see only their own shop's entries, and staff only their duties' operations
         from core.services.shops import can_see_type
 
-        return bool(t.shop_id) and (user.is_shop_senior or (t.shop_id == user.shop_id and can_see_type(user, t.type)))
+        mine = t.shop_id == user.shop_id or (t.type == "SHOP_TO_SHOP" and t.dest_account_id
+                                             and t.dest_account.shop_id == user.shop_id)  # sent to this shop
+        return bool(t.shop_id) and (user.is_shop_senior or (mine and can_see_type(user, t.type)))
     if t.shop_id and t.type not in ("SHOP_TO_DESK", "DESK_TO_SHOP", "CAPITAL_IN", "CAPITAL_OUT", "CAPITAL_MOVE"):
         return False  # shop dealings are not visible to cashiers, junior managers or agents
     if user.is_agent:

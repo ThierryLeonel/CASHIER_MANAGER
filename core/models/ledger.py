@@ -193,6 +193,7 @@ class TxType(models.TextChoices):
     SHOP_EXPENSE = "SHOP_EXPENSE", _("Shop: expense")
     SHOP_PURCHASE = "SHOP_PURCHASE", _("Shop: purchase of items")
     SHOP_STOCK_OUT = "SHOP_STOCK_OUT", _("Shop: stock written off")
+    SHOP_TO_SHOP = "SHOP_TO_SHOP", _("Shop: transfer to another shop")
 
 
 class Product(models.TextChoices):
@@ -268,6 +269,8 @@ class Transaction(models.Model):
     shop = models.ForeignKey("Shop", null=True, blank=True, on_delete=models.PROTECT, related_name="transactions")
     commission = models.DecimalField(_("commission"), **MONEY, null=True, blank=True)
     client_phone = models.CharField(_("client phone"), max_length=30, blank=True)
+    account_name = models.CharField(_("account name"), max_length=120, blank=True,
+                                    help_text="Orange Money cash-in / cash-out: name on the client's account.")
     on_credit = models.BooleanField(default=False)
     subtype = models.CharField(_("kind"), max_length=12, blank=True)  # airtime: GOOD_DEAL / NORMAL
 

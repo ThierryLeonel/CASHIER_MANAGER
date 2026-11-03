@@ -88,8 +88,9 @@ class Command(BaseCommand):
                          serials="356000000000011\n356000000000029\n356000000000037\n356000000000045\n356000000000052")
         sh.receive_stock(o["shop_senior"], shop=shop, item=o["items"]["kit"],
                          serials="OEK-S-0001, OEK-S-0002, OEK-S-0003")
-        sh.cash_in(smgr, amount=D(50_000), commission=D(250), client_phone="677123456")
-        sh.cash_out(o["shop_om"], amount=D(20_000), commission=D(200))
+        sh.cash_in(smgr, amount=D(50_000), commission=D(250), client_phone="677123456",
+                   account_name="[SAMPLE] Ngwa Peter")
+        sh.cash_out(o["shop_om"], amount=D(20_000), commission=D(200), account_name="[SAMPLE] Ebai Joseph")
         sh.airtime(smgr, amount=D(5_000))
         sh.airtime(o["shop_air"], amount=D(10_000), kind="GOOD_DEAL")
         sh.convert(smgr, amount=D(100_000))

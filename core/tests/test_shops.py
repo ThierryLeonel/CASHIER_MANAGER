@@ -182,6 +182,10 @@ class ShopPages(OrgMixin, TestCase):
         self.assertRedirects(c.get("/"), "/shops/", fetch_redirect_response=False)
         self.assertRedirects(c.get("/shops/"), f"/shops/{self.shop.pk}/")
         r = c.post("/shops/do/cashin/", {"idem": str(uuid.uuid4()), "amount": "50 000", "commission": "250"})
+        self.assertEqual(r.status_code, 200)  # the account name is required
+        self.assertContains(r, "Account name")
+        r = c.post("/shops/do/cashin/", {"idem": str(uuid.uuid4()), "amount": "50 000", "commission": "250",
+                                         "account_name": "Ngwa Peter", "client_phone": "677123456"})
         self.assertEqual(r.status_code, 302, r.content[:1500])
         r = c.post("/shops/do/appro/", {"idem": str(uuid.uuid4()), "agent": "691000001", "amount": "10 000",
                                         "pay": "CREDIT"})
@@ -941,3 +945,129 @@ class DeskTransfers(OrgMixin, TestCase):
         c2 = self.client_class()
         c2.login(username="cashier.fako2", password=PW)
         self.assertEqual(c2.get(r["Location"]).status_code, 200)
+
+
+class TransfersForEveryStaffMember(OrgMixin, TestCase):
+    """Transfers between a shop and the cashiers, and between shops, are open to every staff member."""
+
+    def setUp(self):
+        self.make_org()
+        self.fund_all()
+        self.shop = self.o["shop"]
+        self.other = Shop.objects.create(name="Shop Limbe", code="shop-limbe")
+        for kind, amt in ((K.CASH_DRAWER, 300000), (K.UVE, 800000), (K.ER, 150000)):
+            self.fund(self.shop.account(kind), amt)
+        open_shifts(self.o)
+
+    def client_for(self, u):
+        c = self.client_class()
+        self.assertTrue(c.login(username=u, password=PW))
+        return c
+
+    def test_orange_money_desk_transfers_to_cashier_and_shop(self):
+        om = self.o["shop_om"]  # duties: Orange Money only
+        t = sh.to_cashier(om, desk=self.zones["fako1"], cash=D(10000))
+        self.assertEqual(t.type, TxType.SHOP_TO_DESK)
+        s = sh.to_shop(om, dest_shop=self.other, cash=D(20000), uve=D(50000), description="float for Limbe")
+        self.assertEqual(len(s.payment_parts), 2)
+        self.assertEqual(sum(1 for p in s.payment_parts if p.receipt_no), 1)
+        self.assertEqual((self.bal(self.other.account(K.CASH_DRAWER)), self.bal(self.other.account(K.UVE))),
+                         (D(20000), D(50000)))
+        b = sh.shop_balances(self.shop)
+        self.assertEqual((b[K.CASH_DRAWER], b[K.UVE]), (D(300000 - 10000 - 20000), D(750000)))
+        with self.assertRaises(BusinessError):
+            sh.to_shop(om, dest_shop=self.shop, cash=D(1))  # not to itself
+        with self.assertRaises(BusinessError):
+            sh.to_shop(om, dest_shop=self.other)  # nothing typed
+        # pages, menu and shop-page buttons for the Orange Money desk
+        c = self.client_for("shop.molyko.om")
+        page = c.get(f"/shops/{self.shop.pk}/")
+        self.assertContains(page, "/shops/do/to_cashier/")
+        self.assertContains(page, "/shops/do/to_shop/")
+        form = c.get("/shops/do/to_shop/")
+        self.assertContains(form, 'name="cash"')
+        self.assertContains(form, 'name="uve"')
+        self.assertNotContains(form, f'<option value="{self.shop.pk}"')  # not its own shop
+        r = c.post("/shops/do/to_shop/", {"idem": str(uuid.uuid4()), "dest_shop": self.other.pk, "uve": "5 000"})
+        self.assertEqual(r.status_code, 302, r.content[:1500])
+        self.assertEqual(c.get(f"/transactions/{s.pk}/").status_code, 200)
+        self.assertContains(c.get("/shops/transactions/"), s.reference)
+        # the receiving shop sees it too: its staff, its page and its list
+        lim = User.objects.create(username="limbe.mgr", role=User.Role.SHOP_MANAGER, shop=self.other)
+        lim.set_password(PW)
+        lim.save()
+        lc = self.client_for("limbe.mgr")
+        self.assertEqual(lc.get(f"/transactions/{s.pk}/").status_code, 200)
+        self.assertContains(lc.get("/shops/transactions/"), s.reference)
+        self.assertContains(lc.get(f"/shops/{self.other.pk}/"), "transfer received from another shop")
+        # cashiers never see shop-to-shop transfers
+        self.assertEqual(self.client_for("cashier.fako1").get(f"/transactions/{s.pk}/").status_code, 404)
+        # the report: transfers appear for the Orange Money desk too
+        rep = c.get("/shops/reports/?period=day")
+        self.assertContains(rep, "To other shops")
+        self.assertContains(rep, "To cashiers")
+
+
+class CashInAccountName(OrgMixin, TestCase):
+    def setUp(self):
+        self.make_org()
+        self.shop = self.o["shop"]
+        for kind, amt in ((K.CASH_DRAWER, 300000), (K.UVE, 800000), (K.ER, 150000)):
+            self.fund(self.shop.account(kind), amt)
+        open_shifts(self.o)
+
+    def test_account_name_recorded_and_shown(self):
+        t = sh.cash_out(self.o["shop_om"], amount=D(20000), commission=D(200), account_name=" Ebai Joseph ",
+                        client_phone="699887766")
+        self.assertEqual(t.account_name, "Ebai Joseph")
+        c = self.client_class()
+        c.login(username="shop.molyko.om", password=PW)
+        self.assertContains(c.get(f"/transactions/{t.pk}/"), "Ebai Joseph")
+        self.assertContains(c.get("/shops/transactions/"), "Ebai Joseph")
+        self.assertContains(c.get("/shops/do/cashout/"), 'name="account_name"')
+
+
+class TransferReconciliation(OrgMixin, TestCase):
+    def setUp(self):
+        self.make_org()
+        self.fund_all()
+        self.shop = self.o["shop"]
+        self.other = Shop.objects.create(name="Shop Limbe", code="shop-limbe")
+        for kind, amt in ((K.CASH_DRAWER, 300000), (K.UVE, 800000), (K.ER, 150000)):
+            self.fund(self.shop.account(kind), amt)
+        open_shifts(self.o)
+
+    def client_for(self, u):
+        c = self.client_class()
+        self.assertTrue(c.login(username=u, password=PW))
+        return c
+
+    def test_every_internal_transfer_reconciled(self):
+        from core.services import capital as cap
+        from core.services import operations as ops
+
+        ops.record_desk_transfer(self.c_f1, desk=self.zones["fako2"], cash=D(50000), uve=D(80000))
+        sh.desk_to_shop(self.c_f1, shop=self.shop, cash=D(20000))
+        sh.to_cashier(self.o["shop_om"], desk=self.zones["fako2"], uve=D(30000))
+        sh.to_shop(self.o["shop_om"], dest_shop=self.other, cash=D(10000))
+        cap.transfer(self.finance, source=self.d_me, destination=self.bank, amount=D(5000), purpose="deposit")
+        fin = self.client_for("finance")
+        r = fin.get("/reports/transfers/?preset=all")
+        self.assertContains(r, "Transfer reconciliation")
+        self.assertContains(r, "OK — sent equals received")
+        for txt in ("Who sent what to whom", "By desk and shop", "Shop [SAMPLE] Shop Molyko", "Shop Shop Limbe",
+                    "Fako 2", "195 000"):  # 50 000 + 80 000 + 20 000 + 30 000 + 10 000 + 5 000
+            self.assertContains(r, txt)
+        self.assertEqual(fin.get("/reports/transfers/?preset=all&format=xlsx&table=1").status_code, 200)
+        self.assertEqual(fin.get("/reports/transfers/?preset=all&format=pdf").status_code, 200)
+        # a cashier sees the transfers his desk sent or received
+        mine = self.client_for("cashier.fako2").get("/reports/transfers/?preset=all")
+        self.assertContains(mine, "80 000")
+        self.assertNotContains(mine, "Shop Limbe")
+        # the shops' side: transfers touching the shops only
+        sr = self.client_for("shop.senior").get("/shops/reports/?kind=transfers&period=day")
+        self.assertContains(sr, "Transfer reconciliation")
+        self.assertContains(sr, "Shop Shop Limbe")
+        self.assertNotContains(sr, "80 000")  # cashier-to-cashier transfers are not the shops'
+        om = self.client_for("shop.molyko.om").get("/shops/reports/?kind=transfers&period=day")
+        self.assertEqual(om.status_code, 200)

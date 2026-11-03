@@ -30,6 +30,7 @@ SHOP_ROLES = (R.SHOP_MANAGER, R.SHOP_SENIOR, R.MANAGER, R.FINANCE, R.SUPERADMIN)
 SHOP_DESK = (R.SHOP_MANAGER, R.SHOP_SENIOR, R.SUPERADMIN)  # who records shop operations
 SHOP_CONFIG = (R.SHOP_SENIOR, R.SUPERADMIN)  # who manages services, items, stock and the shop rate
 K = Account.Kind
+RECEIVED = "SHOP_TO_SHOP_IN"  # summary line: transfers received from other shops
 SHOP_TYPES = [t for t in TxType.values if t.startswith("SHOP_")] + [TxType.DESK_TO_SHOP, TxType.CAPITAL_IN,
                                                                    TxType.CAPITAL_OUT, TxType.CAPITAL_MOVE]
 
@@ -59,6 +60,9 @@ OPS = {
     "to_cashier": (SF.ToCashierForm, sh.to_cashier, _("Transfer to a cashier"),
                    _("Cash and / or UVE sent from the shop to a cashier desk, in one record. It is recorded on the "
                      "cashier side too."), "transfer"),
+    "to_shop": (SF.ToShopForm, sh.to_shop, _("Transfer to another shop"),
+                _("Cash and / or UVE sent from this shop to another shop, in one record. Both shops see it."),
+                "transfer"),
     "sale": (SF.SaleForm, sh.sell, _("Sale"), "", "store"),
     "expense": (SF.ShopExpenseForm, sh.expense, _("Shop expense"),
                 _("An expense of the shop (rent, electricity, transport…), paid from its cash drawer or UVE."),
@@ -103,12 +107,17 @@ def _shop_or_404(user, pk):
 
 def _activity(shops, d_from, d_to):
     """Per shop: totals of the period by operation, commissions, counted services, retrievals and sales."""
-    txq = Transaction.objects.filter(shop__in=shops, business_date__gte=d_from, business_date__lte=d_to,
-                                     correction__isnull=True).exclude(type=TxType.REVERSAL)
+    period_q = Transaction.objects.filter(business_date__gte=d_from, business_date__lte=d_to,
+                                          correction__isnull=True).exclude(type=TxType.REVERSAL)
+    txq = period_q.filter(shop__in=shops)
     by = {}
     for row in txq.values("shop_id", "type").annotate(n=Count("id"), amt=Sum("amount"), com=Sum("commission")):
         d = by.setdefault(row["shop_id"], {})
         d[row["type"]] = row
+    # transfers received from other shops, on the receiving shop's line
+    for row in period_q.filter(type=TxType.SHOP_TO_SHOP, dest_account__shop__in=shops) \
+            .values("dest_account__shop_id").annotate(n=Count("id"), amt=Sum("amount")):
+        by.setdefault(row["dest_account__shop_id"], {})[RECEIVED] = dict(row, com=None)
     svc = {}
     for row in ServiceCount.objects.filter(shop__in=shops, business_date__gte=d_from, business_date__lte=d_to) \
             .values("shop_id").annotate(n=Sum("count")):
@@ -165,10 +174,13 @@ def shop_detail(request, pk):
         row = act.get(t)
         if row and (types is None or t in types):
             summary.append(dict(label=TxType(t).label, n=row["n"], amt=row["amt"], com=row["com"]))
+    if act.get(RECEIVED):
+        r = act[RECEIVED]
+        summary.append(dict(label=_("Shop: transfer received from another shop"), n=r["n"], amt=r["amt"], com=None))
     sees_services = user.has_shop_duty("SERVICES")
     svc_rows = ServiceCount.objects.filter(shop=shop, business_date__gte=d_from, business_date__lte=d_to) \
         .values("service__name").annotate(n=Sum("count")).order_by("service__name") if sees_services else []
-    recent = Transaction.objects.filter(shop=shop).select_related("counterparty", "entered_by", "correction") \
+    recent = Transaction.objects.filter(sh.shop_txn_q([shop])).select_related("counterparty", "entered_by", "correction") \
         .order_by("-posted_at")
     if restricted:
         recent = recent.filter(type__in=types)
@@ -295,7 +307,7 @@ def shop_transactions(request):
     user = request.user
     shops_qs = sh.visible_shops(user)
     d_from, d_to = _period(request, default_days=30)
-    qs = Transaction.objects.filter(shop__in=shops_qs, business_date__gte=d_from, business_date__lte=d_to) \
+    qs = Transaction.objects.filter(sh.shop_txn_q(shops_qs), business_date__gte=d_from, business_date__lte=d_to) \
         .select_related("shop", "counterparty", "entered_by", "correction").order_by("-posted_at")
     shop_id, typ = request.GET.get("shop") or "", request.GET.get("type") or ""
     allowed = sh.visible_types(user)
@@ -303,7 +315,7 @@ def shop_transactions(request):
     if allowed is not None:
         qs = qs.filter(type__in=allowed)
     if shop_id.isdigit():
-        qs = qs.filter(shop_id=shop_id)
+        qs = qs.filter(sh.shop_txn_q([shop_id]))
     if typ in types:
         qs = qs.filter(type=typ)
     totals = qs.exclude(type=TxType.REVERSAL).aggregate(amt=Sum("amount"), com=Sum("commission"))
@@ -598,7 +610,7 @@ def shop_reports(request):
     from django.http import HttpResponse
 
     from core.reports.engine import only_table
-    from core.reports.shops import ShopReportForm, income_statement, shop_summary
+    from core.reports.shops import ShopReportForm, income_statement, shop_summary, shop_transfers
     from core.pdf import report_pdf
     from core.reports.xlsx import report_xlsx
     from core.services import operations as ops
@@ -613,6 +625,8 @@ def shop_reports(request):
         if sh.is_restricted(request.user):  # the income statement needs every duty
             raise DjangoPermissionDenied
         rep, period, d_from, d_to = income_statement(form, visible)
+    elif kind == "transfers":
+        rep, period, d_from, d_to = shop_transfers(form, visible)
     else:
         rep, period, d_from, d_to = shop_summary(form, visible, viewer=request.user)
     if fmt_ in ("xlsx", "pdf"):
@@ -620,7 +634,7 @@ def shop_reports(request):
     who = f"{request.user} ({request.user.get_role_display()})"
     if fmt_ in ("xlsx", "pdf"):
         ops.log_event(request.user, "report_export", report="shops", format=fmt_, filters=rep.title)
-        name = f"shop-{'income-statement' if kind == 'income' else 'report'}-{period}-{d_from}"
+        name = f"shop-{ {'income': 'income-statement', 'transfers': 'transfers'}.get(kind, 'report')}-{period}-{d_from}"
         if fmt_ == "xlsx":
             resp = HttpResponse(report_xlsx(rep, who),
                                 content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")

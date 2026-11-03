@@ -33,7 +33,8 @@ MONTHS = [_l("January"), _l("February"), _l("March"), _l("April"), _l("May"), _l
           _l("August"), _l("September"), _l("October"), _l("November"), _l("December")]
 
 
-KINDS_OF_REPORT = [("summary", _l("Activity summary")), ("income", _l("Income statement"))]
+KINDS_OF_REPORT = [("summary", _l("Activity summary")), ("income", _l("Income statement")),
+                   ("transfers", _l("Transfer reconciliation"))]
 
 
 class ShopReportForm(forms.Form):
@@ -105,13 +106,14 @@ def _period_title(period, start, end):
 
 
 METRICS = ["cashin", "cashin_n", "cashout", "cashout_n", "commission", "airtime", "good_deal", "convert", "appro",
-           "er_supply", "destock", "agent_paid", "agent_repaid", "to_cashiers", "from_cashiers", "capital", "expenses",
+           "er_supply", "destock", "agent_paid", "agent_repaid", "to_cashiers", "from_cashiers", "to_shops", "from_shops", "capital",
+           "expenses",
            "purchases", "sales",
            "units", "services", "retrievals", "hours", "diff_cash", "diff_uve", "diff_er"]
 TYPE_METRIC = {T.SHOP_CASHIN: "cashin", T.SHOP_CASHOUT: "cashout", T.SHOP_CONVERT: "convert",
                T.SHOP_APPRO: "appro", T.SHOP_ER_SUPPLY: "er_supply", T.SHOP_DESTOCK: "destock",
                T.SHOP_AGENT_PAY: "agent_paid", T.SHOP_AGENT_REPAY: "agent_repaid", T.SHOP_TO_DESK: "to_cashiers",
-               T.DESK_TO_SHOP: "from_cashiers", T.SHOP_SALE: "sales", T.SHOP_EXPENSE: "expenses",
+               T.DESK_TO_SHOP: "from_cashiers", T.SHOP_TO_SHOP: "to_shops", T.SHOP_SALE: "sales", T.SHOP_EXPENSE: "expenses",
                T.SHOP_PURCHASE: "purchases"}
 
 
@@ -134,6 +136,12 @@ def _daily(shops, d_from, d_to, hours_of=None):
             if t in (T.SHOP_CASHIN, T.SHOP_CASHOUT):
                 d[TYPE_METRIC[t] + "_n"] += r["n"]
                 d["commission"] += r["com"] or Z
+    # transfers received from other shops, on the receiving shop
+    for r in Transaction.objects.filter(type=T.SHOP_TO_SHOP, dest_account__shop_id__in=shop_ids,
+                                        business_date__gte=d_from, business_date__lte=d_to,
+                                        correction__isnull=True).values("dest_account__shop_id", "business_date") \
+            .annotate(s=Sum("amount")):
+        data[(r["dest_account__shop_id"], r["business_date"])]["from_shops"] += r["s"] or Z
     # capital: net effect on the shop's cash, UVE and ER (in − out)
     for r in Entry.objects.filter(account__shop_id__in=shop_ids, account__shop_agent__isnull=True,
                                   account__kind__in=[k for k, _x in KINDS], business_date__gte=d_from,
@@ -202,6 +210,8 @@ def _cols_control(first_key, first_label):
             Col("agent_repaid", _("Paid by agents"), "money", True),
             Col("to_cashiers", _("To cashiers"), "money", True),
             Col("from_cashiers", _("From cashiers"), "money", True),
+            Col("to_shops", _("To other shops"), "money", True),
+            Col("from_shops", _("From other shops"), "money", True),
             Col("capital", _("Capital (net)"), "money", True),
             Col("expenses", _("Expenses"), "money", True), Col("purchases", _("Purchases of items"), "money", True),
             Col("diff_cash", _("Cash difference (counted)"), "money", True),
@@ -224,8 +234,8 @@ def _row(first_key, first_value, metrics, closing):
 COL_DUTY = {"cashin": "OM", "cashin_n": "OM", "cashout": "OM", "cashout_n": "OM", "commission": "OM",
             "airtime": "AIRTIME", "good_deal": "AIRTIME", "convert": "AIRTIME", "sales": "SALES", "units": "SALES",
             "services": "SERVICES", "retrievals": "SERVICES", "appro": "AGENTS", "er_supply": "AGENTS",
-            "destock": "AGENTS", "agent_paid": "AGENTS", "agent_repaid": "AGENTS", "to_cashiers": "AGENTS",
-            "from_cashiers": "AGENTS", "capital": "ALL", "expenses": "EXPENSES", "purchases": "EXPENSES"}
+            "destock": "AGENTS", "agent_paid": "AGENTS", "agent_repaid": "AGENTS", "capital": "ALL",
+            "expenses": "EXPENSES", "purchases": "EXPENSES"}  # transfers (cashiers, shops): every staff member
 
 
 def _allowed(viewer):
@@ -414,6 +424,26 @@ def income_statement(form, visible_shops):
     tot = lambda key: sum((key[s.pk] for s in shops), Z)  # noqa: E731
     rep.summary = [(_("Total income"), tot(income), "money"), (_("Total costs"), tot(costs), "money"),
                    (_("Net result"), tot(result), "money")]
+    return rep, period, d_from, d_to
+
+
+def shop_transfers(form, visible_shops):
+    """Transfer reconciliation of the shops: transfers to and from cashiers, between shops, and capital moved to or
+    from a shop, over the period."""
+    from django.db.models import Q
+
+    from .defs import TRANSFER_TYPES, transfer_reconciliation
+
+    period, d_from, d_to, shops_qs, _b = resolve(form, visible_shops)
+    shops = list(shops_qs.filter(active=True))
+    qs = Transaction.objects.filter(type__in=TRANSFER_TYPES, correction__isnull=True, business_date__gte=d_from,
+                                    business_date__lte=d_to) \
+        .filter(Q(source_account__shop__in=shops) | Q(dest_account__shop__in=shops)) \
+        .select_related("source_account__shop", "source_account__zone", "source_account__custodian__subzone",
+                        "dest_account__shop", "dest_account__zone", "dest_account__custodian__subzone", "entered_by") \
+        .order_by("business_date", "posted_at", "id")
+    text = ", ".join(s.name for s in shops) if len(shops) < 6 else _("%(n)s shops") % {"n": len(shops)}
+    rep = transfer_reconciliation(qs, f"{d_from:%d/%m/%Y} → {d_to:%d/%m/%Y} · {text}")
     return rep, period, d_from, d_to
 
 

@@ -44,18 +44,19 @@ DUTY_LABEL = dict(SHOP_DUTIES)
 # shop page / operation -> duty needed (segmented shops: each staff member has some of the duties)
 OP_DUTY = {"cashin": "OM", "cashout": "OM", "airtime": "AIRTIME", "convert": "AIRTIME", "sale": "SALES",
            "stock": "SALES", "service": "SERVICES", "retrieve": "SERVICES", "appro": "AGENTS", "er_supply": "AGENTS",
-           "destockage": "AGENTS", "pay_agent": "AGENTS", "agent_repay": "AGENTS", "to_cashier": "AGENTS",
-           "expense": "EXPENSES", "purchase": "EXPENSES"}
+           "destockage": "AGENTS", "pay_agent": "AGENTS", "agent_repay": "AGENTS", "to_cashier": None,
+           "to_shop": None, "expense": "EXPENSES", "purchase": "EXPENSES"}  # transfers: every staff member
 
 
-# operation type -> duty that sees it; unlisted types (capital, openings, corrections) are for staff with all duties
+# operation type -> duty that sees it ("ANY" = every staff member of the shop); unlisted types (capital, openings,
+# corrections) are for staff with all duties
 TYPE_DUTY = {
     TxType.SHOP_CASHIN: "OM", TxType.SHOP_CASHOUT: "OM",
     TxType.SHOP_AIRTIME: "AIRTIME", TxType.SHOP_CONVERT: "AIRTIME",
     TxType.SHOP_SALE: "SALES",
     TxType.SHOP_APPRO: "AGENTS", TxType.SHOP_ER_SUPPLY: "AGENTS", TxType.SHOP_DESTOCK: "AGENTS",
-    TxType.SHOP_AGENT_PAY: "AGENTS", TxType.SHOP_AGENT_REPAY: "AGENTS", TxType.SHOP_TO_DESK: "AGENTS",
-    TxType.DESK_TO_SHOP: "AGENTS",
+    TxType.SHOP_AGENT_PAY: "AGENTS", TxType.SHOP_AGENT_REPAY: "AGENTS",
+    TxType.SHOP_TO_DESK: "ANY", TxType.DESK_TO_SHOP: "ANY", TxType.SHOP_TO_SHOP: "ANY",
     TxType.SHOP_EXPENSE: "EXPENSES", TxType.SHOP_PURCHASE: "EXPENSES", TxType.SHOP_STOCK_OUT: "SALES",
 }
 
@@ -72,7 +73,7 @@ def visible_types(user):
     if not is_restricted(user):
         return None
     duties = user.shop_duty_set
-    return [t for t, d in TYPE_DUTY.items() if d in duties]
+    return [t for t, d in TYPE_DUTY.items() if d in duties or d == "ANY"]
 
 
 def can_see_type(user, type_):
@@ -172,21 +173,25 @@ def _record(user, specs, idem):
 
 
 # ---------------------------------------------------------------- Orange Money, airtime, conversion
-def cash_in(user, *, shop=None, amount, commission=None, client_phone="", description="", idempotency_key=None):
+def cash_in(user, *, shop=None, amount, commission=None, client_phone="", account_name="", description="",
+            idempotency_key=None):
     shop = shop_for(user, shop, "OM")
     a = _amt(amount)
     com = _amt(commission, "commission", allow_zero=True) if commission not in (None, "") else None
     return _record(user, [_spec(TxType.SHOP_CASHIN, shop, [(shop.account(K.CASH_DRAWER), a), (shop.account(K.UVE), -a)],
-                                a, commission=com, client_phone=_phone(client_phone), description=description)],
+                                a, commission=com, client_phone=_phone(client_phone),
+                                account_name=(account_name or "").strip()[:120], description=description)],
                    idempotency_key)[0]
 
 
-def cash_out(user, *, shop=None, amount, commission=None, client_phone="", description="", idempotency_key=None):
+def cash_out(user, *, shop=None, amount, commission=None, client_phone="", account_name="", description="",
+             idempotency_key=None):
     shop = shop_for(user, shop, "OM")
     a = _amt(amount)
     com = _amt(commission, "commission", allow_zero=True) if commission not in (None, "") else None
     return _record(user, [_spec(TxType.SHOP_CASHOUT, shop, [(shop.account(K.UVE), a), (shop.account(K.CASH_DRAWER), -a)],
-                                a, commission=com, client_phone=_phone(client_phone), description=description)],
+                                a, commission=com, client_phone=_phone(client_phone),
+                                account_name=(account_name or "").strip()[:120], description=description)],
                    idempotency_key)[0]
 
 
@@ -320,7 +325,7 @@ def to_cashier(user, *, shop=None, desk, cash=None, uve=None, description="", id
     from .days import zone_day
     from .operations import desk_account, transfer_parts
 
-    shop = shop_for(user, shop, "AGENTS")
+    shop = shop_for(user, shop)  # every staff member may transfer, whatever their duties
     if desk is None:
         raise BusinessError(_("Choose the cashier desk receiving the transfer."), "desk")
     todo = transfer_parts({"CASH": cash, "UVE": uve}, allowed=("CASH", "UVE"))
@@ -359,6 +364,36 @@ def desk_to_shop(user, *, shop, cash=None, uve=None, amount=None, description=""
                                         payment_group=group, description=description)))
     with transaction.atomic():
         return post(specs, ctx, idempotency_key)[0]
+
+
+def to_shop(user, *, shop=None, dest_shop, cash=None, uve=None, description="", idempotency_key=None):
+    """One shop sends cash and / or UVE to another shop: shop drawer -> other shop's drawer, UVE -> UVE. Every staff
+    member may do it. Both shops see it; one group, one receipt."""
+    from .operations import transfer_parts
+
+    shop = shop_for(user, shop)
+    if dest_shop is None or not dest_shop.active:
+        raise BusinessError(_("Choose the shop receiving the transfer."), "dest_shop")
+    if dest_shop.pk == shop.pk:
+        raise BusinessError(_("Choose another shop than this one."), "dest_shop")
+    todo = transfer_parts({"CASH": cash, "UVE": uve}, allowed=("CASH", "UVE"))
+    group = _group(idempotency_key, len(todo), "to-shop-shop")
+    specs = []
+    for i, (prod, kind, a) in enumerate(todo):
+        src, dest = shop.account(kind), dest_shop.account(kind)
+        spec = _spec(TxType.SHOP_TO_SHOP, shop, [(dest, a), (src, -a)], a, source_account=src, dest_account=dest,
+                     product=prod, payment_group=group, description=description)
+        spec.receipt = i == 0
+        specs.append(spec)
+    with transaction.atomic():
+        return post(specs, _ctx(user), idempotency_key)[0]
+
+
+def shop_txn_q(shops):
+    """Entries of these shops: their own, plus transfers other shops sent them."""
+    from django.db.models import Q as Q_
+
+    return Q_(shop__in=shops) | Q_(type=TxType.SHOP_TO_SHOP, dest_account__shop__in=shops)
 
 
 # ---------------------------------------------------------------- sales and stock (units by IMEI / serial)

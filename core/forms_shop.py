@@ -35,6 +35,8 @@ class ShopForm(forms.Form):
 class CashInOutForm(ShopForm):
     amount = MoneyField(label=_("Amount (FCFA)"))
     commission = MoneyField(label=_("Commission earned (FCFA)"), required=False)
+    account_name = forms.CharField(label=_("Account name"), max_length=120,
+                                   help_text=_("The name on the client's Orange Money account."))
     client_phone = forms.CharField(label=_("Client phone (optional)"), required=False, max_length=30)
     description = forms.CharField(label=_("Note"), required=False, max_length=255)
 
@@ -98,6 +100,30 @@ class ToCashierForm(ShopForm):
         if not cd.get("cash") and not cd.get("uve"):
             self.add_error("cash", _("Enter the amount transferred in cash and / or UVE."))
         return cd
+
+class ToShopForm(ShopForm):
+    """A shop sends cash and / or UVE to another shop."""
+
+    dest_shop = forms.ModelChoiceField(label=_("To the shop"), queryset=Shop.objects.none())
+    cash = MoneyField(label=_("Cash"), required=False)
+    uve = MoneyField(label=_("UVE"), required=False)
+    description = forms.CharField(label=_("Note"), required=False, max_length=255)
+
+    def __init__(self, user, *args, **kwargs):
+        super().__init__(user, *args, **kwargs)
+        from core.forms import amount_boxes
+
+        qs = Shop.objects.filter(active=True)
+        self.fields["dest_shop"].queryset = qs.exclude(pk=user.shop_id) if user.is_shop_manager else qs
+        amount_boxes(self, ["cash", "uve"], _("Fill what you send: cash from this shop's drawer to the other shop's "
+                                              "drawer, UVE from wallet to wallet."), str(_("Total transferred")))
+
+    def clean(self):
+        cd = super().clean()
+        if not cd.get("cash") and not cd.get("uve"):
+            self.add_error("cash", _("Enter the amount transferred in cash and / or UVE."))
+        return cd
+
 
 class UnitsWidget(forms.CheckboxSelectMultiple):
     """Units in stock, each tagged with its item and shop so the page shows only the matching ones."""

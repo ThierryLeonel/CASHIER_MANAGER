@@ -364,6 +364,9 @@ msgstr ""
 msgid "Account %(u)s deleted."
 msgstr "Compte %(u)s supprimé."
 
+msgid "Account name"
+msgstr "Nom du compte"
+
 msgid "Account receiving the capital"
 msgstr "Compte qui reçoit le capital"
 
@@ -388,6 +391,12 @@ msgstr ""
 
 msgid "Accounts › Add"
 msgstr "Comptes › Ajouter"
+
+msgid ""
+"Across the whole company, total sent equals total received for each product."
+msgstr ""
+"Pour toute l'entreprise, le total envoyé est égal au total reçu pour chaque "
+"produit."
 
 msgid "Action"
 msgstr "Action"
@@ -591,6 +600,9 @@ msgid ""
 msgstr ""
 "Toutes les transactions, clôtures et écarts (garder agents, PDV et "
 "configuration)"
+
+msgid "All transfers"
+msgstr "Tous les transferts"
 
 msgid "All zones"
 msgstr "Toutes les zones"
@@ -839,6 +851,9 @@ msgstr "Par"
 msgid "By day"
 msgstr "Par jour"
 
+msgid "By desk and shop"
+msgstr "Par guichet et boutique"
+
 msgid "By shop"
 msgstr "Par boutique"
 
@@ -912,12 +927,22 @@ msgstr "Reporté non résolu"
 msgid "Cash"
 msgstr "Espèces"
 
+msgid "Cash and / or UVE"
+msgstr "Espèces et / ou UVE"
+
 msgid ""
 "Cash and / or UVE sent from the shop to a cashier desk, in one record. It is"
 " recorded on the cashier side too."
 msgstr ""
 "Espèces et / ou UVE envoyées de la boutique vers un guichet caissier, en un "
 "seul enregistrement. C'est aussi enregistré côté caissier."
+
+msgid ""
+"Cash and / or UVE sent from this shop to another shop, in one record. Both "
+"shops see it."
+msgstr ""
+"Espèces et / ou UVE envoyés de cette boutique à une autre boutique, en un "
+"seul enregistrement. Les deux boutiques le voient."
 
 msgid ""
 "Cash and / or UVE sent from your desk to a shop, in one record. The shop "
@@ -1183,6 +1208,9 @@ msgstr "Choisissez un article."
 msgid "Choose another desk than yours."
 msgstr "Choisissez un autre guichet que le vôtre."
 
+msgid "Choose another shop than this one."
+msgstr "Choisissez une autre boutique que celle-ci."
+
 msgid "Choose cash or UVE."
 msgstr "Choisissez espèces ou UVE."
 
@@ -1258,6 +1286,9 @@ msgstr "Choisissez le guichet qui reçoit le transfert."
 msgid "Choose the exchange direction."
 msgstr "Choisissez le sens de l'échange."
 
+msgid "Choose the shop receiving the transfer."
+msgstr "Choisissez la boutique qui reçoit le transfert."
+
 msgid "Choose the shop."
 msgstr "Choisissez la boutique."
 
@@ -1302,6 +1333,9 @@ msgstr "Client"
 
 msgid "Client full name"
 msgstr "Nom complet du client"
+
+msgid "Client phone"
+msgstr "Téléphone du client"
 
 msgid "Client phone (optional)"
 msgstr "Téléphone du client (facultatif)"
@@ -1886,6 +1920,9 @@ msgstr "Décrivez la dépense."
 msgid "Description"
 msgstr "Description"
 
+msgid "Desk / shop"
+msgstr "Guichet / boutique"
+
 msgid "Destockage"
 msgstr "Déstockage"
 
@@ -2134,6 +2171,13 @@ msgstr ""
 "Chaque transaction est équilibrée (débits = crédits). Compte client : débit "
 "= doit plus ; crédit = a payé / doit moins."
 
+msgid ""
+"Every transfer between desks, shops and banks: who sent what to whom, sent ="
+" received"
+msgstr ""
+"Chaque transfert entre guichets, boutiques et banques : qui a envoyé quoi à "
+"qui, envoyé = reçu"
+
 msgid "Everything above, plus agents, POS, agent logins and cash managers"
 msgstr ""
 "Tout ce qui précède, plus agents, PDV, accès agents et gestionnaires de cash"
@@ -2264,6 +2308,13 @@ msgstr ""
 "guichet."
 
 msgid ""
+"Fill what you send: cash from this shop's drawer to the other shop's drawer,"
+" UVE from wallet to wallet."
+msgstr ""
+"Remplissez ce que vous envoyez : les espèces de la caisse de cette boutique "
+"vers celle de l'autre boutique, l'UVE de portefeuille à portefeuille."
+
+msgid ""
 "Fill what you send: cash from your drawer to the shop's drawer, UVE from "
 "your UVE wallet to the shop's UVE wallet."
 msgstr ""
@@ -2326,6 +2377,9 @@ msgstr "Du compte"
 
 msgid "From cashiers"
 msgstr "Des caissiers"
+
+msgid "From other shops"
+msgstr "Des autres boutiques"
 
 msgid ""
 "Full control of the application. Every change made here is recorded in the "
@@ -2781,6 +2835,9 @@ msgstr "Carte nationale d'identité"
 msgid "Nb"
 msgstr "Nb"
 
+msgid "Net (received − sent)"
+msgstr "Net (reçu − envoyé)"
+
 msgid "Net amount"
 msgstr "Montant net"
 
@@ -3065,6 +3122,9 @@ msgstr "Nombre d'unités reçues"
 
 msgid "OK"
 msgstr "OK"
+
+msgid "OK — sent equals received"
+msgstr "OK — envoyé égale reçu"
 
 msgid "OTT, MAX IT, ID update, tickets…"
 msgstr "OTT, MAX IT, mise à jour d'identification, tickets…"
@@ -4251,8 +4311,14 @@ msgstr "Boutique : stock au coût"
 msgid "Shop: stock written off"
 msgstr "Boutique : stock sorti en perte"
 
+msgid "Shop: transfer received from another shop"
+msgstr "Boutique : transfert reçu d'une autre boutique"
+
 msgid "Shop: transfer to a cashier"
 msgstr "Boutique : transfert vers un caissier"
+
+msgid "Shop: transfer to another shop"
+msgstr "Boutique : transfert vers une autre boutique"
 
 msgid "Shops"
 msgstr "Boutiques"
@@ -4652,6 +4718,9 @@ msgstr "Le fichier dépasse 3 Mo."
 msgid "The file is too large (maximum 3 MB)."
 msgstr "Le fichier est trop volumineux (maximum 3 Mo)."
 
+msgid "The name on the client's Orange Money account."
+msgstr "Le nom sur le compte Orange Money du client."
+
 msgid "The new responsible party must be different."
 msgstr "Le nouveau responsable doit être différent."
 
@@ -4905,11 +4974,17 @@ msgstr "Vers le compte"
 msgid "To cashiers"
 msgstr "Vers les caissiers"
 
+msgid "To other shops"
+msgstr "Vers les autres boutiques"
+
 msgid "To the cashier desk (subzone)"
 msgstr "Vers le guichet caissier (sous-zone)"
 
 msgid "To the desk (subzone)"
 msgstr "Vers le guichet (sous-zone)"
+
+msgid "To the shop"
+msgstr "Vers la boutique"
 
 msgid "Too many failed attempts. Try again in 15 minutes."
 msgstr "Trop de tentatives échouées. Réessayez dans 15 minutes."
@@ -4938,6 +5013,12 @@ msgstr "Total de la vente"
 
 msgid "Total payment"
 msgstr "Total du paiement"
+
+msgid "Total received"
+msgstr "Total reçu"
+
+msgid "Total sent"
+msgstr "Total envoyé"
 
 msgid "Total supplied"
 msgstr "Total fourni"
@@ -4994,6 +5075,9 @@ msgstr "Transférer de l'UVE à une boutique"
 msgid "Transfer capital"
 msgstr "Transférer du capital"
 
+msgid "Transfer reconciliation"
+msgstr "Rapprochement des transferts"
+
 msgid "Transfer responsibility"
 msgstr "Transférer la responsabilité"
 
@@ -5006,6 +5090,9 @@ msgstr "Transfert vers une boutique"
 msgid "Transfer to another cashier"
 msgstr "Transfert vers un autre caissier"
 
+msgid "Transfer to another shop"
+msgstr "Transfert vers une autre boutique"
+
 msgid "Transfer to cashier"
 msgstr "Transfert vers caissier"
 
@@ -5014,6 +5101,9 @@ msgstr "Transfert vers boutique"
 
 msgid "Transferred"
 msgstr "Transféré"
+
+msgid "Transfers"
+msgstr "Transferts"
 
 msgid ""
 "Transfers are only between active company cash, wallet or bank accounts."
@@ -5440,6 +5530,12 @@ msgstr "Qui doit à qui"
 msgid "Who receives the money, e.g. the owner, a partner, a bank."
 msgstr "Qui reçoit l'argent, par ex. le propriétaire, un associé, une banque."
 
+msgid "Who sent what to whom"
+msgstr "Qui a envoyé quoi à qui"
+
+msgid "With agents"
+msgstr "Avec les agents"
+
 msgid "With agents & cashiers"
 msgstr "Avec agents et caissiers"
 
@@ -5596,6 +5692,9 @@ msgstr ""
 
 msgid "a master zone first, then its subzones."
 msgstr "d'abord une zone master, puis ses sous-zones."
+
+msgid "account name"
+msgstr "nom du compte"
 
 msgid "account number"
 msgstr "numéro de compte"
@@ -5906,6 +6005,9 @@ msgstr "accès en lecture seule"
 msgid "receipt footer"
 msgstr "pied de reçu"
 
+msgid "received"
+msgstr "reçu"
+
 #, python-format
 msgid "received by POS %(pos)s"
 msgstr "reçu par le PDV %(pos)s"
@@ -5927,6 +6029,9 @@ msgstr "lignes"
 
 msgid "selling price (FCFA)"
 msgstr "prix de vente (FCFA)"
+
+msgid "sent"
+msgstr "envoyé"
 
 msgid "serial number"
 msgstr "numéro de série"

@@ -185,7 +185,7 @@ def day_reconciliation(shop, day, viewer=None):
 
         if is_restricted(viewer):
             duties = viewer.shop_duty_set
-            keep = {str(TxType(t).label) for t, d in TYPE_DUTY.items() if d in duties}
+            keep = {str(TxType(t).label) for t, d in TYPE_DUTY.items() if d in duties or d == "ANY"}
             ops = [o for o in ops if str(o["label"]) in keep]
             shifts = [x for x in shifts if x.user_id == viewer.pk]
             if "SERVICES" not in duties:

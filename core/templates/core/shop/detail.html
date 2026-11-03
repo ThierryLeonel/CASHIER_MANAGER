@@ -26,6 +26,8 @@
   <a class="qa" href="{% url 'shop_service' %}"><span class="qa-ic">{% icon "list" 22 %}</span><strong>{% trans "Services done" %}</strong><span class="d">{% trans "OTT, MAX IT, ID update, tickets…" %}</span></a>
   <a class="qa" href="{% url 'shop_retrieve' %}"><span class="qa-ic">{% icon "users" 22 %}</span><strong>{% trans "SIM retrieval" %}</strong><span class="d">{% trans "Person and SIM registered" %}</span></a>
   {% endif %}
+  <a class="qa" href="{% url 'shop_op' 'to_cashier' %}"><span class="qa-ic">{% icon "transfer" 22 %}</span><strong>{% trans "Transfer to a cashier" %}</strong><span class="d">{% trans "Cash and / or UVE" %}</span></a>
+  <a class="qa" href="{% url 'shop_op' 'to_shop' %}"><span class="qa-ic">{% icon "store" 22 %}</span><strong>{% trans "Transfer to another shop" %}</strong><span class="d">{% trans "Cash and / or UVE" %}</span></a>
 </div>
 {% endwith %}{% endif %}
 <h2>{% trans "Activity" %}</h2>

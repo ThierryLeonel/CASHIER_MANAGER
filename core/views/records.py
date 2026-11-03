@@ -140,6 +140,10 @@ def receipt_rows(t):
         rows.append((_("Shop"), str(t.shop)))
     if t.subtype in ("NORMAL", "GOOD_DEAL"):
         rows.append((_("Airtime kind"), _("Good deal") if t.subtype == "GOOD_DEAL" else _("Normal airtime")))
+    if t.account_name:
+        rows.append((_("Account name"), t.account_name))
+    if t.client_phone and t.type in (T.SHOP_CASHIN, T.SHOP_CASHOUT):
+        rows.append((_("Client phone"), display_sim(t.client_phone) if t.client_phone.isdigit() else t.client_phone))
     if t.on_credit:
         rows.append((_("On credit"), _("Yes")))
     if t.type == T.SHOP_SALE and hasattr(t, "item_sale"):
@@ -204,7 +208,7 @@ def receipt_rows(t):
             rows.append((_("Received into"), str(t.dest_account)))
             if t.bank_reference:
                 rows.append((_("Bank deposit reference"), t.bank_reference))
-    elif t.type in (T.INTERNAL_TRANSFER, T.SHOP_TO_DESK, T.DESK_TO_SHOP) and t.payment_group:
+    elif t.type in (T.INTERNAL_TRANSFER, T.SHOP_TO_DESK, T.DESK_TO_SHOP, T.SHOP_TO_SHOP) and t.payment_group:
         parts = t.payment_parts  # one transfer in several products (cash, UVE, MTN float)
         for p in parts:
             note = " — " + _("CORRECTED") if hasattr(p, "correction") else ""
