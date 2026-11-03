@@ -56,9 +56,9 @@ OPS = {
                   _("Settles what the shop owes an agent."), "payment"),
     "agent_repay": (SF.AgentDealForm, sh.agent_repay, _("An agent pays the shop"),
                     _("The agent pays back what he owes the shop (e.g. a destockage taken on credit)."), "payment"),
-    "to_cashier": (SF.ToCashierForm, sh.to_cashier, _("Transfer UVE to a cashier"),
-                   _("UVE sent from the shop to a cashier's UVE wallet. It is recorded on the cashier side too."),
-                   "transfer"),
+    "to_cashier": (SF.ToCashierForm, sh.to_cashier, _("Transfer to a cashier"),
+                   _("Cash and / or UVE sent from the shop to a cashier desk, in one record. It is recorded on the "
+                     "cashier side too."), "transfer"),
     "sale": (SF.SaleForm, sh.sell, _("Sale"), "", "store"),
     "expense": (SF.ShopExpenseForm, sh.expense, _("Shop expense"),
                 _("An expense of the shop (rent, electricity, transport…), paid from its cash drawer or UVE."),
@@ -244,8 +244,9 @@ def desk_to_shop(request):
         if resp:
             return resp
     return render(request, "core/entry_form.html", {
-        "form": form, "title": _("Transfer UVE to a shop"), "icon": "transfer",
-        "intro": _("UVE sent from your subzone's UVE wallet to a shop. The shop sees it in its entries.")})
+        "form": form, "title": _("Transfer to a shop"), "icon": "transfer",
+        "intro": _("Cash and / or UVE sent from your desk to a shop, in one record. The shop sees it in its "
+                   "entries.")})
 
 
 @roles_required(*SHOP_DESK)

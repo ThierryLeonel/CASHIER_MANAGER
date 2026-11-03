@@ -318,6 +318,10 @@ class Transaction(models.Model):
                     .select_related("dest_account", "source_account").order_by("id"))
 
     @property
+    def group_total(self):
+        return sum(p.amount for p in self.payment_parts)
+
+    @property
     def receipt_txn(self):
         """The part holding the receipt number of this payment (itself for ordinary transactions)."""
         if self.receipt_no or not self.payment_group:

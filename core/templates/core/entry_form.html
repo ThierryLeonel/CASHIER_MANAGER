@@ -116,7 +116,8 @@
     var pf = function (v) { return String(v).replace(/\B(?=(\d{3})+(?!\d))/g, ' '); };
     var syncPay = function () {
       var t = 0; pays.forEach(function (p) { t += pn(p.value); });
-      tot.innerHTML = '<span>' + (form.querySelector('[name=bank]') ? '{{ _("Total payment")|escapejs }}' : '{{ _("Total supplied")|escapejs }}') + '</span><strong>' + pf(t) + ' FCFA</strong>';
+      var lbl = pays[0].dataset.totalLabel || (form.querySelector('[name=bank]') ? '{{ _("Total payment")|escapejs }}' : '{{ _("Total supplied")|escapejs }}');
+      tot.innerHTML = '<span>' + lbl + '</span><strong>' + pf(t) + ' FCFA</strong>';
       var bankIn = form.querySelector('[name=bank]'), bank = bankIn ? pn(bankIn.value) > 0 : false;
       bankFlds.forEach(function (f) { if (f) f.hidden = !bank; });
       if (bank) autoPick(form.querySelector('[name=bank_account]'));

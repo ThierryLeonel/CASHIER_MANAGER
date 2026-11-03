@@ -79,24 +79,32 @@ class ShopMoney(OrgMixin, TestCase):
         with self.assertRaises(BusinessError):
             sh.airtime(self.m, amount=D(1), kind="BAD")
 
-    def test_transfer_to_cashier_is_uve_and_on_cashier_side(self):
-        before, sbefore = self.bal(self.uve_f1), self.b()[1]
-        t = sh.to_cashier(self.m, destination=self.uve_f1, amount=D(100000))
-        self.assertEqual(self.bal(self.uve_f1), before + 100000)
-        self.assertEqual(self.b()[1], sbefore - 100000)
+    def test_transfer_to_cashier_cash_and_uve_on_cashier_side(self):
+        f1 = self.zones["fako1"]
+        ubefore, dbefore, sb = self.bal(self.uve_f1), self.bal(self.d_f1), self.b()
+        t = sh.to_cashier(self.m, desk=f1, cash=D(30000), uve=D(100000))
+        self.assertEqual(self.bal(self.uve_f1), ubefore + 100000)
+        self.assertEqual(self.bal(self.d_f1), dbefore + 30000)
+        self.assertEqual((self.b()[0], self.b()[1]), (sb[0] - 30000, sb[1] - 100000))
+        parts = t.payment_parts
+        self.assertEqual(len(parts), 2)  # one record: cash part + UVE part, one receipt
+        self.assertEqual(sum(1 for p in parts if p.receipt_no), 1)
         self.assertIsNotNone(t.cashier_day_id)  # recorded in the cashier subzone's day
-        self.assertEqual(t.zone, t.cashier_day.zone)
-        with self.assertRaises(BusinessError):  # only UVE: never into a cash drawer
-            sh.to_cashier(self.m, destination=self.d_f1, amount=D(1))
+        self.assertEqual(t.cashier_day.zone, f1)
+        one = sh.to_cashier(self.m, desk=f1, uve=D(1000))  # a single product: no group
+        self.assertIsNone(one.payment_group)
+        with self.assertRaises(BusinessError):  # nothing typed
+            sh.to_cashier(self.m, desk=f1)
 
-    def test_cashier_transfers_uve_to_shop(self):
-        sbefore, before = self.b()[1], self.bal(self.uve_f1)
-        t = sh.desk_to_shop(self.c_f1, shop=self.shop, amount=D(40000))
+    def test_cashier_transfers_cash_and_uve_to_shop(self):
+        sb, ubefore, dbefore = self.b(), self.bal(self.uve_f1), self.bal(self.d_f1)
+        t = sh.desk_to_shop(self.c_f1, shop=self.shop, cash=D(20000), uve=D(40000))
         self.assertEqual((t.type, t.shop, t.cashier), (TxType.DESK_TO_SHOP, self.shop, self.c_f1))
-        self.assertEqual(self.b()[1], sbefore + 40000)
-        self.assertEqual(self.bal(self.uve_f1), before - 40000)
+        self.assertEqual((self.b()[0], self.b()[1]), (sb[0] + 20000, sb[1] + 40000))
+        self.assertEqual((self.bal(self.uve_f1), self.bal(self.d_f1)), (ubefore - 40000, dbefore - 20000))
+        self.assertEqual(len(t.payment_parts), 2)
         with self.assertRaises(PermissionDenied):
-            sh.desk_to_shop(self.m, shop=self.shop, amount=D(1))  # shop managers are not cashiers
+            sh.desk_to_shop(self.m, shop=self.shop, uve=D(1))  # shop managers are not cashiers
 
     def test_agent_owes_the_shop(self):
         sh.destockage(self.m, agent=self.a1, amount=D(30000), pay="CREDIT")
@@ -192,14 +200,15 @@ class ShopPages(OrgMixin, TestCase):
         shop_txn = Transaction.objects.filter(shop=self.shop).first()
         self.assertEqual(c.get(f"/transactions/{shop_txn.pk}/").status_code, 200)
         # a UVE transfer to a cashier shows on both sides
-        c.post("/shops/do/to_cashier/", {"idem": str(uuid.uuid4()), "destination": self.uve_f1.pk, "amount": "5000"})
+        r = c.post("/shops/do/to_cashier/", {"idem": str(uuid.uuid4()), "desk": self.zones["fako1"].pk, "uve": "5000"})
+        self.assertEqual(r.status_code, 302, r.content[:1500])
         tr = Transaction.objects.get(type=TxType.SHOP_TO_DESK)
         self.assertEqual(self.client_for("cashier.fako1").get(f"/transactions/{tr.pk}/").status_code, 200)
         self.assertEqual(c.get(f"/transactions/{tr.pk}/").status_code, 200)
         # the cashier's transfer to the shop page
         cf = self.client_for("cashier.fako1")
         self.assertEqual(cf.get("/transfer/to-shop/").status_code, 200)
-        r = cf.post("/transfer/to-shop/", {"idem": str(uuid.uuid4()), "shop": self.shop.pk, "amount": "7 000"})
+        r = cf.post("/transfer/to-shop/", {"idem": str(uuid.uuid4()), "shop": self.shop.pk, "uve": "7 000"})
         self.assertEqual(r.status_code, 302, r.content[:1500])
         self.assertTrue(Transaction.objects.filter(type=TxType.DESK_TO_SHOP, amount=7000).exists())
         # and cashiers do not see shop dealings
@@ -895,3 +904,40 @@ class ShopExpensesPurchasesIncome(OrgMixin, TestCase):
         self.assertLess(len(one.content), len(whole.content))
         self.assertEqual(fin.get("/shops/reports/?kind=income&format=pdf&table=0").status_code, 200)
         self.assertEqual(fin.get("/reports/reconciliation/?preset=all&format=xlsx&table=1").status_code, 200)
+
+
+class DeskTransfers(OrgMixin, TestCase):
+    """Cashier -> cashier transfers in cash, UVE and / or MTN float, in one form with one box per product."""
+
+    def setUp(self):
+        self.make_org()
+        self.fund_all()
+
+    def test_cash_and_uve_between_desks(self):
+        from core.services import operations as ops
+
+        f2 = self.zones["fako2"]
+        d2, u2, d1, u1 = self.bal(self.d_f2), self.bal(self.uve_f2), self.bal(self.d_f1), self.bal(self.uve_f1)
+        txns = ops.record_desk_transfer(self.c_f1, desk=f2, cash=D(50000), uve=D(80000), description="float")
+        self.assertEqual(len(txns), 2)
+        self.assertEqual((self.bal(self.d_f2), self.bal(self.uve_f2)), (d2 + 50000, u2 + 80000))
+        self.assertEqual((self.bal(self.d_f1), self.bal(self.uve_f1)), (d1 - 50000, u1 - 80000))
+        self.assertEqual(txns[0].payment_group, txns[1].payment_group)
+        with self.assertRaises(BusinessError):
+            ops.record_desk_transfer(self.c_f1, desk=self.zones["fako1"], cash=D(1))  # not to yourself
+        with self.assertRaises(BusinessError):
+            ops.record_desk_transfer(self.c_f1, desk=f2)  # nothing typed
+        # the page: two boxes, no product drop-down; the receiving cashier sees it
+        c = self.client_class()
+        c.login(username="cashier.fako1", password=PW)
+        page = c.get("/transfer/new/")
+        self.assertContains(page, 'name="cash"')
+        self.assertContains(page, 'name="uve"')
+        self.assertNotContains(page, 'name="source"')
+        r = c.post("/transfer/new/", {"idem": str(uuid.uuid4()), "desk": f2.pk, "cash": "10 000", "uve": "5 000"})
+        self.assertEqual(r.status_code, 302, r.content[:1500])
+        rec = c.get(r["Location"])
+        self.assertContains(rec, "15 000")
+        c2 = self.client_class()
+        c2.login(username="cashier.fako2", password=PW)
+        self.assertEqual(c2.get(r["Location"]).status_code, 200)

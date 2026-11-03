@@ -98,7 +98,7 @@ class Command(BaseCommand):
         sh.destockage(smgr, agent=a1, amount=D(30_000))
         sh.destockage(smgr, agent=a1, amount=D(20_000), pay="CREDIT")  # the agent owes the shop
         sh.agent_repay(smgr, agent=a1, amount=D(5_000), pay="CASH")
-        sh.desk_to_shop(o["c_f1"], shop=shop, amount=D(100_000), description="[SAMPLE] UVE top-up from Fako 1")
+        sh.desk_to_shop(o["c_f1"], shop=shop, cash=D(50_000), uve=D(100_000), description="[SAMPLE] top-up from Fako 1")
         sh.sell(smgr, item=o["items"]["phone"], units=list(StockUnit.objects.filter(serial="356000000000011")), client_name="[SAMPLE] Client Ngwa Peter",
                 client_address="Molyko, Buea", client_country="Cameroon", id_type="CNI", id_number="SAMPLE-998877",
                 phone="677445566", whatsapp="677445566")

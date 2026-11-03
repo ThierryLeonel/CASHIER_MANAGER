@@ -22,7 +22,7 @@ import uuid
 from decimal import Decimal
 
 from django.db import transaction
-from django.db.models import Sum
+from django.db.models import Q, Sum
 from django.utils.translation import gettext as _
 
 from core.models import (
@@ -321,7 +321,77 @@ def record_expense(user, idempotency_key=None, acting_for=None, **params):
 
 
 # ---------------------------------------------------------------- internal transfers
-TRANSFER_KINDS = (K.MTN, K.UVE, K.BANK)  # internal transfers: MTN float, UVE or bank only
+TRANSFER_KINDS = (K.CASH_DRAWER, K.MTN, K.UVE, K.BANK)  # internal transfers: same kind on both sides
+# a transfer between desks (cashier <-> cashier, cashier <-> shop): one amount box per product
+TRANSFER_PRODUCTS = (("CASH", K.CASH_DRAWER), ("UVE", K.UVE), ("MTN", K.MTN))
+
+
+def transfer_desks(exclude=None):
+    """Desks that hold accounts: subzones, and master zones without subzones."""
+    from core.models import Zone
+
+    qs = Zone.objects.filter(Q(parent__isnull=False) | Q(subzones__isnull=True)).distinct().order_by("name")
+    return qs.exclude(pk=exclude.pk) if exclude is not None else qs
+
+
+def desk_account(zone, kind, field=None):
+    """The account of a kind that a desk (subzone) holds: its own, or the master SIM wallet its cashier in charge
+    works with."""
+    qs = Account.objects.filter(perm.zone_closing_accounts_q(zone), kind=kind, active=True, shop__isnull=True) \
+        .distinct().order_by("id")
+    if not qs.exists():
+        raise BusinessError(_("%(zone)s has no %(kind)s.") % {"zone": zone, "kind": Account.Kind(kind).label},
+                            field or kind.lower())
+    return qs.first()
+
+
+def own_account(cashier, kind, field=None):
+    qs = perm.usable_accounts(cashier, [kind]).filter(shop__isnull=True)
+    if qs.count() != 1:
+        raise BusinessError(_("No single %(kind)s account is set up for your subzone.")
+                            % {"kind": Account.Kind(kind).label}, field or kind.lower())
+    return qs.first()
+
+
+def transfer_parts(parts, allowed=("CASH", "UVE", "MTN")):
+    """{product: amount} -> [(product, account kind, amount)] for the amounts typed (> 0)."""
+    todo = []
+    for prod, kind in TRANSFER_PRODUCTS:
+        if prod not in allowed:
+            continue
+        amt = _money(parts.get(prod) or 0)
+        if amt < 0:
+            raise BusinessError(_("Amounts cannot be negative."), prod.lower())
+        if amt:
+            todo.append((prod, kind, amt))
+    if not todo:
+        raise BusinessError(_("Enter the amount transferred in cash and / or UVE."), allowed[0].lower())
+    return todo
+
+
+def record_desk_transfer(user, *, desk, cash=None, uve=None, mtn=None, description="", idempotency_key=None,
+                         acting_for=None):
+    """Transfer from the cashier's desk to another desk, in cash, UVE and / or MTN float at once. Each product
+    leaves from the cashier's own account and arrives in the other desk's account of the same kind; the parts are
+    posted together, sharing one group and one receipt."""
+    ctx = cashier_ctx(user, acting_for)
+    if desk is None:
+        raise BusinessError(_("Choose the desk receiving the transfer."), "desk")
+    if desk.pk == ctx.cashier.subzone_id:
+        raise BusinessError(_("Choose another desk than yours."), "desk")
+    todo = transfer_parts({"CASH": cash, "UVE": uve, "MTN": mtn})
+    group = uuid.uuid5(idempotency_key, "transfer") if idempotency_key and len(todo) > 1 else (
+        uuid.uuid4() if len(todo) > 1 else None)
+    specs = []
+    for i, (prod, kind, amt) in enumerate(todo):
+        spec = build_internal_transfer(ctx, source=own_account(ctx.cashier, kind, prod.lower()),
+                                       destination=desk_account(desk, kind, prod.lower()), amount=amt,
+                                       description=description)
+        spec.fields["payment_group"] = group
+        spec.receipt = i == 0
+        specs.append(spec)
+    with transaction.atomic():
+        return post(specs, ctx, idempotency_key)
 
 
 def _compatible(a, b):

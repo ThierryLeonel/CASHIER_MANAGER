@@ -204,6 +204,13 @@ def receipt_rows(t):
             rows.append((_("Received into"), str(t.dest_account)))
             if t.bank_reference:
                 rows.append((_("Bank deposit reference"), t.bank_reference))
+    elif t.type in (T.INTERNAL_TRANSFER, T.SHOP_TO_DESK, T.DESK_TO_SHOP) and t.payment_group:
+        parts = t.payment_parts  # one transfer in several products (cash, UVE, MTN float)
+        for p in parts:
+            note = " — " + _("CORRECTED") if hasattr(p, "correction") else ""
+            rows.append((p.source_account.get_kind_display() if p.source_account_id else "",
+                         f"{fmt(p.amount)} FCFA: {p.source_account} → {p.dest_account}{note}"))
+        rows.append((_("Total transferred"), f"{fmt(sum(p.amount for p in parts))} FCFA"))
     else:
         if t.counterparty_id:
             rows.append((_("Customer"), str(t.counterparty)))

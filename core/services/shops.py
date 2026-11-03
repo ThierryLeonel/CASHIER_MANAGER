@@ -305,45 +305,60 @@ def owed_by_agent(shop, agent):
 
 
 # ---------------------------------------------------------------- transfers between shops and cashiers (UVE only)
-def to_cashier(user, *, shop=None, destination, amount, description="", idempotency_key=None):
-    """Send UVE from the shop to a cashier subzone's UVE wallet. The entry belongs to that subzone's business day,
-    so it shows on the cashier side too (lists, closing)."""
+def _group(idempotency_key, n, salt):
+    import uuid
+
+    if n < 2:
+        return None
+    return uuid.uuid5(idempotency_key, salt) if isinstance(idempotency_key, uuid.UUID) else uuid.uuid4()
+
+
+def to_cashier(user, *, shop=None, desk, cash=None, uve=None, description="", idempotency_key=None):
+    """The shop sends cash and / or UVE to a cashier desk (subzone). Each product leaves the shop's account and
+    arrives in the desk's account of the same kind; the entries belong to that desk's business day, so they show
+    on the cashier side too (lists, closing). One group, one receipt."""
     from .days import zone_day
+    from .operations import desk_account, transfer_parts
 
-    shop, a = shop_for(user, shop, "AGENTS"), _amt(amount)
-    if destination is None or destination.kind != K.UVE or destination.shop_id or not destination.zone_id \
-            or not destination.active:
-        raise BusinessError(_("Choose the cashier UVE wallet that receives it."), "destination")
-    zone = destination.custodian.subzone if destination.custodian_id else destination.zone
-    day = zone_day(zone)
+    shop = shop_for(user, shop, "AGENTS")
+    if desk is None:
+        raise BusinessError(_("Choose the cashier desk receiving the transfer."), "desk")
+    todo = transfer_parts({"CASH": cash, "UVE": uve}, allowed=("CASH", "UVE"))
+    day = zone_day(desk)
     ctx = Ctx(entered_by=user, cashier=None, day=day, business_date=day.business_date)
-    src = shop.account(K.UVE)
+    group = _group(idempotency_key, len(todo), "to-cashier")
+    specs = []
+    for i, (prod, kind, a) in enumerate(todo):
+        dest, src = desk_account(desk, kind, prod.lower()), shop.account(kind)
+        spec = _spec(TxType.SHOP_TO_DESK, shop, [(dest, a), (src, -a)], a, dest_account=dest, source_account=src,
+                     product=prod, payment_group=group, description=description)
+        spec.receipt = i == 0
+        specs.append(spec)
     with transaction.atomic():
-        return post([_spec(TxType.SHOP_TO_DESK, shop, [(destination, a), (src, -a)], a, dest_account=destination,
-                           source_account=src, product="UVE", description=description)], ctx, idempotency_key)[0]
+        return post(specs, ctx, idempotency_key)[0]
 
 
-def desk_to_shop(user, *, shop, amount, source=None, description="", idempotency_key=None, acting_for=None):
-    """A cashier sends UVE from the subzone's UVE wallet to a shop."""
-    from . import permissions as perm
-    from .operations import cashier_ctx
+def desk_to_shop(user, *, shop, cash=None, uve=None, amount=None, description="", idempotency_key=None,
+                 acting_for=None):
+    """A cashier sends cash and / or UVE from the subzone's accounts to a shop (`amount` = UVE, kept for older
+    callers). One group, one receipt."""
+    from .operations import cashier_ctx, own_account, transfer_parts
 
     ctx = cashier_ctx(user, acting_for)
-    a = _amt(amount)
     if shop is None or not shop.active:
         raise BusinessError(_("Choose the shop."), "shop")
-    if source is None:
-        qs = perm.usable_accounts(ctx.cashier, [K.UVE]).filter(shop__isnull=True)
-        if qs.count() != 1:
-            raise BusinessError(_("Choose the UVE wallet the UVE leaves from."), "source")
-        source = qs.first()
-    if source.kind != K.UVE or not perm.can_send_from(ctx.cashier, source):
-        raise BusinessError(_("Choose the UVE wallet the UVE leaves from."), "source")
-    dest = shop.account(K.UVE)
+    if amount not in (None, "") and uve in (None, ""):
+        uve = amount
+    todo = transfer_parts({"CASH": cash, "UVE": uve}, allowed=("CASH", "UVE"))
+    group = _group(idempotency_key, len(todo), "to-shop")
+    specs = []
+    for i, (prod, kind, a) in enumerate(todo):
+        src, dest = own_account(ctx.cashier, kind, prod.lower()), shop.account(kind)
+        specs.append(TxSpec(type=TxType.DESK_TO_SHOP, lines=[(dest, a), (src, -a)], receipt=i == 0,
+                            fields=dict(amount=a, shop=shop, source_account=src, dest_account=dest, product=prod,
+                                        payment_group=group, description=description)))
     with transaction.atomic():
-        return post([TxSpec(type=TxType.DESK_TO_SHOP, lines=[(dest, a), (source, -a)],
-                            fields=dict(amount=a, shop=shop, source_account=source, dest_account=dest, product="UVE",
-                                        description=description), receipt=True)], ctx, idempotency_key)[0]
+        return post(specs, ctx, idempotency_key)[0]
 
 
 # ---------------------------------------------------------------- sales and stock (units by IMEI / serial)

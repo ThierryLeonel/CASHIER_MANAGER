@@ -76,20 +76,28 @@ class AgentDealForm(ShopForm):
 
 
 class ToCashierForm(ShopForm):
-    destination = forms.ModelChoiceField(label=_("Cashier UVE wallet receiving it"), queryset=Account.objects.none())
-    amount = MoneyField(label=_("UVE sent (FCFA)"))
+    """The shop sends cash and / or UVE to a cashier desk."""
+
+    desk = forms.ModelChoiceField(label=_("To the cashier desk (subzone)"), queryset=Zone.objects.none())
+    cash = MoneyField(label=_("Cash"), required=False)
+    uve = MoneyField(label=_("UVE"), required=False)
     description = forms.CharField(label=_("Note"), required=False, max_length=255)
 
     def __init__(self, user, *args, **kwargs):
         super().__init__(user, *args, **kwargs)
-        from core.forms import AccountSelect
+        from core.forms import amount_boxes
+        from core.services.operations import transfer_desks
 
-        f = self.fields["destination"]
-        f.widget = AccountSelect()
-        f.queryset = Account.objects.filter(kind=K.UVE, active=True, zone__isnull=False, shop__isnull=True) \
-            .select_related("zone", "sim", "custodian__subzone").order_by("zone__name")
-        f.label_from_instance = lambda a: f"{(a.custodian.subzone if a.custodian_id else a.zone).name} · {a}"
+        self.fields["desk"].queryset = transfer_desks()
+        amount_boxes(self, ["cash", "uve"], _("Fill what you send: cash from the shop's drawer to the desk's drawer, "
+                                              "UVE from the shop's UVE wallet to the desk's UVE wallet."),
+                     str(_("Total transferred")))
 
+    def clean(self):
+        cd = super().clean()
+        if not cd.get("cash") and not cd.get("uve"):
+            self.add_error("cash", _("Enter the amount transferred in cash and / or UVE."))
+        return cd
 
 class UnitsWidget(forms.CheckboxSelectMultiple):
     """Units in stock, each tagged with its item and shop so the page shows only the matching ones."""
@@ -263,25 +271,35 @@ class RemoveUnitForm(forms.Form):
 
 
 class DeskToShopForm(forms.Form):
-    """Cashier side: send UVE to a shop."""
+    """Cashier side: send cash and / or UVE to a shop."""
 
     idem = forms.UUIDField(widget=forms.HiddenInput)
-    shop = forms.ModelChoiceField(label=_("Shop receiving the UVE"), queryset=Shop.objects.filter(active=True))
-    amount = MoneyField(label=_("UVE sent (FCFA)"))
+    shop = forms.ModelChoiceField(label=_("Shop receiving the transfer"), queryset=Shop.objects.filter(active=True))
+    cash = MoneyField(label=_("Cash"), required=False)
+    uve = MoneyField(label=_("UVE"), required=False)
     description = forms.CharField(label=_("Note"), required=False, max_length=255)
 
     def __init__(self, user, *args, **kwargs):
+        from core.forms import amount_boxes
+
         self.user = user
         super().__init__(*args, **kwargs)
         if not self.is_bound:
             self.initial.setdefault("idem", uuid.uuid4())
+        amount_boxes(self, ["cash", "uve"], _("Fill what you send: cash from your drawer to the shop's drawer, UVE "
+                                              "from your UVE wallet to the shop's UVE wallet."),
+                     str(_("Total transferred")))
+
+    def clean(self):
+        cd = super().clean()
+        if not cd.get("cash") and not cd.get("uve"):
+            self.add_error("cash", _("Enter the amount transferred in cash and / or UVE."))
+        return cd
 
     def params(self):
         d = dict(self.cleaned_data)
         d.pop("idem", None)
         return d
-
-
 class CategoryForm(forms.ModelForm):
     class Meta:
         model = ItemCategory

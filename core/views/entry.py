@@ -113,9 +113,10 @@ def expense_new(request):
 
 @roles_required(*DESK)
 def transfer_new(request):
-    return _entry(request, F.InternalTransferForm, ops.record_internal_transfer, _("Internal transfer"),
-                  _("A completed move between company accounts of the same kind: MTN float, UVE or bank. "
-                    "No customer is affected."), extra={"icon": "transfer"})
+    return _entry(request, F.DeskTransferForm, ops.record_desk_transfer, _("Transfer to another cashier"),
+                  _("Cash, UVE and / or MTN float sent from your desk to another cashier desk, in one record. Each "
+                    "amount leaves your account of that kind and arrives in theirs. No customer is affected."),
+                  extra={"icon": "transfer"})
 
 
 @roles_required(*DESK)

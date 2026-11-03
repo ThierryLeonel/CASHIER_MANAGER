@@ -262,20 +262,36 @@ class ExpenseForm(BaseEntryForm):
         self.fields["drawer"].queryset = self.accounts(list(EXPENSE_SOURCE_KINDS))
 
 
-class InternalTransferForm(BaseEntryForm):
-    source = AccountChoiceField(label=_("From (your account)"), queryset=Account.objects.none())
-    destination = AccountChoiceField(label=_("To (company account)"), queryset=Account.objects.none())
-    amount = MoneyField(label=_("Amount (FCFA)"))
+def amount_boxes(form, names, help_text, total_label):
+    """Show several amount fields side by side with a running total (like the supply form)."""
+    for name in names:
+        form.fields[name].widget.attrs.update({"data-pay": name, "placeholder": "0", "data-total-label": total_label})
+    form.fields[names[0]].help_text = help_text
+
+
+class DeskTransferForm(BaseEntryForm):
+    """Transfer from your desk to another cashier desk: cash, UVE and / or MTN float at once."""
+
+    desk = forms.ModelChoiceField(label=_("To the desk (subzone)"), queryset=Zone.objects.none())
+    cash = MoneyField(label=_("Cash"), required=False)
+    uve = MoneyField(label=_("UVE"), required=False)
+    mtn = MoneyField(label=_("MTN float"), required=False)
     description = forms.CharField(label=_("Note"), required=False, max_length=255)
 
     def __init__(self, user, *args, **kwargs):
         super().__init__(user, *args, **kwargs)
-        kinds = [K.MTN, K.UVE, K.BANK]  # internal transfers: MTN float, UVE or bank only, same kind both sides
-        self.fields["source"].queryset = self.accounts(kinds)
-        self.fields["destination"].queryset = Account.objects.filter(
-            kind__in=kinds, active=True).select_related("sim").order_by("kind", "id")
-        self.fields["destination"].help_text = _("Same kind as the source: MTN float to MTN float, UVE to UVE, "
-                                                 "bank to bank.")
+        from core.services.operations import transfer_desks
+
+        self.fields["desk"].queryset = transfer_desks(exclude=getattr(user, "subzone", None))
+        amount_boxes(self, ["cash", "uve", "mtn"],
+                     _("Fill what you send. Cash leaves your drawer and arrives in the other desk's drawer, UVE "
+                       "goes wallet to wallet, MTN float float to float."), str(_("Total transferred")))
+
+    def clean(self):
+        cd = super().clean()
+        if not any(cd.get(n) for n in ("cash", "uve", "mtn")):
+            self.add_error("cash", _("Enter the amount transferred in cash and / or UVE."))
+        return cd
 
 
 class ConversionForm(BaseEntryForm):

@@ -130,6 +130,13 @@ Shops have their own **Shop opening balances** page (Shops workspace; super admi
 
 **Income statement per shop** (Shop reports › Which report: Income statement; staff with every duty, finance, managers, admin): item sales − cost of the items sold = margin on items; + Orange Money commissions (as recorded) + UVE→ER conversion gain = total income; − expenses by category − stock written off = total costs; net result. One column per shop plus all shops; daily, weekly, monthly or custom; Excel / PDF. The activity summary also has Expenses and Purchases columns.
 
+#### Transfers in cash and UVE with separate boxes (03/11/2026)
+Transfers between desks no longer pick a product from a list; like the supply form, each has one amount box per product and a running total, and the parts are posted together (all or nothing) with one group and **one receipt** listing each part and the total:
+* **Cashier → cashier** (Transfer): choose the receiving desk (subzone), then Cash, UVE and / or MTN float. Each amount leaves the cashier's own account of that kind and arrives in the other desk's account of the same kind (its own, or the master SIM wallet its cashier in charge works with). Not to one's own desk.
+* **Cashier → shop** (Transfer to shop): choose the shop, then Cash and / or UVE (drawer → shop drawer, UVE wallet → shop UVE).
+* **Shop → cashier** (Transfer to a cashier, agents duty): choose the cashier desk, then Cash and / or UVE; posted in that desk's business day so it shows on the cashier side and in its closing.
+Shop reports' columns are now "To cashiers" / "From cashiers" (cash and UVE together).
+
 ### Users & passwords
 
 - Passwords are stored hashed: nobody — not even the super administrator — can read them. The super administrator's **Users & passwords** page (Administration) lists every user with role, zone, staff ID, last sign-in and status, and lets them **reset** a password (a strong one generated and shown once, or one they type, checked against the password rules), optionally forcing the user to choose their own at next sign-in, and **deactivate / activate** accounts (deactivation signs the user out at once; you cannot deactivate yourself or the last active super administrator). Every action is in the audit log.

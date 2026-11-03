@@ -2,7 +2,7 @@
 {% block title %}{{ t.reference }}{% endblock %}
 {% block content %}
 <h1>{{ t.display_type }} {{ t.reference }} {% if t.is_corrected %}<span class="stamp">{% trans "CORRECTED" %}</span>{% endif %}</h1>
-{% with rt=t.receipt_txn %}<p class="muted">{{ t.amount|fcfa }} FCFA{% if rt.receipt_no %} · {% trans "Receipt" %} {{ rt.receipt_no }}{% endif %}{% if t.payment_group %} · {% trans "part of a payment made with several methods" %}{% endif %}</p>
+{% with rt=t.receipt_txn %}<p class="muted">{{ t.amount|fcfa }} FCFA{% if rt.receipt_no %} · {% trans "Receipt" %} {{ rt.receipt_no }}{% endif %}{% if t.payment_group %} · {% if t.type == 'COLLECTION' %}{% trans "part of a payment made with several methods" %}{% elif t.type == 'SUPPLY' %}{% trans "part of a supply of several products" %}{% elif t.type == 'SHOP_SALE' %}{% trans "part of a sale of several items" %}{% else %}{% trans "part of a transfer in several products" %}{% endif %} · {% trans "total" %} {{ t.group_total|fcfa }} FCFA{% endif %}</p>
 <div class="actions">
   {% if rt.receipt_no %}<a class="btn primary" href="{% url 'receipt' rt.pk %}">{% trans "A4 receipt / print" %}</a>
   <a class="btn" href="{% url 'receipt_pdf' rt.pk %}?download=1">{% trans "Download PDF" %}</a>{% endif %}
