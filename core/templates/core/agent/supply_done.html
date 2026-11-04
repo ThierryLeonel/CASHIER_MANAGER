@@ -1,0 +1,40 @@
+{% extends "core/base.html" %}{% load i18n cashier %}
+{% block title %}{% trans "Supply recorded" %}{% endblock %}
+{% block topbar %}{% trans "Supply a client" %}{% endblock %}
+{% block content %}
+<div class="form-head">
+  <span class="form-ic">{% icon "supply" 26 %}</span>
+  <div><h1>{% trans "Supply recorded" %}</h1>
+  <p class="muted">{{ e.reference }} · {{ e.client_label }}{% if number %} · {{ number|sim }}{% endif %}</p></div>
+</div>
+<div class="panel dial-panel">
+  <div class="dial-sum">
+    <span>{% if e.uve %}UVE{% elif e.er %}ER{% else %}{% trans "Cash" %}{% endif %}</span>
+    <strong>{{ e.total|fcfa }} FCFA</strong>
+    {% if e.paid %}<span class="small muted">{% blocktrans with p=e.paid|fcfa o=e.balance_effect|fcfa %}Paid now {{ p }} · owed to you {{ o }}{% endblocktrans %}</span>{% endif %}
+  </div>
+  {% if code %}
+  <p>{% trans "Send it from your phone with this code. Your dialpad opens with it: check it and press call." %}</p>
+  <div class="dial-code" id="dial-code">{{ code }}</div>
+  <a class="btn primary big" id="dial-btn" href="{{ tel }}">{% icon "payment" 18 %} {% trans "Open the dialpad" %}</a>
+  <button class="btn" type="button" id="copy-btn">{% trans "Copy the code" %}</button>
+  <p class="small muted">{% trans "On a computer the dialpad cannot open: dial the code on your phone." %}</p>
+  {% elif e.uve or e.er %}
+  <div class="msg warning">{% trans "No valid Orange number for this client, so no code can be prepared. Send it manually." %}</div>
+  {% else %}
+  <p class="muted">{% trans "Cash supply: nothing to dial." %}</p>
+  {% endif %}
+</div>
+<div class="actions"><a class="btn primary" href="{% url 'agent_supply' %}">{% trans "Supply another client" %}</a> <a class="btn" href="{% url 'agent_activity' %}">{% trans "My transactions" %}</a></div>
+{% endblock %}
+{% block scripts %}{% if code %}
+<script>
+(function () {
+  var btn = document.getElementById('dial-btn');
+  {% if auto %}setTimeout(function () { location.href = btn.getAttribute('href'); }, 400);{% endif %}
+  document.getElementById('copy-btn').addEventListener('click', function () {
+    var t = document.getElementById('dial-code').textContent, b = this;
+    if (navigator.clipboard) navigator.clipboard.writeText(t).then(function () { b.textContent = '{{ _("Copied")|escapejs }}'; });
+  });
+})();
+</script>{% endif %}{% endblock %}

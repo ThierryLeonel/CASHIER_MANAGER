@@ -13,7 +13,7 @@
 <form method="post" class="entry" novalidate id="entry-form">{% csrf_token %}
   {% include "core/inc/fields.html" %}
   <div class="form-foot">
-    <button type="submit" class="btn primary" id="submit-btn">{% trans "Record" %}</button>
+    <button type="submit" class="btn primary" id="submit-btn">{% if submit_label %}{{ submit_label }}{% else %}{% trans "Record" %}{% endif %}</button>
     <a class="btn" href="{% url 'dashboard' %}">{% trans "Cancel" %}</a>
   </div>
 </form>

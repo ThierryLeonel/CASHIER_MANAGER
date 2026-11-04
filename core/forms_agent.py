@@ -42,17 +42,20 @@ class _ClientForm(_AgentForm):
 
 
 class AgentSupplyForm(_ClientForm):
-    uve = MoneyField(label=_("UVE"), required=False)
-    er = MoneyField(label=_("ER"), required=False)
-    cash = MoneyField(label=_("Cash"), required=False)
+    product = forms.ChoiceField(label=_("Product"), choices=[("UVE", "UVE"), ("ER", "ER"), ("CASH", _("Cash"))],
+                                initial="UVE",
+                                help_text=_("For UVE and ER, your phone's dialpad opens with the Orange code once you "
+                                            "press Supply."))
+    amount = MoneyField(label=_("Amount (FCFA)"))
     paid = MoneyField(label=_("Paid now by the client"), required=False,
                       help_text=_("What the client paid you on the spot. The rest is owed to you."))
     note = forms.CharField(label=_("Note"), required=False, max_length=255)
 
-    def __init__(self, user, *args, **kwargs):
-        super().__init__(user, *args, **kwargs)
-        amount_boxes(self, ["uve", "er", "cash"], _("Fill what you supplied, in one or several products."),
-                     str(_("Total supplied")))
+    def params(self):
+        d = super().params()
+        product, amount = d.pop("product"), d.pop("amount")
+        d[{"UVE": "uve", "ER": "er", "CASH": "cash"}[product]] = amount
+        return d
 
 
 class ClientPaymentForm(_ClientForm):

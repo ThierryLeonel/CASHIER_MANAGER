@@ -309,3 +309,28 @@ def summary(agent):
         "today_supplied": sum(supplied_by_product(agent, business_date=today).values(), Z),
         "zone": zone_of(agent),
     }
+
+
+# ---------------------------------------------------------------- Orange dial codes
+USSD = {"UVE": "#149*5*{number}*{amount}#", "ER": "#189*2*{number}*{amount}#"}
+
+
+def client_number(entry):
+    """The Orange number the agent sends to: the POS business SIM, the shop SIM or the other client's phone."""
+    from core.simnumbers import SimNumberError, normalize_sim
+
+    raw = entry.pos.business_sim if entry.pos_id else entry.shop.sim_number if entry.shop_id else entry.client_phone
+    try:
+        return normalize_sim(raw)
+    except SimNumberError:
+        return ""
+
+
+def ussd_code(entry):
+    """The code to dial for this supply (UVE or ER), or "" when there is none (cash, or no number)."""
+    product = "UVE" if entry.uve else "ER" if entry.er else None
+    number = client_number(entry)
+    if entry.kind != E.Kind.SUPPLY or product is None or not number:
+        return ""
+    amount = int(entry.uve or entry.er)
+    return USSD[product].format(number=number, amount=amount)

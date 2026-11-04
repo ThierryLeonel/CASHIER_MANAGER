@@ -1110,6 +1110,9 @@ msgstr ""
 msgid "Cash received now"
 msgstr "Espèces reçues maintenant"
 
+msgid "Cash supply: nothing to dial."
+msgstr "Approvisionnement en espèces : rien à composer."
+
 msgid "Cash to POS, UVE to agents"
 msgstr "Espèces aux PDV, UVE aux agents"
 
@@ -1695,6 +1698,9 @@ msgstr "Convertir l'UVE en ER sur une SIM"
 
 msgid "Copy"
 msgstr "Copier"
+
+msgid "Copy the code"
+msgstr "Copier le code"
 
 msgid "Correct"
 msgstr "Corriger"
@@ -2516,6 +2522,13 @@ msgid "Follow-up"
 msgstr "Suivi"
 
 msgid ""
+"For UVE and ER, your phone's dialpad opens with the Orange code once you "
+"press Supply."
+msgstr ""
+"Pour l'UVE et l'ER, le clavier de votre téléphone s'ouvre avec le code "
+"Orange dès que vous appuyez sur Approvisionner."
+
+msgid ""
 "For a replacement, fill only the values that change; the others are copied "
 "from the original and re-validated."
 msgstr ""
@@ -3308,6 +3321,13 @@ msgstr "Aucune unité cochée."
 msgid "No unit with this IMEI / serial number."
 msgstr "Aucune unité avec ce numéro IMEI / série."
 
+msgid ""
+"No valid Orange number for this client, so no code can be prepared. Send it "
+"manually."
+msgstr ""
+"Aucun numéro Orange valide pour ce client : aucun code ne peut être préparé."
+" Envoyez-le manuellement."
+
 msgid "No value was changed."
 msgstr "Aucune valeur n'a été modifiée."
 
@@ -3416,6 +3436,11 @@ msgstr "OTT, MAX IT, mise à jour d'identification, tickets…"
 
 msgid "October"
 msgstr "Octobre"
+
+msgid "On a computer the dialpad cannot open: dial the code on your phone."
+msgstr ""
+"Sur un ordinateur le clavier ne peut pas s'ouvrir : composez le code sur "
+"votre téléphone."
 
 msgid "On credit"
 msgstr "À crédit"
@@ -3577,6 +3602,9 @@ msgstr "Ouvrir le menu"
 
 msgid "Open my shift"
 msgstr "Ouvrir mon service"
+
+msgid "Open the dialpad"
+msgstr "Ouvrir le clavier"
 
 msgid "Open your shift first (count the till), then record."
 msgstr "Ouvrez d'abord votre service (comptez la caisse), puis enregistrez."
@@ -3866,6 +3894,10 @@ msgstr "Payé en %(m)s"
 
 msgid "Paid in cash, UVE or MTN float"
 msgstr "Payé en espèces, UVE ou float MTN"
+
+#, python-format
+msgid "Paid now %(p)s · owed to you %(o)s"
+msgstr "Payé maintenant %(p)s · vous est dû %(o)s"
 
 msgid "Paid now by the client"
 msgstr "Payé maintenant par le client"
@@ -4498,6 +4530,13 @@ msgstr ""
 "votre zone. C'est compté comme payé dès que le caissier confirme la "
 "réception."
 
+msgid ""
+"Send it from your phone with this code. Your dialpad opens with it: check it"
+" and press call."
+msgstr ""
+"Envoyez-le depuis votre téléphone avec ce code. Votre clavier s'ouvre avec :"
+" vérifiez-le et appuyez sur appeler."
+
 msgid "Senior manager"
 msgstr "Manager senior"
 
@@ -4971,6 +5010,9 @@ msgstr "Approvisionnement"
 msgid "Supply a client"
 msgstr "Approvisionner un client"
 
+msgid "Supply another client"
+msgstr "Approvisionner un autre client"
+
 msgid "Supply due to customer"
 msgstr "Approvisionnement dû au client"
 
@@ -4985,6 +5027,9 @@ msgstr "Approvisionnements dus aux clients (soldes prépayés / trop-perçus)"
 
 msgid "Supply due to you"
 msgstr "Approvisionnement qui vous est dû"
+
+msgid "Supply recorded"
+msgstr "Approvisionnement enregistré"
 
 msgid "Supply this POS"
 msgstr "Approvisionner ce POS"

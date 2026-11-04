@@ -75,6 +75,7 @@ urlpatterns = [
     path("agent/pos/", v.agent_pos, name="agent_pos"),
     path("agent/pos/<int:pk>/", v.agent_pos_detail, name="agent_pos_detail"),
     path("agent/supply/", v.agent_supply, name="agent_supply"),
+    path("agent/supply/<int:pk>/done/", v.agent_supply_done, name="agent_supply_done"),
     path("agent/collect/", v.agent_collect, name="agent_collect"),
     path("agent/payback/", v.agent_payback, name="agent_payback"),
     path("agent/activity/", v.agent_activity, name="agent_activity"),

@@ -8,6 +8,7 @@ from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils.http import url_has_allowed_host_and_scheme
+from django.utils.translation import get_language
 from django.utils.translation import gettext as _
 from django.utils.translation import gettext_lazy as _l
 from django.views.decorators.http import require_POST
@@ -82,7 +83,7 @@ def agent_pos_detail(request, pk):
                                                           "entries": entries})
 
 
-def _entry_form(request, form_class, fn, title, intro, icon, ok_msg):
+def _entry_form(request, form_class, fn, title, intro, icon, ok_msg, done=None, submit_label=None):
     initial = {}
     if request.GET.get("pos"):
         initial = {"client_kind": "POS", "pos_sim": request.GET["pos"]}
@@ -90,12 +91,12 @@ def _entry_form(request, form_class, fn, title, intro, icon, ok_msg):
     if request.method == "POST" and form.is_valid():
         resp = run_service(request, form,
                            lambda: fn(request.user, idempotency_key=form.cleaned_data["idem"], **form.params()),
-                           success=ok_msg, on_success=lambda o: redirect("agent_activity"))
+                           success=ok_msg, on_success=done or (lambda o: redirect("agent_activity")))
         if resp:
             return resp
     agent = request.user.counterparty
     return render(request, "core/agent/form.html", {
-        "form": form, "title": title, "intro": intro, "icon": icon,
+        "form": form, "title": title, "intro": intro, "icon": icon, "submit_label": submit_label,
         "zone_pos": ag.zone_pos(agent).filter(active=True) if "pos_sim" in form.fields else []})
 
 
@@ -105,7 +106,20 @@ def agent_supply(request):
         request, AF.AgentSupplyForm, ag.record_supply, _("Supply a client"),
         _("UVE, ER or cash you gave to a POS, a shop or another client from your own stock."), "supply",
         lambda e: _("%(ref)s: %(amt)s FCFA supplied to %(who)s.") % {
-            "ref": e.reference, "amt": fmt(e.total), "who": e.client_label})
+            "ref": e.reference, "amt": fmt(e.total), "who": e.client_label},
+        done=lambda e: redirect("agent_supply_done", pk=e.pk),
+        # the button is a verb; the catalogue's "Supply" is the noun (Approvisionnement)
+        submit_label="Approvisionner" if (get_language() or "").startswith("fr") else _("Supply"))
+
+
+@roles_required(R.AGENT)
+def agent_supply_done(request, pk):
+    """After a supply: open the phone's dialpad with the Orange code (UVE #149*5*number*amount#, ER #189*2*…#)."""
+    e = get_object_or_404(E, pk=pk, agent=request.user.counterparty, kind=E.Kind.SUPPLY)
+    code = ag.ussd_code(e)
+    return render(request, "core/agent/supply_done.html", {
+        "e": e, "code": code, "tel": "tel:" + code.replace("#", "%23") if code else "",
+        "number": ag.client_number(e), "auto": request.GET.get("again") != "1" and not e.is_cancelled})
 
 
 @roles_required(R.AGENT)

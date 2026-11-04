@@ -118,9 +118,23 @@ class AgentPortal(OrgMixin, TestCase):
         self.assertEqual(c.get(f"/agent/pos/{self.p1.pk}/").status_code, 200)
         self.assertEqual(c.get(f"/agent/pos/{self.p3.pk}/").status_code, 404)  # other zone: no information
         r = c.post("/agent/supply/", {"idem": str(uuid.uuid4()), "client_kind": "POS",
-                                      "pos_sim": self.p3.business_sim, "uve": "12 000", "paid": ""})
+                                      "pos_sim": self.p3.business_sim, "product": "UVE", "amount": "12 000",
+                                      "paid": ""})
         self.assertEqual(r.status_code, 302, r.content[:3000])
-        self.assertEqual(AgentClientEntry.objects.get().pos, self.p3)
+        e = AgentClientEntry.objects.get()
+        self.assertEqual((e.pos, e.uve, e.er), (self.p3, D(12000), D(0)))
+        self.assertEqual(r["Location"], f"/agent/supply/{e.pk}/done/")
+        done = c.get(r["Location"])
+        self.assertContains(done, "#149*5*692000003*12000#")
+        self.assertContains(done, 'href="tel:%23149*5*692000003*12000%23"')
+        self.assertContains(c.get("/agent/supply/"), ">Supply</button>")
+        r = c.post("/agent/supply/", {"idem": str(uuid.uuid4()), "client_kind": "POS",
+                                      "pos_sim": self.p1.business_sim, "product": "ER", "amount": "5000"})
+        self.assertContains(c.get(r["Location"]), "#189*2*692000001*5000#")
+        r = c.post("/agent/supply/", {"idem": str(uuid.uuid4()), "client_kind": "POS",
+                                      "pos_sim": self.p1.business_sim, "product": "CASH", "amount": "3000"})
+        self.assertNotContains(c.get(r["Location"]), "tel:")
+        AgentClientEntry.objects.exclude(pk=e.pk).delete()
         act = c.get("/agent/activity/")
         self.assertContains(act, self.p3.name)  # its name only
         self.assertNotContains(act, f"/agent/pos/{self.p3.pk}/")
@@ -141,6 +155,13 @@ class AgentPortal(OrgMixin, TestCase):
         for u in ("cashier.fako1", "manager"):
             self.assertEqual(self.client_for(u).get("/agent/supply/").status_code, 403)
         self.assertEqual(c.get("/paybacks/").status_code, 403)
+
+    def test_dial_codes(self):
+        e = ag.record_supply(self.ua, client_kind="OTHER", client_name="Z", client_phone="+237 677 11 22 33",
+                             er=D(2500))
+        self.assertEqual(ag.ussd_code(e), "#189*2*677112233*2500#")
+        e = ag.record_supply(self.ua, client_kind="OTHER", client_name="Z", uve=D(100))
+        self.assertEqual(ag.ussd_code(e), "")  # no number
 
     def test_admin_delete_and_clear(self):
         from core.services import admin as adm
