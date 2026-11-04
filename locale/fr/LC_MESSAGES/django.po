@@ -133,6 +133,10 @@ msgid "%(n)s waiting"
 msgstr "%(n)s en attente"
 
 #, python-format
+msgid "%(p)s at the end (in %(i)s, out %(o)s)"
+msgstr "%(p)s en fin de période (entrées %(i)s, sorties %(o)s)"
+
+#, python-format
 msgid ""
 "%(party)s currently owes %(owed)s FCFA, less than the %(amt)s FCFA of "
 "%(ref)s. Part of it is already settled, so the full supply cannot be "
@@ -318,6 +322,14 @@ msgstr ""
 msgid "A POS belongs to a microzone: choose it or create it."
 msgstr "Un PDV appartient à une microzone : choisissez-la ou créez-la."
 
+msgid ""
+"A POS sends UVE to the shop: the shop's UVE goes up; the shop pays the POS "
+"cash now, or it settles what the POS owes."
+msgstr ""
+"Un POS envoie de l'UVE à la boutique : l'UVE de la boutique augmente ; la "
+"boutique paie le POS en espèces maintenant, ou cela règle ce que le POS "
+"doit."
+
 msgid "A balance cannot be negative."
 msgstr "Un solde ne peut pas être négatif."
 
@@ -450,6 +462,9 @@ msgstr "Compte %(u)s supprimé."
 msgid "Account name"
 msgstr "Nom du compte"
 
+msgid "Account name (optional)"
+msgstr "Nom du compte (facultatif)"
+
 msgid "Account receiving the capital"
 msgstr "Compte qui reçoit le capital"
 
@@ -568,11 +583,17 @@ msgstr "Outils d'administration"
 msgid "Administration"
 msgstr "Administration"
 
+msgid "Against what the POS owes (credit)"
+msgstr "Sur ce que le POS doit (crédit)"
+
 msgid "Agent"
 msgstr "Agent"
 
 msgid "Agent (owes)"
 msgstr "Agent (redevable)"
+
+msgid "Agent / POS"
+msgstr "Agent / POS"
 
 msgid "Agent / client"
 msgstr "Agent / client"
@@ -610,6 +631,9 @@ msgstr "Agents & PDV"
 
 msgid "Agents and POS"
 msgstr "Agents et PDV"
+
+msgid "Agents and POS, cash managers and bank accounts: one at a time."
+msgstr "Agents et POS, cash managers et comptes bancaires : un à la fois."
 
 msgid ""
 "Agents and POS, cash managers, MTN float wallets and bank accounts: one at a"
@@ -1315,6 +1339,9 @@ msgstr "Choisissez une résolution."
 msgid "Choose a username."
 msgstr "Choisissez un nom d'utilisateur."
 
+msgid "Choose an active POS."
+msgstr "Choisissez un POS actif."
+
 msgid "Choose an active cashier to record for."
 msgstr "Choisissez un caissier actif pour qui enregistrer."
 
@@ -1361,6 +1388,14 @@ msgstr "Choisissez le mode de paiement : espèces ou UVE."
 
 msgid "Choose how it was paid: cash, UVE or on credit."
 msgstr "Choisissez le mode de paiement : espèces, UVE ou à crédit."
+
+msgid "Choose how the POS is paid: cash now or against what it owes."
+msgstr ""
+"Choisissez comment le POS est payé : espèces maintenant ou sur ce qu'il "
+"doit."
+
+msgid "Choose how the POS pays: cash now or on credit."
+msgstr "Choisissez comment le POS paie : espèces maintenant ou à crédit."
 
 msgid "Choose how the expense is paid."
 msgstr "Choisissez comment la dépense est payée."
@@ -1427,6 +1462,9 @@ msgstr "Choisissez le sens de l'échange."
 
 msgid "Choose the exchange."
 msgstr "Choisissez l'échange."
+
+msgid "Choose the float account the payment arrived on."
+msgstr "Choisissez le compte float sur lequel le paiement est arrivé."
 
 msgid "Choose the shop receiving the transfer."
 msgstr "Choisissez la boutique qui reçoit le transfert."
@@ -1529,6 +1567,9 @@ msgstr "Fermés par le responsable"
 
 msgid "Closing"
 msgstr "Clôture"
+
+msgid "Closing (book)"
+msgstr "Clôture (livre)"
 
 msgid "Closing (system)"
 msgstr "Clôture (système)"
@@ -2029,6 +2070,9 @@ msgstr "Rapprochement journalier"
 msgid "Daily shop report — %(d)s"
 msgstr "Rapport journalier des boutiques — %(d)s"
 
+msgid "Daily supplies versus payments"
+msgstr "Approvisionnements et paiements par jour"
+
 msgid ""
 "Daily, weekly, monthly, custom or overall: opening + movements = closing"
 msgstr ""
@@ -2062,6 +2106,12 @@ msgstr "Date de service"
 
 msgid "Day"
 msgstr "Jour"
+
+msgid "Day by day"
+msgstr "Jour par jour"
+
+msgid "Day by day: opening + in − out = closing"
+msgstr "Jour par jour : ouverture + entrées − sorties = clôture"
 
 msgid "Day signed off."
 msgstr "Journée validée."
@@ -2278,6 +2328,18 @@ msgstr ""
 "Chaque compte ne peut être initialisé qu'une fois, par une écriture "
 "auditable contre les capitaux d'ouverture. Pour le modifier ensuite, un "
 "responsable ou un responsable financier le corrige."
+
+msgid ""
+"Each day, cash, UVE, ER and MTN float: opening + in − out = closing, counted"
+" and difference"
+msgstr ""
+"Chaque jour, espèces, UVE, ER et float MTN : ouverture + entrées − sorties ="
+" clôture, compté et écart"
+
+msgid "Each day, what was supplied against what was paid, and per agent / POS"
+msgstr ""
+"Chaque jour, ce qui a été approvisionné face à ce qui a été payé, et par "
+"agent / POS"
 
 msgid ""
 "Each new shop gets its own cash drawer, UVE and ER accounts automatically."
@@ -2646,6 +2708,9 @@ msgstr "Échange de float"
 
 msgid "Float exchanges"
 msgstr "Échanges de float"
+
+msgid "Float received on"
+msgstr "Float reçu sur"
 
 msgid "Floating-point money values are not allowed"
 msgstr "Les montants en virgule flottante ne sont pas autorisés"
@@ -3656,6 +3721,9 @@ msgstr "À crédit"
 msgid "On credit (owed to the agent)"
 msgstr "À crédit (dû à l'agent)"
 
+msgid "On credit (the POS owes it)"
+msgstr "À crédit (le POS le doit)"
+
 msgid "On credit (the agent owes the shop)"
 msgstr "À crédit (l'agent doit à la boutique)"
 
@@ -4046,6 +4114,9 @@ msgstr "Doit à l'entreprise"
 msgid "Owes me"
 msgstr "Me doit"
 
+msgid "Owes now (all desks)"
+msgstr "Doit maintenant (tous guichets)"
+
 msgid "Owes the shop"
 msgstr "Doit à la boutique"
 
@@ -4067,6 +4138,9 @@ msgstr ""
 
 msgid "POS"
 msgstr "PDV"
+
+msgid "POS (business SIM)"
+msgstr "POS (SIM business)"
 
 msgid "POS (received cash)"
 msgstr "PDV (a reçu les espèces)"
@@ -4101,8 +4175,17 @@ msgstr "Payé"
 msgid "Paid / credited −"
 msgstr "Payé / crédité −"
 
+msgid "Paid MTN"
+msgstr "Payé MTN"
+
+msgid "Paid UVE"
+msgstr "Payé UVE"
+
 msgid "Paid back"
 msgstr "Remboursé"
+
+msgid "Paid bank"
+msgstr "Payé banque"
 
 msgid "Paid by"
 msgstr "Payé par"
@@ -4113,6 +4196,9 @@ msgstr "Payé par %(m)s"
 
 msgid "Paid by agents"
 msgstr "Payé par les agents"
+
+msgid "Paid cash"
+msgstr "Payé espèces"
 
 msgid "Paid from"
 msgstr "Payé depuis"
@@ -4274,6 +4360,9 @@ msgstr "Paiements confirmés"
 msgid "Payments received: cash, UVE, MTN, bank"
 msgstr "Paiements reçus : espèces, UVE, MTN, banque"
 
+msgid "Per agent / POS over the period"
+msgstr "Par agent / POS sur la période"
+
 msgid "Per day"
 msgstr "Par jour"
 
@@ -4404,6 +4493,9 @@ msgstr "Reçu n°"
 
 msgid "Receive"
 msgstr "Recevoir"
+
+msgid "Receive UVE from a POS"
+msgstr "Recevoir de l'UVE d'un POS"
 
 msgid "Receive payment"
 msgstr "Recevoir le paiement"
@@ -4797,6 +4889,9 @@ msgstr "Choisissez la correction qui explique cet écart."
 msgid "Sell an item"
 msgstr "Vendre un article"
 
+msgid "Send UVE to a POS"
+msgstr "Envoyer de l'UVE à un POS"
+
 msgid ""
 "Send UVE to the master SIM, cash or MTN float to the cashier of your zone. "
 "It counts as paid once the cashier confirms receiving it."
@@ -4882,6 +4977,9 @@ msgstr "Indiquez le prix de %(i)s."
 
 msgid "Settings"
 msgstr "Paramètres"
+
+msgid "Settled"
+msgstr "Réglé"
 
 msgid "Settles what the shop owes an agent."
 msgstr "Règle ce que la boutique doit à un agent."
@@ -5002,6 +5100,12 @@ msgstr "Boutique : dépôt Orange Money"
 
 msgid "Shop: Orange Money cash-out"
 msgstr "Boutique : retrait Orange Money"
+
+msgid "Shop: UVE received from a POS"
+msgstr "Boutique : UVE reçue d'un POS"
+
+msgid "Shop: UVE sent to a POS"
+msgstr "Boutique : UVE envoyée à un POS"
 
 msgid "Shop: UVE supply from agent (appro)"
 msgstr "Boutique : appro UVE par agent"
@@ -5260,6 +5364,9 @@ msgstr "Approvisionné"
 msgid "Supplied today"
 msgstr "Approvisionné aujourd'hui"
 
+msgid "Supplied − paid"
+msgstr "Approvisionné − payé"
+
 msgid "Supplier"
 msgstr "Fournisseur"
 
@@ -5373,6 +5480,9 @@ msgid ""
 msgstr ""
 "Mot de passe temporaire — donnez-le à la personne maintenant. Il ne sera "
 "plus affiché."
+
+msgid "The POS pays cash now"
+msgstr "Le POS paie en espèces maintenant"
 
 msgid ""
 "The account follows the exchange: cash or MTN float given, UVE served; UVE "
@@ -5539,8 +5649,18 @@ msgstr "La boutique ne doit que %(owed)s FCFA à %(agent)s."
 msgid "The shop owes the agent"
 msgstr "La boutique doit à l'agent"
 
+msgid "The shop pays the POS cash now"
+msgstr "La boutique paie le POS en espèces maintenant"
+
 msgid "The shop rate is not set yet."
 msgstr "Le taux boutique n'est pas encore défini."
+
+msgid ""
+"The shop sends UVE to an end-user POS: the shop's UVE goes down; the POS "
+"pays cash now or owes it on credit."
+msgstr ""
+"La boutique envoie de l'UVE à un POS : l'UVE de la boutique diminue ; le POS"
+" paie en espèces maintenant ou le doit à crédit."
 
 msgid ""
 "The shop sends UVE to the agent and receives cash — or the agent owes the "
@@ -6528,6 +6648,11 @@ msgstr ""
 "Votre comptage diffère du solde attendu (%(d)s). Expliquez l'écart dans la "
 "note."
 
+msgid "Your desk's float SIM, or a float account all cashiers use."
+msgstr ""
+"La SIM float de votre guichet, ou un compte float utilisé par tous les "
+"caissiers."
+
 msgid "Your drawers and wallets (book balances)"
 msgstr "Vos caisses et portefeuilles (soldes comptables)"
 
@@ -7092,6 +7217,9 @@ msgstr "mis à jour : %(cp)s"
 
 msgid "uplift rate"
 msgstr "taux de bonus"
+
+msgid "used by all cashiers"
+msgstr "utilisé par tous les caissiers"
 
 msgid "usual master zone"
 msgstr "zone principale habituelle"

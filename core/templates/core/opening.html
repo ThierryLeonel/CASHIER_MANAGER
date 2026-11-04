@@ -57,7 +57,7 @@
 <p class="muted small">{% trans "At go-live, what a commercial agent owes a shop (e.g. a destockage on credit) or what the shop owes the agent (e.g. ER supplied on credit). One at a time." %}</p>
 {% else %}
 <h2>{% trans "Other opening balances" %}</h2>
-<p class="muted small">{% trans "Agents and POS, cash managers, MTN float wallets and bank accounts: one at a time." %} <a href="{% url 'shop_opening_balances' %}">{% trans "Shop opening balances" %} →</a></p>
+<p class="muted small">{% trans "Agents and POS, cash managers and bank accounts: one at a time." %} <a href="{% url 'shop_opening_balances' %}">{% trans "Shop opening balances" %} →</a></p>
 {% endif %}
 <div class="panel"><form method="post" class="entry" novalidate>{% csrf_token %}<input type="hidden" name="action" value="single">{% include "core/inc/fields.html" %}<button class="btn primary" type="submit">{% trans "Record opening balance" %}</button></form></div>
 <h2>{% trans "Recorded" %}</h2>

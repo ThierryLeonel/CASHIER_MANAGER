@@ -45,7 +45,8 @@ DUTY_LABEL = dict(SHOP_DUTIES)
 OP_DUTY = {"cashin": "OM", "cashout": "OM", "airtime": "AIRTIME", "convert": "AIRTIME", "sale": "SALES",
            "stock": "SALES", "service": "SERVICES", "retrieve": "SERVICES", "appro": "AGENTS", "er_supply": "AGENTS",
            "destockage": "AGENTS", "pay_agent": "AGENTS", "agent_repay": "AGENTS", "to_cashier": None,
-           "to_shop": None, "expense": "EXPENSES", "purchase": "EXPENSES"}  # transfers: every staff member
+           "to_shop": None, "expense": "EXPENSES", "purchase": "EXPENSES", "pos_uve_out": "AGENTS",
+           "pos_uve_in": "AGENTS"}  # transfers: every staff member
 
 
 # operation type -> duty that sees it ("ANY" = every staff member of the shop); unlisted types (capital, openings,
@@ -58,6 +59,7 @@ TYPE_DUTY = {
     TxType.SHOP_AGENT_PAY: "AGENTS", TxType.SHOP_AGENT_REPAY: "AGENTS",
     TxType.SHOP_TO_DESK: "ANY", TxType.DESK_TO_SHOP: "ANY", TxType.SHOP_TO_SHOP: "ANY",
     TxType.SHOP_AGENT_PAYBACK: "ANY",
+    TxType.SHOP_POS_UVE_OUT: "AGENTS", TxType.SHOP_POS_UVE_IN: "AGENTS",
     TxType.SHOP_EXPENSE: "EXPENSES", TxType.SHOP_PURCHASE: "EXPENSES", TxType.SHOP_STOCK_OUT: "SALES",
 }
 
@@ -278,6 +280,36 @@ def agent_repay(user, *, shop=None, agent, amount, pay="CASH", description="", i
     return _record(user, [_spec(TxType.SHOP_AGENT_REPAY, shop, [(shop.account(PAY_KINDS[pay]), a),
                                                                 (shop.payable_to(agent), -a)], a,
                                 counterparty=agent, description=description)], idempotency_key)[0]
+
+
+def _pos(pos):
+    if pos is None or pos.kind != Counterparty.Kind.POS or not pos.active:
+        raise BusinessError(_("Choose an active POS."), "pos")
+    return pos
+
+
+def uve_to_pos(user, *, shop=None, pos, amount, pay="CASH", description="", idempotency_key=None):
+    """The shop sends UVE to a POS: the shop's UVE goes down; the POS pays cash now, or owes it on credit (on its
+    account with the company, like a direct POS supply)."""
+    shop, pos, a = shop_for(user, shop, "AGENTS"), _pos(pos), _amt(amount)
+    if pay not in ("CASH", "CREDIT"):
+        raise BusinessError(_("Choose how the POS pays: cash now or on credit."), "pay")
+    other = shop.account(K.CASH_DRAWER) if pay == "CASH" else pos.account
+    return _record(user, [_spec(TxType.SHOP_POS_UVE_OUT, shop, [(other, a), (shop.account(K.UVE), -a)], a,
+                                counterparty=pos, on_credit=pay == "CREDIT", product="UVE",
+                                description=description)], idempotency_key)[0]
+
+
+def uve_from_pos(user, *, shop=None, pos, amount, pay="CASH", description="", idempotency_key=None):
+    """The shop receives UVE from a POS: the shop's UVE goes up; the shop pays the POS cash now, or it settles what
+    the POS owes (credit on its account with the company)."""
+    shop, pos, a = shop_for(user, shop, "AGENTS"), _pos(pos), _amt(amount)
+    if pay not in ("CASH", "CREDIT"):
+        raise BusinessError(_("Choose how the POS is paid: cash now or against what it owes."), "pay")
+    other = shop.account(K.CASH_DRAWER) if pay == "CASH" else pos.account
+    return _record(user, [_spec(TxType.SHOP_POS_UVE_IN, shop, [(shop.account(K.UVE), a), (other, -a)], a,
+                                counterparty=pos, on_credit=pay == "CREDIT", product="UVE",
+                                description=description)], idempotency_key)[0]
 
 
 def receive_agent_payback(user, *, shop, agent, cash=None, uve=None, description="", idempotency_key=None):

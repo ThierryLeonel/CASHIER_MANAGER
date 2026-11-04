@@ -476,7 +476,10 @@ def create_exchange(user, *, cash_manager, amount, note="", idempotency_key=None
 def _desk_account(ctx, kind, receiving=False):
     """The single account of this kind the cashier's subzone uses, or None."""
     qs = perm.usable_accounts(ctx.cashier, [kind], receiving=receiving)
-    return qs.first() if qs.count() == 1 else None
+    if qs.count() == 1:
+        return qs.first()
+    own = qs.filter(shared=False)  # the desk's own account first; a shared one (all cashiers) is chosen explicitly
+    return own.first() if own.count() == 1 else None
 
 
 def record_exchange(user, *, cash_manager, amount, give_kind, give_account=None, amount_given=None,

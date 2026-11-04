@@ -729,6 +729,135 @@ def reconciliation(f):
     return rep
 
 
+
+# ------------------------------------------------------------------ daily reports for the cashiers
+DAILY_KINDS = [(K.CASH_DRAWER, _l("Cash")), (K.UVE, "UVE"), (K.ER, "ER"), (K.MTN, _l("MTN float"))]
+
+
+def _days(f, qs_dates):
+    """The business days to show: the filter's range, or the days that have entries when it is open-ended."""
+    from datetime import timedelta
+
+    if f.date_from and f.date_to and (f.date_to - f.date_from).days <= 92:
+        d, out = f.date_from, []
+        while d <= f.date_to:
+            out.append(d)
+            d += timedelta(days=1)
+        return out
+    return sorted(set(qs_dates))
+
+
+def daily_reconciliation(f):
+    """Day by day, per product (cash, UVE, ER, MTN float): opening + in − out = closing, next to what was counted at
+    the closing of that day and the difference."""
+    rep = Report("daily_reconciliation", _("Daily reconciliation"), f.text())
+    accs = list(scoped_asset_accounts(f, [k for k, _l2 in DAILY_KINDS]).filter(zone__isnull=False))
+    ids = [a.id for a in accs]
+    kind_of = {a.id: a.kind for a in accs}
+    ent = Entry.objects.filter(account_id__in=ids)
+    moves = defaultdict(lambda: [Z, Z])  # (day, kind) -> [in, out]
+    for r in ent.filter(f.date_q()).values("business_date", "account_id").annotate(
+            i=Sum("amount", filter=Q(amount__gt=0)), o=Sum("amount", filter=Q(amount__lt=0))):
+        m = moves[(r["business_date"], kind_of[r["account_id"]])]
+        m[0] += money(r["i"])
+        m[1] -= money(r["o"])
+    days = _days(f, [d for d, _k in moves])
+    running = {}
+    for k, _l2 in DAILY_KINDS:
+        q = ent.filter(account__kind=k)
+        if days:
+            q = q.filter(business_date__lt=days[0])
+        running[k] = money(q.aggregate(s=Sum("amount"))["s"]) if days else Z
+    counted = defaultdict(lambda: [Z, Z, False])  # (day, kind) -> [actual, difference, closed]
+    for ln in ClosingLine.objects.filter(account_id__in=ids).filter(f.date_q("closing__cashier_day__business_date")) \
+            .values("closing__cashier_day__business_date", "account__kind").annotate(a=Sum("actual"),
+                                                                                    d=Sum("difference")):
+        c = counted[(ln["closing__cashier_day__business_date"], ln["account__kind"])]
+        c[0], c[1], c[2] = money(ln["a"]), money(ln["d"]), True
+    rows, totals = [], {k: [Z, Z] for k, _l2 in DAILY_KINDS}
+    for d in days:
+        for k, label in DAILY_KINDS:
+            i, o = moves.get((d, k), (Z, Z))
+            opening = running[k]
+            closing = opening + i - o
+            running[k] = closing
+            c = counted.get((d, k))
+            if not (i or o or opening or c):
+                continue
+            totals[k][0] += i
+            totals[k][1] += o
+            rows.append(dict(day=d, product=str(label), opening=opening, money_in=i, money_out=o, closing=closing,
+                             counted=c[0] if c else None, difference=c[1] if c else None,
+                             status=(_("closed") if c else _("not closed"))))
+    rep.tables.append(Table(_("Day by day: opening + in − out = closing"), [
+        Col("day", _("Business date"), "date"), Col("product", _("Product")),
+        Col("opening", _("Opening"), "money"), Col("money_in", _("In"), "money", True),
+        Col("money_out", _("Out"), "money", True), Col("closing", _("Closing (book)"), "money"),
+        Col("counted", _("Counted at closing"), "money"), Col("difference", _("Difference"), "money", True),
+        Col("status", _("Day"))], rows))
+    from core.money import fmt
+
+    rep.summary = [(_("%(p)s at the end (in %(i)s, out %(o)s)") % {"p": label, "i": fmt(totals[k][0]),
+                                                                    "o": fmt(totals[k][1])}, running[k], "money")
+                   for k, label in DAILY_KINDS]
+    return rep
+
+
+def _base(t):
+    return t.reverses if t.type == TxType.REVERSAL else t
+
+
+def supply_payment(f):
+    """Day by day: what was supplied (UVE, ER, cash, destockage) against what was paid (cash, UVE, MTN, bank), and the
+    same per agent / POS over the period."""
+    rep = Report("supply_payment", _("Daily supplies versus payments"), f.text())
+    sup = list(txns(f, [TxType.SUPPLY, TxType.DESTOCKAGE]))
+    pay = list(txns(f, [TxType.COLLECTION]))
+    S_COLS = [("UVE", "UVE"), ("ER", "ER"), ("CASH", _("Cash")), ("DESTOCK", _("Destockage"))]
+    P_COLS = [("P_CASH", _("Paid cash")), ("P_UVE", _("Paid UVE")), ("P_MTN", _("Paid MTN")),
+              ("P_BANK", _("Paid bank"))]
+    per_day = defaultdict(lambda: defaultdict(Decimal))
+    per_cust = defaultdict(lambda: defaultdict(Decimal))
+    for t in sup:
+        b = _base(t)
+        key = "DESTOCK" if b.type == TxType.DESTOCKAGE else b.product
+        per_day[t.business_date][key] += signed(t)
+        per_day[t.business_date]["supplied"] += signed(t)
+        if b.counterparty_id:
+            per_cust[b.counterparty]["supplied"] += signed(t)
+    for t in pay:
+        b = _base(t)
+        per_day[t.business_date]["P_" + b.payment_method] += signed(t)
+        per_day[t.business_date]["paid"] += signed(t)
+        if b.counterparty_id:
+            per_cust[b.counterparty]["paid"] += signed(t)
+    rows = []
+    for d in sorted(per_day):
+        v = per_day[d]
+        row = dict(day=d, supplied=v["supplied"], paid=v["paid"], net=v["supplied"] - v["paid"])
+        row.update({k: v[k] for k, _lbl in S_COLS + P_COLS})
+        rows.append(row)
+    cols = [Col("day", _("Business date"), "date")]
+    cols += [Col(k, lbl, "money", True) for k, lbl in S_COLS]
+    cols += [Col("supplied", _("Total supplied"), "money", True)]
+    cols += [Col(k, lbl, "money", True) for k, lbl in P_COLS]
+    cols += [Col("paid", _("Total paid"), "money", True), Col("net", _("Supplied − paid"), "money", True)]
+    rep.tables.append(Table(_("Day by day"), cols, rows))
+    from core.services.ledger import balance
+
+    crow = []
+    for cp, v in sorted(per_cust.items(), key=lambda x: -(x[1]["supplied"] - x[1]["paid"])):
+        crow.append(dict(customer=str(cp), kind=cp.get_kind_display(), supplied=v["supplied"], paid=v["paid"],
+                         net=v["supplied"] - v["paid"], balance=balance(cp.account)))
+    rep.tables.append(Table(_("Per agent / POS over the period"), [
+        Col("customer", _("Agent / POS")), Col("kind", _("Type")), Col("supplied", _("Supplied"), "money", True),
+        Col("paid", _("Paid"), "money", True), Col("net", _("Supplied − paid"), "money", True),
+        Col("balance", _("Owes now (all desks)"), "money", True)], crow))
+    ts, tp = sum(r["supplied"] for r in rows), sum(r["paid"] for r in rows)
+    rep.summary = [(_("Total supplied"), ts, "money"), (_("Total paid"), tp, "money"),
+                   (_("Supplied − paid"), ts - tp, "money")]
+    return rep
+
 REPORTS = {
     "statement": (_l("Customer account statement"), statement),
     "customers": (_l("Customer balances"), customers),
@@ -745,6 +874,8 @@ REPORTS = {
     "corrections": (_l("Corrections and responsibility transfers"), corrections),
     "closings": (_l("Daily closings and differences"), closings),
     "reconciliation": (_l("Reconciliation"), reconciliation),
+    "daily_reconciliation": (_l("Daily reconciliation"), daily_reconciliation),
+    "supply_payment": (_l("Daily supplies versus payments"), supply_payment),
 }
 
 
@@ -765,4 +896,7 @@ REPORT_CARDS = {
     "corrections": ("edit", _l("Corrected entries and changes of responsibility")),
     "closings": ("lock", _l("Counted versus expected, and open differences")),
     "reconciliation": ("chart", _l("Daily, weekly, monthly, custom or overall: opening + movements = closing")),
+    "daily_reconciliation": ("calendar", _l("Each day, cash, UVE, ER and MTN float: opening + in − out = closing, "
+                                             "counted and difference")),
+    "supply_payment": ("payment", _l("Each day, what was supplied against what was paid, and per agent / POS")),
 }

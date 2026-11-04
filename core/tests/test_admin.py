@@ -253,7 +253,7 @@ class InactivitySignOut(OrgMixin, TestCase):
         c = self.client_class()
         c.login(username="manager", password=PW)
         r = c.get("/reports/")
-        self.assertContains(r, 'class="report-card"', count=15)
+        self.assertContains(r, 'class="report-card"', count=17)
         self.assertNotContains(r, "daily/weekly")
 
 

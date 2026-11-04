@@ -70,6 +70,9 @@ class Account(models.Model):
     shop_agent = models.ForeignKey(Counterparty, null=True, blank=True, on_delete=models.PROTECT,
                                    related_name="shop_payables", help_text="SHOP_PAYABLE: the agent owed.")
     active = models.BooleanField(default=True)
+    # an account every cashier may use (e.g. a company MTN float SIM shared by all desks): payments can go into it from
+    # any cashier; it is counted at the closing of the subzone that holds it
+    shared = models.BooleanField(_("used by all cashiers"), default=False)
     created_at = models.DateTimeField(default=timezone.now)
 
     class Meta:
@@ -195,6 +198,8 @@ class TxType(models.TextChoices):
     SHOP_STOCK_OUT = "SHOP_STOCK_OUT", _("Shop: stock written off")
     SHOP_TO_SHOP = "SHOP_TO_SHOP", _("Shop: transfer to another shop")
     SHOP_AGENT_PAYBACK = "SHOP_AG_PAYBACK", _("Shop: agent pays the company")
+    SHOP_POS_UVE_OUT = "SHOP_POS_UVE_OUT", _("Shop: UVE sent to a POS")
+    SHOP_POS_UVE_IN = "SHOP_POS_UVE_IN", _("Shop: UVE received from a POS")
 
 
 class Product(models.TextChoices):

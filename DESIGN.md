@@ -168,6 +168,15 @@ Commercial agents (role AGENT, linked to their agent account) have a working por
 * **My debtors**: every client with a balance, the amount outstanding, his number and last supply, a **Receive payment** button (opens *A client pays me* for that client) and **Remind** (an SMS with the amount owed, on the phone).
 * **Clear data** has two more scopes: **commercial agents' records only** (supplies, client payments, transfers, exchanges, paybacks — for one agent or all; company ledger entries such as office supplies and confirmed payments stay), and **one user's records** (transactions he entered or that belong to his desk, with their corrections, his shifts, services and SIM retrievals, and for an agent his portal records; balances are re-checked and nothing is removed if an account would go negative).
 
+#### Float in the cashiers' openings, shared float accounts, shops' UVE with POS, cashiers' daily reports (04/11/2026)
+* **Opening balances**: the cashiers' grid now has an **MTN float** column next to cash, UVE and ER (the shops' grid keeps cash, UVE, ER).
+* **Accounts used by all cashiers** (`Account.shared`, Configuration › Accounts: "used by all cashiers"): e.g. a company MTN float SIM. Every cashier, whatever the subzone, can receive payments into it and use it; it is counted at the closing of the subzone set on the account (the one that keeps the SIM). A desk's own account stays the default; on the payment form, when a cashier has his own float SIM and a shared one, **Float received on** asks which.
+* **Shop cash-in / cash-out**: the account name is optional.
+* **Shops and POS** (staff with the agents duty): **Send UVE to a POS** — shop UVE down; the POS pays cash now (drawer up) or **on credit** (the POS's account with the company goes up, like a direct POS supply) — and **Receive UVE from a POS** — shop UVE up; the shop pays cash now, or it settles what the POS owes (`SHOP_POS_UVE_OUT` / `SHOP_POS_UVE_IN`).
+* **Cashiers' daily reports** (Reports; cashiers see their own desk, supervisors their scope; on screen, Excel, PDF):
+  * **Daily reconciliation** — each day, for cash, UVE, ER and MTN float: opening + in − out = closing (book), what was counted at that day's closing and the difference, "closed / not closed".
+  * **Daily supplies versus payments** — each day: supplies (UVE, ER, cash, destockage) and payments (cash, UVE, MTN, bank) with totals and supplied − paid; then per agent / POS over the period with what each owes now.
+
 ### Users & passwords
 
 - Passwords are stored hashed: nobody — not even the super administrator — can read them. The super administrator's **Users & passwords** page (Administration) lists every user with role, zone, staff ID, last sign-in and status, and lets them **reset** a password (a strong one generated and shown once, or one they type, checked against the password rules), optionally forcing the user to choose their own at next sign-in, and **deactivate / activate** accounts (deactivation signs the user out at once; you cannot deactivate yourself or the last active super administrator). Every action is in the audit log.

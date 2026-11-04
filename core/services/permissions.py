@@ -31,6 +31,8 @@ def _zone_rule(user, account):
     * an account held at master-zone level (e.g. the master SIM) is used only
       by its cashier in charge (Account.custodian);
     * explicit grants (configuration) add access to other accounts."""
+    if account.shared:  # used by every cashier
+        return True
     if account.custodian_id:
         return account.custodian_id == user.id
     return account.zone_id is not None and account.zone_id == user.subzone_id
@@ -57,7 +59,8 @@ def can_receive_into(user, account):
 def zone_accounts_q(user):
     from django.db.models import Q
 
-    return Q(custodian=user) | Q(custodian__isnull=True, zone_id=user.subzone_id) | Q(grants__user=user)
+    return (Q(custodian=user) | Q(custodian__isnull=True, zone_id=user.subzone_id) | Q(grants__user=user)
+            | Q(shared=True))
 
 
 def usable_accounts(user, kinds, receiving=False):

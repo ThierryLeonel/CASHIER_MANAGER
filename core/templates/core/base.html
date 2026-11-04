@@ -83,6 +83,8 @@
     <a href="{% url 'shop_op' 'destockage' %}" class="{% if request.path == '/shops/do/destockage/' %}on{% endif %}">{% icon "destock" %}<span>{% trans "Destockage" %}</span></a>
     <a href="{% url 'shop_op' 'pay_agent' %}" class="{% if request.path == '/shops/do/pay_agent/' %}on{% endif %}">{% icon "payment" %}<span>{% trans "Pay an agent" %}</span></a>
     <a href="{% url 'shop_op' 'agent_repay' %}" class="{% if request.path == '/shops/do/agent_repay/' %}on{% endif %}">{% icon "payment" %}<span>{% trans "Agent pays the shop" %}</span></a>
+    <a href="{% url 'shop_op' 'pos_uve_out' %}" class="{% if request.path == '/shops/do/pos_uve_out/' %}on{% endif %}">{% icon "supply" %}<span>{% trans "Send UVE to a POS" %}</span></a>
+    <a href="{% url 'shop_op' 'pos_uve_in' %}" class="{% if request.path == '/shops/do/pos_uve_in/' %}on{% endif %}">{% icon "payment" %}<span>{% trans "Receive UVE from a POS" %}</span></a>
     {% endif %}
     <div class="side-group">{% trans "Transfers" %}</div>
     <a href="{% url 'shop_op' 'to_cashier' %}" class="{% if request.path == '/shops/do/to_cashier/' %}on{% endif %}">{% icon "transfer" %}<span>{% trans "Transfer to a cashier" %}</span></a>

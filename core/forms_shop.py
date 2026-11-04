@@ -35,7 +35,7 @@ class ShopForm(forms.Form):
 class CashInOutForm(ShopForm):
     amount = MoneyField(label=_("Amount (FCFA)"))
     commission = MoneyField(label=_("Commission earned (FCFA)"), required=False)
-    account_name = forms.CharField(label=_("Account name"), max_length=120,
+    account_name = forms.CharField(label=_("Account name (optional)"), max_length=120, required=False,
                                    help_text=_("The name on the client's Orange Money account."))
     client_phone = forms.CharField(label=_("Client phone (optional)"), required=False, max_length=30)
     description = forms.CharField(label=_("Note"), required=False, max_length=255)
@@ -75,6 +75,25 @@ class AgentDealForm(ShopForm):
             self.fields["pay"].choices = choices
         else:
             del self.fields["pay"]
+
+
+class PosUveForm(ShopForm):
+    """UVE sent to, or received from, an end-user POS."""
+
+    pos = CustomerField(label=_("POS (business SIM)"), kind=Counterparty.Kind.POS)
+    amount = MoneyField(label=_("UVE amount (FCFA)"))
+    pay = forms.ChoiceField(label=_("Settled"), choices=[])
+    description = forms.CharField(label=_("Note"), required=False, max_length=255)
+
+    PAY_CHOICES = {
+        "pos_uve_out": [("CASH", _("The POS pays cash now")), ("CREDIT", _("On credit (the POS owes it)"))],
+        "pos_uve_in": [("CASH", _("The shop pays the POS cash now")),
+                       ("CREDIT", _("Against what the POS owes (credit)"))],
+    }
+
+    def __init__(self, user, *args, op="pos_uve_out", **kwargs):
+        super().__init__(user, *args, **kwargs)
+        self.fields["pay"].choices = self.PAY_CHOICES[op]
 
 
 class ToCashierForm(ShopForm):

@@ -181,9 +181,6 @@ class ShopPages(OrgMixin, TestCase):
         c = self.client_for("shop.molyko")
         self.assertRedirects(c.get("/"), "/shops/", fetch_redirect_response=False)
         self.assertRedirects(c.get("/shops/"), f"/shops/{self.shop.pk}/")
-        r = c.post("/shops/do/cashin/", {"idem": str(uuid.uuid4()), "amount": "50 000", "commission": "250"})
-        self.assertEqual(r.status_code, 200)  # the account name is required
-        self.assertContains(r, "Account name")
         r = c.post("/shops/do/cashin/", {"idem": str(uuid.uuid4()), "amount": "50 000", "commission": "250",
                                          "account_name": "Ngwa Peter", "client_phone": "677123456"})
         self.assertEqual(r.status_code, 302, r.content[:1500])

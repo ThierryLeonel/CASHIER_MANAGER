@@ -205,6 +205,8 @@ class CollectionForm(BaseEntryForm):
     uve = MoneyField(label=_("UVE"), required=False)
     mtn = MoneyField(label=_("MTN float"), required=False)
     bank = MoneyField(label=_("Bank deposit"), required=False)
+    mtn_account = AccountChoiceField(label=_("Float received on"), queryset=Account.objects.none(), required=False,
+                                     help_text=_("Your desk's float SIM, or a float account all cashiers use."))
     bank_account = AccountChoiceField(label=_("Bank account"), queryset=Account.objects.none(), required=False)
     bank_reference = forms.CharField(label=_("Bank deposit reference"), required=False, max_length=60)
     description = forms.CharField(label=_("Note"), required=False, max_length=255)
@@ -219,9 +221,19 @@ class CollectionForm(BaseEntryForm):
         self.fields["cash"].help_text = _("Fill every way the customer paid. The total is added up for you; each "
                                           "part goes into your subzone's account for that method.")
         self.fields["bank_account"].queryset = self.accounts([K.BANK], receiving=True)
+        mtn = self.accounts([K.MTN], receiving=True)
+        if mtn.count() > 1:  # own float SIM and a shared one: the cashier says where the float arrived
+            self.fields["mtn_account"].queryset = mtn
+            own = mtn.filter(shared=False)
+            if not self.is_bound and own.count() == 1:
+                self.initial["mtn_account"] = own.first().pk
+        else:
+            del self.fields["mtn_account"]
 
     def clean(self):
         cd = super().clean()
+        if cd.get("mtn") and "mtn_account" in self.fields and not cd.get("mtn_account"):
+            self.add_error("mtn_account", _("Choose the float account the payment arrived on."))
         if not any(cd.get(n) for n, _m in self.METHOD_FIELDS):
             self.add_error("cash", _("Enter the amount received in at least one payment method."))
         if cd.get("bank"):
@@ -239,6 +251,8 @@ class CollectionForm(BaseEntryForm):
         cd = self.cleaned_data
         parts = {m: cd.get(n) for n, m in self.METHOD_FIELDS if cd.get(n)}
         accounts = {PaymentMethod.BANK: cd["bank_account"]} if cd.get("bank_account") else {}
+        if cd.get("mtn") and cd.get("mtn_account"):
+            accounts[PaymentMethod.MTN] = cd["mtn_account"]
         return dict(payer=cd["payer"], parts=parts, accounts=accounts, bank_reference=cd.get("bank_reference", ""),
                     description=cd.get("description", ""))
 

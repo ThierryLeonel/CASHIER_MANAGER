@@ -138,7 +138,8 @@ def discrepancy_detail(request, pk):
 
 
 # ---------------------------------------------------------------- admin money settings
-OPENING_GRID_KINDS = (Account.Kind.CASH_DRAWER, Account.Kind.UVE, Account.Kind.ER)
+OPENING_GRID_KINDS = (Account.Kind.CASH_DRAWER, Account.Kind.UVE, Account.Kind.ER, Account.Kind.MTN)  # cashiers
+SHOP_GRID_KINDS = (Account.Kind.CASH_DRAWER, Account.Kind.UVE, Account.Kind.ER)
 
 
 class _ShopsGroup:
@@ -153,9 +154,10 @@ class _ShopsGroup:
 
 
 def opening_grid(shops=False):
-    """Control accounts (cash, UVE, ER) with recorded openings: the cashiers' by master zone -> subzone / master SIM
+    """Control accounts (cash, UVE, ER, and MTN float for the cashiers) with recorded openings: the cashiers' by master zone -> subzone / master SIM
     line, or (shops=True) one line per shop."""
-    accts = Account.objects.filter(kind__in=OPENING_GRID_KINDS, active=True)
+    KINDS = SHOP_GRID_KINDS if shops else OPENING_GRID_KINDS
+    accts = Account.objects.filter(kind__in=KINDS, active=True)
     accts = accts.filter(shop__isnull=False, shop_agent__isnull=True, shop__active=True) if shops \
         else accts.filter(zone__isnull=False, shop__isnull=True)
     accts = list(accts.select_related("zone__parent", "custodian", "sim", "shop").order_by("id"))
@@ -163,13 +165,13 @@ def opening_grid(shops=False):
     for t in Transaction.objects.filter(type=TxType.OPENING_BALANCE, opening_for_account__in=accts,
                                         correction__isnull=True):
         recorded[t.opening_for_account_id] = t
-    masters, totals = {}, {k: Decimal(0) for k in OPENING_GRID_KINDS}
+    masters, totals = {}, {k: Decimal(0) for k in KINDS}
     for a in accts:
         if a.shop_id:  # shops: one row per shop under a "Shops" group
             me = masters.setdefault("shops", {"zone": _ShopsGroup(), "rows": {},
-                                              "totals": {k: Decimal(0) for k in OPENING_GRID_KINDS}})
+                                              "totals": {k: Decimal(0) for k in KINDS}})
             row = me["rows"].setdefault(("shop", a.shop_id), {"label": a.shop.name, "master_level": False,
-                                                              "cells": {k: [] for k in OPENING_GRID_KINDS}})
+                                                              "cells": {k: [] for k in KINDS}})
             t = recorded.get(a.id)
             row["cells"][a.kind].append({"account": a, "txn": t})
             if t is not None:
@@ -177,14 +179,14 @@ def opening_grid(shops=False):
                 totals[a.kind] += t.amount
             continue
         m = a.zone.master
-        me = masters.setdefault(m.id, {"zone": m, "rows": {}, "totals": {k: Decimal(0) for k in OPENING_GRID_KINDS}})
+        me = masters.setdefault(m.id, {"zone": m, "rows": {}, "totals": {k: Decimal(0) for k in KINDS}})
         if a.zone.is_master and (a.custodian_id or not m.subzones.exists()):
             key = ("m", a.custodian_id)
             label = _("Master SIM") + (f" · {a.custodian}" if a.custodian_id else "")
         else:
             key, label = ("s", a.zone_id), a.zone.name
         row = me["rows"].setdefault(key, {"label": label, "master_level": key[0] == "m",
-                                          "cells": {k: [] for k in OPENING_GRID_KINDS}})
+                                          "cells": {k: [] for k in KINDS}})
         t = recorded.get(a.id)
         row["cells"][a.kind].append({"account": a, "txn": t})
         if t is not None:
@@ -193,10 +195,10 @@ def opening_grid(shops=False):
     out = []
     for m in sorted(masters.values(), key=lambda x: (isinstance(x["zone"], _ShopsGroup), x["zone"].name)):
         rows = sorted(m["rows"].values(), key=lambda r: (r["master_level"], r["label"]))
-        out.append({"zone": m["zone"], "totals": [m["totals"][k] for k in OPENING_GRID_KINDS],
+        out.append({"zone": m["zone"], "totals": [m["totals"][k] for k in KINDS],
                     "total": sum(m["totals"].values()),
-                    "rows": [dict(r, cells=[r["cells"][k] for k in OPENING_GRID_KINDS]) for r in rows]})
-    return out, [totals[k] for k in OPENING_GRID_KINDS], sum(totals.values()), accts, recorded
+                    "rows": [dict(r, cells=[r["cells"][k] for k in KINDS]) for r in rows]})
+    return out, [totals[k] for k in KINDS], sum(totals.values()), accts, recorded
 
 
 def _save_grid(request, accts, recorded, back="opening_balances"):
@@ -314,7 +316,7 @@ def shop_opening_balances(request):
             t.who_owes = _("the agent owes the shop") if signs[t.pk] > 0 else _("the shop owes the agent")
     return render(request, "core/opening.html", {
         "shops_mode": True, "form": form, "done": done, "grid": grid, "kind_totals": kind_totals, "grand": grand,
-        "kinds": [Account.Kind(k).label for k in OPENING_GRID_KINDS], "batch": uuid.uuid4(),
+        "kinds": [Account.Kind(k).label for k in SHOP_GRID_KINDS], "batch": uuid.uuid4(),
         "today": douala_today(), "posted_date": request.POST.get("business_date") or "",
         "posted": ({a.id: request.POST.get(f"acct_{a.id}", "") for a in accts}
                    if request.POST.get("action") == "grid" else {}),

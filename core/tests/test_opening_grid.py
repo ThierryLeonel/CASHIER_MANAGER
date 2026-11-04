@@ -20,7 +20,7 @@ class OpeningGrid(OrgMixin, TestCase):
         self.assertContains(r, "TOTAL OPENING")
         self.assertContains(r, f'name="acct_{self.d_f1.pk}"')
         self.assertContains(r, f'name="acct_{self.er_f1.pk}"')
-        self.assertNotContains(r, f'name="acct_{self.mtn_f1.pk}"')  # MTN goes in "other"
+        self.assertContains(r, f'name="acct_{self.mtn_f1.pk}"')  # the cashiers' MTN float is in the grid too
         data = {"action": "grid", "batch": str(uuid.uuid4()), "business_date": "2026-10-28", "note": "launch",
                 f"acct_{self.d_f1.pk}": "1 000 000", f"acct_{self.uve_f1.pk}": "2 500 000",
                 f"acct_{self.er_f1.pk}": "300 000", f"acct_{self.d_me.pk}": ""}
