@@ -112,7 +112,8 @@ METRICS = ["cashin", "cashin_n", "cashout", "cashout_n", "commission", "airtime"
            "units", "services", "retrievals", "hours", "diff_cash", "diff_uve", "diff_er"]
 TYPE_METRIC = {T.SHOP_CASHIN: "cashin", T.SHOP_CASHOUT: "cashout", T.SHOP_CONVERT: "convert",
                T.SHOP_APPRO: "appro", T.SHOP_ER_SUPPLY: "er_supply", T.SHOP_DESTOCK: "destock",
-               T.SHOP_AGENT_PAY: "agent_paid", T.SHOP_AGENT_REPAY: "agent_repaid", T.SHOP_TO_DESK: "to_cashiers",
+               T.SHOP_AGENT_PAY: "agent_paid", T.SHOP_AGENT_REPAY: "agent_repaid",
+               T.SHOP_AGENT_PAYBACK: "agent_repaid", T.SHOP_TO_DESK: "to_cashiers",
                T.DESK_TO_SHOP: "from_cashiers", T.SHOP_TO_SHOP: "to_shops", T.SHOP_SALE: "sales", T.SHOP_EXPENSE: "expenses",
                T.SHOP_PURCHASE: "purchases"}
 

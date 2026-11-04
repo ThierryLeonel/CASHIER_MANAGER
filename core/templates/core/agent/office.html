@@ -1,0 +1,20 @@
+{% extends "core/base.html" %}{% load i18n cashier %}
+{% block title %}{% trans "Office supplies" %}{% endblock %}
+{% block topbar %}{% trans "Office supplies" %}{% endblock %}
+{% block content %}
+<h1>{% trans "Office supplies" %}</h1>
+<p class="small muted">{% trans "Every supply and destockage the office recorded on your account, also those delivered straight to a POS for you." %}</p>
+<form class="filters panel" method="get">
+  <div class="field"><label>{% trans "From" %}</label><input type="date" name="from" value="{{ d_from|date:'Y-m-d' }}"></div>
+  <div class="field"><label>{% trans "To" %}</label><input type="date" name="to" value="{{ d_to|date:'Y-m-d' }}"></div>
+  <div class="field"><button class="btn" type="submit">{% trans "Apply" %}</button></div>
+</form>
+<h2>{% trans "Per day" %}</h2>
+<div class="tbl-wrap"><table class="t"><thead><tr><th>{% trans "Day" %}</th><th class="money">UVE</th><th class="money">ER</th><th class="money">{% trans "Cash" %}</th><th class="money">{% trans "Destockage" %}</th><th class="money">{% trans "Total" %}</th></tr></thead>
+<tbody>{% for r in days %}<tr><td><a href="{% url 'agent_daily' %}?date={{ r.day|date:'Y-m-d' }}">{{ r.day|date:"D d/m/Y" }}</a></td><td class="money">{{ r.UVE|fcfa }}</td><td class="money">{{ r.ER|fcfa }}</td><td class="money">{{ r.CASH|fcfa }}</td><td class="money">{{ r.DESTOCK|fcfa }}</td><td class="money"><strong>{{ r.total|fcfa }}</strong></td></tr>
+{% empty %}<tr><td colspan="6" class="muted">{% trans "No office supply." %}</td></tr>{% endfor %}</tbody>
+{% if days %}<tfoot><tr><th>{% trans "Total" %}</th><th class="money">{{ totals.UVE|fcfa }}</th><th class="money">{{ totals.ER|fcfa }}</th><th class="money">{{ totals.CASH|fcfa }}</th><th class="money">{{ totals.DESTOCK|fcfa }}</th><th class="money">{{ totals.total|fcfa }}</th></tr></tfoot>{% endif %}</table></div>
+<h2>{% trans "All records" %}</h2>
+{% include "core/agent/inc/office_supply_rows.html" with rows=page %}
+<div class="pager">{% if page.has_previous %}<a class="btn small" href="?from={{ d_from|date:'Y-m-d' }}&to={{ d_to|date:'Y-m-d' }}&page={{ page.previous_page_number }}">←</a>{% endif %}<span class="muted small">{{ page.number }} / {{ page.paginator.num_pages }}</span>{% if page.has_next %}<a class="btn small" href="?from={{ d_from|date:'Y-m-d' }}&to={{ d_to|date:'Y-m-d' }}&page={{ page.next_page_number }}">→</a>{% endif %}</div>
+{% endblock %}

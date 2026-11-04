@@ -1,0 +1,48 @@
+{% extends "core/base.html" %}{% load i18n cashier %}
+{% block title %}{% trans "Daily reconciliation" %}{% endblock %}
+{% block topbar %}{% trans "Daily reconciliation" %}{% endblock %}
+{% block content %}
+<h1>{% trans "Daily reconciliation" %}</h1>
+<div class="day-nav">
+  <a class="btn small" href="?date={{ prev|date:'Y-m-d' }}">←</a>
+  <form method="get"><input type="date" name="date" value="{{ day|date:'Y-m-d' }}" max="{{ today|date:'Y-m-d' }}" onchange="this.form.submit()"></form>
+  {% if next %}<a class="btn small" href="?date={{ next|date:'Y-m-d' }}">→</a>{% endif %}
+</div>
+<p class="small muted">{% trans "Calculated automatically from the office records and what you recorded. Opening + in − out = closing." %}</p>
+
+<h2>{% trans "Stock and cash in hand" %}</h2>
+{% include "core/agent/inc/stock_table.html" with rec=rec %}
+
+<div class="two-col">
+<section><h2>{% trans "My account with the company" %}</h2>
+<div class="tbl-wrap"><table class="t recon"><tbody>
+  <tr><td>{% trans "Owed at the start of the day" %}</td><td class="money">{{ rec.company.opening|fcfa }}</td></tr>
+  <tr><td>+ {% trans "Supplies and destockage from the office" %}</td><td class="money">{{ rec.company.taken|fcfa }}</td></tr>
+  <tr><td>− {% trans "Payments confirmed" %}</td><td class="money">{{ rec.company.paid|fcfa }}</td></tr>
+  <tr class="total"><td><strong>{% trans "Owed at the end of the day" %}</strong></td><td class="money"><strong>{{ rec.company.closing|fcfa }}</strong></td></tr>
+</tbody></table></div>
+{% if rec.pending %}<p class="small muted">{% blocktrans count n=rec.pending %}{{ n }} payment is still waiting for confirmation.{% plural %}{{ n }} payments are still waiting for confirmation.{% endblocktrans %}</p>{% endif %}</section>
+<section><h2>{% trans "My clients" %}</h2>
+<div class="tbl-wrap"><table class="t recon"><tbody>
+  <tr><td>{% trans "They owed me at the start" %}</td><td class="money">{{ rec.clients.opening|fcfa }}</td></tr>
+  <tr><td>+ {% trans "Supplied" %}</td><td class="money">{{ rec.clients.supplied|fcfa }}</td></tr>
+  <tr><td>− {% trans "Received" %}</td><td class="money">{{ rec.clients.received|fcfa }}</td></tr>
+  <tr class="total"><td><strong>{% trans "They owe me at the end" %}</strong></td><td class="money"><strong>{{ rec.clients.closing|fcfa }}</strong></td></tr>
+</tbody></table></div></section>
+</div>
+
+<h2>{% trans "Office supplies of the day" %}</h2>
+{% include "core/agent/inc/office_supply_rows.html" with rows=office %}
+<h2>{% trans "My operations of the day" %}</h2>
+<div class="tbl-wrap"><table class="t"><thead><tr><th>{% trans "Time" %}</th><th>{% trans "Ref." %}</th><th>{% trans "Operation" %}</th><th>{% trans "With" %}</th><th>{% trans "Product" %}</th><th class="money">{% trans "Amount" %}</th><th class="money">{% trans "Received" %}</th></tr></thead>
+<tbody>{% for e in entries %}<tr{% if e.is_cancelled %} class="corrected"{% endif %}><td class="small">{{ e.created_at|date:"H:i" }}</td><td class="keep">{{ e.reference }}{% if e.is_cancelled %} <span class="badge bad">{% trans "cancelled" %}</span>{% endif %}</td>
+<td class="small">{% if e.client_kind == 'AGENT' %}{% if e.agent_id == me.pk %}{% trans "Transfer to an agent" %}{% else %}{% trans "Transfer from an agent" %}{% endif %}{% elif e.kind == 'SUPPLY' %}{% trans "Supply" %}{% else %}{% trans "Payment" %}{% endif %}</td>
+<td>{% if e.client_kind == 'AGENT' and e.agent_id != me.pk %}{{ e.agent.name }}{% else %}{{ e.client_label }}{% endif %}</td><td>{{ e.product|default:"—" }}</td><td class="money">{% if e.total %}{{ e.total|fcfa }}{% endif %}</td><td class="money">{% if e.paid %}{{ e.paid|fcfa }}{% endif %}</td></tr>
+{% empty %}<tr><td colspan="7" class="muted">{% trans "Nothing recorded this day." %}</td></tr>{% endfor %}
+{% for p in paybacks %}<tr><td class="small">{{ p.created_at|date:"H:i" }}</td><td class="keep">{{ p.code }}</td><td class="small">{% trans "Paid back" %}</td><td>{{ p.receiver }}</td><td>{{ p.method }}</td><td class="money">{{ p.total|fcfa }}</td><td>{% include "core/agent/inc/payback_status.html" %}</td></tr>{% endfor %}</tbody></table></div>
+
+<h2>{% trans "Last 14 days" %}</h2>
+<div class="tbl-wrap"><table class="t"><thead><tr><th>{% trans "Day" %}</th><th class="money">{% trans "From the office" %}</th><th class="money">{% trans "Supplied" %}</th><th class="money">{% trans "From agents" %}</th><th class="money">{% trans "To agents" %}</th><th class="money">{% trans "Collected" %}</th><th class="money">{% trans "Paid back" %}</th></tr></thead>
+<tbody>{% for r in days %}<tr><td><a href="?date={{ r.day|date:'Y-m-d' }}">{{ r.day|date:"D d/m" }}</a></td><td class="money">{{ r.office|fcfa }}</td><td class="money">{{ r.to_clients|fcfa }}</td><td class="money">{{ r.agents_in|fcfa }}</td><td class="money">{{ r.agents_out|fcfa }}</td><td class="money">{{ r.collected|fcfa }}</td><td class="money">{{ r.paid_back|fcfa }}</td></tr>
+{% empty %}<tr><td colspan="7" class="muted">{% trans "No activity." %}</td></tr>{% endfor %}</tbody></table></div>
+{% endblock %}

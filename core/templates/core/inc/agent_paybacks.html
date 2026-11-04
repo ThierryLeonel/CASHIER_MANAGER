@@ -1,5 +1,5 @@
 {% load i18n cashier %}{% if paybacks %}<div class="panel payback-box">
   <h3>{% trans "Agent paybacks to confirm" %}</h3>
-  <p class="small muted">{% trans "Confirm once you have received the money: UVE on the master SIM, cash or MTN float with you. It is then recorded as the agent's payment, with a receipt." %}</p>
+  <p class="small muted">{% trans "Confirm once you have received the money (UVE on the SIM, cash or MTN float in hand). It is then recorded as the agent's payment, with a receipt." %}</p>
   {% include "core/agent/inc/payback_rows.html" with rows=paybacks next_url=next_url %}
 </div>{% endif %}

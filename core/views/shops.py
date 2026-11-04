@@ -214,10 +214,15 @@ def _unpaid_ctx(user, shop):
     """Transfers the shop received and has not paid back: shown to its own staff."""
     from core.services import settlements as st
 
+    from core.services import agents as ag
+
+    paybacks = list(ag.pending_for_shop(shop))
+    for p in paybacks:
+        p.can_decide = ag.can_decide(user, p)
     if not (user.is_shop_manager and user.shop_id == shop.pk):
-        return {"unpaid": []}
+        return {"unpaid": [], "paybacks": paybacks if user.is_shop_senior else []}
     unpaid = st.unpaid_for_shop(shop)
-    return {"unpaid": unpaid, "unpaid_total": sum((o for _h, o in unpaid), Decimal(0))}
+    return {"unpaid": unpaid, "unpaid_total": sum((o for _h, o in unpaid), Decimal(0)), "paybacks": paybacks}
 
 
 @roles_required(*SHOP_DESK)

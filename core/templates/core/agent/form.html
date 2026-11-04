@@ -1,52 +1,138 @@
-{% extends "core/entry_form.html" %}{% load i18n cashier %}
+{% extends "core/base.html" %}{% load i18n cashier %}
+{% block title %}{{ title }}{% endblock %}
+{% block topbar %}{{ title }}{% endblock %}
 {% block content %}
-<div class="form-head">
-  {% if icon %}<span class="form-ic">{% icon icon 26 %}</span>{% endif %}
-  <div><h1>{{ title }}</h1>{% if intro %}<p class="muted">{{ intro }}</p>{% endif %}</div>
+<div class="form-head compact">
+  <span class="form-ic">{% icon icon 22 %}</span>
+  <h1>{{ title }}</h1>
 </div>
-{% if s %}<div class="bal-row">
-  <div class="bal k-CASH_DRAWER"><span class="bal-label">{% if s.owed_company|negative %}{% trans "The company owes you" %}{% else %}{% trans "I owe the company" %}{% endif %}</span><span class="bal-value">{{ s.owed_company|absval|fcfa }}</span><span class="bal-unit">FCFA</span></div>
-  {% if s.pending %}<div class="bal k-MTN"><span class="bal-label">{% trans "Already sent, waiting for the cashier" %}</span><span class="bal-value">{{ s.pending_total|fcfa }}</span><span class="bal-unit">FCFA</span></div>
-  <div class="bal k-UVE"><span class="bal-label">{% trans "Left to pay after those" %}</span><span class="bal-value">{% if s.after_pending|negative %}0{% else %}{{ s.after_pending|fcfa }}{% endif %}</span><span class="bal-unit">FCFA</span></div>{% endif %}
+{% if s %}<div class="mini-tiles">
+  <div><span>{% if s.owed_company|negative %}{% trans "The company owes you" %}{% else %}{% trans "I owe the company" %}{% endif %}</span><strong>{{ s.owed_company|absval|fcfa }}</strong></div>
+  {% if s.pending %}<div><span>{% trans "Waiting for confirmation" %}</span><strong>{{ s.pending_total|fcfa }}</strong></div>{% endif %}
 </div>{% endif %}
+<div id="agent-msg" class="agent-msg" aria-live="polite"></div>
 <div class="panel">
-<form method="post" class="entry" novalidate id="entry-form">{% csrf_token %}
+<form method="post" class="entry agent-form" novalidate id="agent-form"
+      data-dial="{{ labels.dial|default:'' }}" data-plain="{{ labels.plain|default:'' }}">{% csrf_token %}
   {% include "core/inc/fields.html" %}
   <div class="form-foot">
-    <button type="submit" class="btn primary" id="submit-btn">{% if submit_label %}{{ submit_label }}{% else %}{% trans "Record" %}{% endif %}</button>
+    <button type="submit" class="btn primary big" id="submit-btn">{% trans "Record" %}</button>
     <a class="btn" href="{% url 'dashboard' %}">{% trans "Cancel" %}</a>
   </div>
 </form>
 </div>
 {% if zone_pos %}<datalist id="zone-pos">{% for p in zone_pos %}<option value="{{ p.business_sim }}">{{ p.name }}{% if p.microzone %} · {{ p.microzone.name }}{% endif %}</option>{% endfor %}</datalist>{% endif %}
+{% if agents %}<datalist id="agents">{% for a in agents %}<option value="{{ a.business_sim }}">{{ a.name }}</option>{% endfor %}</datalist>{% endif %}
 {% endblock %}
-{% block scripts %}{{ block.super }}
+{% block scripts %}
 <script>
 (function () {
-  var form = document.getElementById('entry-form');
-  var radios = form.querySelectorAll('input[name=client_kind]');
-  if (!radios.length) return;
-  radios[0].closest('.field').classList.add('client-kind');
-  var show = {POS: ['fld-pos_sim'], SHOP: ['fld-shop'], OTHER: ['fld-client_name', 'fld-client_phone']};
-  var all = ['fld-pos_sim', 'fld-shop', 'fld-client_name', 'fld-client_phone'];
-  var known = {};{% for p in zone_pos %}known['{{ p.business_sim }}'] = '{{ p.name|escapejs }}';{% endfor %}
-  var sim = form.querySelector('[name=pos_sim]'), info = document.createElement('div');
-  info.className = 'pos-info small';
-  if (sim) sim.closest('.field').insertBefore(info, sim.nextSibling);
-  function syncSim() {
-    if (!sim) return;
-    var v = sim.value.replace(/\D/g, '').slice(-9);
-    if (v.length < 9) { info.textContent = ''; return; }
-    info.className = 'pos-info small ' + (known[v] ? 'ok' : 'muted');
-    info.textContent = known[v] ? '✓ ' + known[v] : '{{ _("Not a POS of your zone: it is checked when you record. Only its name will be shown.")|escapejs }}';
+  var form = document.getElementById('agent-form'), btn = document.getElementById('submit-btn');
+  var box = document.getElementById('agent-msg');
+  var $ = function (n) { return form.querySelector('[name=' + n + ']'); };
+  var fld = function (n) { return document.getElementById('fld-' + n); };
+  var known = {};{% for p in zone_pos %}known['{{ p.business_sim }}'] = '{{ p.name|escapejs }}';{% endfor %}{% for a in agents %}known['{{ a.business_sim }}'] = '{{ a.name|escapejs }}';{% endfor %}
+
+  // a line under a field: the POS / agent name, or the number a shop / cashier is sent to
+  function note(name) {
+    var f = fld(name); if (!f) return null;
+    var n = f.querySelector('.num-note');
+    if (!n) { n = document.createElement('div'); n.className = 'num-note small'; f.insertBefore(n, f.querySelector('.help, .err')); }
+    return n;
   }
-  function sync() {
-    var k = (form.querySelector('input[name=client_kind]:checked') || {}).value || 'POS';
-    all.forEach(function (id) { var el = document.getElementById(id); if (el) el.hidden = show[k].indexOf(id) < 0; });
+  function syncNumber(name) {
+    var el = $(name), n = note(name); if (!el || !n) return;
+    if (el.tagName === 'SELECT') {
+      var o = el.options[el.selectedIndex], sim = o && o.dataset.sim;
+      n.textContent = o && o.value ? (sim ? '{{ _("Number")|escapejs }}: ' + sim.replace(/(\d{3})(\d{2})(\d{2})(\d{2})/, '$1 $2 $3 $4') : '{{ _("No number registered")|escapejs }}') : '';
+      n.className = 'num-note small ' + (sim ? 'ok' : 'muted');
+    } else {
+      var v = el.value.replace(/\D/g, '').slice(-9);
+      n.textContent = v.length === 9 && known[v] ? '✓ ' + known[v] : '';
+      n.className = 'num-note small ok';
+    }
   }
-  radios.forEach(function (r) { r.addEventListener('change', sync); });
-  if (sim) sim.addEventListener('input', syncSim);
-  sync(); syncSim();
+
+  // who the client is / who is paid
+  var kinds = form.querySelectorAll('input[name=client_kind]'), tos = form.querySelectorAll('input[name=to]');
+  var showFor = {POS: ['pos_sim'], SHOP: ['shop'], OTHER: ['client_phone'], DESK: ['desk']};
+  function syncKind() {
+    var groups = [[kinds, ['pos_sim', 'shop', 'client_phone']], [tos, ['desk', 'shop']]];
+    groups.forEach(function (g) {
+      if (!g[0].length) return;
+      g[0][0].closest('.field').classList.add('choice-pills');
+      var k = (form.querySelector('input[name=' + g[0][0].name + ']:checked') || g[0][0]).value;
+      var want = k === 'SHOP' ? ['shop'] : showFor[k] || [];
+      g[1].forEach(function (n) { var f = fld(n); if (f) f.hidden = want.indexOf(n) < 0; });
+    });
+    var m = $('method');
+    if (m && tos.length) {  // a shop receives cash or UVE only
+      var shop = (form.querySelector('input[name=to]:checked') || {}).value === 'SHOP';
+      Array.prototype.forEach.call(m.options, function (o) { if (o.value === 'MTN') { o.hidden = shop; o.disabled = shop; } });
+      if (shop && m.value === 'MTN') m.value = 'UVE';
+    }
+    syncButton();
+  }
+  // UVE / ER open the dialpad: the button says so; cash (and MTN) is only recorded
+  function dials() {
+    var p = $('product') || $('method');
+    return p && (p.value === 'UVE' || (p.value === 'ER' && p.name === 'product'));
+  }
+  function syncButton() { if (form.dataset.dial) btn.textContent = dials() ? form.dataset.dial : form.dataset.plain; }
+
+  kinds.forEach(function (r) { r.addEventListener('change', syncKind); });
+  tos.forEach(function (r) { r.addEventListener('change', syncKind); });
+  ['product', 'method'].forEach(function (n) { var el = $(n); if (el) el.addEventListener('change', syncButton); });
+  ['pos_sim', 'agent_sim', 'shop', 'desk'].forEach(function (n) {
+    var el = $(n); if (!el) return;
+    el.addEventListener(el.tagName === 'SELECT' ? 'change' : 'input', function () { syncNumber(n); }); syncNumber(n);
+  });
+  syncKind();
+
+  function show(kind, html) {
+    box.innerHTML = '<div class="msg ' + kind + '">' + html + '</div>';
+    box.scrollIntoView({block: 'nearest', behavior: 'smooth'});
+  }
+  function clearErrors() {
+    form.querySelectorAll('.err, .nonfield').forEach(function (e) { e.remove(); });
+  }
+  function esc(t) { var d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
+
+  // record, clear the form, then hand the Orange code to the phone's dialpad — no extra page
+  form.addEventListener('submit', function (ev) {
+    if (!window.fetch || !window.FormData) return;  // old browsers: normal submit
+    ev.preventDefault();
+    if (btn.disabled) return;
+    var label = btn.textContent; btn.disabled = true; btn.textContent = '…';
+    clearErrors();
+    fetch(location.pathname, {method: 'POST', body: new FormData(form), credentials: 'same-origin',
+                              headers: {'X-Requested-With': 'fetch'}})
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        btn.disabled = false; btn.textContent = label;
+        if (!d.ok) {
+          Object.keys(d.errors || {}).forEach(function (k) {
+            var ul = '<ul class="err">' + d.errors[k].map(function (m) { return '<li>' + esc(m) + '</li>'; }).join('') + '</ul>';
+            var f = fld(k);
+            if (f && !f.hidden) f.insertAdjacentHTML('beforeend', ul);
+            else form.insertAdjacentHTML('afterbegin', '<div class="nonfield">' + d.errors[k].map(esc).join('<br>') + '</div>');
+          });
+          show('error', '{{ _("Nothing was recorded. Check the form.")|escapejs }}');
+          return;
+        }
+        ['amount', 'paid', 'note', 'reference', 'pos_sim', 'client_phone', 'agent_sim'].forEach(function (n) {
+          var el = $(n); if (el) { el.value = ''; el.dispatchEvent(new Event('input')); }
+        });
+        $('idem').value = d.idem;
+        var tel = d.code ? 'tel:' + d.code.replace(/#/g, '%23') : '';
+        show('success', esc(d.message) + (d.code ? '<br><a class="dial-again" href="' + tel + '">' + esc(d.code) + '</a>' : ''));
+        if (tel) location.href = tel;
+      })
+      .catch(function () {
+        btn.disabled = false; btn.textContent = label;
+        show('error', '{{ _("No connection: nothing was recorded. Try again.")|escapejs }}');
+      });
+  });
 })();
 </script>
 {% endblock %}

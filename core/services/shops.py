@@ -57,6 +57,7 @@ TYPE_DUTY = {
     TxType.SHOP_APPRO: "AGENTS", TxType.SHOP_ER_SUPPLY: "AGENTS", TxType.SHOP_DESTOCK: "AGENTS",
     TxType.SHOP_AGENT_PAY: "AGENTS", TxType.SHOP_AGENT_REPAY: "AGENTS",
     TxType.SHOP_TO_DESK: "ANY", TxType.DESK_TO_SHOP: "ANY", TxType.SHOP_TO_SHOP: "ANY",
+    TxType.SHOP_AGENT_PAYBACK: "ANY",
     TxType.SHOP_EXPENSE: "EXPENSES", TxType.SHOP_PURCHASE: "EXPENSES", TxType.SHOP_STOCK_OUT: "SALES",
 }
 
@@ -277,6 +278,23 @@ def agent_repay(user, *, shop=None, agent, amount, pay="CASH", description="", i
     return _record(user, [_spec(TxType.SHOP_AGENT_REPAY, shop, [(shop.account(PAY_KINDS[pay]), a),
                                                                 (shop.payable_to(agent), -a)], a,
                                 counterparty=agent, description=description)], idempotency_key)[0]
+
+
+def receive_agent_payback(user, *, shop, agent, cash=None, uve=None, description="", idempotency_key=None):
+    """A commercial agent pays what he owes the company into the shop (cash drawer and / or UVE): it reduces his
+    balance with the company, exactly like a payment at a cashier."""
+    shop = shop_for(user, shop, None)
+    c = _amt(cash, "cash", allow_zero=True) if cash not in (None, "") else Decimal(0)
+    u = _amt(uve, "uve", allow_zero=True) if uve not in (None, "") else Decimal(0)
+    total = c + u
+    if total <= 0:
+        raise BusinessError(_("Enter the amount received in cash and / or UVE."), "cash")
+    lines = [(shop.account(K.CASH_DRAWER), c)] if c else []
+    lines += [(shop.account(K.UVE), u)] if u else []
+    lines.append((agent.account, -total))
+    return _record(user, [_spec(TxType.SHOP_AGENT_PAYBACK, shop, lines, total, counterparty=agent,
+                                payment_method="UVE" if u and not c else "CASH" if c and not u else "",
+                                description=description)], idempotency_key)[0]
 
 
 def pay_agent(user, *, shop=None, agent, amount, pay="CASH", description="", idempotency_key=None):

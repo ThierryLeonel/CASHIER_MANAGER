@@ -1,10 +1,11 @@
-"""Commercial agent portal, and the cashier's confirmation of agents' paybacks."""
+"""Commercial agent portal, and the cashier's / shop's confirmation of agents' paybacks."""
+import uuid
 from datetime import date, timedelta
 
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Max, Q
-from django.http import Http404
+from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils.http import url_has_allowed_host_and_scheme
@@ -20,7 +21,7 @@ from core.services import agents as ag
 from core.services.days import douala_today
 from core.services.errors import BusinessError
 
-from .base import R, STAFF, roles_required, run_service
+from .base import R, STAFF, roles_required
 
 E, P = AgentClientEntry, AgentPayback
 
@@ -39,15 +40,11 @@ def _period(request, days=30):
 
 
 def agent_home(request):
-    """Portal home (the agent's dashboard)."""
+    """Portal home (the agent's dashboard): kept short — today's figures and the actions."""
     agent = request.user.counterparty
-    s = ag.summary(agent)
+    today = douala_today()
     return render(request, "core/agent/home.html", {
-        "cp": agent, "s": s,
-        "paybacks": P.objects.filter(agent=agent).select_related("desk", "transaction")[:5],
-        "recent": ag.live_entries(agent).select_related("pos", "shop")[:8],
-        "office": ag.office_txns(agent)[:8],
-    })
+        "cp": agent, "s": ag.summary(agent), "rec": ag.daily_reconciliation(agent, today)})
 
 
 @roles_required(R.AGENT)
@@ -83,74 +80,137 @@ def agent_pos_detail(request, pk):
                                                           "entries": entries})
 
 
-def _entry_form(request, form_class, fn, title, intro, icon, ok_msg, done=None, submit_label=None):
+def _wants_json(request):
+    return request.headers.get("X-Requested-With") == "fetch"
+
+
+def _json_errors(form, status=400):
+    errors = {k: [str(m) for m in v] for k, v in form.errors.items()}
+    return JsonResponse({"ok": False, "errors": errors}, status=status)
+
+
+def _entry_form(request, form_class, fn, *, title, icon, ok_msg, code_of=None, labels=None, extra=None):
+    """Agent entry form. Sent by the page's script (fetch), it answers in JSON: the record is saved, the form is
+    cleared and — for UVE / ER — the Orange code is handed to the phone's dialpad at once."""
     initial = {}
     if request.GET.get("pos"):
         initial = {"client_kind": "POS", "pos_sim": request.GET["pos"]}
     form = form_class(request.user, request.POST or None, initial=initial)
-    if request.method == "POST" and form.is_valid():
-        resp = run_service(request, form,
-                           lambda: fn(request.user, idempotency_key=form.cleaned_data["idem"], **form.params()),
-                           success=ok_msg, on_success=done or (lambda o: redirect("agent_activity")))
-        if resp:
-            return resp
+    if request.method == "POST":
+        if form.is_valid():
+            try:
+                obj = fn(request.user, idempotency_key=form.cleaned_data["idem"], **form.params())
+            except BusinessError as exc:
+                if exc.field and exc.field in form.fields:
+                    form.add_error(exc.field, exc.message)
+                else:
+                    form.add_error(None, exc.message)
+            else:
+                msg = ok_msg(obj)
+                code = code_of(obj) if code_of else ""
+                if _wants_json(request):
+                    return JsonResponse({"ok": True, "message": msg, "code": code, "idem": str(uuid.uuid4())})
+                messages.success(request, msg + (f" · {code}" if code else ""))
+                return redirect(request.path)
+        if _wants_json(request):
+            return _json_errors(form)
     agent = request.user.counterparty
-    return render(request, "core/agent/form.html", {
-        "form": form, "title": title, "intro": intro, "icon": icon, "submit_label": submit_label,
-        "zone_pos": ag.zone_pos(agent).filter(active=True) if "pos_sim" in form.fields else []})
+    ctx = {"form": form, "title": title, "icon": icon, "labels": labels or {},
+           "zone_pos": ag.zone_pos(agent).filter(active=True) if "pos_sim" in form.fields else []}
+    ctx.update(extra or {})
+    return render(request, "core/agent/form.html", ctx)
+
+
+def _verb(en, fr):
+    # a button is a verb; some catalogue entries ("Supply", "Transfer") are nouns in French
+    return fr if (get_language() or "").startswith("fr") else en
 
 
 @roles_required(R.AGENT)
 def agent_supply(request):
     return _entry_form(
-        request, AF.AgentSupplyForm, ag.record_supply, _("Supply a client"),
-        _("UVE, ER or cash you gave to a POS, a shop or another client from your own stock."), "supply",
-        lambda e: _("%(ref)s: %(amt)s FCFA supplied to %(who)s.") % {
+        request, AF.AgentSupplyForm, ag.record_supply, title=_("Supply a client"), icon="supply",
+        ok_msg=lambda e: _("%(ref)s: %(amt)s FCFA supplied to %(who)s.") % {
             "ref": e.reference, "amt": fmt(e.total), "who": e.client_label},
-        done=lambda e: redirect("agent_supply_done", pk=e.pk),
-        # the button is a verb; the catalogue's "Supply" is the noun (Approvisionnement)
-        submit_label="Approvisionner" if (get_language() or "").startswith("fr") else _("Supply"))
+        code_of=ag.ussd_code,
+        labels={"dial": _verb("Supply", "Approvisionner"), "plain": _("Record")})
 
 
 @roles_required(R.AGENT)
-def agent_supply_done(request, pk):
-    """After a supply: open the phone's dialpad with the Orange code (UVE #149*5*number*amount#, ER #189*2*…#)."""
-    e = get_object_or_404(E, pk=pk, agent=request.user.counterparty, kind=E.Kind.SUPPLY)
-    code = ag.ussd_code(e)
-    return render(request, "core/agent/supply_done.html", {
-        "e": e, "code": code, "tel": "tel:" + code.replace("#", "%23") if code else "",
-        "number": ag.client_number(e), "auto": request.GET.get("again") != "1" and not e.is_cancelled})
+def agent_transfer(request):
+    agent = request.user.counterparty
+    return _entry_form(
+        request, AF.AgentTransferForm, ag.record_supply, title=_("Transfer to an agent"), icon="transfer",
+        ok_msg=lambda e: _("%(ref)s: %(amt)s FCFA transferred to %(who)s.") % {
+            "ref": e.reference, "amt": fmt(e.total), "who": e.client_label},
+        code_of=ag.ussd_code,
+        labels={"dial": _verb("Transfer", "Transférer"), "plain": _("Record")},
+        extra={"agents": Counterparty.objects.filter(kind=Counterparty.Kind.AGENT, active=True)
+               .exclude(pk=agent.pk).order_by("name")})
 
 
 @roles_required(R.AGENT)
 def agent_collect(request):
     return _entry_form(
-        request, AF.ClientPaymentForm, ag.record_client_payment, _("A client pays me"),
-        _("Money a client paid you for earlier supplies. It reduces what the client owes you."), "payment",
-        lambda e: _("%(ref)s: %(amt)s FCFA received from %(who)s.") % {
+        request, AF.ClientPaymentForm, ag.record_client_payment, title=_("A client pays me"), icon="payment",
+        ok_msg=lambda e: _("%(ref)s: %(amt)s FCFA received from %(who)s.") % {
             "ref": e.reference, "amt": fmt(e.paid), "who": e.client_label})
 
 
 @roles_required(R.AGENT)
 def agent_payback(request):
-    form = AF.PaybackForm(request.user, request.POST or None)
-    if request.method == "POST" and form.is_valid():
-        resp = run_service(
-            request, form, lambda: ag.request_payback(request.user, idempotency_key=form.cleaned_data["idem"],
-                                                      **form.params()),
-            success=lambda p: _("%(code)s: %(amt)s FCFA sent to %(desk)s, waiting for the cashier to confirm.") % {
-                "code": p.code, "amt": fmt(p.total), "desk": p.desk},
-            on_success=lambda p: redirect(reverse("agent_activity") + "?tab=paybacks"))
-        if resp:
-            return resp
-    s = ag.summary(request.user.counterparty)
-    return render(request, "core/agent/form.html", {
-        "form": form, "title": _("Pay back the company"), "icon": "payment", "s": s,
-        "intro": _("Send UVE to the master SIM, cash or MTN float to the cashier of your zone. It counts as paid once "
-                   "the cashier confirms receiving it.")})
+    return _entry_form(
+        request, AF.PaybackForm, ag.request_payback, title=_("Pay back the company"), icon="transfer",
+        ok_msg=lambda p: _("%(code)s: %(amt)s FCFA to %(who)s, waiting for confirmation.") % {
+            "code": p.code, "amt": fmt(p.total), "who": p.receiver},
+        code_of=ag.payback_code,
+        labels={"dial": _verb("Pay back", "Rembourser"), "plain": _("Record")},
+        extra={"s": ag.summary(request.user.counterparty)})
 
 
-TABS = (("office", _l("From the office")), ("clients", _l("My clients")), ("paybacks", _l("My paybacks")))
+@roles_required(R.AGENT)
+def agent_daily(request):
+    agent = request.user.counterparty
+    today = douala_today()
+    try:
+        day = date.fromisoformat(request.GET.get("date") or "")
+    except ValueError:
+        day = today
+    day = min(day, today)
+    d_from = day - timedelta(days=13)
+    day_entries = E.objects.filter(Q(agent=agent) | Q(to_agent=agent), business_date=day) \
+        .select_related("pos", "shop", "to_agent", "agent")
+    return render(request, "core/agent/daily.html", {
+        "rec": ag.daily_reconciliation(agent, day), "day": day, "today": today,
+        "prev": day - timedelta(days=1), "next": day + timedelta(days=1) if day < today else None,
+        "office": ag.office_supplies(agent).filter(business_date=day),
+        "entries": day_entries, "me": agent,
+        "paybacks": P.objects.filter(agent=agent, created_at__date=day).select_related("desk", "shop", "transaction"),
+        "days": ag.daily_summary(agent, d_from, day)})
+
+
+@roles_required(R.AGENT)
+def agent_office(request):
+    """Every supply and destockage the office recorded on the agent, with daily totals per product."""
+    agent = request.user.counterparty
+    d_from, d_to = _period(request)
+    qs = ag.office_supplies(agent).filter(business_date__gte=d_from, business_date__lte=d_to)
+    per_day = {}
+    for t in qs:
+        row = per_day.setdefault(t.business_date, {"day": t.business_date, "UVE": 0, "ER": 0, "CASH": 0,
+                                                   "DESTOCK": 0, "total": 0})
+        key = "DESTOCK" if t.type == "DESTOCKAGE" else t.product
+        row[key] += t.amount
+        row["total"] += t.amount
+    days = sorted(per_day.values(), key=lambda r: r["day"], reverse=True)
+    totals = {k: sum(r[k] for r in days) for k in ("UVE", "ER", "CASH", "DESTOCK", "total")}
+    return render(request, "core/agent/office.html", {
+        "days": days, "totals": totals, "page": Paginator(qs, 50).get_page(request.GET.get("page")),
+        "d_from": d_from, "d_to": d_to})
+
+
+TABS = (("clients", _l("My clients")), ("agents", _l("Agents")), ("paybacks", _l("My paybacks")),
+        ("office", _l("All office records")))
 
 
 @roles_required(R.AGENT)
@@ -158,16 +218,18 @@ def agent_activity(request):
     agent = request.user.counterparty
     tab = request.GET.get("tab") if request.GET.get("tab") in dict(TABS) else "clients"
     d_from, d_to = _period(request)
-    ctx = {"tab": tab, "tabs": TABS, "d_from": d_from, "d_to": d_to, "today": douala_today()}
+    ctx = {"tab": tab, "tabs": TABS, "d_from": d_from, "d_to": d_to, "today": douala_today(), "me": agent}
     if tab == "office":
         qs = ag.office_txns(agent).filter(business_date__gte=d_from, business_date__lte=d_to)
-        ctx["account"] = agent.account
     elif tab == "paybacks":
         qs = P.objects.filter(agent=agent, created_at__date__gte=d_from, created_at__date__lte=d_to) \
-            .select_related("desk", "decided_by", "transaction")
+            .select_related("desk", "shop", "decided_by", "transaction")
+    elif tab == "agents":
+        qs = E.objects.filter(Q(agent=agent) | Q(to_agent=agent), client_kind="AGENT",
+                              business_date__gte=d_from, business_date__lte=d_to).select_related("agent", "to_agent")
     else:
         qs = E.objects.filter(agent=agent, business_date__gte=d_from, business_date__lte=d_to) \
-            .select_related("pos", "shop")
+            .exclude(client_kind="AGENT").select_related("pos", "shop")
         kind = request.GET.get("kind")
         if kind in E.Kind.values:
             qs = qs.filter(kind=kind)
@@ -204,12 +266,16 @@ def agent_payback_cancel(request, pk):
 
 
 # ---------------------------------------------------------------- cashier / staff
-@roles_required(R.CASHIER, *STAFF)
+@roles_required(R.CASHIER, R.SHOP_MANAGER, R.SHOP_SENIOR, *STAFF)
 def paybacks(request):
     user = request.user
-    qs = P.objects.select_related("agent", "desk", "decided_by", "transaction")
+    qs = P.objects.select_related("agent", "desk", "shop", "decided_by", "transaction")
     if user.is_cashier:
         qs = qs.filter(desk=user.subzone)
+    elif user.is_shop_manager:
+        qs = qs.filter(shop_id=user.shop_id)
+    elif user.is_shop_senior:
+        qs = qs.filter(shop__isnull=False)
     elif user.is_junior:
         qs = qs.filter(desk_id__in=user.zone_ids_in_scope())
     status = request.GET.get("status") or ""
@@ -223,7 +289,7 @@ def paybacks(request):
         "pending": pending, "page": Paginator(done, 50).get_page(request.GET.get("page")), "status": status})
 
 
-@roles_required(R.CASHIER)
+@roles_required(R.CASHIER, R.SHOP_MANAGER, R.SHOP_SENIOR, R.SUPERADMIN)
 @require_POST
 def payback_decide(request, pk):
     p = get_object_or_404(P, pk=pk)

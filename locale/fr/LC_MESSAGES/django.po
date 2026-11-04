@@ -61,6 +61,10 @@ msgstr ""
 "le caissier."
 
 #, python-format
+msgid "%(code)s: %(amt)s FCFA to %(who)s, waiting for confirmation."
+msgstr "%(code)s : %(amt)s FCFA à %(who)s, en attente de confirmation."
+
+#, python-format
 msgid "%(cp)s is inactive."
 msgstr "%(cp)s est inactif."
 
@@ -125,6 +129,10 @@ msgid "%(n)s unit(s) received into stock."
 msgstr "%(n)s unité(s) reçue(s) en stock."
 
 #, python-format
+msgid "%(n)s waiting"
+msgstr "%(n)s en attente"
+
+#, python-format
 msgid ""
 "%(party)s currently owes %(owed)s FCFA, less than the %(amt)s FCFA of "
 "%(ref)s. Part of it is already settled, so the full supply cannot be "
@@ -171,6 +179,10 @@ msgstr "%(ref)s : %(amt)s FCFA reçus de %(who)s."
 #, python-format
 msgid "%(ref)s: %(amt)s FCFA supplied to %(who)s."
 msgstr "%(ref)s : %(amt)s FCFA approvisionnés à %(who)s."
+
+#, python-format
+msgid "%(ref)s: %(amt)s FCFA transferred to %(who)s."
+msgstr "%(ref)s : %(amt)s FCFA transférés à %(who)s."
 
 #, python-format
 msgid "%(s)s is not a %(item)s."
@@ -312,6 +324,9 @@ msgstr ""
 msgid "A cashier must belong to a subzone."
 msgstr "Un caissier doit appartenir à une sous-zone."
 
+msgid "A cashier of my zone"
+msgstr "Un caissier de ma zone"
+
 msgid ""
 "A cashier's cash drawer or UVE wallet, a master SIM, a bank account or a "
 "shop account."
@@ -374,6 +389,9 @@ msgid "A responsibility transfer can only be cancelled, then recorded again."
 msgstr ""
 "Un transfert de responsabilité peut seulement être annulé, puis ressaisi."
 
+msgid "A shop"
+msgstr "Une boutique"
+
 msgid "A shop is paid back in cash and / or UVE."
 msgstr "Une boutique est remboursée en espèces et / ou UVE."
 
@@ -382,6 +400,9 @@ msgstr "Un gérant de boutique doit être affecté à une boutique."
 
 msgid "A shop pays back in cash and / or UVE."
 msgstr "Une boutique rembourse en espèces et / ou UVE."
+
+msgid "A shop receives cash or UVE, not MTN float."
+msgstr "Une boutique reçoit des espèces ou de l'UVE, pas de float MTN."
 
 msgid "A subzone's parent must be a master zone."
 msgstr "Le parent d'une sous-zone doit être une zone principale."
@@ -558,6 +579,9 @@ msgstr "Dette des agents et PDV par produit (UVE, espèces, ER)"
 msgid "Agent in charge"
 msgstr "Agent responsable"
 
+msgid "Agent number"
+msgstr "Numéro de l'agent"
+
 #, python-format
 msgid "Agent payback %(code)s"
 msgstr "Remboursement agent %(code)s"
@@ -573,6 +597,9 @@ msgstr "L'agent paie la boutique"
 
 msgid "Agent who received the UVE and owes (business SIM)"
 msgstr "Agent qui a reçu l'UVE et doit (SIM business)"
+
+msgid "Agents"
+msgstr "Agents"
 
 msgid "Agents & POS"
 msgstr "Agents & PDV"
@@ -648,8 +675,14 @@ msgstr "Toutes les dates"
 msgid "All duties"
 msgstr "Toutes les tâches"
 
+msgid "All office records"
+msgstr "Toutes les écritures du bureau"
+
 msgid "All office supplies and payments"
 msgstr "Tous les approvisionnements du bureau et paiements"
+
+msgid "All records"
+msgstr "Toutes les écritures"
 
 msgid "All shops"
 msgstr "Toutes les boutiques"
@@ -949,6 +982,13 @@ msgstr "CORRIGÉ"
 #, python-format
 msgid "CORRECTED: %(reason)s"
 msgstr "CORRIGÉ : %(reason)s"
+
+msgid ""
+"Calculated automatically from the office records and what you recorded. "
+"Opening + in − out = closing."
+msgstr ""
+"Calculé automatiquement à partir des écritures du bureau et de vos "
+"enregistrements. Ouverture + entrées − sorties = clôture."
 
 msgid "Cancel"
 msgstr "Annuler"
@@ -1291,6 +1331,9 @@ msgstr ""
 msgid "Choose an item."
 msgstr "Choisissez un article."
 
+msgid "Choose another agent, not yourself."
+msgstr "Choisissez un autre agent, pas vous-même."
+
 msgid "Choose another desk than yours."
 msgstr "Choisissez un autre guichet que le vôtre."
 
@@ -1355,6 +1398,9 @@ msgstr "Choisissez le caissier responsable de la SIM master."
 
 msgid "Choose the cashier you are recording for."
 msgstr "Choisissez le caissier pour qui vous enregistrez."
+
+msgid "Choose the cashier."
+msgstr "Choisissez le caissier."
 
 msgid ""
 "Choose the category, the item and the unit(s) by IMEI / serial, then the "
@@ -1425,6 +1471,9 @@ msgstr "Nom complet du client"
 
 msgid "Client name"
 msgstr "Nom du client"
+
+msgid "Client number"
+msgstr "Numéro du client"
 
 msgid "Client phone"
 msgstr "Téléphone du client"
@@ -1501,6 +1550,9 @@ msgstr "Code"
 msgid "Collect a payment"
 msgstr "Encaisser un paiement"
 
+msgid "Collected"
+msgstr "Encaissé"
+
 msgid "Collection (payment)"
 msgstr "Encaissement (paiement)"
 
@@ -1530,6 +1582,17 @@ msgstr "Agents commerciaux et PDV"
 
 msgid "Commercial agents and transfers to cashiers"
 msgstr "Agents commerciaux et transferts aux caissiers"
+
+msgid ""
+"Commercial agents pay the company at a cashier of their zone (UVE to the "
+"master SIM, cash or MTN float) or at a shop (UVE to the shop SIM or cash). "
+"Whoever receives it confirms: it is then recorded as the agent's payment, "
+"with a receipt."
+msgstr ""
+"Les agents commerciaux paient l'entreprise auprès d'un caissier de leur zone"
+" (UVE sur la SIM master, espèces ou float MTN) ou dans une boutique (UVE sur"
+" la SIM de la boutique ou espèces). Celui qui reçoit confirme : c'est alors "
+"enregistré comme paiement de l'agent, avec un reçu."
 
 msgid ""
 "Commercial agents send UVE to the master SIM and cash or MTN float to the "
@@ -1651,6 +1714,13 @@ msgstr "Configuration"
 
 msgid "Confirm import"
 msgstr "Confirmer l'importation"
+
+msgid ""
+"Confirm once you have received the money (UVE on the SIM, cash or MTN float "
+"in hand). It is then recorded as the agent's payment, with a receipt."
+msgstr ""
+"Confirmez une fois l'argent reçu (UVE sur la SIM, espèces ou float MTN en "
+"main). C'est alors enregistré comme paiement de l'agent, avec un reçu."
 
 msgid ""
 "Confirm once you have received the money: UVE on the master SIM, cash or MTN"
@@ -2040,6 +2110,9 @@ msgstr ""
 "Supprimé : %(refs)s. Une copie complète est conservée dans le journal "
 "d'audit."
 
+msgid "Delivered to"
+msgstr "Livré à"
+
 msgid "Describe the expense."
 msgstr "Décrivez la dépense."
 
@@ -2260,6 +2333,9 @@ msgstr "Saisissez le montant payé en espèces et / ou UVE."
 msgid "Enter the amount received in at least one payment method."
 msgstr "Saisissez le montant reçu dans au moins un mode de paiement."
 
+msgid "Enter the amount received in cash and / or UVE."
+msgstr "Saisissez le montant reçu en espèces et / ou UVE."
+
 msgid "Enter the amount supplied in cash, UVE and/or ER."
 msgstr "Saisissez le montant fourni en espèces, UVE et/ou ER."
 
@@ -2274,6 +2350,9 @@ msgstr "Saisissez la référence du versement bancaire."
 
 msgid "Enter the client's name."
 msgstr "Saisissez le nom du client."
+
+msgid "Enter the client's phone number."
+msgstr "Saisissez le numéro de téléphone du client."
 
 msgid "Enter the go-live date."
 msgstr "Saisissez la date de démarrage."
@@ -2324,6 +2403,13 @@ msgid ""
 msgstr ""
 "Chaque rapport a des filtres et des téléchargements Excel/PDF qui utilisent "
 "exactement les mêmes filtres et droits que l'écran."
+
+msgid ""
+"Every supply and destockage the office recorded on your account, also those "
+"delivered straight to a POS for you."
+msgstr ""
+"Tous les approvisionnements et déstockages enregistrés par le bureau sur "
+"votre compte, y compris ceux livrés directement à un POS pour vous."
 
 msgid "Every supply and payment of one agent or POS, with running balance"
 msgstr ""
@@ -2564,6 +2650,9 @@ msgstr "De (votre compte)"
 msgid "From account"
 msgstr "Du compte"
 
+msgid "From agents"
+msgstr "Des agents"
+
 msgid "From cashiers"
 msgstr "Des caissiers"
 
@@ -2711,6 +2800,9 @@ msgstr "Entrées"
 msgid "In and out of every drawer, SIM wallet and bank"
 msgstr "Entrées et sorties de chaque caisse, portefeuille SIM et banque"
 
+msgid "In hand"
+msgstr "En main"
+
 msgid "In stock"
 msgstr "En stock"
 
@@ -2834,6 +2926,9 @@ msgstr "Manager junior"
 
 msgid "Last"
 msgstr "Dernier"
+
+msgid "Last 14 days"
+msgstr "14 derniers jours"
 
 msgid "Last name"
 msgstr "Nom"
@@ -2962,6 +3057,9 @@ msgstr "Zones master"
 msgid "May"
 msgstr "Mai"
 
+msgid "Me"
+msgstr "Moi"
+
 msgid "Method"
 msgstr "Mode"
 
@@ -3036,6 +3134,9 @@ msgstr "Mes POS"
 msgid "My account"
 msgstr "Mon compte"
 
+msgid "My account with the company"
+msgstr "Mon compte avec l'entreprise"
+
 msgid "My clients"
 msgstr "Mes clients"
 
@@ -3044,6 +3145,9 @@ msgstr "Mes clients me doivent"
 
 msgid "My dealings with this POS"
 msgstr "Mes opérations avec ce POS"
+
+msgid "My operations of the day"
+msgstr "Mes opérations du jour"
 
 msgid "My password"
 msgstr "Mon mot de passe"
@@ -3197,6 +3301,13 @@ msgstr ""
 msgid "No active cashier yet. Create cashiers in Configuration."
 msgstr "Aucun caissier actif. Créez des caissiers dans Configuration."
 
+#, python-format
+msgid "No active commercial agent has the business SIM %(sim)s."
+msgstr "Aucun agent commercial actif n'a la SIM business %(sim)s."
+
+msgid "No activity."
+msgstr "Aucune activité."
+
 msgid "No agent or POS found"
 msgstr "Aucun agent ni PDV trouvé"
 
@@ -3258,6 +3369,9 @@ msgstr ""
 msgid "No notes yet."
 msgstr "Aucune note pour l'instant."
 
+msgid "No office supply."
+msgstr "Aucun approvisionnement du bureau."
+
 msgid "No password set"
 msgstr "Aucun mot de passe défini"
 
@@ -3311,6 +3425,9 @@ msgstr ""
 
 msgid "No transactions."
 msgstr "Aucune transaction."
+
+msgid "No transfer in this period."
+msgstr "Aucun transfert sur la période."
 
 msgid "No unit of this item in stock."
 msgstr "Aucune unité de cet article en stock."
@@ -3437,6 +3554,12 @@ msgstr "OTT, MAX IT, mise à jour d'identification, tickets…"
 msgid "October"
 msgstr "Octobre"
 
+msgid "Office supplies"
+msgstr "Approvisionnements du bureau"
+
+msgid "Office supplies of the day"
+msgstr "Approvisionnements du bureau du jour"
+
 msgid "On a computer the dialpad cannot open: dial the code on your phone."
 msgstr ""
 "Sur un ordinateur le clavier ne peut pas s'ouvrir : composez le code sur "
@@ -3477,6 +3600,14 @@ msgid ""
 "Only %(rem)s FCFA remain to be delivered on this side of exchange %(ref)s."
 msgstr ""
 "Il ne reste que %(rem)s FCFA à livrer sur ce volet de l'échange %(ref)s."
+
+#, python-format
+msgid "Only %(who)s confirms this payback, while it is pending."
+msgstr "Seul %(who)s confirme ce remboursement, tant qu'il est en attente."
+
+#, python-format
+msgid "Only %(who)s rejects this payback, while it is pending."
+msgstr "Seul %(who)s rejette ce remboursement, tant qu'il est en attente."
 
 #, python-format
 msgid "Only a cashier of %(desk)s confirms this payback, while it is pending."
@@ -3791,6 +3922,12 @@ msgstr "Dû"
 msgid "Owed +/−"
 msgstr "Dû +/−"
 
+msgid "Owed at the end of the day"
+msgstr "Dû en fin de journée"
+
+msgid "Owed at the start of the day"
+msgstr "Dû en début de journée"
+
 #, python-format
 msgid "Owed in %(p)s (end of period)"
 msgstr "Dû en %(p)s (fin de période)"
@@ -3841,6 +3978,9 @@ msgstr "Soldes des PDV"
 msgid "POS business SIM"
 msgstr "SIM business du POS"
 
+msgid "POS number"
+msgstr "Numéro du POS"
+
 msgid "POS that received the cash (business SIM)"
 msgstr "PDV qui a reçu les espèces (SIM business)"
 
@@ -3861,6 +4001,9 @@ msgstr "Payé"
 
 msgid "Paid / credited −"
 msgstr "Payé / crédité −"
+
+msgid "Paid back"
+msgstr "Remboursé"
 
 msgid "Paid by"
 msgstr "Payé par"
@@ -3888,6 +4031,9 @@ msgstr ""
 "Payé depuis votre caisse, votre portefeuille UVE ou votre float MTN. Les "
 "dépenses ne réduisent jamais la dette d'un agent."
 
+msgid "Paid in"
+msgstr "Payé en"
+
 #, python-format
 msgid "Paid in %(m)s"
 msgstr "Payé en %(m)s"
@@ -3895,12 +4041,18 @@ msgstr "Payé en %(m)s"
 msgid "Paid in cash, UVE or MTN float"
 msgstr "Payé en espèces, UVE ou float MTN"
 
+msgid "Paid now"
+msgstr "Payé maintenant"
+
 #, python-format
 msgid "Paid now %(p)s · owed to you %(o)s"
 msgstr "Payé maintenant %(p)s · vous est dû %(o)s"
 
 msgid "Paid now by the client"
 msgstr "Payé maintenant par le client"
+
+msgid "Paid to"
+msgstr "Payé à"
 
 msgid "Paid to / where it goes"
 msgstr "Payé à / destination"
@@ -3966,6 +4118,9 @@ msgstr ""
 msgid "Pay the sender — %(ref)s"
 msgstr "Payer l'expéditeur — %(ref)s"
 
+msgid "Pay to"
+msgstr "Payer à"
+
 msgid "Payback"
 msgstr "Remboursement"
 
@@ -4005,8 +4160,14 @@ msgstr "Paiement du transfert %(ref)s"
 msgid "Payments"
 msgstr "Paiements"
 
+msgid "Payments confirmed"
+msgstr "Paiements confirmés"
+
 msgid "Payments received: cash, UVE, MTN, bank"
 msgstr "Paiements reçus : espèces, UVE, MTN, banque"
+
+msgid "Per day"
+msgstr "Par jour"
 
 msgid "Period"
 msgstr "Période"
@@ -4734,6 +4895,9 @@ msgstr "Boutique : appro UVE par agent"
 msgid "Shop: UVE → ER conversion"
 msgstr "Boutique : conversion UVE → ER"
 
+msgid "Shop: agent pays the company"
+msgstr "Boutique : l'agent paie l'entreprise"
+
 msgid "Shop: agent pays the shop"
 msgstr "Boutique : l'agent paie la boutique"
 
@@ -4921,6 +5085,9 @@ msgstr "Reste dû"
 msgid "Stock"
 msgstr "Stock"
 
+msgid "Stock and cash in hand"
+msgstr "Stock et espèces en main"
+
 msgid "Stock cannot go below zero."
 msgstr "Le stock ne peut pas être négatif."
 
@@ -4987,6 +5154,9 @@ msgstr "Approvisionnements"
 
 msgid "Supplies (UVE, ER, cash)"
 msgstr "Approvisionnements (UVE, ER, espèces)"
+
+msgid "Supplies and destockage from the office"
+msgstr "Approvisionnements et déstockage du bureau"
 
 msgid ""
 "Supplies the office gave you, payments you made to the cashiers, and other "
@@ -5231,6 +5401,9 @@ msgstr "Le compte de réception ne correspond pas au mode de paiement."
 msgid "The responsible party of a destockage must be a commercial agent."
 msgstr "Le responsable d'un déstockage doit être un agent commercial."
 
+msgid "The rest is owed to you."
+msgstr "Le reste vous est dû."
+
 msgid ""
 "The shop conversion rate is not set yet (Administration › Shop conversion "
 "rate)."
@@ -5336,6 +5509,12 @@ msgid ""
 msgstr ""
 "Elles ont été passées sur une journée ouverte ultérieure ; cette clôture n'a"
 " pas été réécrite."
+
+msgid "They owe me at the end"
+msgstr "Ils me doivent en fin de journée"
+
+msgid "They owed me at the start"
+msgstr "Ils me devaient en début de journée"
 
 msgid "This POS is inactive."
 msgstr "Ce POS est inactif."
@@ -5477,6 +5656,9 @@ msgstr ""
 "guichet dépôt / retrait, et le reste pour le guichet crédit. Cochez tout (ou"
 " rien) pour un gérant qui fait tout."
 
+msgid "Time"
+msgstr "Heure"
+
 msgid "To"
 msgstr "Vers"
 
@@ -5492,6 +5674,9 @@ msgstr "Au (personnalisé)"
 msgid "To account"
 msgstr "Vers le compte"
 
+msgid "To agents"
+msgstr "Aux agents"
+
 msgid "To cashiers"
 msgstr "Vers les caissiers"
 
@@ -5506,6 +5691,9 @@ msgstr "Vers le guichet (sous-zone)"
 
 msgid "To the shop"
 msgstr "Vers la boutique"
+
+msgid "Today"
+msgstr "Aujourd'hui"
 
 msgid "Too many failed attempts. Try again in 15 minutes."
 msgstr "Trop de tentatives échouées. Réessayez dans 15 minutes."
@@ -5602,6 +5790,9 @@ msgstr "Transférer de l'UVE à une boutique"
 msgid "Transfer capital"
 msgstr "Transférer du capital"
 
+msgid "Transfer from an agent"
+msgstr "Transfert d'un agent"
+
 msgid "Transfer reconciliation"
 msgstr "Rapprochement des transferts"
 
@@ -5616,6 +5807,9 @@ msgstr "Transfert vers un caissier"
 
 msgid "Transfer to a shop"
 msgstr "Transfert vers une boutique"
+
+msgid "Transfer to an agent"
+msgstr "Transfert à un agent"
 
 msgid "Transfer to another cashier"
 msgstr "Transfert vers un autre caissier"
@@ -6105,6 +6299,9 @@ msgstr "Pourquoi ?"
 
 msgid "Why? e.g. nothing received"
 msgstr "Pourquoi ? par ex. rien reçu"
+
+msgid "With"
+msgstr "Avec"
 
 msgid "With agents"
 msgstr "Avec les agents"
@@ -6771,6 +6968,11 @@ msgid ""
 msgstr ""
 "ⓒ = transaction corrigée ultérieurement (voir le rapport des corrections). "
 "Montants en FCFA."
+
+msgid "%(n)s payment is still waiting for confirmation."
+msgid_plural "%(n)s payments are still waiting for confirmation."
+msgstr[0] "%(n)s paiement est encore en attente de confirmation."
+msgstr[1] "%(n)s paiements sont encore en attente de confirmation."
 
 msgid "%(n)s unresolved closing difference on your accounts."
 msgid_plural "%(n)s unresolved closing differences on your accounts."

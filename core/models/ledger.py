@@ -194,6 +194,7 @@ class TxType(models.TextChoices):
     SHOP_PURCHASE = "SHOP_PURCHASE", _("Shop: purchase of items")
     SHOP_STOCK_OUT = "SHOP_STOCK_OUT", _("Shop: stock written off")
     SHOP_TO_SHOP = "SHOP_TO_SHOP", _("Shop: transfer to another shop")
+    SHOP_AGENT_PAYBACK = "SHOP_AG_PAYBACK", _("Shop: agent pays the company")
 
 
 class Product(models.TextChoices):

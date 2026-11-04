@@ -100,10 +100,13 @@ def can_view_txn(user, t):
         mine = t.shop_id == user.shop_id or (t.type == "SHOP_TO_SHOP" and t.dest_account_id
                                              and t.dest_account.shop_id == user.shop_id)  # sent to this shop
         return bool(t.shop_id) and (user.is_shop_senior or (mine and can_see_type(user, t.type)))
+    if user.is_agent:  # entries on the agent's own account; of the shops' records only his payments to the company
+        if t.shop_id and t.type != "SHOP_AG_PAYBACK":
+            return False
+        return Entry.objects.filter(transaction=t, account__counterparty=user.counterparty,
+                                    account__kind="CUSTOMER").exists()
     if t.shop_id and t.type not in ("SHOP_TO_DESK", "DESK_TO_SHOP", "CAPITAL_IN", "CAPITAL_OUT", "CAPITAL_MOVE"):
-        return False  # shop dealings are not visible to cashiers, junior managers or agents
-    if user.is_agent:
-        return Entry.objects.filter(transaction=t, account__counterparty=user.counterparty).exists()
+        return False  # shop dealings are not visible to cashiers or junior managers
     if user.is_junior:
         ids = user.zone_ids_in_scope()
         if t.zone_id in ids:
@@ -245,6 +248,8 @@ def dashboard(request):
         from core.services import agents as ag
 
         ctx["paybacks"] = list(ag.pending_for_desk(user.subzone))
+        for p in ctx["paybacks"]:
+            p.can_decide = ag.can_decide(user, p)
         ctx["open_disc"] = Discrepancy.objects.filter(
             status="OPEN", account__in=[a.id for a in zone_accts]).count()
         return render(request, "core/dashboard_cashier.html", ctx)

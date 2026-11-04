@@ -21,6 +21,7 @@ class ClientKind(models.TextChoices):
     POS = "POS", _("End-user POS")
     SHOP = "SHOP", _("Shop")
     OTHER = "OTHER", _("Other client")
+    AGENT = "AGENT", _("Commercial agent")
 
 
 class AgentClientEntry(models.Model):
@@ -37,6 +38,8 @@ class AgentClientEntry(models.Model):
     pos = models.ForeignKey(Counterparty, null=True, blank=True, on_delete=models.PROTECT,
                             related_name="agent_supplies_received", limit_choices_to={"kind": "POS"})
     shop = models.ForeignKey("Shop", null=True, blank=True, on_delete=models.PROTECT, related_name="agent_entries")
+    to_agent = models.ForeignKey(Counterparty, null=True, blank=True, on_delete=models.PROTECT,
+                                 related_name="agent_transfers_received", limit_choices_to={"kind": "AGENT"})
     client_name = models.CharField(_("client name"), max_length=120, blank=True)
     client_phone = models.CharField(_("client phone"), max_length=30, blank=True)
     uve = models.DecimalField(_("UVE"), default=Z, **MONEY)
@@ -57,6 +60,8 @@ class AgentClientEntry(models.Model):
             models.CheckConstraint(name="agent_entry_pos_has_pos", condition=~Q(client_kind="POS") | Q(pos__isnull=False)),
             models.CheckConstraint(name="agent_entry_shop_has_shop",
                                    condition=~Q(client_kind="SHOP") | Q(shop__isnull=False)),
+            models.CheckConstraint(name="agent_entry_agent_has_agent",
+                                   condition=~Q(client_kind="AGENT") | Q(to_agent__isnull=False)),
         ]
 
     def __str__(self):
@@ -64,7 +69,12 @@ class AgentClientEntry(models.Model):
 
     @property
     def reference(self):
-        return f"{'AS' if self.kind == self.Kind.SUPPLY else 'AC'}-{self.pk:06d}"
+        prefix = "AT" if self.client_kind == ClientKind.AGENT else "AS" if self.kind == self.Kind.SUPPLY else "AC"
+        return f"{prefix}-{self.pk:06d}"
+
+    @property
+    def product(self):
+        return "UVE" if self.uve else "ER" if self.er else "CASH" if self.cash else ""
 
     @property
     def total(self):
@@ -73,7 +83,9 @@ class AgentClientEntry(models.Model):
 
     @property
     def balance_effect(self):
-        """How much this entry adds to what the client owes the agent."""
+        """How much this entry adds to what the client owes the agent (a transfer to another agent: nothing)."""
+        if self.client_kind == ClientKind.AGENT:
+            return Z
         return self.total - self.paid
 
     @property
@@ -86,7 +98,9 @@ class AgentClientEntry(models.Model):
             return self.pos.name
         if self.client_kind == ClientKind.SHOP and self.shop_id:
             return self.shop.name
-        return self.client_name or "—"
+        if self.client_kind == ClientKind.AGENT and self.to_agent_id:
+            return self.to_agent.name
+        return self.client_name or self.client_phone or "—"
 
     @property
     def client_key(self):
@@ -94,7 +108,10 @@ class AgentClientEntry(models.Model):
             return ("POS", self.pos_id)
         if self.client_kind == ClientKind.SHOP:
             return ("SHOP", self.shop_id)
-        return ("OTHER", (self.client_name or "").strip().lower(), (self.client_phone or "").replace(" ", ""))
+        if self.client_kind == ClientKind.AGENT:
+            return ("AGENT", self.to_agent_id)
+        phone = "".join(ch for ch in (self.client_phone or "") if ch.isdigit())[-9:]
+        return ("OTHER", phone or (self.client_name or "").strip().lower())
 
 
 class AgentPayback(models.Model):
@@ -108,8 +125,10 @@ class AgentPayback(models.Model):
 
     agent = models.ForeignKey(Counterparty, on_delete=models.PROTECT, related_name="paybacks",
                               limit_choices_to={"kind": "AGENT"})
-    desk = models.ForeignKey(Zone, on_delete=models.PROTECT, related_name="agent_paybacks",
+    desk = models.ForeignKey(Zone, null=True, blank=True, on_delete=models.PROTECT, related_name="agent_paybacks",
                              verbose_name=_("cashier desk"))
+    shop = models.ForeignKey("Shop", null=True, blank=True, on_delete=models.PROTECT, related_name="agent_paybacks",
+                             verbose_name=_("shop"))
     cash = models.DecimalField(_("cash"), default=Z, **MONEY)
     uve = models.DecimalField(_("UVE"), default=Z, **MONEY)
     mtn = models.DecimalField(_("MTN float"), default=Z, **MONEY)
@@ -126,9 +145,20 @@ class AgentPayback(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
+        constraints = [models.CheckConstraint(name="agent_payback_one_receiver",
+                                              condition=Q(desk__isnull=False, shop__isnull=True)
+                                              | Q(desk__isnull=True, shop__isnull=False))]
 
     def __str__(self):
         return f"{self.code} {self.agent}"
+
+    @property
+    def receiver(self):
+        return self.shop if self.shop_id else self.desk
+
+    @property
+    def method(self):
+        return "UVE" if self.uve else "MTN" if self.mtn else "CASH"
 
     @property
     def code(self):

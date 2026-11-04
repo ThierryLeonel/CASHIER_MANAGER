@@ -97,19 +97,40 @@ def _amt(v, field):
     return a
 
 
-def _client(agent, client_kind, pos_sim, shop, client_name, client_phone):
-    out = dict(client_kind=client_kind, pos=None, shop=None, client_name="", client_phone=(client_phone or "").strip())
+def _sim(raw, field):
+    from core.simnumbers import SimNumberError, normalize_sim
+
+    try:
+        return normalize_sim(raw)
+    except SimNumberError as exc:
+        raise BusinessError(_(str(exc)), field) from exc
+
+
+def find_agent(sim, me):
+    s = _sim(sim, "agent_sim")
+    other = Counterparty.objects.filter(kind=Counterparty.Kind.AGENT, business_sim=s, active=True).first()
+    if other is None:
+        raise BusinessError(_("No active commercial agent has the business SIM %(sim)s.") % {"sim": sim}, "agent_sim")
+    if other.pk == me.pk:
+        raise BusinessError(_("Choose another agent, not yourself."), "agent_sim")
+    return other
+
+
+def _client(agent, client_kind, pos_sim="", shop=None, client_phone="", agent_sim="", client_name=""):
+    out = dict(client_kind=client_kind, pos=None, shop=None, to_agent=None, client_name=(client_name or "").strip(),
+               client_phone="")
     if client_kind == ClientKind.POS:
         out["pos"] = find_pos(pos_sim)
     elif client_kind == ClientKind.SHOP:
         if shop is None or not shop.active:
             raise BusinessError(_("Choose the shop."), "shop")
         out["shop"] = shop
-    elif client_kind == ClientKind.OTHER:
-        name = (client_name or "").strip()
-        if not name:
-            raise BusinessError(_("Enter the client's name."), "client_name")
-        out["client_name"] = name
+    elif client_kind == ClientKind.OTHER:  # identified by the phone number only
+        if not (client_phone or "").strip():
+            raise BusinessError(_("Enter the client's phone number."), "client_phone")
+        out["client_phone"] = _sim(client_phone, "client_phone")
+    elif client_kind == ClientKind.AGENT:
+        out["to_agent"] = find_agent(agent_sim, agent)
     else:
         raise BusinessError(_("Choose who the client is."), "client_kind")
     return out
@@ -131,10 +152,13 @@ def _create(model, idem, **fields):
 
 
 # ---------------------------------------------------------------- recording
-def record_supply(user, *, client_kind, pos_sim="", shop=None, client_name="", client_phone="", uve=None, er=None,
-                  cash=None, paid=None, note="", idempotency_key=None):
+def record_supply(user, *, client_kind, pos_sim="", shop=None, client_name="", client_phone="", agent_sim="",
+                  uve=None, er=None, cash=None, paid=None, note="", idempotency_key=None):
+    """A supply to a POS, a shop or another client, or a transfer to another commercial agent (client_kind AGENT)."""
     agent = agent_of(user)
-    client = _client(agent, client_kind, pos_sim, shop, client_name, client_phone)
+    client = _client(agent, client_kind, pos_sim, shop, client_phone, agent_sim, client_name)
+    if client_kind == ClientKind.AGENT:
+        paid = None  # a transfer between agents moves stock; nothing is owed through the portal
     vals = {k: _amt(v, k) for k, v in (("uve", uve), ("er", er), ("cash", cash), ("paid", paid))}
     total = vals["uve"] + vals["er"] + vals["cash"]
     if total <= 0:
@@ -149,7 +173,9 @@ def record_supply(user, *, client_kind, pos_sim="", shop=None, client_name="", c
 def record_client_payment(user, *, client_kind, pos_sim="", shop=None, client_name="", client_phone="", amount=None,
                           note="", idempotency_key=None):
     agent = agent_of(user)
-    client = _client(agent, client_kind, pos_sim, shop, client_name, client_phone)
+    if client_kind == ClientKind.AGENT:
+        raise BusinessError(_("Choose who the client is."), "client_kind")
+    client = _client(agent, client_kind, pos_sim, shop, client_phone, "", client_name)
     amount = _amt(amount, "amount")
     if amount <= 0:
         raise BusinessError(_("Enter the amount the client paid you."), "amount")
@@ -174,15 +200,23 @@ def cancel_entry(user, entry, reason):
     return entry
 
 
-def request_payback(user, *, desk, cash=None, uve=None, mtn=None, reference="", note="", idempotency_key=None):
+def request_payback(user, *, desk=None, shop=None, cash=None, uve=None, mtn=None, reference="", note="",
+                    idempotency_key=None):
+    """Pay the company back at a cashier of the zone, or at a shop."""
     agent = agent_of(user)
-    if desk is None or not desks_for(agent).filter(pk=desk.pk).exists():
+    if shop is not None:
+        if not shop.active:
+            raise BusinessError(_("Choose the shop."), "shop")
+        desk = None
+    elif desk is None or not desks_for(agent).filter(pk=desk.pk).exists():
         raise BusinessError(_("Choose a cashier desk of your zone."), "desk")
     vals = {k: _amt(v, k) for k, v in (("cash", cash), ("uve", uve), ("mtn", mtn))}
     if sum(vals.values(), Z) <= 0:
-        raise BusinessError(_("Enter what you pay back in cash, UVE and / or MTN float."), "cash")
-    return _create(P, idempotency_key, agent=agent, desk=desk, **vals, reference=(reference or "").strip(),
-                   note=(note or "").strip(), recorded_by=user)
+        raise BusinessError(_("Enter what you pay back in cash, UVE and / or MTN float."), "amount")
+    if shop is not None and vals["mtn"]:
+        raise BusinessError(_("A shop receives cash or UVE, not MTN float."), "method")
+    return _create(P, idempotency_key, agent=agent, desk=desk, shop=shop, **vals,
+                   reference=(reference or "").strip(), note=(note or "").strip(), recorded_by=user)
 
 
 def cancel_payback(user, p):
@@ -196,7 +230,11 @@ def cancel_payback(user, p):
 
 # ---------------------------------------------------------------- cashier side
 def can_decide(user, p):
-    return p.status == P.Status.PENDING and user.is_cashier and user.subzone_id == p.desk_id
+    if p.status != P.Status.PENDING:
+        return False
+    if p.shop_id:
+        return (user.is_shop_manager and user.shop_id == p.shop_id) or user.is_shop_senior or user.is_superadmin
+    return user.is_cashier and user.subzone_id == p.desk_id
 
 
 def pending_for_desk(zone):
@@ -205,21 +243,32 @@ def pending_for_desk(zone):
     return P.objects.filter(desk=zone, status=P.Status.PENDING).select_related("agent", "desk").order_by("created_at")
 
 
+def pending_for_shop(shop):
+    if shop is None:
+        return P.objects.none()
+    return P.objects.filter(shop=shop, status=P.Status.PENDING).select_related("agent", "shop").order_by("created_at")
+
+
 def confirm_payback(user, p):
     """The cashier confirms receiving the payback: it is posted as the agent's payment to the company."""
     from . import operations as ops
+    from . import shops as sh
 
     with transaction.atomic():
         p = P.objects.select_for_update().get(pk=p.pk)
         if not can_decide(user, p):
-            raise PermissionDenied(_("Only a cashier of %(desk)s confirms this payback, while it is pending.")
-                                   % {"desk": p.desk})
-        parts = {PaymentMethod.CASH: p.cash, PaymentMethod.UVE: p.uve, PaymentMethod.MTN: p.mtn}
+            raise PermissionDenied(_("Only %(who)s confirms this payback, while it is pending.")
+                                   % {"who": p.receiver})
         desc = _("Agent payback %(code)s") % {"code": p.code}
         if p.reference:
             desc += f" · {p.reference}"
         key = uuid.uuid5(uuid.NAMESPACE_URL, f"agent-payback-{p.pk}")
-        txns = ops.record_payment(user, payer=p.agent, parts=parts, description=desc, idempotency_key=key)
+        if p.shop_id:
+            txns = [sh.receive_agent_payback(user, shop=p.shop, agent=p.agent, cash=p.cash or None,
+                                             uve=p.uve or None, description=desc, idempotency_key=key)]
+        else:
+            parts = {PaymentMethod.CASH: p.cash, PaymentMethod.UVE: p.uve, PaymentMethod.MTN: p.mtn}
+            txns = ops.record_payment(user, payer=p.agent, parts=parts, description=desc, idempotency_key=key)
         p.status = P.Status.CONFIRMED
         p.decided_by, p.decided_at, p.transaction = user, timezone.now(), txns[0]
         p.save(update_fields=["status", "decided_by", "decided_at", "transaction"])
@@ -228,8 +277,7 @@ def confirm_payback(user, p):
 
 def reject_payback(user, p, reason):
     if not can_decide(user, p):
-        raise PermissionDenied(_("Only a cashier of %(desk)s rejects this payback, while it is pending.")
-                               % {"desk": p.desk})
+        raise PermissionDenied(_("Only %(who)s rejects this payback, while it is pending.") % {"who": p.receiver})
     if not (reason or "").strip():
         raise BusinessError(_("Say why the payback is rejected (e.g. nothing received)."), "reason")
     p.status, p.reject_reason = P.Status.REJECTED, reason.strip()
@@ -246,7 +294,8 @@ def live_entries(agent):
 def office_txns(agent):
     """Company transactions concerning the agent: supplies from the office, payments, destockages, transfers of
     responsibility, shop dealings."""
-    return Transaction.objects.filter(entries__account__counterparty=agent).distinct() \
+    return Transaction.objects.filter(entries__account__counterparty=agent, entries__account__kind="CUSTOMER") \
+        .distinct() \
         .select_related("entered_by", "counterparty", "counterparty_2", "zone", "shop", "correction") \
         .order_by("-posted_at")
 
@@ -267,14 +316,16 @@ def supplied_by_product(agent, **filters):
 
 
 def stock_estimate(agent):
-    rec, out = received_by_product(agent), supplied_by_product(agent)
-    return [(p.label, rec[p], out[p], rec[p] - out[p]) for p in (Product.UVE, Product.ER, Product.CASH)]
+    """In hand now, per product: [(label, in hand)]."""
+    f = _flows(agent)
+    return [(_("Cash") if p == "CASH" else p, _net(f, p)) for p in PRODUCTS]
 
 
 def clients_owing(agent):
     """What each client owes the agent: [(label, kind, owed, last entry)] for clients with a balance."""
     groups = OrderedDict()
-    for e in live_entries(agent).select_related("pos", "shop").order_by("created_at"):
+    for e in live_entries(agent).exclude(client_kind=ClientKind.AGENT).select_related("pos", "shop") \
+            .order_by("created_at"):
         g = groups.setdefault(e.client_key, {"label": e.client_label, "kind": e.get_client_kind_display(),
                                              "owed": Z, "last": e, "pos": e.pos, "phone": e.client_phone})
         g["owed"] += e.balance_effect
@@ -315,22 +366,157 @@ def summary(agent):
 USSD = {"UVE": "#149*5*{number}*{amount}#", "ER": "#189*2*{number}*{amount}#"}
 
 
-def client_number(entry):
-    """The Orange number the agent sends to: the POS business SIM, the shop SIM or the other client's phone."""
+def _norm(raw):
     from core.simnumbers import SimNumberError, normalize_sim
 
-    raw = entry.pos.business_sim if entry.pos_id else entry.shop.sim_number if entry.shop_id else entry.client_phone
     try:
         return normalize_sim(raw)
     except SimNumberError:
         return ""
 
 
-def ussd_code(entry):
-    """The code to dial for this supply (UVE or ER), or "" when there is none (cash, or no number)."""
-    product = "UVE" if entry.uve else "ER" if entry.er else None
-    number = client_number(entry)
-    if entry.kind != E.Kind.SUPPLY or product is None or not number:
+def client_number(entry):
+    """The Orange number the agent sends to: the POS business SIM, the shop SIM, the other agent's business SIM or
+    the other client's phone."""
+    if entry.pos_id:
+        return _norm(entry.pos.business_sim)
+    if entry.shop_id:
+        return _norm(entry.shop.sim_number)
+    if entry.to_agent_id:
+        return _norm(entry.to_agent.business_sim)
+    return _norm(entry.client_phone)
+
+
+def _code(product, number, amount):
+    if product not in USSD or not number or not amount:
         return ""
-    amount = int(entry.uve or entry.er)
-    return USSD[product].format(number=number, amount=amount)
+    return USSD[product].format(number=number, amount=int(amount))
+
+
+def ussd_code(entry):
+    """The code to dial for this supply or transfer (UVE or ER), or "" (cash, a client payment, no number)."""
+    if entry.kind != E.Kind.SUPPLY:
+        return ""
+    return _code(entry.product, client_number(entry), entry.total)
+
+
+def desk_master_sim(desk):
+    """The master SIM (UVE) of a desk's master zone, where agents send UVE."""
+    from core.models import CompanySim
+
+    master = desk.parent if desk.parent_id else desk
+    sim = CompanySim.objects.filter(master_zone=master, is_master=True).first()
+    return sim.msisdn if sim else ""
+
+
+def payback_number(p):
+    return _norm(p.shop.sim_number) if p.shop_id else desk_master_sim(p.desk)
+
+
+def payback_code(p):
+    """A UVE payback is sent with the same code as a UVE supply, to the master SIM or the shop SIM."""
+    return _code("UVE", payback_number(p), p.uve) if p.uve and not (p.cash or p.mtn) else ""
+
+
+# ---------------------------------------------------------------- office supplies and daily reconciliation
+OFFICE_TYPES = (TxType.SUPPLY, TxType.DESTOCKAGE)
+PRODUCTS = ("UVE", "ER", "CASH")
+
+
+def office_supplies(agent):
+    """Supplies and destockages the office recorded on the agent (also those delivered straight to a POS)."""
+    return Transaction.objects.filter(type__in=OFFICE_TYPES, counterparty=agent, correction__isnull=True) \
+        .select_related("counterparty_2", "zone", "entered_by").order_by("-posted_at")
+
+
+def _flows(agent, d_from=None, d_to=None):
+    """Stock movements per product between two dates (inclusive; None = open-ended)."""
+    def rng(qs, field):
+        if d_from:
+            qs = qs.filter(**{f"{field}__gte": d_from})
+        if d_to:
+            qs = qs.filter(**{f"{field}__lte": d_to})
+        return qs
+
+    f = {k: {p: Z for p in PRODUCTS} for k in ("office", "from_agents", "to_clients", "to_agents", "paid_back",
+                                                 "collected")}
+    for r in rng(Transaction.objects.filter(type=TxType.SUPPLY, counterparty=agent, counterparty_2__isnull=True,
+                                            correction__isnull=True), "business_date") \
+            .values("product").annotate(s=Sum("amount")):
+        f["office"][r["product"]] += r["s"] or Z
+    mine = rng(live_entries(agent), "business_date")
+    for key, qs in (("to_clients", mine.filter(kind=E.Kind.SUPPLY).exclude(client_kind=ClientKind.AGENT)),
+                    ("to_agents", mine.filter(client_kind=ClientKind.AGENT)),
+                    ("from_agents", rng(E.objects.filter(to_agent=agent, cancelled_at__isnull=True),
+                                        "business_date"))):
+        a = qs.aggregate(u=Sum("uve"), e=Sum("er"), c=Sum("cash"))
+        f[key].update({"UVE": a["u"] or Z, "ER": a["e"] or Z, "CASH": a["c"] or Z})
+    f["collected"]["CASH"] = mine.exclude(client_kind=ClientKind.AGENT).aggregate(s=Sum("paid"))["s"] or Z
+    pb = rng(P.objects.filter(agent=agent).exclude(status=P.Status.REJECTED), "created_at__date") \
+        .aggregate(u=Sum("uve"), c=Sum("cash"))
+    f["paid_back"].update({"UVE": pb["u"] or Z, "CASH": pb["c"] or Z})
+    return f
+
+
+def _net(f, p):
+    return (f["office"][p] + f["from_agents"][p] + f["collected"][p]
+            - f["to_clients"][p] - f["to_agents"][p] - f["paid_back"][p])
+
+
+def daily_reconciliation(agent, day):
+    """Automatic reconciliation of one day: stock and cash in hand, the account with the company, clients."""
+    from datetime import timedelta
+
+    from core.models import Entry
+
+    before = _flows(agent, None, day - timedelta(days=1))
+    today = _flows(agent, day, day)
+    stock = []
+    for p in PRODUCTS:
+        opening = _net(before, p)
+        stock.append({"product": _("Cash") if p == "CASH" else p, "code": p, "opening": opening,
+                      "office": today["office"][p], "from_agents": today["from_agents"][p],
+                      "collected": today["collected"][p], "to_clients": today["to_clients"][p],
+                      "to_agents": today["to_agents"][p], "paid_back": today["paid_back"][p],
+                      "closing": opening + _net(today, p)})
+    acct = Entry.objects.filter(account=agent.account)
+    opening_owed = acct.filter(business_date__lt=day).aggregate(s=Sum("amount"))["s"] or Z
+    day_e = acct.filter(business_date=day)
+    taken = day_e.filter(amount__gt=0).aggregate(s=Sum("amount"))["s"] or Z
+    paid = -(day_e.filter(amount__lt=0).aggregate(s=Sum("amount"))["s"] or Z)
+    cl = live_entries(agent).exclude(client_kind=ClientKind.AGENT)
+
+    def owed(qs):
+        a = qs.aggregate(u=Sum("uve"), e=Sum("er"), c=Sum("cash"), p=Sum("paid"))
+        return (a["u"] or Z) + (a["e"] or Z) + (a["c"] or Z) - (a["p"] or Z)
+
+    c_open = owed(cl.filter(business_date__lt=day))
+    c_day = cl.filter(business_date=day)
+    supplied = sum((e.total for e in c_day), Z)
+    received = sum((e.paid for e in c_day), Z)
+    return {
+        "day": day, "stock": stock,
+        "company": {"opening": opening_owed, "taken": taken, "paid": paid, "closing": opening_owed + taken - paid},
+        "clients": {"opening": c_open, "supplied": supplied, "received": received,
+                    "closing": c_open + supplied - received},
+        "pending": P.objects.filter(agent=agent, status=P.Status.PENDING).count(),
+    }
+
+
+def daily_summary(agent, d_from, d_to):
+    """One line per day with activity: office, supplied, transfers, collected, paid back."""
+    from datetime import timedelta
+
+    rows, d = [], d_to
+    while d >= d_from:
+        f = _flows(agent, d, d)
+        line = {"day": d,
+                "office": sum(f["office"].values(), Z),
+                "to_clients": sum(f["to_clients"].values(), Z),
+                "agents_in": sum(f["from_agents"].values(), Z), "agents_out": sum(f["to_agents"].values(), Z),
+                "collected": f["collected"]["CASH"],
+                "paid_back": sum(f["paid_back"].values(), Z)}
+        if any(v for k, v in line.items() if k != "day"):
+            rows.append(line)
+        d -= timedelta(days=1)
+    return rows
