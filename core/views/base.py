@@ -1,3 +1,4 @@
+from decimal import Decimal
 from functools import wraps
 
 from django.conf import settings
@@ -241,6 +242,10 @@ def dashboard(request):
         ctx["recent"] = Transaction.objects.filter(Q(zone=user.subzone) | Q(entered_by=user)).select_related(
             "cashier", "entered_by", "counterparty", "counterparty_2", "source_account__sim",
             "dest_account__sim").order_by("-posted_at")[:15]
+        from core.services import settlements as st
+
+        ctx["unpaid"] = st.unpaid_for_desk(user.subzone) if user.subzone_id else []
+        ctx["unpaid_total"] = sum((o for _h, o in ctx["unpaid"]), Decimal(0))
         ctx["open_disc"] = Discrepancy.objects.filter(
             status="OPEN", account__in=[a.id for a in zone_accts]).count()
         return render(request, "core/dashboard_cashier.html", ctx)

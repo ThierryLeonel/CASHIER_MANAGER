@@ -64,6 +64,7 @@ def unpaid_for_shop(shop):
     for h in _heads().filter(dest_account__shop=shop).order_by("posted_at"):
         o = outstanding(h)
         if o > 0:
+            h.sender_name = party(h.source_account)
             out.append((h, o))
     return out
 
@@ -77,6 +78,7 @@ def unpaid_for_desk(zone):
     for h in _heads().filter(dest_account_id__in=ids, dest_account__shop__isnull=True).order_by("posted_at"):
         o = outstanding(h)
         if o > 0:
+            h.sender_name = party(h.source_account)
             out.append((h, o))
     return out
 

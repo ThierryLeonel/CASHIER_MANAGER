@@ -58,6 +58,18 @@ def _opening_book(account):
         s=Sum("amount"))["s"] or Decimal("0")
 
 
+def _with_unpaid(zone, notes):
+    """The notes typed, plus — automatically — the transfers this desk received and has not paid back yet."""
+    from .settlements import summary_line, unpaid_for_desk
+
+    lines = [notes.strip()] if (notes or "").strip() else []
+    unpaid = unpaid_for_desk(zone) if zone is not None else []
+    if unpaid:
+        lines.append(str(_("Transfers received not paid back yet:")))
+        lines += ["• " + summary_line(h, o) for h, o in unpaid]
+    return "\n".join(lines)
+
+
 def close_day(user, *, actuals, notes=""):
     """actuals: {account_id: amount}. Returns the Closing."""
     perm.require_role(user, perm.ENTRY_ROLES, "closing")
@@ -82,7 +94,7 @@ def close_day(user, *, actuals, notes=""):
         lock_accounts([a.id for a in accounts])
         now = timezone.now()
         closing = Closing.objects.create(
-            cashier_day=day, closed_by=user, closed_at=now, notes=notes,
+            cashier_day=day, closed_by=user, closed_at=now, notes=_with_unpaid(day.zone, notes),
             last_entry_id=Entry.objects.aggregate(m=Max("id"))["m"] or 0,
         )
         for acct in accounts:

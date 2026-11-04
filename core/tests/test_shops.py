@@ -1153,3 +1153,53 @@ class ShiftClosingAndTransferPayments(OrgMixin, TestCase):
         r = c.post(f"/transactions/{t.pk}/pay/", {"idem": str(uuid.uuid4()), "uve": "30 000"})
         self.assertEqual(r.status_code, 302, r.content[:1500])
         self.assertEqual(st.outstanding(t), D(0))
+
+
+class CashierTransferPayments(OrgMixin, TestCase):
+    """Cashiers see what they received and have not paid back, pay it, and the closing notes list what is left."""
+
+    def setUp(self):
+        self.make_org()
+        self.fund_all()
+        self.shop = self.o["shop"]
+        for kind, amt in ((K.CASH_DRAWER, 300000), (K.UVE, 800000), (K.ER, 150000)):
+            self.fund(self.shop.account(kind), amt)
+        open_shifts(self.o)
+
+    def client_for(self, u):
+        c = self.client_class()
+        self.assertTrue(c.login(username=u, password=PW))
+        return c
+
+    def test_home_closing_and_payment(self):
+        from core.services import closing as cl
+        from core.services import operations as ops
+        from core.services import settlements as st
+        from core.services.ledger import balance
+
+        t1 = sh.to_cashier(self.o["shop_om"], desk=self.zones["fako2"], uve=D(40000))  # shop -> Fako 2
+        t2 = ops.record_desk_transfer(self.c_f1, desk=self.zones["fako2"], cash=D(25000))[0]  # Fako 1 -> Fako 2
+        c = self.client_for("cashier.fako2")
+        home = c.get("/")
+        self.assertContains(home, "Transfers received not paid back yet")
+        self.assertContains(home, t1.reference)
+        self.assertContains(home, "Fako 1")  # the sending desk is named
+        page = c.get("/closing/")
+        self.assertContains(page, t2.reference)
+        self.assertContains(page, "65 000")  # total still owed
+        # pay the shop back from the closing page
+        r = c.post(f"/transactions/{t1.pk}/pay/?next=/closing/", {"idem": str(uuid.uuid4()), "cash": "40 000"})
+        self.assertRedirects(r, "/closing/", fetch_redirect_response=False)
+        self.assertEqual(st.outstanding(t1), D(0))
+        p = Transaction.objects.get(settles=t1)
+        self.assertEqual((p.type, p.shop), (TxType.DESK_TO_SHOP, self.shop))
+        # close the day: the transfer still owed to Fako 1 is written automatically into the notes
+        actuals = {a.id: balance(a) for a in cl.closing_accounts(self.c_f2)}
+        closing = cl.close_day(self.c_f2, actuals=actuals, notes="all good")
+        self.assertIn("all good", closing.notes)
+        self.assertIn(t2.reference, closing.notes)
+        self.assertIn("25 000", closing.notes)
+        self.assertNotIn(t1.reference, closing.notes)
+        # the shop page shows its staff what the shop owes (nothing here) and cashiers what they owe
+        self.assertNotContains(self.client_for("shop.molyko").get(f"/shops/{self.shop.pk}/"),
+                               "Transfers received not paid back yet")

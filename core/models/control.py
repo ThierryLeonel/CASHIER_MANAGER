@@ -13,7 +13,7 @@ class Closing(models.Model):
     closed_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name="+")
     closed_at = models.DateTimeField(default=timezone.now)
     last_entry_id = models.BigIntegerField(help_text="Highest ledger entry id included in expected balances.")
-    notes = models.CharField(max_length=255, blank=True)
+    notes = models.TextField(blank=True)  # may carry the unpaid transfers received, listed automatically
 
     class Meta:
         ordering = ["-closed_at"]

@@ -42,7 +42,13 @@ def close_day(request):
                                on_success=lambda c: redirect("closing_detail", pk=c.pk))
             if resp:
                 return resp
-    return render(request, "core/close_day.html", {"form": form, "day": day, "accounts": accounts})
+    from decimal import Decimal as D_
+
+    from core.services import settlements as st
+
+    unpaid = st.unpaid_for_desk(request.user.subzone) if request.user.subzone_id else []
+    return render(request, "core/close_day.html", {"form": form, "day": day, "accounts": accounts, "unpaid": unpaid,
+                                                   "unpaid_total": sum((o for _h, o in unpaid), D_(0))})
 
 
 def _zone_ok(user, zone):

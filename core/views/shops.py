@@ -206,7 +206,18 @@ def shop_detail(request, pk):
         "sees_agents": user.has_shop_duty("AGENTS"), "sees_services": sees_services,
         "recent": recent, "staff_rows": staff_rows, "owed": owed, "owed_by": owed_by, "d_from": d_from, "d_to": d_to,
         "can_record": user.role in SHOP_DESK and (not user.is_shop_manager or user.shop_id == shop.pk),
-        "rate": ShopConversionRate.current(), "my_shift": ss.current_shift(request.user)})
+        "rate": ShopConversionRate.current(), "my_shift": ss.current_shift(request.user),
+        **_unpaid_ctx(user, shop)})
+
+
+def _unpaid_ctx(user, shop):
+    """Transfers the shop received and has not paid back: shown to its own staff."""
+    from core.services import settlements as st
+
+    if not (user.is_shop_manager and user.shop_id == shop.pk):
+        return {"unpaid": []}
+    unpaid = st.unpaid_for_shop(shop)
+    return {"unpaid": unpaid, "unpaid_total": sum((o for _h, o in unpaid), Decimal(0))}
 
 
 @roles_required(*SHOP_DESK)
