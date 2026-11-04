@@ -22,7 +22,7 @@
       <div class="pick-item-head"><strong>{{ item.name }}</strong> <span class="muted small">{{ item.price|fcfa }} FCFA · <span class="n-stock">{{ units|length }}</span> {% trans "in stock" %}</span></div>
       <div class="pick-units">{% for u in units %}<label class="unit" data-shop="{{ u.shop_id }}" data-serial="{{ u.imei|default:"" }} {{ u.serial|default:""|lower }}"><input type="checkbox" name="units" value="{{ u.pk }}"{% if u.pk|stringformat:"d" in chosen %} checked{% endif %}><span class="mono">{{ u.ident }}</span></label>{% endfor %}</div>
     </div>{% endfor %}
-  </div>{% empty %}<p class="muted">{% trans "Nothing in stock. Receive units into stock first." %}</p>{% endfor %}
+  </div>{% empty %}<p class="muted meta">{% trans "Nothing in stock. Receive units into stock first." %}</p>{% endfor %}
   {% endwith %}
   </div>
 </div>

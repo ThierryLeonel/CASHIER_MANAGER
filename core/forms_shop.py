@@ -78,17 +78,16 @@ class AgentDealForm(ShopForm):
 
 
 class PosUveForm(ShopForm):
-    """UVE sent to, or received from, an end-user POS."""
+    """UVE sent to, or received from, a commercial agent or a POS."""
 
-    pos = CustomerField(label=_("POS (business SIM)"), kind=Counterparty.Kind.POS)
+    pos = CustomerField(label=_("Agent or POS (business SIM)"))
     amount = MoneyField(label=_("UVE amount (FCFA)"))
     pay = forms.ChoiceField(label=_("Settled"), choices=[])
     description = forms.CharField(label=_("Note"), required=False, max_length=255)
 
     PAY_CHOICES = {
-        "pos_uve_out": [("CASH", _("The POS pays cash now")), ("CREDIT", _("On credit (the POS owes it)"))],
-        "pos_uve_in": [("CASH", _("The shop pays the POS cash now")),
-                       ("CREDIT", _("Against what the POS owes (credit)"))],
+        "pos_uve_out": [("CASH", _("Paid in cash now")), ("CREDIT", _("On credit (owed to the company)"))],
+        "pos_uve_in": [("CASH", _("The shop pays cash now")), ("CREDIT", _("Against what they owe (credit)"))],
     }
 
     def __init__(self, user, *args, op="pos_uve_out", **kwargs):

@@ -586,6 +586,9 @@ msgstr "Administration"
 msgid "Against what the POS owes (credit)"
 msgstr "Sur ce que le POS doit (crédit)"
 
+msgid "Against what they owe (credit)"
+msgstr "Sur ce qu'ils doivent (crédit)"
+
 msgid "Agent"
 msgstr "Agent"
 
@@ -606,6 +609,9 @@ msgstr "Agent responsable"
 
 msgid "Agent number"
 msgstr "Numéro de l'agent"
+
+msgid "Agent or POS (business SIM)"
+msgstr "Agent ou POS (SIM business)"
 
 #, python-format
 msgid "Agent payback %(code)s"
@@ -1344,6 +1350,9 @@ msgstr "Choisissez un POS actif."
 
 msgid "Choose an active cashier to record for."
 msgstr "Choisissez un caissier actif pour qui enregistrer."
+
+msgid "Choose an active commercial agent or POS."
+msgstr "Choisissez un agent commercial ou un POS actif."
 
 msgid "Choose an active commercial agent."
 msgstr "Choisissez un agent commercial actif."
@@ -2770,6 +2779,9 @@ msgstr "Du compte"
 msgid "From agents"
 msgstr "Des agents"
 
+msgid "From an agent or POS"
+msgstr "D'un agent ou d'un POS"
+
 msgid "From cashiers"
 msgstr "Des caissiers"
 
@@ -3721,6 +3733,9 @@ msgstr "À crédit"
 msgid "On credit (owed to the agent)"
 msgstr "À crédit (dû à l'agent)"
 
+msgid "On credit (owed to the company)"
+msgstr "À crédit (dû à l'entreprise)"
+
 msgid "On credit (the POS owes it)"
 msgstr "À crédit (le POS le doit)"
 
@@ -4223,6 +4238,9 @@ msgstr "Payé en"
 msgid "Paid in %(m)s"
 msgstr "Payé en %(m)s"
 
+msgid "Paid in cash now"
+msgstr "Payé en espèces maintenant"
+
 msgid "Paid in cash, UVE or MTN float"
 msgstr "Payé en espèces, UVE ou float MTN"
 
@@ -4493,6 +4511,9 @@ msgstr "Reçu n°"
 
 msgid "Receive"
 msgstr "Recevoir"
+
+msgid "Receive UVE"
+msgstr "Recevoir de l'UVE"
 
 msgid "Receive UVE from a POS"
 msgstr "Recevoir de l'UVE d'un POS"
@@ -4889,6 +4910,9 @@ msgstr "Choisissez la correction qui explique cet écart."
 msgid "Sell an item"
 msgstr "Vendre un article"
 
+msgid "Send UVE"
+msgstr "Envoyer de l'UVE"
+
 msgid "Send UVE to a POS"
 msgstr "Envoyer de l'UVE à un POS"
 
@@ -5104,8 +5128,14 @@ msgstr "Boutique : retrait Orange Money"
 msgid "Shop: UVE received from a POS"
 msgstr "Boutique : UVE reçue d'un POS"
 
+msgid "Shop: UVE received from an agent / POS"
+msgstr "Boutique : UVE reçue d'un agent / POS"
+
 msgid "Shop: UVE sent to a POS"
 msgstr "Boutique : UVE envoyée à un POS"
+
+msgid "Shop: UVE sent to an agent / POS"
+msgstr "Boutique : UVE envoyée à un agent / POS"
 
 msgid "Shop: UVE supply from agent (appro)"
 msgstr "Boutique : appro UVE par agent"
@@ -5649,6 +5679,9 @@ msgstr "La boutique ne doit que %(owed)s FCFA à %(agent)s."
 msgid "The shop owes the agent"
 msgstr "La boutique doit à l'agent"
 
+msgid "The shop pays cash now"
+msgstr "La boutique paie en espèces maintenant"
+
 msgid "The shop pays the POS cash now"
 msgstr "La boutique paie le POS en espèces maintenant"
 
@@ -5911,6 +5944,9 @@ msgstr "Vers le compte"
 msgid "To agents"
 msgstr "Aux agents"
 
+msgid "To an agent or POS"
+msgstr "À un agent ou un POS"
+
 msgid "To cashiers"
 msgstr "Vers les caissiers"
 
@@ -6062,6 +6098,9 @@ msgstr "Transféré"
 
 msgid "Transfers"
 msgstr "Transferts"
+
+msgid "Transfers and UVE"
+msgstr "Transferts et UVE"
 
 msgid ""
 "Transfers are only between active company cash, wallet or bank accounts."

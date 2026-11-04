@@ -14,7 +14,7 @@
     <span class="pick-txt"><strong>{{ c }}</strong><small>{{ c.staff_code }} · {{ c.subzone }}{% if c.subzone.parent %} · {{ c.subzone.parent }}{% endif %}</small></span>
     {% if current and current.pk == c.pk %}<span class="badge acc">{% trans "Current" %}</span>{% endif %}
   </button>
-{% empty %}<p class="muted">{% trans "No active cashier yet. Create cashiers in Configuration." %}</p>{% endfor %}
+{% empty %}<p class="muted meta">{% trans "No active cashier yet. Create cashiers in Configuration." %}</p>{% endfor %}
 </div>
 {% if current %}<div class="form-foot"><button class="btn" name="cashier" value="">{% trans "Stop recording for a cashier" %}</button></div>{% endif %}
 </form>

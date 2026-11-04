@@ -177,6 +177,10 @@ Commercial agents (role AGENT, linked to their agent account) have a working por
   * **Daily reconciliation** — each day, for cash, UVE, ER and MTN float: opening + in − out = closing (book), what was counted at that day's closing and the difference, "closed / not closed".
   * **Daily supplies versus payments** — each day: supplies (UVE, ER, cash, destockage) and payments (cash, UVE, MTN, bank) with totals and supplied − paid; then per agent / POS over the period with what each owes now.
 
+#### UVE with agents and POS for every shop staff member; fewer comments (04/11/2026)
+* **Send UVE / Receive UVE** (shop page buttons and the "Transfers and UVE" menu group) are open to every shop staff member, whatever their duties, with **any commercial agent or POS** (business SIM). Sending: shop UVE down, paid in cash now or on credit (their account with the company goes up). Receiving: shop UVE up, the shop pays cash now or it settles what they owe.
+* **Fewer comments**: explanatory paragraphs under titles and section headings, form introductions, field hints and the line under the Record button are no longer shown (CSS in `app.css`). Lines that carry information — dates, totals, SIM numbers, links, empty-list messages, warnings before deleting or editing — are marked `.meta` and stay.
+
 ### Users & passwords
 
 - Passwords are stored hashed: nobody — not even the super administrator — can read them. The super administrator's **Users & passwords** page (Administration) lists every user with role, zone, staff ID, last sign-in and status, and lets them **reset** a password (a strong one generated and shown once, or one they type, checked against the password rules), optionally forcing the user to choose their own at next sign-in, and **deactivate / activate** accounts (deactivation signs the user out at once; you cannot deactivate yourself or the last active super administrator). Every action is in the audit log.

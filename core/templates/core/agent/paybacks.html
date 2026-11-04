@@ -5,7 +5,7 @@
 <h1>{% trans "Agent paybacks" %}</h1>
 <p class="muted">{% trans "Commercial agents pay the company at a cashier of their zone (UVE to the master SIM, cash or MTN float) or at a shop (UVE to the shop SIM or cash). Whoever receives it confirms: it is then recorded as the agent's payment, with a receipt." %}</p>
 <h2>{% trans "Waiting for confirmation" %}</h2>
-{% if pending %}{% include "core/agent/inc/payback_rows.html" with rows=pending next_url=request.get_full_path %}{% else %}<p class="muted">{% trans "Nothing waiting." %}</p>{% endif %}
+{% if pending %}{% include "core/agent/inc/payback_rows.html" with rows=pending next_url=request.get_full_path %}{% else %}<p class="muted meta">{% trans "Nothing waiting." %}</p>{% endif %}
 <h2>{% trans "Decided" %}</h2>
 <div class="chips"><a class="chip{% if not status %} on{% endif %}" href="?">{% trans "All" %}</a><a class="chip{% if status == 'CONFIRMED' %} on{% endif %}" href="?status=CONFIRMED">{% trans "Confirmed" %}</a><a class="chip{% if status == 'REJECTED' %} on{% endif %}" href="?status=REJECTED">{% trans "Rejected" %}</a></div>
 <div class="tbl-wrap"><table class="t"><thead><tr><th>{% trans "Payback" %}</th><th>{% trans "Agent" %}</th><th>{% trans "Paid to" %}</th><th>{% trans "Sent at" %}</th><th class="money">{% trans "Total" %}</th><th>{% trans "Status" %}</th><th>{% trans "By" %}</th></tr></thead>

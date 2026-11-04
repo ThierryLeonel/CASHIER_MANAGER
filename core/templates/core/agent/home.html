@@ -3,7 +3,7 @@
 {% block topbar %}{% trans "My portal" %}{% endblock %}
 {% block content %}
 <h1>{{ cp.name }}</h1>
-<p class="muted small">{{ cp.business_sim|sim }}{% if s.zone %} · {{ s.zone.name }}{% endif %}{% if cp.microzone %} · {{ cp.microzone.name }}{% endif %}</p>
+<p class="muted small meta">{{ cp.business_sim|sim }}{% if s.zone %} · {{ s.zone.name }}{% endif %}{% if cp.microzone %} · {{ cp.microzone.name }}{% endif %}</p>
 <div class="bal-row">
   <div class="bal k-CASH_DRAWER"><span class="bal-label">{% if s.owed_company|negative %}{% trans "The company owes you" %}{% else %}{% trans "I owe the company" %}{% endif %}</span><span class="bal-value">{{ s.owed_company|absval|fcfa }}</span><span class="bal-unit">FCFA{% if s.pending %} · {% blocktrans with n=s.pending %}{{ n }} waiting{% endblocktrans %}{% endif %}</span></div>
   <a class="bal k-UVE bal-link" href="{% url 'agent_debtors' %}"><span class="bal-label">{% trans "My clients owe me" %}</span><span class="bal-value">{{ s.clients_owe|fcfa }}</span><span class="bal-unit">FCFA · {% trans "see my debtors" %} →</span></a>

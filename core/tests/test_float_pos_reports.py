@@ -87,15 +87,27 @@ class FloatPosReports(OrgMixin, TestCase):
         self.assertEqual(self.bal(self.shop.account(K.UVE)), D(75000))
         self.assertEqual(self.bal(self.shop.account(K.CASH_DRAWER)), D(75000))
         self.assertEqual(self.cbal(self.p1), pos_before)
+        # a commercial agent too: on credit it goes on his account with the company
+        a_before = self.cbal(self.a1)
+        sh.uve_to_pos(mgr, pos=self.a1, amount=D(4000), pay="CREDIT")
+        sh.uve_from_pos(mgr, pos=self.a1, amount=D(1000), pay="CASH")
+        self.assertEqual(self.cbal(self.a1), a_before + 4000)
+        self.p2.active = False
+        self.p2.save()
         with self.assertRaises(BusinessError):
-            sh.uve_to_pos(mgr, pos=self.a1, amount=D(1))  # an agent is not a POS
+            sh.uve_to_pos(mgr, pos=self.p2, amount=D(1))  # inactive
+        # a staff member with only the Orange Money duty may do it too
+        om = self.o["shop_om"]
+        ss.open_shift(om)
+        sh.uve_from_pos(om, pos=self.p1, amount=D(500), pay="CASH")
         c = self.client_for("shop.molyko")
         for op in ("pos_uve_out", "pos_uve_in"):
             self.assertEqual(c.get(f"/shops/do/{op}/").status_code, 200)
         r = c.post("/shops/do/pos_uve_out/", {"idem": str(uuid.uuid4()), "pos": self.p1.business_sim,
                                               "amount": "1 000", "pay": "CASH"})
         self.assertEqual(r.status_code, 302, r.content[:2000])
-        self.assertEqual(Transaction.objects.filter(type=TxType.SHOP_POS_UVE_OUT).count(), 3)
+        self.assertEqual(Transaction.objects.filter(type=TxType.SHOP_POS_UVE_OUT).count(), 4)
+        self.assertEqual(self.client_for("shop.molyko.om").get("/shops/do/pos_uve_in/").status_code, 200)
 
     def test_daily_reports_for_cashiers(self):
         ops.record_supply(self.c_f1, product="UVE", customer=self.a1, amount=D(70000), source_account=self.uve_f1)

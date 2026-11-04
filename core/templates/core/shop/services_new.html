@@ -11,7 +11,7 @@
 <div class="field" id="fld-business_date"><label for="{{ form.business_date.id_for_label }}">{{ form.business_date.label }} *</label>{{ form.business_date }}{% if form.business_date.errors %}<ul class="err">{% for e in form.business_date.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}</div>
 <div class="svc-grid">
 {% for svc, f in form.service_rows %}<label class="svc-row" for="{{ f.id_for_label }}"><span class="svc-name">{{ svc.name }}</span>{{ f }}{% if f.errors %}<span class="err small">{{ f.errors.0 }}</span>{% endif %}</label>
-{% empty %}<p class="muted">{% trans "No counted service is set up yet." %}</p>{% endfor %}
+{% empty %}<p class="muted meta">{% trans "No counted service is set up yet." %}</p>{% endfor %}
 </div>
 <div class="field" id="fld-note"><label for="{{ form.note.id_for_label }}">{{ form.note.label }}</label>{{ form.note }}</div>
 <div class="form-foot"><button class="btn primary" type="submit" id="submit-btn">{% trans "Record" %}</button> <a class="btn" href="{% url 'shops' %}">{% trans "Cancel" %}</a><span class="small muted">{% trans "Only record transactions that are completed and confirmed." %}</span></div>

@@ -9,7 +9,7 @@
   <div class="field"><label>{% trans "Operation" %}</label><select name="type"><option value="">—</option>{% for v, l in types %}<option value="{{ v }}" {% if v == typ %}selected{% endif %}>{{ l }}</option>{% endfor %}</select></div>
   <div class="field"><button class="btn" type="submit">{% trans "Apply" %}</button></div>
 </form>
-<p class="muted">{% trans "Total amount" %}: <strong>{{ totals.amt|default:0|fcfa }} FCFA</strong> · {% trans "Commissions" %}: <strong>{{ totals.com|default:0|fcfa }} FCFA</strong></p>
+<p class="muted meta">{% trans "Total amount" %}: <strong>{{ totals.amt|default:0|fcfa }} FCFA</strong> · {% trans "Commissions" %}: <strong>{{ totals.com|default:0|fcfa }} FCFA</strong></p>
 {% include "core/shop/_txns.html" with txns=page show_shop=True %}
 <div class="pager">{% if page.has_previous %}<a class="btn small" href="?from={{ d_from|date:'Y-m-d' }}&to={{ d_to|date:'Y-m-d' }}&shop={{ shop_id }}&type={{ typ }}&page={{ page.previous_page_number }}">←</a>{% endif %}<span class="muted small">{{ page.number }} / {{ page.paginator.num_pages }}</span>{% if page.has_next %}<a class="btn small" href="?from={{ d_from|date:'Y-m-d' }}&to={{ d_to|date:'Y-m-d' }}&shop={{ shop_id }}&type={{ typ }}&page={{ page.next_page_number }}">→</a>{% endif %}</div>
 {% endblock %}

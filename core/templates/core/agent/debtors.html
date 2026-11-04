@@ -14,6 +14,6 @@
     {% if g.number %}<a class="btn small" href="sms:+237{{ g.number }}?body={{ g.sms|urlencode }}">{% trans "Remind" %}</a>{% endif %}
   </div>
 </div>
-{% empty %}<p class="muted">{% trans "No client owes you anything." %}</p>{% endfor %}
+{% empty %}<p class="muted meta">{% trans "No client owes you anything." %}</p>{% endfor %}
 </div>
 {% endblock %}

@@ -57,12 +57,8 @@ OPS = {
                   _("Settles what the shop owes an agent."), "payment"),
     "agent_repay": (SF.AgentDealForm, sh.agent_repay, _("An agent pays the shop"),
                     _("The agent pays back what he owes the shop (e.g. a destockage taken on credit)."), "payment"),
-    "pos_uve_out": (SF.PosUveForm, sh.uve_to_pos, _("Send UVE to a POS"),
-                    _("The shop sends UVE to an end-user POS: the shop's UVE goes down; the POS pays cash now or owes "
-                      "it on credit."), "supply"),
-    "pos_uve_in": (SF.PosUveForm, sh.uve_from_pos, _("Receive UVE from a POS"),
-                   _("A POS sends UVE to the shop: the shop's UVE goes up; the shop pays the POS cash now, or it "
-                     "settles what the POS owes."), "payment"),
+    "pos_uve_out": (SF.PosUveForm, sh.uve_to_pos, _("Send UVE"), "", "supply"),
+    "pos_uve_in": (SF.PosUveForm, sh.uve_from_pos, _("Receive UVE"), "", "payment"),
     "to_cashier": (SF.ToCashierForm, sh.to_cashier, _("Transfer to a cashier"),
                    _("Cash and / or UVE sent from the shop to a cashier desk, in one record. It is recorded on the "
                      "cashier side too."), "transfer"),

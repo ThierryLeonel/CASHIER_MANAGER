@@ -3,7 +3,7 @@
 {% block topbar %}{{ shop }}{% endblock %}
 {% block content %}
 <h1>{{ shop }}</h1>
-<p class="muted">{% if shop.zone %}{{ shop.zone }} · {% endif %}{% if shop.sim_number %}SIM {{ shop.sim_number|sim }} · {% endif %}{{ today|default:d_to|date:"d/m/Y" }}</p>
+<p class="muted meta">{% if shop.zone %}{{ shop.zone }} · {% endif %}{% if shop.sim_number %}SIM {{ shop.sim_number|sim }} · {% endif %}{{ today|default:d_to|date:"d/m/Y" }}</p>
 <div class="bal-row">
   <div class="bal k-CASH_DRAWER"><span class="bal-label">{% trans "Cash drawer" %}</span><span class="bal-value">{{ bal.CASH_DRAWER|fcfa }}</span><span class="bal-unit">FCFA</span></div>
   <div class="bal k-UVE"><span class="bal-label">{% trans "UVE" %}</span><span class="bal-value">{{ bal.UVE|fcfa }}</span><span class="bal-unit">FCFA</span></div>
@@ -30,6 +30,8 @@
   {% endif %}
   <a class="qa" href="{% url 'shop_op' 'to_cashier' %}"><span class="qa-ic">{% icon "transfer" 22 %}</span><strong>{% trans "Transfer to a cashier" %}</strong><span class="d">{% trans "Cash and / or UVE" %}</span></a>
   <a class="qa" href="{% url 'shop_op' 'to_shop' %}"><span class="qa-ic">{% icon "store" 22 %}</span><strong>{% trans "Transfer to another shop" %}</strong><span class="d">{% trans "Cash and / or UVE" %}</span></a>
+  <a class="qa" href="{% url 'shop_op' 'pos_uve_out' %}"><span class="qa-ic">{% icon "supply" 22 %}</span><strong>{% trans "Send UVE" %}</strong><span class="d">{% trans "To an agent or POS" %}</span></a>
+  <a class="qa" href="{% url 'shop_op' 'pos_uve_in' %}"><span class="qa-ic">{% icon "payment" 22 %}</span><strong>{% trans "Receive UVE" %}</strong><span class="d">{% trans "From an agent or POS" %}</span></a>
 </div>
 {% endwith %}{% endif %}
 <h2>{% trans "Activity" %}</h2>

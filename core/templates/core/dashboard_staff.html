@@ -3,7 +3,7 @@
 {% block topbar %}{% trans "Home" %}{% endblock %}
 {% block content %}
 <h1>{% if user.is_junior %}{% blocktrans with z=user.scope_zone %}Overview — zone {{ z }}{% endblocktrans %}{% else %}{% trans "Overview — all zones" %}{% endif %}</h1>
-<p class="muted">{{ user.get_role_display }} · {{ today|date:"d/m/Y" }}</p>
+<p class="muted meta">{{ user.get_role_display }} · {{ today|date:"d/m/Y" }}</p>
 <div class="grid" style="margin:12px 0">
   <div class="tile"><div class="label">{% trans "Customers owe the company" %}</div><div class="value">{{ owed|fcfa }}</div></div>
   <div class="tile"><div class="label">{% trans "Supply due to customers" %}</div><div class="value">{{ due|fcfa }}</div></div>

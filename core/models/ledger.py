@@ -198,8 +198,8 @@ class TxType(models.TextChoices):
     SHOP_STOCK_OUT = "SHOP_STOCK_OUT", _("Shop: stock written off")
     SHOP_TO_SHOP = "SHOP_TO_SHOP", _("Shop: transfer to another shop")
     SHOP_AGENT_PAYBACK = "SHOP_AG_PAYBACK", _("Shop: agent pays the company")
-    SHOP_POS_UVE_OUT = "SHOP_POS_UVE_OUT", _("Shop: UVE sent to a POS")
-    SHOP_POS_UVE_IN = "SHOP_POS_UVE_IN", _("Shop: UVE received from a POS")
+    SHOP_POS_UVE_OUT = "SHOP_POS_UVE_OUT", _("Shop: UVE sent to an agent / POS")
+    SHOP_POS_UVE_IN = "SHOP_POS_UVE_IN", _("Shop: UVE received from an agent / POS")
 
 
 class Product(models.TextChoices):

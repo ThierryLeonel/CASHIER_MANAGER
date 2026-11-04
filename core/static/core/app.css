@@ -561,3 +561,8 @@ a.bal-link { text-decoration: none; }
 .debtor .d-who { display: grid; gap: 2px; }
 .debtor .d-amt { font-weight: 800; font-size: 1.15rem; text-align: right; white-space: nowrap; }
 .debtor .d-act { grid-column: 1 / -1; display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* ---------- fewer comments: explanatory paragraphs and field hints are not shown; data lines (.meta) stay ---------- */
+main > p.muted:not(.meta), main > p.small.muted:not(.meta), .form-head p.muted, .field .help, .pay-help,
+.panel > p.small.muted:not(.meta), .panel > p.muted:not(.meta), section > p.small.muted:not(.meta) { display: none; }
+h2 + p.muted:not(.meta), h2 + p.small.muted:not(.meta), h3 + p.small.muted:not(.meta), .form-foot span.small.muted { display: none; }

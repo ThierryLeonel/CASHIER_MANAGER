@@ -11,7 +11,7 @@
   <div class="field"><button class="btn" type="submit">{% trans "Apply" %}</button></div>
 </form>
 {% if tab == 'office' %}
-<p class="small muted">{% trans "Supplies the office gave you, payments you made to the cashiers, and other company records on your account." %} <a href="{% url 'report' 'statement' %}?preset=all">{% trans "Full statement with running balance" %}</a></p>
+<p class="small muted meta">{% trans "Supplies the office gave you, payments you made to the cashiers, and other company records on your account." %} <a href="{% url 'report' 'statement' %}?preset=all">{% trans "Full statement with running balance" %}</a></p>
 {% include "core/agent/inc/office_rows.html" with rows=page %}
 {% elif tab == 'agents' %}
 <div class="actions"><a class="btn primary" href="{% url 'agent_transfer' %}">{% trans "Transfer to an agent" %}</a></div>
@@ -29,7 +29,7 @@
 {% empty %}<tr><td colspan="10" class="muted">{% trans "No payback in this period." %}</td></tr>{% endfor %}</tbody></table></div>
 {% else %}
 <div class="actions"><a class="btn primary" href="{% url 'agent_supply' %}">{% trans "Supply a client" %}</a> <a class="btn" href="{% url 'agent_collect' %}">{% trans "A client pays me" %}</a></div>
-<p class="small muted">{% blocktrans with s=sums.supplied|fcfa r=sums.received|fcfa %}In this period: {{ s }} FCFA supplied, {{ r }} FCFA received from clients. A mistaken record of today can be cancelled.{% endblocktrans %}</p>
+<p class="small muted meta">{% blocktrans with s=sums.supplied|fcfa r=sums.received|fcfa %}In this period: {{ s }} FCFA supplied, {{ r }} FCFA received from clients. A mistaken record of today can be cancelled.{% endblocktrans %}</p>
 {% include "core/agent/inc/entry_rows.html" with rows=page cancel=True %}
 {% endif %}
 <div class="pager">{% if page.has_previous %}<a class="btn small" href="?tab={{ tab }}&from={{ d_from|date:'Y-m-d' }}&to={{ d_to|date:'Y-m-d' }}&kind={{ kind }}&page={{ page.previous_page_number }}">←</a>{% endif %}<span class="muted small">{{ page.number }} / {{ page.paginator.num_pages }}</span>{% if page.has_next %}<a class="btn small" href="?tab={{ tab }}&from={{ d_from|date:'Y-m-d' }}&to={{ d_to|date:'Y-m-d' }}&kind={{ kind }}&page={{ page.next_page_number }}">→</a>{% endif %}</div>
