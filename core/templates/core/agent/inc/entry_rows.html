@@ -1,0 +1,10 @@
+{% load i18n cashier %}<div class="tbl-wrap"><table class="t"><thead><tr><th>{% trans "Date" %}</th><th>{% trans "Ref." %}</th><th>{% trans "Operation" %}</th><th>{% trans "Client" %}</th><th class="money">UVE</th><th class="money">ER</th><th class="money">{% trans "Cash" %}</th><th class="money">{% trans "Received" %}</th><th class="money">{% trans "Owed +/−" %}</th><th>{% trans "Note" %}</th>{% if cancel %}<th></th>{% endif %}</tr></thead>
+<tbody>{% for e in rows %}<tr{% if e.is_cancelled %} class="corrected"{% endif %}>
+<td class="small">{{ e.created_at|date:"d/m/Y H:i" }}</td><td class="keep">{{ e.reference }}{% if e.is_cancelled %} <span class="badge bad">{% trans "cancelled" %}</span>{% endif %}</td>
+<td class="small">{% if e.kind == 'SUPPLY' %}{% trans "Supply" %}{% else %}{% trans "Payment" %}{% endif %}</td>
+<td>{{ e.client_label }}<br><span class="small muted">{{ e.get_client_kind_display }}{% if e.client_phone %} · {{ e.client_phone }}{% endif %}</span></td>
+<td class="money">{% if e.uve %}{{ e.uve|fcfa }}{% endif %}</td><td class="money">{% if e.er %}{{ e.er|fcfa }}{% endif %}</td><td class="money">{% if e.cash %}{{ e.cash|fcfa }}{% endif %}</td>
+<td class="money">{% if e.paid %}{{ e.paid|fcfa }}{% endif %}</td><td class="money{% if e.balance_effect|negative %} neg{% endif %}">{{ e.balance_effect|fcfa }}</td>
+<td class="small">{{ e.note }}{% if e.cancel_reason %}<br><span class="muted">{{ e.cancel_reason }}</span>{% endif %}</td>
+{% if cancel %}<td>{% if not e.is_cancelled and e.business_date == today %}<details class="reject"><summary class="btn small">{% trans "Cancel" %}</summary><form method="post" action="{% url 'agent_entry_cancel' e.pk %}">{% csrf_token %}<input type="text" name="reason" required maxlength="255" placeholder="{% trans 'Why?' %}"><button class="btn small danger">{% trans "Cancel it" %}</button></form></details>{% endif %}</td>{% endif %}
+</tr>{% empty %}<tr><td colspan="11" class="muted">{% trans "Nothing recorded yet." %}</td></tr>{% endfor %}</tbody></table></div>

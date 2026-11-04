@@ -1,0 +1,15 @@
+{% extends "core/base.html" %}{% load i18n cashier %}
+{% block title %}{% trans "Agent paybacks" %}{% endblock %}
+{% block topbar %}{% trans "Agent paybacks" %}{% endblock %}
+{% block content %}
+<h1>{% trans "Agent paybacks" %}</h1>
+<p class="muted">{% trans "Commercial agents send UVE to the master SIM and cash or MTN float to the cashier of their zone, then declare it here. The cashier of that desk confirms once received: it is then recorded as the agent's payment, with a receipt." %}</p>
+<h2>{% trans "Waiting for confirmation" %}</h2>
+{% if pending %}{% include "core/agent/inc/payback_rows.html" with rows=pending next_url=request.get_full_path %}{% else %}<p class="muted">{% trans "Nothing waiting." %}</p>{% endif %}
+<h2>{% trans "Decided" %}</h2>
+<div class="chips"><a class="chip{% if not status %} on{% endif %}" href="?">{% trans "All" %}</a><a class="chip{% if status == 'CONFIRMED' %} on{% endif %}" href="?status=CONFIRMED">{% trans "Confirmed" %}</a><a class="chip{% if status == 'REJECTED' %} on{% endif %}" href="?status=REJECTED">{% trans "Rejected" %}</a></div>
+<div class="tbl-wrap"><table class="t"><thead><tr><th>{% trans "Payback" %}</th><th>{% trans "Agent" %}</th><th>{% trans "Desk" %}</th><th>{% trans "Sent at" %}</th><th class="money">{% trans "Total" %}</th><th>{% trans "Status" %}</th><th>{% trans "By" %}</th></tr></thead>
+<tbody>{% for p in page %}<tr><td class="keep">{{ p.code }}</td><td>{{ p.agent.name }}</td><td class="small">{{ p.desk }}</td><td class="small">{{ p.created_at|date:"d/m/Y H:i" }}</td><td class="money">{{ p.total|fcfa }}</td><td>{% include "core/agent/inc/payback_status.html" %}</td><td class="small">{{ p.decided_by|default:"" }}{% if p.decided_at %}<br><span class="muted">{{ p.decided_at|date:"d/m/Y H:i" }}</span>{% endif %}</td></tr>
+{% empty %}<tr><td colspan="7" class="muted">{% trans "Nothing yet." %}</td></tr>{% endfor %}</tbody></table></div>
+<div class="pager">{% if page.has_previous %}<a class="btn small" href="?status={{ status }}&page={{ page.previous_page_number }}">←</a>{% endif %}<span class="muted small">{{ page.number }} / {{ page.paginator.num_pages }}</span>{% if page.has_next %}<a class="btn small" href="?status={{ status }}&page={{ page.next_page_number }}">→</a>{% endif %}</div>
+{% endblock %}

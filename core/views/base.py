@@ -19,7 +19,6 @@ from core.models import Account, Discrepancy, Entry, Transaction, User
 from core.services import permissions as perm
 from core.services.days import douala_today, peek_open_day
 from core.services.errors import BusinessError, DuplicateSubmission
-from core.services.ledger import balance
 
 R = User.Role
 
@@ -223,12 +222,9 @@ def dashboard(request):
     if user.is_shop_user:
         return redirect("shops")
     if user.is_agent:
-        cp = user.counterparty
-        ctx["cp"] = cp
-        ctx["balance"] = balance(cp.account)
-        ctx["recent"] = Transaction.objects.filter(entries__account=cp.account).select_related(
-            "entered_by", "counterparty", "counterparty_2").order_by("-posted_at")[:15]
-        return render(request, "core/dashboard_agent.html", ctx)
+        from .agents import agent_home
+
+        return agent_home(request)
     if user.is_cashier:
         from core.services.closing import zone_closing_accounts
 
@@ -246,6 +242,9 @@ def dashboard(request):
 
         ctx["unpaid"] = st.unpaid_for_desk(user.subzone) if user.subzone_id else []
         ctx["unpaid_total"] = sum((o for _h, o in ctx["unpaid"]), Decimal(0))
+        from core.services import agents as ag
+
+        ctx["paybacks"] = list(ag.pending_for_desk(user.subzone))
         ctx["open_disc"] = Discrepancy.objects.filter(
             status="OPEN", account__in=[a.id for a in zone_accts]).count()
         return render(request, "core/dashboard_cashier.html", ctx)

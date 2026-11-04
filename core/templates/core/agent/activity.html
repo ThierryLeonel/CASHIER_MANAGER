@@ -1,0 +1,29 @@
+{% extends "core/base.html" %}{% load i18n cashier %}
+{% block title %}{% trans "My transactions" %}{% endblock %}
+{% block topbar %}{% trans "My transactions" %}{% endblock %}
+{% block content %}
+<h1>{% trans "My transactions" %}</h1>
+<div class="chips">{% for k, label in tabs %}<a class="chip{% if tab == k %} on{% endif %}" href="?tab={{ k }}&from={{ d_from|date:'Y-m-d' }}&to={{ d_to|date:'Y-m-d' }}">{{ label }}</a>{% endfor %}</div>
+<form class="filters panel" method="get"><input type="hidden" name="tab" value="{{ tab }}">
+  <div class="field"><label>{% trans "From" %}</label><input type="date" name="from" value="{{ d_from|date:'Y-m-d' }}"></div>
+  <div class="field"><label>{% trans "To" %}</label><input type="date" name="to" value="{{ d_to|date:'Y-m-d' }}"></div>
+  {% if tab == 'clients' %}<div class="field"><label>{% trans "Operation" %}</label><select name="kind"><option value="">{% trans "All" %}</option><option value="SUPPLY"{% if kind == 'SUPPLY' %} selected{% endif %}>{% trans "Supplies" %}</option><option value="PAYMENT"{% if kind == 'PAYMENT' %} selected{% endif %}>{% trans "Payments" %}</option></select></div>{% endif %}
+  <div class="field"><button class="btn" type="submit">{% trans "Apply" %}</button></div>
+</form>
+{% if tab == 'office' %}
+<p class="small muted">{% trans "Supplies the office gave you, payments you made to the cashiers, and other company records on your account." %} <a href="{% url 'report' 'statement' %}?preset=all">{% trans "Full statement with running balance" %}</a></p>
+{% include "core/agent/inc/office_rows.html" with rows=page %}
+{% elif tab == 'paybacks' %}
+<div class="actions"><a class="btn primary" href="{% url 'agent_payback' %}">{% trans "Pay back the company" %}</a></div>
+<div class="tbl-wrap"><table class="t"><thead><tr><th>{% trans "Payback" %}</th><th>{% trans "Sent at" %}</th><th>{% trans "Desk" %}</th><th class="money">{% trans "Cash" %}</th><th class="money">UVE</th><th class="money">{% trans "MTN float" %}</th><th class="money">{% trans "Total" %}</th><th>{% trans "Reference / note" %}</th><th>{% trans "Status" %}</th><th></th></tr></thead>
+<tbody>{% for p in page %}<tr><td class="keep">{{ p.code }}</td><td class="small">{{ p.created_at|date:"d/m/Y H:i" }}</td><td class="small">{{ p.desk }}</td><td class="money">{{ p.cash|fcfa }}</td><td class="money">{{ p.uve|fcfa }}</td><td class="money">{{ p.mtn|fcfa }}</td><td class="money"><strong>{{ p.total|fcfa }}</strong></td><td class="small">{{ p.reference|default:"—" }}{% if p.note %}<br><span class="muted">{{ p.note }}</span>{% endif %}</td>
+<td>{% include "core/agent/inc/payback_status.html" %}{% if p.decided_by %}<br><span class="small muted">{{ p.decided_by }} · {{ p.decided_at|date:"d/m/Y H:i" }}</span>{% endif %}</td>
+<td>{% if p.status == 'PENDING' %}<form method="post" action="{% url 'agent_payback_cancel' p.pk %}">{% csrf_token %}<button class="btn small">{% trans "Withdraw" %}</button></form>{% endif %}</td></tr>
+{% empty %}<tr><td colspan="10" class="muted">{% trans "No payback in this period." %}</td></tr>{% endfor %}</tbody></table></div>
+{% else %}
+<div class="actions"><a class="btn primary" href="{% url 'agent_supply' %}">{% trans "Supply a client" %}</a> <a class="btn" href="{% url 'agent_collect' %}">{% trans "A client pays me" %}</a></div>
+<p class="small muted">{% blocktrans with s=sums.supplied|fcfa r=sums.received|fcfa %}In this period: {{ s }} FCFA supplied, {{ r }} FCFA received from clients. A mistaken record of today can be cancelled.{% endblocktrans %}</p>
+{% include "core/agent/inc/entry_rows.html" with rows=page cancel=True %}
+{% endif %}
+<div class="pager">{% if page.has_previous %}<a class="btn small" href="?tab={{ tab }}&from={{ d_from|date:'Y-m-d' }}&to={{ d_to|date:'Y-m-d' }}&kind={{ kind }}&page={{ page.previous_page_number }}">←</a>{% endif %}<span class="muted small">{{ page.number }} / {{ page.paginator.num_pages }}</span>{% if page.has_next %}<a class="btn small" href="?tab={{ tab }}&from={{ d_from|date:'Y-m-d' }}&to={{ d_to|date:'Y-m-d' }}&kind={{ kind }}&page={{ page.next_page_number }}">→</a>{% endif %}</div>
+{% endblock %}

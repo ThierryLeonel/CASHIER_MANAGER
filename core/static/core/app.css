@@ -501,3 +501,22 @@ input.auto { background: var(--soft); font-weight: 700; }
 .expect .ok-txt { color: #2e9d5b; font-weight: 600; }
 label.req::after { content: " *"; }
 .unpaid-box { border-left: 4px solid var(--accent); }
+
+/* ---------- commercial agent portal ---------- */
+.two-col { display: grid; gap: 0 22px; grid-template-columns: repeat(auto-fit, minmax(min(340px, 100%), 1fr)); }
+.payback-box { border-left: 4px solid var(--accent); }
+td.decide { min-width: 190px; }
+td.decide form.inline { display: block; margin: 0 0 6px; }
+details.reject { display: block; }
+details.reject summary { list-style: none; display: inline-block; }
+details.reject summary::-webkit-details-marker { display: none; }
+details.reject[open] form { display: grid; gap: 6px; margin-top: 6px; }
+details.reject input { width: 100%; min-width: 0; }
+.client-kind ul, .client-kind div[id] { display: flex; flex-wrap: wrap; gap: 8px; list-style: none; padding: 0; margin: 0; }
+.client-kind label { font-weight: 600; }
+.client-kind input[type=radio] + * , .client-kind li label, .client-kind div[id] > div label {
+  display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border: 1px solid var(--line); border-radius: 99px;
+  background: var(--panel); cursor: pointer; font-weight: 600; }
+.client-kind li label:has(input:checked), .client-kind div[id] > div label:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+.pos-info { margin-top: 6px; }
+.zone-note { font-size: .85rem; }

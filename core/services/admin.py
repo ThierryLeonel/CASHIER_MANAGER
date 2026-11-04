@@ -120,6 +120,11 @@ def delete_transaction(user, t, *, reason):
 
 def _release_shop_rows(txn_ids):
     """Shop rows hanging on transactions about to be deleted: a deleted sale puts its units back in stock."""
+    from core.models import AgentPayback
+
+    # an agent payback whose payment is deleted is no longer confirmed (the agent declares it again if needed)
+    AgentPayback.objects.filter(transaction_id__in=txn_ids).update(
+        status=AgentPayback.Status.REJECTED, transaction=None, reject_reason="Payment deleted by the administrator")
     sales = ItemSale.objects.filter(transaction_id__in=txn_ids)
     StockUnit.objects.filter(sale__in=sales).update(status=StockUnit.Status.IN_STOCK, sale=None)
     # a deleted purchase takes its units out of the stock again (refused when one was already sold)
@@ -235,6 +240,11 @@ def clear_data(user, *, scope, password, confirm_text):
         return dict(counts)
     with admin_override():
         counts.update(_clear_shop_operations())
+        from core.models import AgentClientEntry, AgentPayback
+
+        counts["agent_records"] = AgentClientEntry.objects.count() + AgentPayback.objects.count()
+        AgentPayback.objects.all().delete()
+        AgentClientEntry.objects.all().delete()
         counts["transactions"] = Transaction.objects.count()
         counts["closings"] = Closing.objects.count()
         DiscrepancyNote.objects.all().delete()

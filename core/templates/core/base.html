@@ -26,6 +26,16 @@
     </div>{% endif %}
     {% if show_cash %}<a href="{% url 'dashboard' %}" class="{% if u == 'dashboard' %}on{% endif %}">{% icon "home" %}<span>{% trans "Home" %}</span></a>{% endif %}
 
+    {% if user.is_agent %}
+    <div class="side-group">{% trans "My work" %}</div>
+    <a href="{% url 'agent_supply' %}" class="{% if u == 'agent_supply' %}on{% endif %}">{% icon "supply" %}<span>{% trans "Supply a client" %}</span></a>
+    <a href="{% url 'agent_collect' %}" class="{% if u == 'agent_collect' %}on{% endif %}">{% icon "payment" %}<span>{% trans "A client pays me" %}</span></a>
+    <a href="{% url 'agent_payback' %}" class="{% if u == 'agent_payback' %}on{% endif %}">{% icon "transfer" %}<span>{% trans "Pay back the company" %}</span></a>
+    <div class="side-group">{% trans "Follow-up" %}</div>
+    <a href="{% url 'agent_pos' %}" class="{% if u == 'agent_pos' or u == 'agent_pos_detail' %}on{% endif %}">{% icon "store" %}<span>{% trans "My POS" %}</span></a>
+    <a href="{% url 'agent_activity' %}" class="{% if u == 'agent_activity' %}on{% endif %}">{% icon "list" %}<span>{% trans "My transactions" %}</span></a>
+    {% endif %}
+
     {% if show_cash and user.is_cashier or show_cash and user.is_superadmin %}
     <div class="side-group">{% trans "Record" %}</div>
     {% if user.is_superadmin %}<a href="{% url 'act_as' %}" class="acting{% if u == 'act_as' %} on{% endif %}">{% icon "users" %}<span>{% if acting_cashier %}{% blocktrans with c=acting_cashier %}For: {{ c }}{% endblocktrans %}{% else %}{% trans "Choose a cashier…" %}{% endif %}</span></a>{% endif %}
@@ -93,6 +103,7 @@
     <a href="{% url 'customers' %}" class="{% if u == 'customers' or u == 'customer_new' or u == 'customer_edit' %}on{% endif %}">{% icon "users" %}<span>{% trans "Agents & POS" %}</span></a>
     <a href="{% url 'txn_list' %}" class="{% if u == 'txn_list' or u == 'txn_detail' or u == 'receipt' or u == 'txn_correct' or u == 'txn_transfer' %}on{% endif %}">{% icon "list" %}<span>{% trans "Transactions" %}</span></a>
     <a href="{% url 'exchanges' %}" class="{% if u == 'exchanges' or u == 'exchange_detail' or u == 'exchange_new' %}on{% endif %}">{% icon "bank" %}<span>{% trans "Cash managers" %}</span></a>
+    <a href="{% url 'paybacks' %}" class="{% if u == 'paybacks' %}on{% endif %}">{% icon "payment" %}<span>{% trans "Agent paybacks" %}</span></a>
 
     <div class="side-group">{% trans "End of day" %}</div>
     {% if user.is_cashier %}<a href="{% url 'close_day' %}" class="{% if u == 'close_day' %}on{% endif %}">{% icon "lock" %}<span>{% trans "Close day" %}</span></a>{% endif %}

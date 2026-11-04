@@ -9,3 +9,4 @@ from .shops import (  # noqa: F401,E402
     ItemCategory, ItemSale, ServiceCount, Shop, ShopDayReview, ShopShift, ShopConversionRate, ShopItem, ShopService, SimRetrieval, StockMove,
     StockUnit,
 )
+from .agents import AgentClientEntry, AgentPayback, ClientKind  # noqa: F401,E402

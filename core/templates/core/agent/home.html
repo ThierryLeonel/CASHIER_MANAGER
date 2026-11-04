@@ -1,0 +1,43 @@
+{% extends "core/base.html" %}{% load i18n cashier %}
+{% block title %}{% trans "My portal" %}{% endblock %}
+{% block topbar %}{% trans "My portal" %}{% endblock %}
+{% block content %}
+<h1>{{ cp.name }}</h1>
+<p class="muted">{% trans "Business SIM" %} {{ cp.business_sim|sim }}{% if s.zone %} · {% trans "Zone" %} {{ s.zone.name }}{% endif %}{% if cp.microzone %} · {{ cp.microzone.name }}{% endif %}</p>
+<div class="bal-row">
+  <div class="bal k-CASH_DRAWER"><span class="bal-label">{% if s.owed_company|negative %}{% trans "The company owes you" %}{% else %}{% trans "I owe the company" %}{% endif %}</span><span class="bal-value">{{ s.owed_company|absval|fcfa }}</span><span class="bal-unit">FCFA</span></div>
+  <div class="bal k-MTN"><span class="bal-label">{% trans "Paybacks waiting for the cashier" %}</span><span class="bal-value">{{ s.pending_total|fcfa }}</span><span class="bal-unit">FCFA · {{ s.pending }}</span></div>
+  <div class="bal k-UVE"><span class="bal-label">{% trans "My clients owe me" %}</span><span class="bal-value">{{ s.clients_owe|fcfa }}</span><span class="bal-unit">FCFA</span></div>
+  <div class="bal k-ER"><span class="bal-label">{% trans "Supplied today" %}</span><span class="bal-value">{{ s.today_supplied|fcfa }}</span><span class="bal-unit">FCFA</span></div>
+</div>
+<div class="quick">
+  <a class="qa main" href="{% url 'agent_supply' %}"><span class="qa-ic">{% icon "supply" 22 %}</span><strong>{% trans "Supply a client" %}</strong><span class="d">{% trans "POS, shop or other · UVE, ER, cash" %}</span></a>
+  <a class="qa" href="{% url 'agent_collect' %}"><span class="qa-ic">{% icon "payment" 22 %}</span><strong>{% trans "A client pays me" %}</strong><span class="d">{% trans "Money received from a client" %}</span></a>
+  <a class="qa" href="{% url 'agent_payback' %}"><span class="qa-ic">{% icon "transfer" 22 %}</span><strong>{% trans "Pay back the company" %}</strong><span class="d">{% trans "UVE to the master SIM, cash or MTN to the cashier" %}</span></a>
+  <a class="qa" href="{% url 'agent_pos' %}"><span class="qa-ic">{% icon "store" 22 %}</span><strong>{% trans "My POS" %}</strong><span class="d">{% trans "Every POS of my zone" %}</span></a>
+</div>
+
+<div class="two-col">
+<section>
+<h2>{% trans "My stock (estimate)" %}</h2>
+<p class="small muted">{% trans "Received from the office minus what you recorded as supplied to your clients." %}</p>
+<div class="tbl-wrap"><table class="t"><thead><tr><th>{% trans "Product" %}</th><th class="money">{% trans "From the office" %}</th><th class="money">{% trans "Supplied out" %}</th><th class="money">{% trans "Left" %}</th></tr></thead>
+<tbody>{% for label, rec, out, left in s.stock %}<tr><td>{{ label }}</td><td class="money">{{ rec|fcfa }}</td><td class="money">{{ out|fcfa }}</td><td class="money{% if left|negative %} neg{% endif %}"><strong>{{ left|fcfa }}</strong></td></tr>{% endfor %}</tbody></table></div>
+</section>
+<section>
+<h2>{% trans "Clients who owe me" %}</h2>
+<div class="tbl-wrap"><table class="t"><thead><tr><th>{% trans "Client" %}</th><th>{% trans "Type" %}</th><th>{% trans "Last" %}</th><th class="money">{% trans "Owes me" %}</th></tr></thead>
+<tbody>{% for g in s.clients|slice:":10" %}<tr><td>{% if g.in_zone %}<a href="{% url 'agent_pos_detail' g.pos.pk %}">{{ g.label }}</a>{% else %}{{ g.label }}{% endif %}{% if g.pos and not g.in_zone %} <span class="badge">{% trans "other zone" %}</span>{% endif %}</td><td class="small">{{ g.kind }}</td><td class="small">{{ g.last.business_date|date:"d/m/Y" }}</td><td class="money{% if g.owed|negative %} neg{% endif %}">{{ g.owed|fcfa }}</td></tr>
+{% empty %}<tr><td colspan="4" class="muted">{% trans "No client owes you anything." %}</td></tr>{% endfor %}</tbody></table></div>
+</section>
+</div>
+
+<h2>{% trans "My paybacks" %}</h2>
+<div class="tbl-wrap"><table class="t"><thead><tr><th>{% trans "Payback" %}</th><th>{% trans "Sent at" %}</th><th>{% trans "Desk" %}</th><th class="money">{% trans "Total" %}</th><th>{% trans "Status" %}</th></tr></thead>
+<tbody>{% for p in paybacks %}<tr><td class="keep">{{ p.code }}</td><td class="small">{{ p.created_at|date:"d/m/Y H:i" }}</td><td class="small">{{ p.desk }}</td><td class="money">{{ p.total|fcfa }}</td><td>{% include "core/agent/inc/payback_status.html" %}</td></tr>
+{% empty %}<tr><td colspan="5" class="muted">{% trans "No payback yet." %}</td></tr>{% endfor %}</tbody></table></div>
+
+<h2>{% trans "Latest from the office" %}</h2>
+{% include "core/agent/inc/office_rows.html" with rows=office %}
+<div class="actions"><a class="btn" href="{% url 'agent_activity' %}?tab=office">{% trans "All office supplies and payments" %}</a> <a class="btn" href="{% url 'report' 'statement' %}?preset=all">{% trans "Full statement" %}</a></div>
+{% endblock %}

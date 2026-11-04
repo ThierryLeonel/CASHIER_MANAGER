@@ -1,0 +1,20 @@
+{% extends "core/base.html" %}{% load i18n cashier %}
+{% block title %}{{ pos.name }}{% endblock %}
+{% block topbar %}{% trans "My POS" %}{% endblock %}
+{% block content %}
+<p><a href="{% url 'agent_pos' %}">← {% trans "My POS" %}</a></p>
+<h1>{{ pos.name }}</h1>
+<div class="panel"><dl class="kv">
+  <dt>{% trans "Business SIM" %}</dt><dd>{{ pos.business_sim|sim }}</dd>
+  <dt>{% trans "Zone" %}</dt><dd>{{ pos.master_zone|default:"—" }}</dd>
+  <dt>{% trans "Microzone" %}</dt><dd>{% if pos.microzone %}{{ pos.microzone.subzone.name }} › {{ pos.microzone.name }}{% else %}—{% endif %}</dd>
+  <dt>{% trans "Agent in charge" %}</dt><dd>{{ pos.agent_in_charge.name|default:"—" }}</dd>
+  <dt>{% trans "Other phone" %}</dt><dd>{{ pos.other_phone|default:"—" }}</dd>
+  <dt>{% trans "Notes" %}</dt><dd>{{ pos.notes|default:"—" }}</dd>
+  <dt>{% trans "Status" %}</dt><dd>{% if pos.active %}{% trans "active" %}{% else %}{% trans "inactive" %}{% endif %}</dd>
+</dl></div>
+<div class="bal-row"><div class="bal k-UVE"><span class="bal-label">{% trans "Owes me" %}</span><span class="bal-value">{{ owed|fcfa }}</span><span class="bal-unit">FCFA</span></div></div>
+{% if pos.active %}<div class="actions"><a class="btn primary" href="{% url 'agent_supply' %}?pos={{ pos.business_sim }}">{% trans "Supply this POS" %}</a> <a class="btn" href="{% url 'agent_collect' %}?pos={{ pos.business_sim }}">{% trans "This POS pays me" %}</a></div>{% endif %}
+<h2>{% trans "My dealings with this POS" %}</h2>
+{% include "core/agent/inc/entry_rows.html" with rows=entries %}
+{% endblock %}

@@ -1,0 +1,10 @@
+{% load i18n cashier %}<div class="tbl-wrap"><table class="t"><thead><tr><th>{% trans "Payback" %}</th><th>{% trans "Agent" %}</th><th>{% trans "Desk" %}</th><th>{% trans "Sent at" %}</th><th class="money">{% trans "Cash" %}</th><th class="money">UVE</th><th class="money">{% trans "MTN float" %}</th><th class="money">{% trans "Total" %}</th><th>{% trans "Reference / note" %}</th><th></th></tr></thead>
+<tbody>{% for p in rows %}<tr>
+<td class="keep">{{ p.code }}</td><td>{{ p.agent.name }}<br><span class="small muted">{{ p.agent.business_sim|sim }}</span></td><td class="small">{{ p.desk }}</td><td class="small">{{ p.created_at|date:"d/m/Y H:i" }}</td>
+<td class="money">{{ p.cash|fcfa }}</td><td class="money">{{ p.uve|fcfa }}</td><td class="money">{{ p.mtn|fcfa }}</td><td class="money"><strong>{{ p.total|fcfa }}</strong></td>
+<td class="small">{{ p.reference|default:"—" }}{% if p.note %}<br><span class="muted">{{ p.note }}</span>{% endif %}</td>
+<td class="decide">{% if user.is_cashier and user.subzone_id == p.desk_id %}
+<form method="post" action="{% url 'payback_decide' p.pk %}" class="inline">{% csrf_token %}<input type="hidden" name="next" value="{{ next_url }}"><button class="btn small primary" name="action" value="confirm">{% trans "Confirm received" %}</button></form>
+<details class="reject"><summary class="btn small">{% trans "Reject" %}</summary><form method="post" action="{% url 'payback_decide' p.pk %}">{% csrf_token %}<input type="hidden" name="next" value="{{ next_url }}"><input type="text" name="reason" required maxlength="255" placeholder="{% trans 'Why? e.g. nothing received' %}"><button class="btn small danger" name="action" value="reject">{% trans "Reject" %}</button></form></details>
+{% else %}<span class="small muted">{% trans "Waiting for the cashier" %}</span>{% endif %}</td>
+</tr>{% endfor %}</tbody></table></div>
