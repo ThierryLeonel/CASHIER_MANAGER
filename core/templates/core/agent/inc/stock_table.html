@@ -4,7 +4,8 @@
 <tr><td>{% trans "Opening" %}</td>{% for r in rec.stock %}<td class="money">{{ r.opening|fcfa }}</td>{% endfor %}</tr>
 <tr><td>+ {% trans "From the office" %}</td>{% for r in rec.stock %}<td class="money">{{ r.office|fcfa }}</td>{% endfor %}</tr>
 {% if not compact %}<tr><td>+ {% trans "From agents" %}</td>{% for r in rec.stock %}<td class="money">{{ r.from_agents|fcfa }}</td>{% endfor %}</tr>
-<tr><td>+ {% trans "Collected" %}</td>{% for r in rec.stock %}<td class="money">{{ r.collected|fcfa }}</td>{% endfor %}</tr>{% endif %}
+<tr><td>+ {% trans "Collected" %}</td>{% for r in rec.stock %}<td class="money">{{ r.collected|fcfa }}</td>{% endfor %}</tr>
+<tr><td>± {% trans "Float exchanges" %}</td>{% for r in rec.stock %}<td class="money">{{ r.exchanged|fcfa }}</td>{% endfor %}</tr>{% endif %}
 <tr><td>− {% trans "Supplied" %}</td>{% for r in rec.stock %}<td class="money">{{ r.to_clients|fcfa }}</td>{% endfor %}</tr>
 {% if not compact %}<tr><td>− {% trans "To agents" %}</td>{% for r in rec.stock %}<td class="money">{{ r.to_agents|fcfa }}</td>{% endfor %}</tr>
 <tr><td>− {% trans "Paid back" %}</td>{% for r in rec.stock %}<td class="money">{{ r.paid_back|fcfa }}</td>{% endfor %}</tr>{% endif %}

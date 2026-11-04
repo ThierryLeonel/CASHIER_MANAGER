@@ -10,3 +10,14 @@
 <div class="form-foot"><button class="btn danger" type="submit">{% trans "Clear the data" %}</button><a class="btn" href="{% url 'admin_home' %}">{% trans "Cancel" %}</a></div>
 </form></div>
 {% endblock %}
+{% block scripts %}<script>
+(function () {
+  var f = document.querySelector('form.entry');
+  function sync() {
+    var v = (f.querySelector('input[name=scope]:checked') || {}).value;
+    document.getElementById('fld-agent').hidden = v !== 'agents';
+    document.getElementById('fld-target_user').hidden = v !== 'user';
+  }
+  f.querySelectorAll('input[name=scope]').forEach(function (r) { r.addEventListener('change', sync); }); sync();
+})();
+</script>{% endblock %}

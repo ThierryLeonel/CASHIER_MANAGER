@@ -68,9 +68,11 @@ def clear_data(request):
         cd = form.cleaned_data
         try:
             counts = adm.clear_data(request.user, scope=cd["scope"], password=cd["password"],
-                                    confirm_text=cd["confirm_text"])
-            messages.success(request, _("Data cleared (%(n)s transactions removed). This action is recorded in the "
-                                        "audit log.") % {"n": counts.get("transactions", 0)})
+                                    confirm_text=cd["confirm_text"], agent=cd.get("agent"),
+                                    target_user=cd.get("target_user"))
+            messages.success(request, _("Data cleared (%(n)s transactions and %(a)s agent records removed). This "
+                                        "action is recorded in the audit log.")
+                             % {"n": counts.get("transactions", 0), "a": counts.get("agent_records", 0)})
             return redirect("admin_home")
         except BusinessError as e:
             form.add_error(e.field if e.field in form.fields else None, e.message)

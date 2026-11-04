@@ -6,13 +6,15 @@
 <p class="muted small">{{ cp.business_sim|sim }}{% if s.zone %} · {{ s.zone.name }}{% endif %}{% if cp.microzone %} · {{ cp.microzone.name }}{% endif %}</p>
 <div class="bal-row">
   <div class="bal k-CASH_DRAWER"><span class="bal-label">{% if s.owed_company|negative %}{% trans "The company owes you" %}{% else %}{% trans "I owe the company" %}{% endif %}</span><span class="bal-value">{{ s.owed_company|absval|fcfa }}</span><span class="bal-unit">FCFA{% if s.pending %} · {% blocktrans with n=s.pending %}{{ n }} waiting{% endblocktrans %}{% endif %}</span></div>
-  <div class="bal k-UVE"><span class="bal-label">{% trans "My clients owe me" %}</span><span class="bal-value">{{ s.clients_owe|fcfa }}</span><span class="bal-unit">FCFA</span></div>
+  <a class="bal k-UVE bal-link" href="{% url 'agent_debtors' %}"><span class="bal-label">{% trans "My clients owe me" %}</span><span class="bal-value">{{ s.clients_owe|fcfa }}</span><span class="bal-unit">FCFA · {% trans "see my debtors" %} →</span></a>
 </div>
 <div class="quick">
   <a class="qa main" href="{% url 'agent_supply' %}"><span class="qa-ic">{% icon "supply" 22 %}</span><strong>{% trans "Supply a client" %}</strong></a>
   <a class="qa" href="{% url 'agent_collect' %}"><span class="qa-ic">{% icon "payment" 22 %}</span><strong>{% trans "A client pays me" %}</strong></a>
   <a class="qa" href="{% url 'agent_payback' %}"><span class="qa-ic">{% icon "transfer" 22 %}</span><strong>{% trans "Pay back the company" %}</strong></a>
   <a class="qa" href="{% url 'agent_transfer' %}"><span class="qa-ic">{% icon "users" 22 %}</span><strong>{% trans "Transfer to an agent" %}</strong></a>
+  <a class="qa" href="{% url 'agent_exchange' %}"><span class="qa-ic">{% icon "convert" 22 %}</span><strong>{% trans "Float exchange" %}</strong></a>
+  <a class="qa" href="{% url 'agent_debtors' %}"><span class="qa-ic">{% icon "list" 22 %}</span><strong>{% trans "My debtors" %}</strong></a>
 </div>
 <h2>{% trans "Today" %}</h2>
 {% include "core/agent/inc/stock_table.html" with rec=rec compact=True %}

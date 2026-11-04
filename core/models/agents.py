@@ -45,7 +45,10 @@ class AgentClientEntry(models.Model):
     uve = models.DecimalField(_("UVE"), default=Z, **MONEY)
     er = models.DecimalField(_("ER"), default=Z, **MONEY)
     cash = models.DecimalField(_("cash"), default=Z, **MONEY)
-    paid = models.DecimalField(_("amount received"), default=Z, **MONEY)
+    paid = models.DecimalField(_("amount received"), default=Z, **MONEY)  # total of the three below
+    paid_cash = models.DecimalField(_("received in cash"), default=Z, **MONEY)
+    paid_uve = models.DecimalField(_("received in UVE"), default=Z, **MONEY)
+    paid_mtn = models.DecimalField(_("received in float"), default=Z, **MONEY)
     note = models.CharField(_("note"), max_length=255, blank=True)
     business_date = models.DateField(db_index=True)
     created_at = models.DateTimeField(default=timezone.now)
@@ -112,6 +115,53 @@ class AgentClientEntry(models.Model):
             return ("AGENT", self.to_agent_id)
         phone = "".join(ch for ch in (self.client_phone or "") if ch.isdigit())[-9:]
         return ("OTHER", phone or (self.client_name or "").strip().lower())
+
+
+class AgentExchange(models.Model):
+    """The agent exchanges MTN float 1:1: he sends float and receives UVE or cash, or receives float and sends UVE."""
+
+    class Direction(models.TextChoices):
+        SEND_FLOAT_UVE = "SEND_FLOAT_UVE", _("I send float, I receive UVE")
+        SEND_FLOAT_CASH = "SEND_FLOAT_CASH", _("I send float, I receive cash")
+        RECEIVE_FLOAT_UVE = "RECEIVE_FLOAT_UVE", _("I receive float, I send UVE")
+
+    # (product given, product received)
+    MOVES = {"SEND_FLOAT_UVE": ("MTN", "UVE"), "SEND_FLOAT_CASH": ("MTN", "CASH"), "RECEIVE_FLOAT_UVE": ("UVE", "MTN")}
+
+    agent = models.ForeignKey(Counterparty, on_delete=models.PROTECT, related_name="float_exchanges",
+                              limit_choices_to={"kind": "AGENT"})
+    direction = models.CharField(_("exchange"), max_length=17, choices=Direction.choices)
+    amount = models.DecimalField(_("amount"), **MONEY)
+    other_phone = models.CharField(_("other party's number"), max_length=30, blank=True)
+    note = models.CharField(_("note"), max_length=255, blank=True)
+    business_date = models.DateField(db_index=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    recorded_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name="+")
+    cancelled_at = models.DateTimeField(null=True, blank=True)
+    cancel_reason = models.CharField(max_length=255, blank=True)
+    idem = models.UUIDField(null=True, blank=True, unique=True, editable=False)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return self.reference
+
+    @property
+    def reference(self):
+        return f"AX-{self.pk:06d}"
+
+    @property
+    def gives(self):
+        return self.MOVES[self.direction][0]
+
+    @property
+    def receives(self):
+        return self.MOVES[self.direction][1]
+
+    @property
+    def is_cancelled(self):
+        return self.cancelled_at is not None
 
 
 class AgentPayback(models.Model):

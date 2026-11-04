@@ -635,10 +635,32 @@ class ClearDataForm(forms.Form):
                           "cashiers' data)")),
               ("transactions", _("All transactions (cashiers and shops), closings, differences, shifts, stock and "
                                  "shop records (keep agents, POS and configuration)")),
-              ("everything", _("Everything above, plus agents, POS, agent logins and cash managers"))]
+              ("everything", _("Everything above, plus agents, POS, agent logins and cash managers")),
+              ("agents", _("Commercial agents' records only: their supplies to POS, shops and clients, client payments, "
+                           "transfers between agents, float exchanges and paybacks (company records are kept)")),
+              ("user", _("One user's records: everything this user entered (transactions, shifts, services, SIM "
+                         "retrievals; for an agent, his portal records)"))]
     scope = forms.ChoiceField(label=_("What to clear"), choices=SCOPES, widget=forms.RadioSelect)
+    agent = forms.ModelChoiceField(label=_("Commercial agent"), required=False, queryset=None,
+                                   empty_label=_("All commercial agents"),
+                                   help_text=_("For the commercial agents' records: one agent, or all of them."))
+    target_user = forms.ModelChoiceField(label=_("User"), required=False, queryset=None,
+                                         help_text=_("For one user's records."))
     confirm_text = forms.CharField(label=_("Type DELETE to confirm"), max_length=20)
     password = forms.CharField(label=_("Your password"), widget=forms.PasswordInput)
+
+
+def _init_clear_form(self, *args, **kwargs):
+    forms.Form.__init__(self, *args, **kwargs)
+    from core.models import Counterparty, User
+
+    self.fields["agent"].queryset = Counterparty.objects.filter(kind="AGENT").order_by("name")
+    self.fields["target_user"].queryset = User.objects.exclude(role="SUPERADMIN").order_by("username")
+    self.fields["target_user"].label_from_instance = lambda u: f"{u.username} · {u.get_full_name() or ''} · " \
+                                                                f"{u.get_role_display()}"
+
+
+ClearDataForm.__init__ = _init_clear_form
 
 
 class ImportForm(forms.Form):

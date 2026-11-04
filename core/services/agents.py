@@ -17,7 +17,7 @@ from django.utils import timezone
 from django.utils.translation import gettext as _
 
 from core.models import (
-    AgentClientEntry, AgentPayback, ClientKind, Counterparty, PaymentMethod, Product, Transaction, TxType, Zone,
+    AgentClientEntry, AgentExchange, AgentPayback, ClientKind, Counterparty, PaymentMethod, Product, Transaction, TxType, Zone,
 )
 from core.money import MoneyError, fmt, to_money
 
@@ -152,35 +152,89 @@ def _create(model, idem, **fields):
 
 
 # ---------------------------------------------------------------- recording
+def _paid(paid, paid_cash, paid_uve, paid_mtn):
+    """What the client paid, by how: cash, UVE, MTN float. `paid` alone (older callers) is cash."""
+    parts = {"paid_cash": _amt(paid_cash, "paid_cash"), "paid_uve": _amt(paid_uve, "paid_uve"),
+             "paid_mtn": _amt(paid_mtn, "paid_mtn")}
+    if not any(parts.values()) and paid not in (None, ""):
+        parts["paid_cash"] = _amt(paid, "paid_cash")
+    parts["paid"] = sum(parts.values(), Z)
+    return parts
+
+
 def record_supply(user, *, client_kind, pos_sim="", shop=None, client_name="", client_phone="", agent_sim="",
-                  uve=None, er=None, cash=None, paid=None, note="", idempotency_key=None):
-    """A supply to a POS, a shop or another client, or a transfer to another commercial agent (client_kind AGENT)."""
+                  uve=None, er=None, cash=None, paid=None, paid_cash=None, paid_uve=None, paid_mtn=None, note="",
+                  idempotency_key=None):
+    """A supply to a POS, a shop or another client, or a transfer to another commercial agent (client_kind AGENT).
+
+    Stock: what is supplied leaves the agent's stock (cash, UVE or ER); what the client pays comes in, in the way he
+    paid — a cash supply is usually paid back in UVE, a UVE / ER supply in cash or MTN float."""
     agent = agent_of(user)
     client = _client(agent, client_kind, pos_sim, shop, client_phone, agent_sim, client_name)
-    if client_kind == ClientKind.AGENT:
-        paid = None  # a transfer between agents moves stock; nothing is owed through the portal
-    vals = {k: _amt(v, k) for k, v in (("uve", uve), ("er", er), ("cash", cash), ("paid", paid))}
+    vals = {k: _amt(v, k) for k, v in (("uve", uve), ("er", er), ("cash", cash))}
+    vals.update(_paid(paid, paid_cash, paid_uve, paid_mtn))
+    if client_kind == ClientKind.AGENT:  # a transfer between agents moves stock; nothing is owed through the portal
+        vals.update(paid=Z, paid_cash=Z, paid_uve=Z, paid_mtn=Z)
     total = vals["uve"] + vals["er"] + vals["cash"]
     if total <= 0:
-        raise BusinessError(_("Enter what you supplied in UVE, ER and / or cash."), "uve")
+        raise BusinessError(_("Enter what you supplied in UVE, ER and / or cash."), "amount")
     if vals["paid"] > total:
         raise BusinessError(_("The client cannot pay more than what was supplied now (%(amt)s FCFA). Record the "
-                              "rest as a payment from the client.") % {"amt": fmt(total)}, "paid")
+                              "rest as a payment from the client.") % {"amt": fmt(total)}, "paid_cash")
     return _create(E, idempotency_key, agent=agent, kind=E.Kind.SUPPLY, **client, **vals, note=(note or "").strip(),
                    business_date=douala_today(), recorded_by=user)
 
 
 def record_client_payment(user, *, client_kind, pos_sim="", shop=None, client_name="", client_phone="", amount=None,
-                          note="", idempotency_key=None):
+                          cash=None, uve=None, mtn=None, note="", idempotency_key=None):
+    """A client pays the agent for earlier supplies: in cash, UVE and / or MTN float (`amount` alone = cash)."""
     agent = agent_of(user)
     if client_kind == ClientKind.AGENT:
         raise BusinessError(_("Choose who the client is."), "client_kind")
     client = _client(agent, client_kind, pos_sim, shop, client_phone, "", client_name)
-    amount = _amt(amount, "amount")
-    if amount <= 0:
-        raise BusinessError(_("Enter the amount the client paid you."), "amount")
-    return _create(E, idempotency_key, agent=agent, kind=E.Kind.PAYMENT, **client, paid=amount,
+    parts = _paid(amount, cash, uve, mtn)
+    if parts["paid"] <= 0:
+        raise BusinessError(_("Enter the amount the client paid you."), "cash")
+    return _create(E, idempotency_key, agent=agent, kind=E.Kind.PAYMENT, **client, **parts,
                    note=(note or "").strip(), business_date=douala_today(), recorded_by=user)
+
+
+EX = AgentExchange
+
+
+def record_exchange(user, *, direction, amount, other_phone="", note="", idempotency_key=None):
+    """Float exchange, 1:1: send float and receive UVE or cash, or receive float and send UVE."""
+    agent = agent_of(user)
+    if direction not in EX.Direction.values:
+        raise BusinessError(_("Choose the exchange."), "direction")
+    a = _amt(amount, "amount")
+    if a <= 0:
+        raise BusinessError(_("Amount must be greater than zero."), "amount")
+    phone = _sim(other_phone, "other_phone") if (other_phone or "").strip() else ""
+    if direction == EX.Direction.RECEIVE_FLOAT_UVE and not phone:
+        raise BusinessError(_("Enter the number you send the UVE to."), "other_phone")
+    return _create(EX, idempotency_key, agent=agent, direction=direction, amount=a, other_phone=phone,
+                   note=(note or "").strip(), business_date=douala_today(), recorded_by=user)
+
+
+def cancel_exchange(user, x, reason):
+    agent = agent_of(user)
+    if x.agent_id != agent.pk:
+        raise PermissionDenied(_("This is not your record."))
+    if x.is_cancelled:
+        raise BusinessError(_("This record is already cancelled."))
+    if x.business_date != douala_today():
+        raise BusinessError(_("Only today's records can be cancelled. Record a correcting entry instead."))
+    if not (reason or "").strip():
+        raise BusinessError(_("Say why you cancel this record."), "reason")
+    x.cancelled_at, x.cancel_reason = timezone.now(), reason.strip()
+    x.save(update_fields=["cancelled_at", "cancel_reason"])
+    return x
+
+
+def exchange_code(x):
+    """Sending UVE in an exchange dials the UVE code to the other party's number."""
+    return _code("UVE", x.other_phone, x.amount) if x.gives == "UVE" else ""
 
 
 def cancel_entry(user, entry, reason):
@@ -318,7 +372,7 @@ def supplied_by_product(agent, **filters):
 def stock_estimate(agent):
     """In hand now, per product: [(label, in hand)]."""
     f = _flows(agent)
-    return [(_("Cash") if p == "CASH" else p, _net(f, p)) for p in PRODUCTS]
+    return [(product_label(p), _net(f, p)) for p in PRODUCTS]
 
 
 def clients_owing(agent):
@@ -327,14 +381,26 @@ def clients_owing(agent):
     for e in live_entries(agent).exclude(client_kind=ClientKind.AGENT).select_related("pos", "shop") \
             .order_by("created_at"):
         g = groups.setdefault(e.client_key, {"label": e.client_label, "kind": e.get_client_kind_display(),
-                                             "owed": Z, "last": e, "pos": e.pos, "phone": e.client_phone})
+                                             "kind_code": e.client_kind, "owed": Z, "last": e, "pos": e.pos,
+                                             "shop": e.shop, "phone": e.client_phone,
+                                             "number": client_number(e)})
         g["owed"] += e.balance_effect
         g["last"] = e
     rows = [g for g in groups.values() if g["owed"] != 0]
     rows.sort(key=lambda g: -g["owed"])
     for g in rows:
         g["in_zone"] = g["pos"] is not None and in_zone(agent, g["pos"])
+        g["last_supply"] = live_entries(agent).filter(kind=E.Kind.SUPPLY, **_client_filter(g)) \
+            .order_by("-created_at").values_list("business_date", flat=True).first()
     return rows
+
+
+def _client_filter(g):
+    if g["kind_code"] == ClientKind.POS:
+        return {"pos": g["pos"]}
+    if g["kind_code"] == ClientKind.SHOP:
+        return {"shop": g["shop"]}
+    return {"client_kind": ClientKind.OTHER, "client_phone": g["phone"]}
 
 
 def pos_owed(agent, pos):
@@ -420,7 +486,12 @@ def payback_code(p):
 
 # ---------------------------------------------------------------- office supplies and daily reconciliation
 OFFICE_TYPES = (TxType.SUPPLY, TxType.DESTOCKAGE)
-PRODUCTS = ("UVE", "ER", "CASH")
+PRODUCTS = ("UVE", "ER", "CASH", "MTN")
+PRODUCT_LABELS = {"UVE": "UVE", "ER": "ER"}
+
+
+def product_label(p):
+    return PRODUCT_LABELS.get(p) or (_("Cash") if p == "CASH" else _("Float"))
 
 
 def office_supplies(agent):
@@ -439,7 +510,7 @@ def _flows(agent, d_from=None, d_to=None):
         return qs
 
     f = {k: {p: Z for p in PRODUCTS} for k in ("office", "from_agents", "to_clients", "to_agents", "paid_back",
-                                                 "collected")}
+                                                 "collected", "exchanged")}
     for r in rng(Transaction.objects.filter(type=TxType.SUPPLY, counterparty=agent, counterparty_2__isnull=True,
                                             correction__isnull=True), "business_date") \
             .values("product").annotate(s=Sum("amount")):
@@ -451,15 +522,20 @@ def _flows(agent, d_from=None, d_to=None):
                                         "business_date"))):
         a = qs.aggregate(u=Sum("uve"), e=Sum("er"), c=Sum("cash"))
         f[key].update({"UVE": a["u"] or Z, "ER": a["e"] or Z, "CASH": a["c"] or Z})
-    f["collected"]["CASH"] = mine.exclude(client_kind=ClientKind.AGENT).aggregate(s=Sum("paid"))["s"] or Z
+    c = mine.exclude(client_kind=ClientKind.AGENT).aggregate(c=Sum("paid_cash"), u=Sum("paid_uve"),
+                                                             m=Sum("paid_mtn"))
+    f["collected"].update({"CASH": c["c"] or Z, "UVE": c["u"] or Z, "MTN": c["m"] or Z})
     pb = rng(P.objects.filter(agent=agent).exclude(status=P.Status.REJECTED), "created_at__date") \
-        .aggregate(u=Sum("uve"), c=Sum("cash"))
-    f["paid_back"].update({"UVE": pb["u"] or Z, "CASH": pb["c"] or Z})
+        .aggregate(u=Sum("uve"), c=Sum("cash"), m=Sum("mtn"))
+    f["paid_back"].update({"UVE": pb["u"] or Z, "CASH": pb["c"] or Z, "MTN": pb["m"] or Z})
+    for x in rng(EX.objects.filter(agent=agent, cancelled_at__isnull=True), "business_date"):
+        f["exchanged"][x.gives] -= x.amount
+        f["exchanged"][x.receives] += x.amount
     return f
 
 
 def _net(f, p):
-    return (f["office"][p] + f["from_agents"][p] + f["collected"][p]
+    return (f["office"][p] + f["from_agents"][p] + f["collected"][p] + f["exchanged"][p]
             - f["to_clients"][p] - f["to_agents"][p] - f["paid_back"][p])
 
 
@@ -474,7 +550,7 @@ def daily_reconciliation(agent, day):
     stock = []
     for p in PRODUCTS:
         opening = _net(before, p)
-        stock.append({"product": _("Cash") if p == "CASH" else p, "code": p, "opening": opening,
+        stock.append({"product": product_label(p), "code": p, "opening": opening, "exchanged": today["exchanged"][p],
                       "office": today["office"][p], "from_agents": today["from_agents"][p],
                       "collected": today["collected"][p], "to_clients": today["to_clients"][p],
                       "to_agents": today["to_agents"][p], "paid_back": today["paid_back"][p],
@@ -514,7 +590,9 @@ def daily_summary(agent, d_from, d_to):
                 "office": sum(f["office"].values(), Z),
                 "to_clients": sum(f["to_clients"].values(), Z),
                 "agents_in": sum(f["from_agents"].values(), Z), "agents_out": sum(f["to_agents"].values(), Z),
-                "collected": f["collected"]["CASH"],
+                "collected": sum(f["collected"].values(), Z),
+                "exchanged": sum((x.amount for x in EX.objects.filter(agent=agent, business_date=d,
+                                                                       cancelled_at__isnull=True)), Z),
                 "paid_back": sum(f["paid_back"].values(), Z)}
         if any(v for k, v in line.items() if k != "day"):
             rows.append(line)

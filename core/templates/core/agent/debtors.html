@@ -1,0 +1,19 @@
+{% extends "core/base.html" %}{% load i18n cashier %}
+{% block title %}{% trans "My debtors" %}{% endblock %}
+{% block topbar %}{% trans "My debtors" %}{% endblock %}
+{% block content %}
+<h1>{% trans "My debtors" %}</h1>
+<div class="bal-row"><div class="bal k-UVE"><span class="bal-label">{% trans "Outstanding" %}</span><span class="bal-value">{{ total|fcfa }}</span><span class="bal-unit">FCFA · {{ rows|length }}</span></div></div>
+<div class="debtors">
+{% for g in rows %}<div class="debtor">
+  <div class="d-who"><strong>{{ g.label }}</strong>
+    <span class="small muted">{{ g.kind }}{% if g.number %} · {{ g.number|sim }}{% endif %}{% if g.pos and not g.in_zone %} · {% trans "other zone" %}{% endif %}{% if g.last_supply %} · {% blocktrans with d=g.last_supply|date:"d/m/Y" %}last supply {{ d }}{% endblocktrans %}{% endif %}</span></div>
+  <div class="d-amt">{{ g.owed|fcfa }} <span class="small muted">FCFA</span></div>
+  <div class="d-act">
+    <a class="btn small primary" href="{% url 'agent_collect' %}?{{ g.collect_q }}">{% trans "Receive payment" %}</a>
+    {% if g.number %}<a class="btn small" href="sms:+237{{ g.number }}?body={{ g.sms|urlencode }}">{% trans "Remind" %}</a>{% endif %}
+  </div>
+</div>
+{% empty %}<p class="muted">{% trans "No client owes you anything." %}</p>{% endfor %}
+</div>
+{% endblock %}

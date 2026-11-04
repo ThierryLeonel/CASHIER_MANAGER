@@ -261,3 +261,100 @@ class AgentPortal(OrgMixin, TestCase):
         self.assertIsNotNone(q.transaction)
         adm.clear_data(self.admin, scope="transactions", password=PW, confirm_text="DELETE")
         self.assertFalse(AgentPayback.objects.exists() or AgentClientEntry.objects.exists())
+
+    def test_stock_follows_how_the_client_paid(self):
+        # cash supply paid back in UVE: cash goes down, UVE goes up by what was paid
+        ag.record_supply(self.ua, client_kind="POS", pos_sim=self.p1.business_sim, cash=D(50000), paid_uve=D(30000))
+        # UVE supply paid in cash and float: UVE down, cash and float up
+        ag.record_supply(self.ua, client_kind="POS", pos_sim=self.p1.business_sim, uve=D(40000), paid_cash=D(10000),
+                         paid_mtn=D(20000))
+        # ER supply paid in float
+        ag.record_supply(self.ua, client_kind="SHOP", shop=self.shop, er=D(10000), paid_mtn=D(10000))
+        # later payment in several ways
+        e = ag.record_client_payment(self.ua, client_kind="POS", pos_sim=self.p1.business_sim, cash=D(5000),
+                                     uve=D(2000), mtn=D(3000))
+        self.assertEqual((e.paid, e.paid_cash, e.paid_uve, e.paid_mtn), (D(10000), D(5000), D(2000), D(3000)))
+        st = dict(ag.stock_estimate(self.a1))
+        self.assertEqual(st["UVE"], D(300000 + 30000 - 40000 + 2000))
+        self.assertEqual(st["ER"], D(100000 - 10000))
+        self.assertEqual(st["Cash"], D(-50000 + 10000 + 5000))
+        self.assertEqual(st["Float"], D(20000 + 10000 + 3000))
+        self.assertEqual(ag.pos_owed(self.a1, self.p1), D(90000 - 30000 - 30000 - 10000))
+        with self.assertRaises(BusinessError):  # paid more than supplied
+            ag.record_supply(self.ua, client_kind="POS", pos_sim=self.p1.business_sim, uve=D(100),
+                             paid_cash=D(60), paid_mtn=D(60))
+        # through the page (fetch), with the boxes the form shows
+        c = self.client_for("agent.ndive")
+        d = c.post("/agent/supply/", {"idem": str(uuid.uuid4()), "client_kind": "POS", "pos_sim": self.p1.business_sim,
+                                      "product": "CASH", "amount": "8000", "paid_uve": "8000"},
+                   HTTP_X_REQUESTED_WITH="fetch").json()
+        self.assertTrue(d["ok"])
+        d = c.post("/agent/collect/", {"idem": str(uuid.uuid4()), "client_kind": "POS", "pos_sim": self.p1.business_sim,
+                                       "cash": "1000", "mtn": "500"}, HTTP_X_REQUESTED_WITH="fetch").json()
+        self.assertTrue(d["ok"], d)
+        self.assertEqual(AgentClientEntry.objects.order_by("-pk").first().paid_mtn, D(500))
+
+    def test_float_exchange(self):
+        from core.models import AgentExchange
+
+        ag.record_exchange(self.ua, direction="SEND_FLOAT_UVE", amount=D(10000))
+        ag.record_exchange(self.ua, direction="SEND_FLOAT_CASH", amount=D(4000))
+        x = ag.record_exchange(self.ua, direction="RECEIVE_FLOAT_UVE", amount=D(25000), other_phone="677 12 34 56")
+        self.assertEqual(ag.exchange_code(x), "#149*5*677123456*25000#")
+        with self.assertRaises(BusinessError):  # sending UVE needs the number
+            ag.record_exchange(self.ua, direction="RECEIVE_FLOAT_UVE", amount=D(1))
+        st = dict(ag.stock_estimate(self.a1))
+        self.assertEqual((st["UVE"], st["Cash"], st["Float"]), (D(300000 + 10000 - 25000), D(4000), D(25000 - 14000)))
+        ag.cancel_exchange(self.ua, AgentExchange.objects.get(direction="SEND_FLOAT_CASH"), "mistake")
+        self.assertEqual(dict(ag.stock_estimate(self.a1))["Cash"], D(0))
+        c = self.client_for("agent.ndive")
+        self.assertEqual(c.get("/agent/exchange/").status_code, 200)
+        d = c.post("/agent/exchange/", {"idem": str(uuid.uuid4()), "direction": "RECEIVE_FLOAT_UVE", "amount": "5000",
+                                        "other_phone": "677123456"}, HTTP_X_REQUESTED_WITH="fetch").json()
+        self.assertEqual(d["code"], "#149*5*677123456*5000#")
+        rec = ag.daily_reconciliation(self.a1, AgentExchange.objects.first().business_date)
+        flt = next(r for r in rec["stock"] if r["code"] == "MTN")
+        self.assertEqual(flt["exchanged"], D(25000 + 5000 - 10000))
+
+    def test_debtors(self):
+        ag.record_supply(self.ua, client_kind="POS", pos_sim=self.p1.business_sim, uve=D(50000), paid_cash=D(10000))
+        ag.record_supply(self.ua, client_kind="OTHER", client_phone="677 11 22 33", er=D(5000))
+        ag.record_supply(self.ua, client_kind="SHOP", shop=self.shop, uve=D(3000), paid_cash=D(3000))  # paid
+        c = self.client_for("agent.ndive")
+        r = c.get("/agent/debtors/")
+        self.assertContains(r, self.p1.name)
+        self.assertContains(r, "40 000")
+        self.assertContains(r, f"/agent/collect/?pos={self.p1.business_sim}")
+        self.assertContains(r, "/agent/collect/?phone=677112233")
+        self.assertContains(r, "sms:+237692000001?body=")
+        self.assertNotContains(r, self.shop.name)
+        self.assertContains(c.get(f"/agent/collect/?pos={self.p1.business_sim}"), f'value="{self.p1.business_sim}"')
+
+    def test_clear_agent_and_user_records(self):
+        from core.models import AgentExchange
+        from core.services import admin as adm
+
+        ag.record_supply(self.ua, client_kind="POS", pos_sim=self.p1.business_sim, uve=D(1000))
+        ag.record_exchange(self.ua, direction="SEND_FLOAT_UVE", amount=D(10))
+        ag.record_supply(self.agent_user2, client_kind="POS", pos_sim=self.p1.business_sim, uve=D(2000))
+        p = ag.confirm_payback(self.c_f1, ag.request_payback(self.ua, desk=self.c_f1.subzone, cash=D(5000)))
+        owed = self.cbal(self.a1)
+        adm.clear_data(self.admin, scope="agents", password=PW, confirm_text="DELETE", agent=self.a1)
+        self.assertFalse(AgentClientEntry.objects.filter(agent=self.a1).exists())
+        self.assertFalse(AgentExchange.objects.exists() or AgentPayback.objects.exists())
+        self.assertTrue(AgentClientEntry.objects.filter(agent=self.a2).exists())  # the other agent's records stay
+        self.assertTrue(Transaction.objects.filter(pk=p.transaction_id).exists())  # the company payment stays
+        self.assertEqual(self.cbal(self.a1), owed)
+        adm.clear_data(self.admin, scope="agents", password=PW, confirm_text="DELETE")
+        self.assertFalse(AgentClientEntry.objects.exists())
+        # one user's records: cashier Fako 2's transactions only
+        t2 = ops.record_supply(self.c_f2, product="UVE", customer=self.a2, amount=D(7000), source_account=self.uve_f2)
+        n_f1 = Transaction.objects.filter(entered_by=self.c_f1).count()
+        with self.assertRaises(BusinessError):
+            adm.clear_data(self.admin, scope="user", password=PW, confirm_text="DELETE")
+        adm.clear_data(self.admin, scope="user", password=PW, confirm_text="DELETE", target_user=self.c_f2)
+        self.assertFalse(Transaction.objects.filter(pk=t2.pk).exists())
+        self.assertEqual(Transaction.objects.filter(entered_by=self.c_f1).count(), n_f1)
+        page = self.client_for("admin").get("/administration/clear/")
+        self.assertContains(page, 'name="target_user"')
+        self.assertContains(page, 'name="agent"')

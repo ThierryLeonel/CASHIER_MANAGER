@@ -185,6 +185,10 @@ msgid "%(ref)s: %(amt)s FCFA transferred to %(who)s."
 msgstr "%(ref)s : %(amt)s FCFA transférés à %(who)s."
 
 #, python-format
+msgid "%(ref)s: %(amt)s FCFA — %(what)s."
+msgstr "%(ref)s : %(amt)s FCFA — %(what)s."
+
+#, python-format
 msgid "%(s)s is not a %(item)s."
 msgstr "%(s)s n'est pas un(e) %(item)s."
 
@@ -665,6 +669,9 @@ msgstr "Tout"
 
 msgid "All categories"
 msgstr "Toutes les catégories"
+
+msgid "All commercial agents"
+msgstr "Tous les agents commerciaux"
 
 msgid "All control accounts have their opening balance."
 msgstr "Tous les comptes de contrôle ont leur solde d'ouverture."
@@ -1418,6 +1425,9 @@ msgstr "Choisissez le guichet qui reçoit le transfert."
 msgid "Choose the exchange direction."
 msgstr "Choisissez le sens de l'échange."
 
+msgid "Choose the exchange."
+msgstr "Choisissez l'échange."
+
 msgid "Choose the shop receiving the transfer."
 msgstr "Choisissez la boutique qui reçoit le transfert."
 
@@ -1435,6 +1445,9 @@ msgstr "Choisissez le type de pièce d'identité."
 
 msgid "Choose the unit(s) sold by IMEI / serial number."
 msgstr "Choisissez la ou les unités vendues par numéro IMEI / série."
+
+msgid "Choose the user whose records are cleared."
+msgstr "Choisissez l'utilisateur dont les écritures sont effacées."
 
 msgid "Choose two different accounts."
 msgstr "Choisissez deux comptes différents."
@@ -1607,6 +1620,16 @@ msgstr ""
 
 msgid "Commercial agents who owe the shop"
 msgstr "Agents commerciaux qui doivent à la boutique"
+
+msgid ""
+"Commercial agents' records only: their supplies to POS, shops and clients, "
+"client payments, transfers between agents, float exchanges and paybacks "
+"(company records are kept)"
+msgstr ""
+"Écritures des agents commerciaux seulement : leurs approvisionnements aux "
+"POS, boutiques et clients, paiements des clients, transferts entre agents, "
+"échanges de float et remboursements (les écritures de l'entreprise sont "
+"conservées)"
 
 msgid "Commission"
 msgstr "Commission"
@@ -2017,6 +2040,14 @@ msgstr "Données"
 
 #, python-format
 msgid ""
+"Data cleared (%(n)s transactions and %(a)s agent records removed). This "
+"action is recorded in the audit log."
+msgstr ""
+"Données effacées (%(n)s transactions et %(a)s écritures d'agents "
+"supprimées). Cette action est enregistrée dans le journal d'audit."
+
+#, python-format
+msgid ""
 "Data cleared (%(n)s transactions removed). This action is recorded in the "
 "audit log."
 msgstr ""
@@ -2360,6 +2391,9 @@ msgstr "Saisissez la date de démarrage."
 msgid "Enter the name of the person retrieving the SIM."
 msgstr "Saisissez le nom de la personne qui retire la SIM."
 
+msgid "Enter the number you send the UVE to."
+msgstr "Saisissez le numéro auquel vous envoyez l'UVE."
+
 msgid "Enter the total, or the UVE, Cash and ER parts."
 msgstr "Saisissez le total, ou les parts UVE, espèces et ER."
 
@@ -2537,6 +2571,9 @@ msgstr ""
 "calcule tout seul ; chaque part va dans le compte de votre sous-zone pour ce"
 " mode."
 
+msgid "Fill what the client paid you, in one or several ways."
+msgstr "Remplissez ce que le client vous a payé, en un ou plusieurs moyens."
+
 msgid ""
 "Fill what was supplied. Cash leaves your drawer, UVE your UVE wallet and ER "
 "the master SIM; the total is added up for you."
@@ -2601,6 +2638,15 @@ msgstr "Trouver une unité (IMEI / série, article ou client)"
 msgid "First name"
 msgstr "Prénom"
 
+msgid "Float"
+msgstr "Float"
+
+msgid "Float exchange"
+msgstr "Échange de float"
+
+msgid "Float exchanges"
+msgstr "Échanges de float"
+
 msgid "Floating-point money values are not allowed"
 msgstr "Les montants en virgule flottante ne sont pas autorisés"
 
@@ -2628,8 +2674,14 @@ msgstr ""
 "Pour chaque unité, saisissez son IMEI, son numéro de série, ou les deux. Un "
 "numéro déjà enregistré est refusé."
 
+msgid "For one user's records."
+msgstr "Pour les écritures d'un utilisateur."
+
 msgid "For security, you will be signed out because of inactivity in:"
 msgstr "Par sécurité, vous serez déconnecté pour inactivité dans :"
+
+msgid "For the commercial agents' records: one agent, or all of them."
+msgstr "Pour les écritures des agents commerciaux : un agent, ou tous."
 
 #, python-format
 msgid "For: %(c)s"
@@ -2718,6 +2770,14 @@ msgid "Good deal"
 msgstr "Bon plan"
 
 #, python-format
+msgid ""
+"Hello %(who)s, you still owe %(amt)s FCFA to %(agent)s (%(sim)s). Thank you "
+"for paying."
+msgstr ""
+"Bonjour %(who)s, vous devez encore %(amt)s FCFA à %(agent)s (%(sim)s). Merci"
+" de régler."
+
+#, python-format
 msgid "Hello, %(name)s"
 msgstr "Bonjour, %(name)s"
 
@@ -2738,6 +2798,15 @@ msgstr "Je confirme qu'il s'agit des soldes réellement comptés/relevés."
 
 msgid "I owe the company"
 msgstr "Je dois à l'entreprise"
+
+msgid "I receive float, I send UVE"
+msgstr "Je reçois du float, j'envoie de l'UVE"
+
+msgid "I send float, I receive UVE"
+msgstr "J'envoie du float, je reçois de l'UVE"
+
+msgid "I send float, I receive cash"
+msgstr "J'envoie du float, je reçois des espèces"
 
 msgid "I will type the new password"
 msgstr "Je saisis le nouveau mot de passe"
@@ -2945,6 +3014,9 @@ msgstr "Dernières opérations"
 msgid "Latest entries of your zone"
 msgstr "Dernières écritures de votre zone"
 
+msgid "Latest exchanges"
+msgstr "Derniers échanges"
+
 msgid "Latest from the office"
 msgstr "Derniers mouvements du bureau"
 
@@ -3146,6 +3218,9 @@ msgstr "Mes clients me doivent"
 msgid "My dealings with this POS"
 msgstr "Mes opérations avec ce POS"
 
+msgid "My debtors"
+msgstr "Mes débiteurs"
+
 msgid "My operations of the day"
 msgstr "Mes opérations du jour"
 
@@ -3202,6 +3277,10 @@ msgstr "Carte nationale d'identité"
 
 msgid "Nb"
 msgstr "Nb"
+
+msgid "Needed when you send UVE: the code is dialled to this number."
+msgstr ""
+"Nécessaire quand vous envoyez de l'UVE : le code est composé vers ce numéro."
 
 msgid "Net (received − sent)"
 msgstr "Net (reçu − envoyé)"
@@ -3368,6 +3447,9 @@ msgstr ""
 
 msgid "No notes yet."
 msgstr "Aucune note pour l'instant."
+
+msgid "No number registered"
+msgstr "Aucun numéro enregistré"
 
 msgid "No office supply."
 msgstr "Aucun approvisionnement du bureau."
@@ -3536,6 +3618,9 @@ msgstr "Novembre"
 msgid "Now recording for %(c)s"
 msgstr "Enregistrement en cours pour %(c)s"
 
+msgid "Number"
+msgstr "Numéro"
+
 msgid "Number of units bought"
 msgstr "Nombre d'unités achetées"
 
@@ -3586,6 +3671,14 @@ msgid ""
 msgstr ""
 "Une unité par ligne (ou séparées par des virgules). Chaque numéro n'est "
 "enregistré qu'une fois."
+
+msgid ""
+"One user's records: everything this user entered (transactions, shifts, "
+"services, SIM retrievals; for an agent, his portal records)"
+msgstr ""
+"Écritures d'un utilisateur : tout ce que cet utilisateur a saisi "
+"(transactions, shifts, services, retraits de SIM ; pour un agent, ses "
+"écritures du portail)"
 
 #, python-format
 msgid "Only %(amt)s FCFA is still owed on %(ref)s."
@@ -3890,6 +3983,9 @@ msgstr "Autre article"
 msgid "Other opening balances"
 msgstr "Autres soldes d'ouverture"
 
+msgid "Other party's number"
+msgstr "Numéro de l'autre partie"
+
 msgid "Other phone"
 msgstr "Autre téléphone"
 
@@ -3902,6 +3998,9 @@ msgstr ""
 
 msgid "Out"
 msgstr "Sorties"
+
+msgid "Outstanding"
+msgstr "Encours"
 
 msgid "Outstanding amount owed"
 msgstr "Montant restant dû"
@@ -4050,6 +4149,15 @@ msgstr "Payé maintenant %(p)s · vous est dû %(o)s"
 
 msgid "Paid now by the client"
 msgstr "Payé maintenant par le client"
+
+msgid "Paid now in UVE"
+msgstr "Payé maintenant en UVE"
+
+msgid "Paid now in cash"
+msgstr "Payé maintenant en espèces"
+
+msgid "Paid now in float"
+msgstr "Payé maintenant en float"
 
 msgid "Paid to"
 msgstr "Payé à"
@@ -4297,6 +4405,9 @@ msgstr "Reçu n°"
 msgid "Receive"
 msgstr "Recevoir"
 
+msgid "Receive payment"
+msgstr "Recevoir le paiement"
+
 msgid "Receive stock or adjust"
 msgstr "Recevoir du stock ou ajuster"
 
@@ -4448,6 +4559,9 @@ msgstr "Rejeter"
 
 msgid "Rejected"
 msgstr "Rejeté"
+
+msgid "Remind"
+msgstr "Relancer"
 
 msgid "Remove"
 msgstr "Retirer"
@@ -6241,6 +6355,9 @@ msgstr ""
 "Ce que le cash manager a servi à l'entreprise jusqu'ici. Le reste est servi "
 "plus tard depuis la page de l'échange."
 
+msgid "What the client paid you now. The rest is owed to you."
+msgstr "Ce que le client vous a payé maintenant. Le reste vous est dû."
+
 msgid "What the client paid you on the spot. The rest is owed to you."
 msgstr "Ce que le client vous a payé sur place. Le reste vous est dû."
 
@@ -6501,6 +6618,9 @@ msgstr "agents et PDV"
 msgid "agents, cash control and balances"
 msgstr "agents, contrôle de caisse et soldes"
 
+msgid "amount"
+msgstr "montant"
+
 msgid "amount received"
 msgstr "montant reçu"
 
@@ -6637,6 +6757,9 @@ msgstr "dû au client"
 msgid "email"
 msgstr "e-mail"
 
+msgid "exchange"
+msgstr "échange"
+
 #, python-format
 msgid "for %(ref)s"
 msgstr "pour %(ref)s"
@@ -6700,6 +6823,10 @@ msgstr "libellé"
 msgid "language"
 msgstr "langue"
 
+#, python-format
+msgid "last supply %(d)s"
+msgstr "dernier approvisionnement %(d)s"
+
 msgid "managed by the super administrator."
 msgstr "géré(s) par le super administrateur."
 
@@ -6759,6 +6886,9 @@ msgstr "ouverture"
 
 msgid "order in lists"
 msgstr "ordre dans les listes"
+
+msgid "other party's number"
+msgstr "numéro de l'autre partie"
 
 msgid "other phone"
 msgstr "autre téléphone"
@@ -6829,6 +6959,15 @@ msgstr "reçu"
 msgid "received by POS %(pos)s"
 msgstr "reçu par le PDV %(pos)s"
 
+msgid "received in UVE"
+msgstr "reçu en UVE"
+
+msgid "received in cash"
+msgstr "reçu en espèces"
+
+msgid "received in float"
+msgstr "reçu en float"
+
 msgid "recorded entries"
 msgstr "des écritures enregistrées"
 
@@ -6843,6 +6982,9 @@ msgstr "rôle"
 
 msgid "rows"
 msgstr "lignes"
+
+msgid "see my debtors"
+msgstr "voir mes débiteurs"
 
 msgid "selling price (FCFA)"
 msgstr "prix de vente (FCFA)"

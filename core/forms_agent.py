@@ -5,7 +5,7 @@ from django import forms
 from django.utils.translation import gettext_lazy as _
 
 from core.forms import MoneyField
-from core.models import ClientKind, Shop, Zone
+from core.models import AgentExchange, ClientKind, Shop, Zone
 from core.services import agents as ag
 
 PRODUCT_CHOICES = [("UVE", "UVE"), ("ER", "ER"), ("CASH", _("Cash"))]
@@ -73,8 +73,10 @@ def _product_amount(form):
 class AgentSupplyForm(_ClientForm):
     product = forms.ChoiceField(label=_("Product"), choices=PRODUCT_CHOICES, initial="UVE")
     amount = MoneyField(label=_("Amount (FCFA)"))
-    paid = MoneyField(label=_("Paid now"), required=False,
-                      help_text=_("The rest is owed to you."))
+    paid_cash = MoneyField(label=_("Paid now in cash"), required=False)
+    paid_uve = MoneyField(label=_("Paid now in UVE"), required=False)
+    paid_mtn = MoneyField(label=_("Paid now in float"), required=False,
+                          help_text=_("What the client paid you now. The rest is owed to you."))
     note = forms.CharField(label=_("Note"), required=False, max_length=255)
 
     def params(self):
@@ -96,7 +98,27 @@ class AgentTransferForm(_AgentForm):
 
 
 class ClientPaymentForm(_ClientForm):
-    amount = MoneyField(label=_("Amount received (FCFA)"))
+    cash = MoneyField(label=_("Cash"), required=False)
+    uve = MoneyField(label=_("UVE"), required=False)
+    mtn = MoneyField(label=_("Float"), required=False)
+    note = forms.CharField(label=_("Note"), required=False, max_length=255)
+
+    def __init__(self, user, *args, **kwargs):
+        super().__init__(user, *args, **kwargs)
+        from core.forms import amount_boxes
+
+        amount_boxes(self, ["cash", "uve", "mtn"], _("Fill what the client paid you, in one or several ways."),
+                     str(_("Total received")))
+
+
+class ExchangeForm(_AgentForm):
+    direction = forms.ChoiceField(label=_("Exchange"), choices=AgentExchange.Direction.choices,
+                                  widget=forms.RadioSelect, initial="SEND_FLOAT_UVE")
+    amount = MoneyField(label=_("Amount (FCFA)"))
+    other_phone = forms.CharField(label=_("Other party's number"), required=False, max_length=30,
+                                  widget=forms.TextInput(attrs={"inputmode": "tel", "autocomplete": "off",
+                                                                "placeholder": "6XX XX XX XX"}),
+                                  help_text=_("Needed when you send UVE: the code is dialled to this number."))
     note = forms.CharField(label=_("Note"), required=False, max_length=255)
 
 

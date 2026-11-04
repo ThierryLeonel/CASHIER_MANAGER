@@ -15,7 +15,7 @@ from django.utils.translation import gettext_lazy as _l
 from django.views.decorators.http import require_POST
 
 from core import forms_agent as AF
-from core.models import AgentClientEntry, AgentPayback, Counterparty
+from core.models import AgentClientEntry, AgentExchange, AgentPayback, Counterparty
 from core.money import fmt
 from core.services import agents as ag
 from core.services.days import douala_today
@@ -92,9 +92,14 @@ def _json_errors(form, status=400):
 def _entry_form(request, form_class, fn, *, title, icon, ok_msg, code_of=None, labels=None, extra=None):
     """Agent entry form. Sent by the page's script (fetch), it answers in JSON: the record is saved, the form is
     cleared and — for UVE / ER — the Orange code is handed to the phone's dialpad at once."""
+    g = request.GET
     initial = {}
-    if request.GET.get("pos"):
-        initial = {"client_kind": "POS", "pos_sim": request.GET["pos"]}
+    if g.get("pos"):
+        initial = {"client_kind": "POS", "pos_sim": g["pos"]}
+    elif g.get("shop", "").isdigit():
+        initial = {"client_kind": "SHOP", "shop": int(g["shop"])}
+    elif g.get("phone"):
+        initial = {"client_kind": "OTHER", "client_phone": g["phone"]}
     form = form_class(request.user, request.POST or None, initial=initial)
     if request.method == "POST":
         if form.is_valid():
@@ -155,6 +160,43 @@ def agent_collect(request):
         request, AF.ClientPaymentForm, ag.record_client_payment, title=_("A client pays me"), icon="payment",
         ok_msg=lambda e: _("%(ref)s: %(amt)s FCFA received from %(who)s.") % {
             "ref": e.reference, "amt": fmt(e.paid), "who": e.client_label})
+
+
+@roles_required(R.AGENT)
+def agent_exchange(request):
+    return _entry_form(
+        request, AF.ExchangeForm, ag.record_exchange, title=_("Float exchange"), icon="convert",
+        ok_msg=lambda x: _("%(ref)s: %(amt)s FCFA — %(what)s.") % {
+            "ref": x.reference, "amt": fmt(x.amount), "what": x.get_direction_display()},
+        code_of=ag.exchange_code, labels={"dial": _verb("Exchange", "Échanger"), "plain": _("Record")},
+        extra={"recent": AgentExchange.objects.filter(agent=request.user.counterparty)[:10],
+               "today": douala_today()})
+
+
+@roles_required(R.AGENT)
+@require_POST
+def agent_exchange_cancel(request, pk):
+    x = get_object_or_404(AgentExchange, pk=pk, agent=request.user.counterparty)
+    try:
+        ag.cancel_exchange(request.user, x, request.POST.get("reason"))
+        messages.success(request, _("%(ref)s cancelled.") % {"ref": x.reference})
+    except BusinessError as exc:
+        messages.error(request, exc.message)
+    return redirect("agent_exchange")
+
+
+@roles_required(R.AGENT)
+def agent_debtors(request):
+    """Everyone who owes the agent, with what is outstanding and a button to receive or ask for the payment."""
+    agent = request.user.counterparty
+    rows = [g for g in ag.clients_owing(agent) if g["owed"] > 0]
+    for g in rows:
+        g["collect_q"] = (f"pos={g['pos'].business_sim}" if g["pos"] else
+                          f"shop={g['shop'].pk}" if g["shop"] else f"phone={g['phone']}")
+        g["sms"] = _("Hello %(who)s, you still owe %(amt)s FCFA to %(agent)s (%(sim)s). Thank you for paying.") % {
+            "who": g["label"], "amt": fmt(g["owed"]), "agent": agent.name, "sim": agent.business_sim}
+    return render(request, "core/agent/debtors.html", {
+        "rows": rows, "total": sum((g["owed"] for g in rows), 0)})
 
 
 @roles_required(R.AGENT)

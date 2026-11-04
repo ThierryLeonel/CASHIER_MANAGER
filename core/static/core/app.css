@@ -552,3 +552,12 @@ table.t.recon td, table.t.recon th { white-space: normal; overflow-wrap: anywher
 table.t.recon td.money, table.t.recon th.money { white-space: nowrap; overflow-wrap: normal; }
 table.t.recon td:first-child, table.t.recon th:first-child { width: 42%; }
 @media (max-width: 560px) { table.t.recon td, table.t.recon th { padding-left: 8px; padding-right: 8px; font-size: .9rem; } }
+.choice-pills.stacked > div[id], .choice-pills.stacked ul { flex-direction: column; align-items: flex-start; }
+.agent-form .pay-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(140px, 100%), 1fr)); gap: 0 12px; }
+a.bal-link { text-decoration: none; }
+.debtors { display: grid; gap: 10px; margin-top: 12px; }
+.debtor { display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; align-items: center; padding: 12px 14px;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 14px; }
+.debtor .d-who { display: grid; gap: 2px; }
+.debtor .d-amt { font-weight: 800; font-size: 1.15rem; text-align: right; white-space: nowrap; }
+.debtor .d-act { grid-column: 1 / -1; display: flex; gap: 8px; flex-wrap: wrap; }

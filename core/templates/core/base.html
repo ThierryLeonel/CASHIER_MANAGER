@@ -32,7 +32,9 @@
     <a href="{% url 'agent_collect' %}" class="{% if u == 'agent_collect' %}on{% endif %}">{% icon "payment" %}<span>{% trans "A client pays me" %}</span></a>
     <a href="{% url 'agent_payback' %}" class="{% if u == 'agent_payback' %}on{% endif %}">{% icon "transfer" %}<span>{% trans "Pay back the company" %}</span></a>
     <a href="{% url 'agent_transfer' %}" class="{% if u == 'agent_transfer' %}on{% endif %}">{% icon "users" %}<span>{% trans "Transfer to an agent" %}</span></a>
+    <a href="{% url 'agent_exchange' %}" class="{% if u == 'agent_exchange' %}on{% endif %}">{% icon "convert" %}<span>{% trans "Float exchange" %}</span></a>
     <div class="side-group">{% trans "Follow-up" %}</div>
+    <a href="{% url 'agent_debtors' %}" class="{% if u == 'agent_debtors' %}on{% endif %}">{% icon "users" %}<span>{% trans "My debtors" %}</span></a>
     <a href="{% url 'agent_daily' %}" class="{% if u == 'agent_daily' %}on{% endif %}">{% icon "calendar" %}<span>{% trans "Daily reconciliation" %}</span></a>
     <a href="{% url 'agent_office' %}" class="{% if u == 'agent_office' %}on{% endif %}">{% icon "download" %}<span>{% trans "Office supplies" %}</span></a>
     <a href="{% url 'agent_pos' %}" class="{% if u == 'agent_pos' or u == 'agent_pos_detail' %}on{% endif %}">{% icon "store" %}<span>{% trans "My POS" %}</span></a>

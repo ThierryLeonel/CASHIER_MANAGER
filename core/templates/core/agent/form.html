@@ -21,6 +21,10 @@
   </div>
 </form>
 </div>
+{% if recent %}<h2>{% trans "Latest exchanges" %}</h2>
+<div class="tbl-wrap"><table class="t"><thead><tr><th>{% trans "Date" %}</th><th>{% trans "Ref." %}</th><th>{% trans "Exchange" %}</th><th class="money">{% trans "Amount" %}</th><th>{% trans "Number" %}</th><th></th></tr></thead>
+<tbody>{% for x in recent %}<tr{% if x.is_cancelled %} class="corrected"{% endif %}><td class="small">{{ x.created_at|date:"d/m H:i" }}</td><td class="keep">{{ x.reference }}{% if x.is_cancelled %} <span class="badge bad">{% trans "cancelled" %}</span>{% endif %}</td><td class="small">{{ x.get_direction_display }}</td><td class="money">{{ x.amount|fcfa }}</td><td class="small">{{ x.other_phone|sim|default:"—" }}</td>
+<td>{% if not x.is_cancelled and x.business_date == today %}<details class="reject"><summary class="btn small">{% trans "Cancel" %}</summary><form method="post" action="{% url 'agent_exchange_cancel' x.pk %}">{% csrf_token %}<input type="text" name="reason" required maxlength="255" placeholder="{% trans 'Why?' %}"><button class="btn small danger">{% trans "Cancel it" %}</button></form></details>{% endif %}</td></tr>{% endfor %}</tbody></table></div>{% endif %}
 {% if zone_pos %}<datalist id="zone-pos">{% for p in zone_pos %}<option value="{{ p.business_sim }}">{{ p.name }}{% if p.microzone %} · {{ p.microzone.name }}{% endif %}</option>{% endfor %}</datalist>{% endif %}
 {% if agents %}<datalist id="agents">{% for a in agents %}<option value="{{ a.business_sim }}">{{ a.name }}</option>{% endfor %}</datalist>{% endif %}
 {% endblock %}
@@ -75,13 +79,42 @@
   }
   // UVE / ER open the dialpad: the button says so; cash (and MTN) is only recorded
   function dials() {
+    var d = form.querySelector('input[name=direction]:checked');
+    if (d) return d.value === 'RECEIVE_FLOAT_UVE';
     var p = $('product') || $('method');
     return p && (p.value === 'UVE' || (p.value === 'ER' && p.name === 'product'));
   }
-  function syncButton() { if (form.dataset.dial) btn.textContent = dials() ? form.dataset.dial : form.dataset.plain; }
+  // a cash supply is paid back in UVE (or float); a UVE / ER supply in cash or float
+  function syncPaid() {
+    var p = $('product'); if (!p || !fld('paid_cash')) return;
+    var cash = p.value === 'CASH';
+    fld('paid_cash').hidden = cash; fld('paid_uve').hidden = !cash;
+    $(cash ? 'paid_cash' : 'paid_uve').value = '';
+  }
+  function syncButton() { syncPaid(); if (form.dataset.dial) btn.textContent = dials() ? form.dataset.dial : form.dataset.plain; }
 
   kinds.forEach(function (r) { r.addEventListener('change', syncKind); });
   tos.forEach(function (r) { r.addEventListener('change', syncKind); });
+  form.querySelectorAll('input[name=direction]').forEach(function (r) {
+    r.closest('.field').classList.add('choice-pills', 'stacked'); r.addEventListener('change', syncButton);
+  });
+  // several amount boxes side by side with their total (payments)
+  var pays = form.querySelectorAll('input[data-pay]');
+  if (pays.length) {
+    var row = document.createElement('div'); row.className = 'pay-row';
+    var first = pays[0].closest('.field'); first.parentNode.insertBefore(row, first);
+    var help = first.querySelector('.help');
+    pays.forEach(function (i) { row.appendChild(i.closest('.field')); });
+    if (help) row.parentNode.insertBefore(help, row.nextSibling);
+    var tot = document.createElement('div'); tot.className = 'pay-total';
+    (help || row).parentNode.insertBefore(tot, (help || row).nextSibling);
+    var n = function (v) { return parseInt(String(v || '').replace(/\D/g, ''), 10) || 0; };
+    var syncTot = function () {
+      var t = 0; pays.forEach(function (i) { t += n(i.value); });
+      tot.innerHTML = '<span>' + pays[0].dataset.totalLabel + '</span><strong>' + String(t).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' FCFA</strong>';
+    };
+    pays.forEach(function (i) { i.addEventListener('input', syncTot); }); syncTot();
+  }
   ['product', 'method'].forEach(function (n) { var el = $(n); if (el) el.addEventListener('change', syncButton); });
   ['pos_sim', 'agent_sim', 'shop', 'desk'].forEach(function (n) {
     var el = $(n); if (!el) return;
@@ -120,7 +153,8 @@
           show('error', '{{ _("Nothing was recorded. Check the form.")|escapejs }}');
           return;
         }
-        ['amount', 'paid', 'note', 'reference', 'pos_sim', 'client_phone', 'agent_sim'].forEach(function (n) {
+        ['amount', 'paid_cash', 'paid_uve', 'paid_mtn', 'cash', 'uve', 'mtn', 'note', 'reference', 'pos_sim',
+         'client_phone', 'agent_sim', 'other_phone'].forEach(function (n) {
           var el = $(n); if (el) { el.value = ''; el.dispatchEvent(new Event('input')); }
         });
         $('idem').value = d.idem;

@@ -190,7 +190,58 @@ def edit_transaction(user, t, *, new_values, reason):
         return t
 
 
-CLEAR_SCOPES = ("transactions", "everything", "shops")
+CLEAR_SCOPES = ("transactions", "everything", "shops", "agents", "user")
+
+
+def _clear_agent_portal(agent=None):
+    """The commercial agents' own records with their POS and clients (supplies, client payments, transfers between
+    agents, float exchanges, paybacks). Company ledger entries — office supplies and confirmed payments — stay."""
+    from core.models import AgentClientEntry, AgentExchange, AgentPayback
+
+    entries, paybacks, exchanges = AgentClientEntry.objects.all(), AgentPayback.objects.all(), \
+        AgentExchange.objects.all()
+    if agent is not None:
+        entries, paybacks, exchanges = entries.filter(agent=agent), paybacks.filter(agent=agent), \
+            exchanges.filter(agent=agent)
+    counts = {"agent_records": entries.count() + paybacks.count() + exchanges.count()}
+    entries.delete()
+    paybacks.delete()
+    exchanges.delete()
+    return counts
+
+
+def _delete_txn_ids(ids):
+    """Delete these ledger transactions together with their correction rows (all or nothing; balances checked)."""
+    ids = set(ids)
+    corrs = Correction.objects.filter(Q(original_id__in=ids) | Q(reversal_txn_id__in=ids)
+                                      | Q(replacement_txn_id__in=ids))
+    for c in corrs:  # a correction goes with its original, reversal and replacement
+        ids |= {c.original_id, c.reversal_txn_id} | ({c.replacement_txn_id} if c.replacement_txn_id else set())
+    ids = list(ids)
+    acct_ids = list(Entry.objects.filter(transaction_id__in=ids).values_list("account_id", flat=True).distinct())
+    Discrepancy.objects.filter(correction__in=corrs).update(correction=None)
+    corrs.delete()
+    _release_shop_rows(ids)
+    Entry.objects.filter(transaction_id__in=ids).delete()
+    _sql_delete_transactions("id = ANY(%s)", [ids])
+    _check_assets(acct_ids)
+    return len(ids)
+
+
+def _clear_user_records(target):
+    """Everything one user recorded: ledger entries he entered (or that belong to his desk as cashier), his shifts,
+    services counted and SIM retrievals; for a commercial agent, his portal records."""
+    counts = {"transactions": _delete_txn_ids(
+        Transaction.objects.filter(Q(entered_by=target) | Q(cashier=target)).values_list("id", flat=True))}
+    counts["shop_shifts"] = ShopShift.objects.filter(user=target).count()
+    ShopShift.objects.filter(user=target).delete()
+    counts["service_counts"] = ServiceCount.objects.filter(recorded_by=target).count()
+    ServiceCount.objects.filter(recorded_by=target).delete()
+    counts["sim_retrievals"] = SimRetrieval.objects.filter(recorded_by=target).count()
+    SimRetrieval.objects.filter(recorded_by=target).delete()
+    if target.is_agent and target.counterparty_id:
+        counts.update(_clear_agent_portal(target.counterparty))
+    return counts
 
 
 def _clear_shop_operations():
@@ -208,7 +259,7 @@ def _clear_shop_operations():
     return counts
 
 
-def clear_data(user, *, scope, password, confirm_text):
+def clear_data(user, *, scope, password, confirm_text, agent=None, target_user=None):
     perm.require_role(user, perm.CONFIG_ROLES, "clear")
     if scope not in CLEAR_SCOPES:
         raise BusinessError(_("Choose what to clear."), "scope")
@@ -217,6 +268,15 @@ def clear_data(user, *, scope, password, confirm_text):
     if authenticate(username=user.username, password=password or "") is None:
         raise BusinessError(_("Your password is incorrect."), "password")
     counts = defaultdict(int)
+    if scope in ("agents", "user"):
+        if scope == "user" and target_user is None:
+            raise BusinessError(_("Choose the user whose records are cleared."), "target_user")
+        with admin_override():
+            counts.update(_clear_agent_portal(agent) if scope == "agents" else _clear_user_records(target_user))
+            AuditEvent.objects.create(user=user, action="data_cleared", detail={
+                "scope": scope, "agent": agent.name if agent else None,
+                "user": target_user.username if target_user else None, **counts})
+        return dict(counts)
     if scope == "shops":
         with admin_override():
             counts.update(_clear_shop_operations())
@@ -240,11 +300,7 @@ def clear_data(user, *, scope, password, confirm_text):
         return dict(counts)
     with admin_override():
         counts.update(_clear_shop_operations())
-        from core.models import AgentClientEntry, AgentPayback
-
-        counts["agent_records"] = AgentClientEntry.objects.count() + AgentPayback.objects.count()
-        AgentPayback.objects.all().delete()
-        AgentClientEntry.objects.all().delete()
+        counts.update(_clear_agent_portal())
         counts["transactions"] = Transaction.objects.count()
         counts["closings"] = Closing.objects.count()
         DiscrepancyNote.objects.all().delete()
