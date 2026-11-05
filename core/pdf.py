@@ -119,9 +119,9 @@ def receipt_pdf(txn, rows, balance_after=None, amount=None):
     ]
     data = [[Paragraph(f"<b>{k}</b>", st["n"]), Paragraph(str(v), st["n"])] for k, v in rows]
     if balance_after is not None:
-        lbl = _("Customer balance after this transaction")
+        lbl = _("Agent / POS balance after this transaction")
         val = (f"{fmt(balance_after)} FCFA " + (_("owed to the company") if balance_after > 0 else
-                                                  _("supply due to customer") if balance_after < 0 else ""))
+                                                  _("supply due to the agent / POS") if balance_after < 0 else ""))
         data.append([Paragraph(f"<b>{lbl}</b>", st["n"]), Paragraph(val, st["n"])])
     t = Table(data, colWidths=[62 * mm, 112 * mm])
     t.setStyle(TableStyle([
@@ -131,7 +131,7 @@ def receipt_pdf(txn, rows, balance_after=None, amount=None):
         ("TOPPADDING", (0, 0), (-1, -1), 4), ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
     ]))
     story += [t, Spacer(1, 18 * mm)]
-    sig = Table([[Paragraph(_("Cashier signature"), st["n"]), Paragraph(_("Customer signature"), st["n"])],
+    sig = Table([[Paragraph(_("Cashier signature"), st["n"]), Paragraph(_("Agent / POS signature"), st["n"])],
                  ["", ""]], colWidths=[87 * mm, 87 * mm], rowHeights=[6 * mm, 22 * mm])
     sig.setStyle(TableStyle([("BOX", (0, 1), (0, 1), 0.4, colors.grey), ("BOX", (1, 1), (1, 1), 0.4, colors.grey)]))
     from core.services.branding import company

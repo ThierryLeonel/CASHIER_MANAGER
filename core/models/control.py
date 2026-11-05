@@ -120,3 +120,15 @@ class AuditEvent(models.Model):
 
     class Meta:
         ordering = ["-at"]
+
+
+class TransferNoPayback(models.Model):
+    """The receiver of a transfer answered "No" to paying it back: it stays as it is and is no longer prompted."""
+
+    transfer = models.OneToOneField("Transaction", on_delete=models.CASCADE, related_name="no_payback")
+    decided_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name="+")
+    decided_at = models.DateTimeField(default=timezone.now)
+    note = models.CharField(max_length=255, blank=True)
+
+    def __str__(self):
+        return f"{self.transfer_id} not paid back"

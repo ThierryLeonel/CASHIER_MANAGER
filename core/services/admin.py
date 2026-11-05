@@ -58,10 +58,16 @@ def snapshot(t):
     }
 
 
-def _check_assets(account_ids):
+def asset_balances(account_ids):
+    return {a.id: balance(a) for a in Account.objects.filter(id__in=account_ids, kind__in=Account.ASSET_KINDS)}
+
+
+def _check_assets(account_ids, before=None):
+    """No account may end below zero because of the change — an account already negative (after supplies) may
+    stay as it is or improve."""
     for acct in Account.objects.filter(id__in=account_ids, kind__in=Account.ASSET_KINDS):
         b = balance(acct)
-        if b < 0:
+        if b < 0 and (before is None or b < before.get(acct.id, 0)):
             raise BusinessError(_("This change would make %(acct)s negative (%(bal)s FCFA). Nothing was changed.")
                                 % {"acct": acct, "bal": fmt(b)})
 
@@ -105,6 +111,7 @@ def delete_transaction(user, t, *, reason):
         ids = [g.id for g in group]
         acct_ids = list(Entry.objects.filter(transaction_id__in=ids).values_list("account_id", flat=True))
         lock_accounts(acct_ids)
+        before = asset_balances(acct_ids)
         snaps = [snapshot(g) for g in group]
         AuditEvent.objects.create(user=user, action="transaction_deleted",
                                   detail={"reason": reason.strip(), "transactions": snaps})
@@ -114,7 +121,7 @@ def delete_transaction(user, t, *, reason):
         _release_shop_rows(ids)
         Entry.objects.filter(transaction_id__in=ids).delete()
         _sql_delete_transactions("id = ANY(%s)", [ids])
-        _check_assets(acct_ids)
+        _check_assets(acct_ids, before)
     return snaps
 
 
@@ -138,6 +145,59 @@ def _release_shop_rows(txn_ids):
 
 
 EDITABLE_EXTRA = ["business_date"]
+
+
+def simple_editable_amount(t):
+    """The amount of an entry made of one value moving between two accounts can be changed in place."""
+    amts = sorted(e.amount for e in t.entries.all())
+    return len(amts) == 2 and amts[0] == -amts[1]
+
+
+def edit_transaction_simple(user, t, *, amount=None, description=None, business_date=None, client_phone=None,
+                            account_name=None, reason=""):
+    """Edit any transaction in place, whoever recorded it (shops, capital, transfers, payments by shops…): its
+    amount when it is a single value between two accounts, its date and its texts. The previous values go to the
+    audit log; balances are checked."""
+    perm.require_role(user, perm.CONFIG_ROLES, "edit")
+    if not (reason or "").strip():
+        raise BusinessError(_("Give the reason for the edit."), "reason")
+    with admin_override():
+        t = Transaction.objects.select_for_update().get(pk=t.pk)
+        if t.type == TxType.REVERSAL or t.replaces_id or Correction.objects.filter(original=t).exists():
+            raise BusinessError(_("This entry is part of a correction; delete it and record it again instead."))
+        before_snap = snapshot(t)
+        fields, changes = {}, {}
+        acct_ids = list(t.entries.values_list("account_id", flat=True))
+        lock_accounts(acct_ids)
+        before = asset_balances(acct_ids)
+        if amount is not None and amount != t.amount:
+            if amount <= 0:
+                raise BusinessError(_("Amount must be greater than zero."), "amount")
+            if not simple_editable_amount(t):
+                raise BusinessError(_("The amount of this entry cannot be changed here: delete it and record it "
+                                      "again."), "amount")
+            for e in t.entries.all():
+                Entry.objects.filter(pk=e.pk).update(amount=amount if e.amount > 0 else -amount)
+            fields["amount"] = amount
+            changes["amount"] = [str(t.amount), str(amount)]
+        for name, val in (("description", description), ("client_phone", client_phone),
+                          ("account_name", account_name)):
+            if val is not None and hasattr(t, name) and (getattr(t, name) or "") != val:
+                fields[name] = val
+                changes[name] = [getattr(t, name) or "", val]
+        if business_date and business_date != t.business_date:
+            fields["business_date"] = business_date
+            Entry.objects.filter(transaction=t).update(business_date=business_date)
+            changes["business_date"] = [str(t.business_date), str(business_date)]
+        if not changes:
+            raise BusinessError(_("No value was changed."))
+        Transaction.objects.filter(pk=t.pk).update(**fields)
+        _check_assets(acct_ids, before)
+        t.refresh_from_db()
+        AuditEvent.objects.create(user=user, action="transaction_edited",
+                                  detail={"reason": reason.strip(), "changes": changes, "before": before_snap,
+                                          "after": snapshot(t)})
+        return t
 
 
 def edit_transaction(user, t, *, new_values, reason):
@@ -176,13 +236,14 @@ def edit_transaction(user, t, *, new_values, reason):
         old_ids = list(t.entries.values_list("account_id", flat=True))
         new_ids = [a.id for a, _amt in spec.lines]
         lock_accounts(old_ids + new_ids)
+        bal_before = asset_balances(old_ids + new_ids)
         Entry.objects.filter(transaction=t).delete()
         fields = {k: v for k, v in spec.fields.items() if k not in ("opening_for_account",)}
         fields["business_date"] = new_date
         Transaction.objects.filter(pk=t.pk).update(**fields)
         Entry.objects.bulk_create([Entry(transaction=t, account_id=a.id, amount=amt, business_date=new_date,
                                          posted_at=t.posted_at) for a, amt in spec.lines])
-        _check_assets(old_ids + new_ids)
+        _check_assets(old_ids + new_ids, bal_before)
         t.refresh_from_db()
         AuditEvent.objects.create(user=user, action="transaction_edited",
                                   detail={"reason": reason.strip(), "changes": changes, "before": before,
@@ -219,12 +280,13 @@ def _delete_txn_ids(ids):
         ids |= {c.original_id, c.reversal_txn_id} | ({c.replacement_txn_id} if c.replacement_txn_id else set())
     ids = list(ids)
     acct_ids = list(Entry.objects.filter(transaction_id__in=ids).values_list("account_id", flat=True).distinct())
+    before = asset_balances(acct_ids)
     Discrepancy.objects.filter(correction__in=corrs).update(correction=None)
     corrs.delete()
     _release_shop_rows(ids)
     Entry.objects.filter(transaction_id__in=ids).delete()
     _sql_delete_transactions("id = ANY(%s)", [ids])
-    _check_assets(acct_ids)
+    _check_assets(acct_ids, before)
     return len(ids)
 
 
@@ -291,11 +353,12 @@ def clear_data(user, *, scope, password, confirm_text, agent=None, target_user=N
             acct_ids = list(Entry.objects.filter(transaction_id__in=ids).values_list("account_id", flat=True)
                             .distinct())
             counts["transactions"] = len(ids)
+            before = asset_balances(acct_ids)
             Discrepancy.objects.filter(correction__in=corrs).update(correction=None)
             corrs.delete()
             Entry.objects.filter(transaction_id__in=ids).delete()
             _sql_delete_transactions("id = ANY(%s)", [ids])
-            _check_assets(acct_ids)
+            _check_assets(acct_ids, before)
             AuditEvent.objects.create(user=user, action="data_cleared", detail={"scope": scope, **counts})
         return dict(counts)
     with admin_override():

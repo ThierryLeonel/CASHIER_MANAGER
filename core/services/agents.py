@@ -485,7 +485,7 @@ def payback_code(p):
 
 
 # ---------------------------------------------------------------- office supplies and daily reconciliation
-OFFICE_TYPES = (TxType.SUPPLY, TxType.DESTOCKAGE)
+OFFICE_TYPES = (TxType.SUPPLY, TxType.DESTOCKAGE, TxType.FLOAT_EXCHANGE)
 PRODUCTS = ("UVE", "ER", "CASH", "MTN")
 PRODUCT_LABELS = {"UVE": "UVE", "ER": "ER"}
 
@@ -511,7 +511,8 @@ def _flows(agent, d_from=None, d_to=None):
 
     f = {k: {p: Z for p in PRODUCTS} for k in ("office", "from_agents", "to_clients", "to_agents", "paid_back",
                                                  "collected", "exchanged")}
-    for r in rng(Transaction.objects.filter(type=TxType.SUPPLY, counterparty=agent, counterparty_2__isnull=True,
+    for r in rng(Transaction.objects.filter(type__in=(TxType.SUPPLY, TxType.FLOAT_EXCHANGE), counterparty=agent,
+                                            counterparty_2__isnull=True,
                                             correction__isnull=True), "business_date") \
             .values("product").annotate(s=Sum("amount")):
         f["office"][r["product"]] += r["s"] or Z

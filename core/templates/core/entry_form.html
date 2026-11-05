@@ -131,6 +131,30 @@
     tk.addEventListener('change', syncKind); syncKind();
   }
   autoAll();
+  // supply: the "paid now" boxes side by side
+  var pc = document.getElementById('fld-paid_cash');
+  if (pc && document.getElementById('fld-paid_mtn')) {
+    var prow = document.createElement('div'); prow.className = 'pay-row paid-row';
+    pc.parentNode.insertBefore(prow, pc);
+    ['paid_cash', 'paid_uve', 'paid_mtn'].forEach(function (n) { var f = document.getElementById('fld-' + n); if (f) prow.appendChild(f); });
+  }
+  // float exchange: a cashier's UVE wallet, or a commercial agent
+  var tos = form.querySelectorAll('input[name=to]');
+  if (tos.length && document.getElementById('fld-agent') && document.getElementById('fld-uve_account')) {
+    var syncTo = function () {
+      var v = (form.querySelector('input[name=to]:checked') || {}).value;
+      document.getElementById('fld-agent').hidden = v !== 'AGENT';
+      document.getElementById('fld-uve_account').hidden = v === 'AGENT';
+    };
+    tos.forEach(function (r) { r.addEventListener('change', syncTo); }); syncTo();
+  }
+  // payment: "received on" (UVE / float wallet of any desk) shows only when that amount is filled
+  [['uve', 'uve_account'], ['mtn', 'mtn_account']].forEach(function (p) {
+    var amt = form.querySelector('[name=' + p[0] + ']'), f = document.getElementById('fld-' + p[1]);
+    if (!amt || !f) return;
+    var sync = function () { f.hidden = !(parseInt(String(amt.value).replace(/\D/g, ''), 10) > 0); };
+    amt.addEventListener('input', sync); sync();
+  });
   // cash-manager exchange: balance still to be served, as you type
   var exAmt = form.querySelector('[name=amount]'), exServed = form.querySelector('[name=amount_served]');
   if (exAmt && exServed) {

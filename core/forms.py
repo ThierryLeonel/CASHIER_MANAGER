@@ -134,6 +134,9 @@ class _SupplyAmounts(BaseEntryForm):
     cash = MoneyField(label=_("Cash"), required=False)
     uve = MoneyField(label=_("UVE"), required=False)
     er = MoneyField(label=_("ER"), required=False)
+    paid_cash = MoneyField(label=_("Paid now in cash"), required=False)
+    paid_uve = MoneyField(label=_("Paid now in UVE"), required=False)
+    paid_mtn = MoneyField(label=_("Paid now in MTN float"), required=False)
     description = forms.CharField(label=_("Note"), required=False, max_length=255)
 
     PRODUCT_FIELDS = (("cash", Product.CASH), ("uve", Product.UVE), ("er", Product.ER))
@@ -154,15 +157,20 @@ class _SupplyAmounts(BaseEntryForm):
     def parts(self):
         return {p: self.cleaned_data.get(n) for n, p in self.PRODUCT_FIELDS if self.cleaned_data.get(n)}
 
+    def paid(self):
+        cd = self.cleaned_data
+        return {m: cd.get(n) for n, m in (("paid_cash", PaymentMethod.CASH), ("paid_uve", PaymentMethod.UVE),
+                                          ("paid_mtn", PaymentMethod.MTN)) if cd.get(n)}
+
 
 class AgentSupplyForm(_SupplyAmounts):
     """Supply to a commercial agent (the normal case)."""
 
     agent = CustomerField(label=_("Commercial agent (business SIM)"), kind=Counterparty.Kind.AGENT)
-    field_order = ["agent", "cash", "uve", "er", "description"]
+    field_order = ["agent", "cash", "uve", "er", "paid_cash", "paid_uve", "paid_mtn", "description"]
 
     def params(self):
-        return dict(customer=self.cleaned_data["agent"], parts=self.parts(),
+        return dict(customer=self.cleaned_data["agent"], parts=self.parts(), paid=self.paid(),
                     description=self.cleaned_data.get("description", ""))
 
 
@@ -175,12 +183,12 @@ class PosSupplyForm(_SupplyAmounts):
                                  kind=Counterparty.Kind.AGENT,
                                  help_text=_("Leave empty: the POS owes. Fill only if an agent explicitly takes "
                                              "responsibility now."))
-    field_order = ["pos", "assign_agent", "cash", "uve", "er", "description"]
+    field_order = ["pos", "assign_agent", "cash", "uve", "er", "paid_cash", "paid_uve", "paid_mtn", "description"]
 
     def params(self):
         pos, agent = self.cleaned_data["pos"], self.cleaned_data.get("assign_agent")
         customer, recipient = (agent, pos) if agent else (pos, None)
-        return dict(customer=customer, recipient=recipient, parts=self.parts(),
+        return dict(customer=customer, recipient=recipient, parts=self.parts(), paid=self.paid(),
                     description=self.cleaned_data.get("description", ""))
 
 
@@ -200,13 +208,16 @@ class DestockageForm(BaseEntryForm):
 class CollectionForm(BaseEntryForm):
     """One payment, possibly made with several methods at once; the total is the sum of the methods."""
 
-    payer = CustomerField(label=_("Paying customer (business SIM)"))
+    payer = CustomerField(label=_("Paying agent or POS (business SIM)"))
     cash = MoneyField(label=_("Cash"), required=False)
     uve = MoneyField(label=_("UVE"), required=False)
     mtn = MoneyField(label=_("MTN float"), required=False)
     bank = MoneyField(label=_("Bank deposit"), required=False)
+    uve_account = AccountChoiceField(label=_("UVE received on"), queryset=Account.objects.none(), required=False,
+                                     help_text=_("Your desk's wallet, or another desk's wallet the agent paid into."))
     mtn_account = AccountChoiceField(label=_("Float received on"), queryset=Account.objects.none(), required=False,
-                                     help_text=_("Your desk's float SIM, or a float account all cashiers use."))
+                                     help_text=_("Your desk's float SIM, another desk's, or a float account all "
+                                                 "cashiers use."))
     bank_account = AccountChoiceField(label=_("Bank account"), queryset=Account.objects.none(), required=False)
     bank_reference = forms.CharField(label=_("Bank deposit reference"), required=False, max_length=60)
     description = forms.CharField(label=_("Note"), required=False, max_length=255)
@@ -218,22 +229,25 @@ class CollectionForm(BaseEntryForm):
         super().__init__(user, *args, **kwargs)
         for name, _m in self.METHOD_FIELDS:
             self.fields[name].widget.attrs.update({"data-pay": name, "placeholder": "0"})
-        self.fields["cash"].help_text = _("Fill every way the customer paid. The total is added up for you; each "
-                                          "part goes into your subzone's account for that method.")
+        self.fields["cash"].help_text = _("Fill every way the agent or POS paid. The total is added up for you; "
+                                          "each part goes into your subzone's account for that method.")
         self.fields["bank_account"].queryset = self.accounts([K.BANK], receiving=True)
-        mtn = self.accounts([K.MTN], receiving=True)
-        if mtn.count() > 1:  # own float SIM and a shared one: the cashier says where the float arrived
-            self.fields["mtn_account"].queryset = mtn
-            own = mtn.filter(shared=False)
-            if not self.is_bound and own.count() == 1:
-                self.initial["mtn_account"] = own.first().pk
-        else:
-            del self.fields["mtn_account"]
+        # UVE and float may have been sent to any desk's wallet (e.g. paid to Fako 2, recorded at Fako 1)
+        for name, kind in (("uve_account", K.UVE), ("mtn_account", K.MTN)):
+            every = Account.objects.filter(kind=kind, active=True, shop__isnull=True).select_related(
+                "zone", "sim", "custodian").order_by("zone__name", "id")
+            if every.count() > 1:
+                self.fields[name].queryset = every
+                mine = self.accounts([kind], receiving=True)
+                own = mine.filter(shared=False)
+                default = own.first() if own.count() == 1 else (mine.first() if mine.count() == 1 else None)
+                if not self.is_bound and default is not None:
+                    self.initial[name] = default.pk
+            else:
+                del self.fields[name]
 
     def clean(self):
         cd = super().clean()
-        if cd.get("mtn") and "mtn_account" in self.fields and not cd.get("mtn_account"):
-            self.add_error("mtn_account", _("Choose the float account the payment arrived on."))
         if not any(cd.get(n) for n, _m in self.METHOD_FIELDS):
             self.add_error("cash", _("Enter the amount received in at least one payment method."))
         if cd.get("bank"):
@@ -253,6 +267,8 @@ class CollectionForm(BaseEntryForm):
         accounts = {PaymentMethod.BANK: cd["bank_account"]} if cd.get("bank_account") else {}
         if cd.get("mtn") and cd.get("mtn_account"):
             accounts[PaymentMethod.MTN] = cd["mtn_account"]
+        if cd.get("uve") and cd.get("uve_account"):
+            accounts[PaymentMethod.UVE] = cd["uve_account"]
         return dict(payer=cd["payer"], parts=parts, accounts=accounts, bank_reference=cd.get("bank_reference", ""),
                     description=cd.get("description", ""))
 
@@ -518,7 +534,7 @@ class CorrectionForm(forms.Form):
     kind = forms.ChoiceField(label=_("Correction"), choices=Correction.Kind.choices, widget=forms.RadioSelect)
     reason = forms.CharField(label=_("Reason (shown on the CORRECTED stamp)"), max_length=255)
     amount = MoneyField(label=_("Corrected amount (FCFA)"), required=False, allow_negative=True)
-    customer = CustomerField(label=_("Corrected customer (business SIM)"), required=False)
+    customer = CustomerField(label=_("Corrected agent / POS (business SIM)"), required=False)
     account = AccountChoiceField(label=_("Corrected company account"), required=False,
                                  queryset=Account.objects.filter(kind__in=Account.ASSET_KINDS, active=True))
     description = forms.CharField(label=_("Corrected note/description"), required=False, max_length=255)
@@ -571,8 +587,8 @@ class OpeningBalanceForm(forms.Form):
     idem = forms.UUIDField(widget=forms.HiddenInput)
     account = forms.ModelChoiceField(label=_("Account"), queryset=Account.objects.none())
     amount = MoneyField(label=_("Amount (FCFA)"), allow_negative=True,
-                        help_text=_("Customers / cash managers: positive = owes the company, negative = the company "
-                                    "owes them (supply due). Drawers, wallets and banks: positive only."))
+                        help_text=_("Agents, POS and cash managers: positive = owes the company, negative = the "
+                                    "company owes them (supply due). Drawers, wallets and banks: positive only."))
     business_date = forms.DateField(label=_("Balance as of (go-live date)"), widget=forms.DateInput(attrs={"type": "date"}))
     description = forms.CharField(label=_("Note"), required=False, max_length=255)
 
@@ -637,6 +653,29 @@ class AdminEditForm(CorrectionForm):
         if self.cleaned_data.get("business_date"):
             vals["business_date"] = self.cleaned_data["business_date"]
         return vals
+
+
+class AdminSimpleEditForm(forms.Form):
+    """Super-admin edit of any other transaction (shops, capital, transfers, payments received by shops…)."""
+
+    amount = MoneyField(label=_("Amount (FCFA)"), required=False)
+    business_date = forms.DateField(label=_("Business date"), required=False,
+                                    widget=forms.DateInput(attrs={"type": "date"}))
+    description = forms.CharField(label=_("Note"), required=False, max_length=255)
+    reason = forms.CharField(label=_("Reason for the edit (kept in the audit log)"), max_length=255)
+
+    def __init__(self, txn, *args, amount_editable=True, **kwargs):
+        super().__init__(*args, **kwargs)
+        if not self.is_bound:
+            self.initial.update(amount=txn.amount, business_date=txn.business_date, description=txn.description)
+        if hasattr(txn, "account_name") and txn.type in ("SHOP_CASHIN", "SHOP_CASHOUT"):
+            self.fields["account_name"] = forms.CharField(label=_("Account name"), required=False, max_length=120,
+                                                          initial=txn.account_name)
+            self.fields["client_phone"] = forms.CharField(label=_("Client phone"), required=False, max_length=30,
+                                                          initial=txn.client_phone)
+        if not amount_editable:
+            del self.fields["amount"]
+        self.order_fields(["amount", "business_date", "account_name", "client_phone", "description", "reason"])
 
 
 class AdminDeleteForm(forms.Form):

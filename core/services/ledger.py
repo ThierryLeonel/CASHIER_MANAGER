@@ -103,6 +103,7 @@ def _post_locked(specs, ctx, idempotency_key):
         raise DuplicateSubmission(Transaction.objects.get(idempotency_key=idempotency_key))
 
     net = defaultdict(Decimal)
+    strict = defaultdict(Decimal)  # outflows that need the money (everything but supplies)
     for spec in specs:
         if len(spec.lines) < 2:
             raise BusinessError("A ledger transaction needs at least two entries")
@@ -116,12 +117,15 @@ def _post_locked(specs, ctx, idempotency_key):
                 raise BusinessError(_("Account %(acct)s is inactive.") % {"acct": locked[acct.id]})
             total += amt
             net[acct.id] += amt
+            if spec.type != "SUPPLY":
+                strict[acct.id] += amt
         if total != 0:
             raise BusinessError(f"Unbalanced posting for {spec.type}: {total}")
 
+    # a supply may take a drawer or wallet below zero (it then shows negative); every other outflow needs the money
     for acct_id, delta in net.items():
         acct = locked[acct_id]
-        if acct.kind in Account.ASSET_KINDS and delta < 0:
+        if acct.kind in Account.ASSET_KINDS and delta < 0 and strict[acct_id] < 0:
             available = balance(acct)
             if available + delta < 0:
                 raise InsufficientFunds(

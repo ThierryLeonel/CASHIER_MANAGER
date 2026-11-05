@@ -566,3 +566,4 @@ a.bal-link { text-decoration: none; }
 main > p.muted:not(.meta), main > p.small.muted:not(.meta), .form-head p.muted, .field .help, .pay-help,
 .panel > p.small.muted:not(.meta), .panel > p.muted:not(.meta), section > p.small.muted:not(.meta) { display: none; }
 h2 + p.muted:not(.meta), h2 + p.small.muted:not(.meta), h3 + p.small.muted:not(.meta), .form-foot span.small.muted { display: none; }
+.paid-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(140px, 100%), 1fr)); gap: 0 12px; }

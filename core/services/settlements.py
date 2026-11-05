@@ -53,7 +53,7 @@ def party(account):
 
 def _heads():
     return Transaction.objects.filter(type__in=SETTLE_TYPES, to_settle=True, correction__isnull=True,
-                                      receipt_no__isnull=False) \
+                                      receipt_no__isnull=False, no_payback__isnull=True) \
         .select_related("source_account__shop", "source_account__zone", "source_account__custodian__subzone",
                         "dest_account__shop", "dest_account__zone", "dest_account__custodian__subzone")
 
@@ -83,10 +83,36 @@ def unpaid_for_desk(zone):
     return out
 
 
+def declined(h):
+    from core.models import TransferNoPayback
+
+    return TransferNoPayback.objects.filter(transfer=h).select_related("decided_by").first()
+
+
+def is_receiver(user, h):
+    dest = h.dest_account
+    if dest.shop_id:
+        return (user.is_shop_manager and user.shop_id == dest.shop_id) or user.is_shop_senior or user.is_superadmin
+    desk = _desk_of(dest)
+    return (user.is_cashier and desk is not None and user.subzone_id == desk.pk) or user.is_superadmin
+
+
+def decline(user, h, note=""):
+    """The receiver answers "No": the transfer is not paid back; it stays as it is and is no longer prompted."""
+    from core.models import TransferNoPayback
+
+    h = head(h)
+    if outstanding(h) <= 0 or not is_receiver(user, h):
+        raise PermissionDenied(_("Only the receiver of this transfer can answer, while something is still owed."))
+    obj, _created = TransferNoPayback.objects.get_or_create(transfer=h, defaults={"decided_by": user,
+                                                                                   "note": (note or "").strip()})
+    return obj
+
+
 def can_pay(user, h):
     """The receiver pays: staff of the receiving shop (or the senior shop manager / admin), or a cashier of the
     receiving desk."""
-    if outstanding(h) <= 0:
+    if outstanding(h) <= 0 or declined(h):
         return False
     dest = h.dest_account
     if dest.shop_id:

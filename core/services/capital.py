@@ -127,6 +127,27 @@ def transfer(user, *, source, destination, amount, purpose, description="", idem
                  product=_product(src))
 
 
+def float_exchange(user, *, source, amount, to="DESK", uve_account=None, agent=None, description="",
+                   idempotency_key=None):
+    """Finance exchanges MTN float for UVE (1:1): the float leaves a float account and the UVE goes to a cashier's UVE
+    wallet, or to a commercial agent — then the agent owes it, like a UVE supply."""
+    from core.models import Counterparty
+
+    a = _amount(amount)
+    if source is None or source.kind != K.MTN or not source.active:
+        raise BusinessError(_("Choose the MTN float account the float leaves from."), "source")
+    if to == "AGENT":
+        if agent is None or agent.kind != Counterparty.Kind.AGENT or not agent.active:
+            raise BusinessError(_("Choose the commercial agent who receives the UVE."), "agent")
+        return _post(user, TxType.FLOAT_EXCHANGE, [(agent.account, a), (source, -a)], [source], idempotency_key,
+                     amount=a, source_account=source, counterparty=agent, product="UVE", description=description)
+    if uve_account is None or uve_account.kind != K.UVE or not uve_account.active or uve_account.shop_id:
+        raise BusinessError(_("Choose the cashier's UVE wallet that receives the UVE."), "uve_account")
+    return _post(user, TxType.FLOAT_EXCHANGE, [(uve_account, a), (source, -a)], [uve_account, source],
+                 idempotency_key, amount=a, source_account=source, dest_account=uve_account, product="UVE",
+                 description=description)
+
+
 def _product(acct):
     return {K.UVE: "UVE", K.ER: "ER", K.CASH_DRAWER: "CASH"}.get(acct.kind, "")
 

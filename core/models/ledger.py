@@ -31,7 +31,7 @@ class Account(models.Model):
         ER = "ER", _("ER wallet")
         MTN = "MTN", _("MTN float wallet")
         BANK = "BANK", _("Bank account")
-        CUSTOMER = "CUSTOMER", _("Customer account")
+        CUSTOMER = "CUSTOMER", _("Agent / POS account")
         CASH_MANAGER = "CASH_MANAGER", _("Cash manager position")
         EXPENSE = "EXPENSE", _("Expense")
         CONVERSION_UPLIFT = "CONVERSION_UPLIFT", _("Conversion uplift")
@@ -198,6 +198,7 @@ class TxType(models.TextChoices):
     SHOP_STOCK_OUT = "SHOP_STOCK_OUT", _("Shop: stock written off")
     SHOP_TO_SHOP = "SHOP_TO_SHOP", _("Shop: transfer to another shop")
     SHOP_AGENT_PAYBACK = "SHOP_AG_PAYBACK", _("Shop: agent pays the company")
+    FLOAT_EXCHANGE = "FLOAT_EXCHANGE", _("Float exchanged for UVE")
     SHOP_POS_UVE_OUT = "SHOP_POS_UVE_OUT", _("Shop: UVE sent to an agent / POS")
     SHOP_POS_UVE_IN = "SHOP_POS_UVE_IN", _("Shop: UVE received from an agent / POS")
 

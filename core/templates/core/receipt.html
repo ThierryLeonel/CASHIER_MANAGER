@@ -22,9 +22,9 @@
   <div class="amount">{{ amount|default:t.amount|fcfa }} FCFA</div>
   <table>
     {% for k, v in rows %}<tr><td>{{ k }}</td><td>{{ v }}</td></tr>{% endfor %}
-    {% if balance_after is not None %}<tr><td>{% trans "Customer balance after this transaction" %}</td><td>{{ balance_after|absval|fcfa }} FCFA {% if balance_after|negative %}{% trans "supply due to customer" %}{% elif balance_after %}{% trans "owed to the company" %}{% endif %}</td></tr>{% endif %}
+    {% if balance_after is not None %}<tr><td>{% trans "Agent / POS balance after this transaction" %}</td><td>{{ balance_after|absval|fcfa }} FCFA {% if balance_after|negative %}{% trans "supply due to the agent / POS" %}{% elif balance_after %}{% trans "owed to the company" %}{% endif %}</td></tr>{% endif %}
   </table>
-  <div class="sig"><div>{% trans "Cashier signature" %}</div><div>{% trans "Customer signature" %}</div></div>
+  <div class="sig"><div>{% trans "Cashier signature" %}</div><div>{% trans "Agent / POS signature" %}</div></div>
   {% if company.receipt_footer %}<p style="font-size:9pt;margin-top:8mm;text-align:center">{{ company.receipt_footer }}</p>{% endif %}
   <p style="font-size:8pt;color:#666;margin-top:6mm">{% trans "This receipt confirms a completed transaction recorded in the company ledger. Amounts in FCFA (XAF)." %}</p>
 </div>

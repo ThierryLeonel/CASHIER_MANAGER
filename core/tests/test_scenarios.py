@@ -107,9 +107,13 @@ class SuppliesAndPayments(OrgMixin, TestCase):
             ops.record_supply(self.c_f1, product="UVE", customer=self.a1, amount=D(0), source_account=self.uve_f1)
         with self.assertRaises(BusinessError):  # fractional FCFA
             ops.record_supply(self.c_f1, product="UVE", customer=self.a1, amount="100.5", source_account=self.uve_f1)
-        with self.assertRaises(InsufficientFunds):
-            ops.record_supply(self.c_f1, product="UVE", customer=self.a1, amount=D(2000000),
-                              source_account=self.uve_f1)
+        # a supply larger than the wallet is accepted: the wallet shows negative
+        ops.record_supply(self.c_f1, product="UVE", customer=self.a1, amount=D(2000000), source_account=self.uve_f1)
+        self.assertLess(self.bal(self.uve_f1), 0)
+        with self.assertRaises(InsufficientFunds):  # other outflows still need the money
+            ops.record_expense(self.c_f1, category=self.o["cat"] if "cat" in self.o else
+                               __import__("core.models", fromlist=["ExpenseCategory"]).ExpenseCategory.objects.first(),
+                               amount=D(10), drawer=self.uve_f1, description="x")
         with self.assertRaises(BusinessError):  # MTN money must go to an MTN wallet
             ops.record_collection(self.c_f1, payer=self.a1, method="MTN", amount=D(10), account=self.uve_f1)
         with self.assertRaises(BusinessError):  # bank deposit needs a reference

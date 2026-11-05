@@ -172,7 +172,7 @@ def receipt_rows(t):
         parts = t.payment_parts
         if len(parts) <= 1:
             rows.append((_("Product"), t.get_product_display()))
-        rows.append((_("Responsible customer"), f"{t.counterparty.name} — {_('business SIM')} "
+        rows.append((_("Responsible agent / POS"), f"{t.counterparty.name} — {_('business SIM')} "
                                                 f"{display_sim(t.counterparty.business_sim)} "
                                                 f"({t.counterparty.get_kind_display()})"))
         if t.counterparty_2_id:
@@ -218,7 +218,7 @@ def receipt_rows(t):
         rows.append((_("Total transferred"), f"{fmt(sum(p.amount for p in parts))} FCFA"))
     else:
         if t.counterparty_id:
-            rows.append((_("Customer"), str(t.counterparty)))
+            rows.append((_("Agent / POS"), str(t.counterparty)))
         if t.source_account_id:
             rows.append((_("From"), str(t.source_account)))
         if t.dest_account_id:
@@ -263,7 +263,7 @@ def txn_detail(request, pk):
     sh_ = st.head(t) if t.type in st.SETTLE_TYPES else None
     ctx = {"t": t, "entries": entries, "rows": receipt_rows(t), "transfers": transfers,
            "settle": ({"outstanding": st.outstanding(sh_), "paid": st.paid(sh_), "total": st.total(sh_),
-                       "can_pay": st.can_pay(request.user, sh_), "head": sh_,
+                       "can_pay": st.can_pay(request.user, sh_), "head": sh_, "declined": st.declined(sh_),
                        "payments": list(Transaction.objects.filter(settles=sh_, correction__isnull=True)
                                         .order_by("posted_at"))}
                       if sh_ is not None and sh_.to_settle else None),
@@ -271,7 +271,7 @@ def txn_detail(request, pk):
            "can_correct": request.user.role in SUPERVISORS and t.type not in corr.NOT_CORRECTABLE
            and not hasattr(t, "correction"),
            "can_admin": request.user.is_superadmin,
-           "can_edit": request.user.is_superadmin and t.type in corr.BUILDERS and t.type != TxType.REVERSAL
+           "can_edit": request.user.is_superadmin and t.type != TxType.REVERSAL
            and not t.replaces_id and not hasattr(t, "correction"),
            "can_transfer": request.user.role in (R.CASHIER, R.MANAGER, R.FINANCE, R.SUPERADMIN)
            and t.type in ops.TRANSFERABLE_TYPES and t.counterparty_id is not None
@@ -379,6 +379,24 @@ def customer_search(request):
                     "balance_label": str(_("owes") if bal > 0 else _("supply due") if bal < 0 else _("settled")),
                     "hide_balance": shop_user})
     return JsonResponse({"results": out})
+
+
+@roles_required(R.CASHIER, R.SHOP_MANAGER, R.SHOP_SENIOR, R.SUPERADMIN)
+def transfer_no_payback(request, pk):
+    """The receiver answers "No": the transfer is not paid back and is no longer prompted."""
+    from core.services import settlements as st
+
+    if request.method != "POST":
+        return redirect("txn_detail", pk=pk)
+    t = _get_visible_txn(request, pk)
+    try:
+        st.decline(request.user, st.head(t), request.POST.get("note", ""))
+        messages.success(request, _("%(ref)s: not paid back. It stays as it is.") % {"ref": st.head(t).reference})
+    except BusinessError as e:
+        messages.error(request, e.message)
+    nxt = request.POST.get("next") or ""
+    return redirect(nxt if nxt.startswith("/") and not nxt.startswith("//") else "txn_detail",
+                    **({} if nxt.startswith("/") and not nxt.startswith("//") else {"pk": pk}))
 
 
 @roles_required(R.CASHIER, R.SHOP_MANAGER, R.SHOP_SENIOR, R.SUPERADMIN)

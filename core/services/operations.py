@@ -90,7 +90,7 @@ PRODUCT_ACCOUNT_KIND = {Product.UVE: K.UVE, Product.ER: K.ER, Product.CASH: K.CA
 
 def build_supply(ctx, *, product, customer, amount, source_account, recipient=None, description=""):
     amount = _positive(amount)
-    _active_party(customer, _("Responsible customer"))
+    _active_party(customer, _("Responsible agent / POS"))
     if product not in PRODUCT_ACCOUNT_KIND:
         raise BusinessError(_("Choose UVE, ER or cash."), "product")
     if recipient is not None and recipient.pk == customer.pk:
@@ -144,7 +144,7 @@ def _supply_account(ctx, product):
 
 
 def record_supplies(user, *, customer, parts, recipient=None, description="", idempotency_key=None,
-                    acting_for=None):
+                    acting_for=None, paid=None):
     """One supply made of several products at once, e.g. {"CASH": 100000, "UVE": 500000, "ER": 120000}.
 
     Each product leaves from its account automatically and is posted as its own supply, all together (all or
@@ -167,6 +167,22 @@ def record_supplies(user, *, customer, parts, recipient=None, description="", id
         spec.fields["payment_group"] = group if len(todo) > 1 else None
         spec.receipt = i == 0
         specs.append(spec)
+    # paid on the spot: a payment by whoever owes the supply, recorded with it (its own receipt)
+    pay = [(m, _money(a)) for m, a in (paid or {}).items() if a]
+    if pay:
+        if sum(a for _m, a in pay) > sum(a for _p, a in todo):
+            raise BusinessError(_("The amount paid now cannot be more than what is supplied."), "paid_cash")
+        pgroup = uuid.uuid5(idempotency_key, "paid") if idempotency_key else uuid.uuid4()
+        for i, (m, amt) in enumerate(pay):
+            acct = _desk_account(ctx, METHOD_ACCOUNT_KIND[m], receiving=True)
+            if acct is None:
+                raise BusinessError(_("No single %(kind)s account is set up for your subzone.")
+                                    % {"kind": Account.Kind(METHOD_ACCOUNT_KIND[m]).label}, f"paid_{m.lower()}")
+            pspec = build_collection(ctx, payer=customer, method=m, amount=amt, account=acct,
+                                     description=_("Paid with the supply"))
+            pspec.fields["payment_group"] = pgroup if len(pay) > 1 else None
+            pspec.receipt = i == 0
+            specs.append(pspec)
     with transaction.atomic():
         return post(specs, ctx, idempotency_key)
 
@@ -227,7 +243,7 @@ def clean_split(split, total, *, allow_negative=False):
 def build_collection(ctx, *, payer, method, amount, account, bank_reference="", description="", split=None):
     amount = _positive(amount)
     split = clean_split(split, amount)
-    _active_party(payer, _("Paying customer"))
+    _active_party(payer, _("Paying agent / POS"))
     if method not in METHOD_ACCOUNT_KIND:
         raise BusinessError(_("Choose a payment method."), "method")
     if account.kind != METHOD_ACCOUNT_KIND[method]:
@@ -246,7 +262,9 @@ def build_collection(ctx, *, payer, method, amount, account, bank_reference="", 
                                 % {"ref": bank_reference}, "bank_reference")
     else:
         bank_reference = ""
-    _require_receive(ctx, account)
+    if not (method in (PaymentMethod.UVE, PaymentMethod.MTN) and account.shop_id is None and account.active
+            and account.kind in (K.UVE, K.MTN)):
+        _require_receive(ctx, account)  # UVE / float sent to any desk's wallet can be recorded by any cashier
     return TxSpec(
         type=TxType.COLLECTION,
         lines=[(account, amount), (payer.account, -amount)],
@@ -586,7 +604,7 @@ def build_opening(ctx, *, account, amount, description="", split=None):
     if amount == 0:
         raise BusinessError(_("Opening amount cannot be zero; leave the account uninitialised instead."), "amount")
     if account.kind not in OPENING_KINDS:
-        raise BusinessError(_("Opening balances are only for customers, cash managers, drawers, wallets and banks."))
+        raise BusinessError(_("Opening balances are only for agents, POS, cash managers, drawers, wallets and banks."))
     if account.kind in Account.ASSET_KINDS and amount < 0:
         raise BusinessError(_("A company drawer/wallet/bank cannot open negative."), "amount")
     existing = Transaction.objects.filter(opening_for_account=account)
@@ -651,10 +669,10 @@ def transfer_responsibility(user, *, supply, new_party, reason, idempotency_key=
             raise BusinessError(_("This transaction has been corrected; transfer its replacement instead."))
         old_party = responsible_party(supply)
         if old_party is None:
-            raise BusinessError(_("This transaction has no customer obligation."))
+            raise BusinessError(_("This transaction has no agent or POS obligation."))
         if supply.type == TxType.OPENING_BALANCE and supply.entries.filter(account=old_party.account,
                                                                            amount__lt=0).exists():
-            raise BusinessError(_("Only an opening amount owed by the customer can be transferred."))
+            raise BusinessError(_("Only an opening amount owed by the agent / POS can be transferred."))
         if active_transfer(supply):
             raise BusinessError(_("Responsibility for %(ref)s has already been transferred. Cancel that transfer "
                                   "first if it was wrong.") % {"ref": supply.reference})

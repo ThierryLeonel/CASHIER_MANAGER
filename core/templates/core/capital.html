@@ -13,6 +13,7 @@
   <a class="qa main" href="{% url 'capital_op' 'inject' %}"><span class="qa-ic">{% icon "payment" 22 %}</span><strong>{% trans "Inject capital" %}</strong><span class="d">{% trans "Cash, UVE, ER, MTN or bank" %}</span></a>
   <a class="qa" href="{% url 'capital_op' 'withdraw' %}"><span class="qa-ic">{% icon "supply" 22 %}</span><strong>{% trans "Withdraw capital" %}</strong><span class="d">{% trans "Owners take money out" %}</span></a>
   <a class="qa" href="{% url 'capital_op' 'transfer' %}"><span class="qa-ic">{% icon "transfer" 22 %}</span><strong>{% trans "Transfer capital" %}</strong><span class="d">{% trans "Between any two accounts" %}</span></a>
+  <a class="qa" href="{% url 'capital_op' 'float' %}"><span class="qa-ic">{% icon "convert" 22 %}</span><strong>{% trans "Exchange float for UVE" %}</strong><span class="d">{% trans "To a cashier or a commercial agent" %}</span></a>
 </div>
 <h2>{% trans "Capital movements" %}</h2>
 <form class="filters panel" method="get">

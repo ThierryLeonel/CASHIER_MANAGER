@@ -5,5 +5,5 @@
   {% endfor %}
     <div class="field"><button class="btn primary" type="submit">{% trans "Apply" %}</button></div>
   </div>
-  <p class="small muted" style="margin:.5rem 0 0">{{ filters_text }}{% if user.is_cashier %} · {% trans "Operational reports are limited to your own desk; customer balances are shared." %}{% endif %}</p>
+  <p class="small muted" style="margin:.5rem 0 0">{{ filters_text }}{% if user.is_cashier %} · {% trans "Operational reports are limited to your own desk; agent and POS balances are shared." %}{% endif %}</p>
 </form>

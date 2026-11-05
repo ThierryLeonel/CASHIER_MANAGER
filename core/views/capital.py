@@ -26,6 +26,7 @@ OPS = {
     "transfer": (CF.CapitalTransferForm, cap.transfer, _l("Transfer capital"),
                  _l("Move money between any two company accounts: cashiers, master SIMs, banks and shops. The total "
                     "capital does not change."), "transfer"),
+    "float": (CF.FloatExchangeForm, cap.float_exchange, _l("Exchange float for UVE"), "", "convert"),
 }
 
 

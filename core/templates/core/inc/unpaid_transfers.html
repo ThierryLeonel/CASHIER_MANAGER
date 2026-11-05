@@ -2,5 +2,6 @@
   <h3>{% trans "Transfers received not paid back yet" %} — {{ unpaid_total|fcfa }} FCFA</h3>
   <p class="small muted">{% trans "Pay the sender now, or they will be written automatically into your closing note as unpaid." %}</p>
   <div class="tbl-wrap"><table class="t"><thead><tr><th>{% trans "Reference" %}</th><th>{% trans "From" %}</th><th>{% trans "Date" %}</th><th class="money">{% trans "Still owed" %}</th><th></th></tr></thead>
-  <tbody>{% for h, o in unpaid %}<tr><td><a href="{% url 'txn_detail' h.pk %}">{{ h.reference }}</a></td><td>{{ h.sender_name }}</td><td>{{ h.business_date|date:"d/m/Y" }}</td><td class="money">{{ o|fcfa }}</td><td><a class="btn small primary" href="{% url 'transfer_pay' h.pk %}?next={{ next_url|urlencode }}">{% trans "Pay the sender" %}</a></td></tr>{% endfor %}</tbody></table></div>
+  <tbody>{% for h, o in unpaid %}<tr><td><a href="{% url 'txn_detail' h.pk %}">{{ h.reference }}</a></td><td>{{ h.sender_name }}</td><td>{{ h.business_date|date:"d/m/Y" }}</td><td class="money">{{ o|fcfa }}</td><td class="decide"><a class="btn small primary" href="{% url 'transfer_pay' h.pk %}?next={{ next_url|urlencode }}">{% trans "Pay the sender" %}</a>
+<form method="post" action="{% url 'transfer_no_payback' h.pk %}" class="inline">{% csrf_token %}<input type="hidden" name="next" value="{{ next_url }}"><button class="btn small">{% trans "No" %}</button></form></td></tr>{% endfor %}</tbody></table></div>
 </div>{% endif %}

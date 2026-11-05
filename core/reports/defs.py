@@ -90,7 +90,7 @@ TX_RELATED = ["cashier", "zone", "entered_by", "cashier_day__zone", "counterpart
 
 TX_COLUMNS = [
     Col("posted_at", _l("Recorded at"), "datetime"), Col("business_date", _l("Business date"), "date"),
-    Col("reference", _l("Reference")), Col("type", _l("Type")), Col("customer", _l("Customer")),
+    Col("reference", _l("Reference")), Col("type", _l("Type")), Col("customer", _l("Agent / POS")),
     Col("details", _l("Details")), Col("cashier", _l("Cashier")), Col("cashier_id", _l("Cashier ID")),
     Col("amount", _l("Amount"), "money", True),
 ]
@@ -153,10 +153,10 @@ def balances_by_account(accounts, f):
 
 # ------------------------------------------------------------------ reports
 def statement(f):
-    rep = Report("statement", _("Customer account statement"), f.text())
+    rep = Report("statement", _("Agent / POS account statement"), f.text())
     cp = f.customer
     if cp is None:
-        rep.tables.append(Table(_("Select a customer business SIM to see the statement."), []))
+        rep.tables.append(Table(_("Select an agent or POS business SIM to see the statement."), []))
         return rep
     acct = cp.account
     entries = Entry.objects.filter(account=acct).filter(f.date_q()).select_related(
@@ -184,14 +184,14 @@ def statement(f):
                          corrected=hasattr(t, "correction"), _id=t.id))
     current = ops.customer_balance(cp)
     rep.summary = [
-        (_("Customer"), f"{cp} ({cp.get_kind_display()})", "text"),
+        (_("Agent / POS"), f"{cp} ({cp.get_kind_display()})", "text"),
         (_("Opening balance"), opening, "money"),
         (_("Closing balance (end of period)"), running, "money"),
         (_("Current balance (now)"), current, "money"),
         (_("Supplied UVE"), by_product["UVE"], "money"), (_("Supplied ER"), by_product["ER"], "money"),
         (_("Supplied cash"), by_product["CASH"], "money"), (_("Destockage"), by_product["DESTOCKAGE"], "money"),
     ] + [(_("Paid by %(m)s") % {"m": PaymentMethod(m).label}, v, "money") for m, v in sorted(by_method.items())]
-    rep.tables.append(Table(_("Movements (positive = owed to company, negative balance = supply due to customer)"), [
+    rep.tables.append(Table(_("Movements (positive = owed to company, negative balance = supply due to the agent / POS)"), [
         Col("posted_at", _("Recorded at"), "datetime"), Col("business_date", _("Business date"), "date"),
         Col("reference", _("Reference")), Col("receipt", _("Receipt")), Col("type", _("Type")),
         Col("details", _("Details")), Col("cashier", _("Cashier")), Col("cashier_id", _("Cashier ID")),
@@ -244,13 +244,13 @@ CUSTOMER_COLS = [
     Col("opening", _l("Opening"), "money", True), Col("supplied", _l("Supplied"), "money", True),
     Col("paid", _l("Paid"), "money", True), Col("transfers", _l("Resp. transfers"), "money", True),
     Col("other", _l("Corrections / opening"), "money", True), Col("closing", _l("Closing"), "money", True),
-    Col("owed", _l("Owed to company"), "money", True), Col("due", _l("Supply due to customer"), "money", True),
+    Col("owed", _l("Owed to company"), "money", True), Col("due", _l("Supply due to the agent / POS"), "money", True),
     Col("current", _l("Current"), "money", True),
 ]
 
 
 def customers(f):
-    rep = Report("customers", _("Customer balances (agents and POS)"), f.text())
+    rep = Report("customers", _("Commercial agent and POS balances"), f.text())
     rep.tables.append(Table(_("Balances"), CUSTOMER_COLS, _customer_rows(f, only="nonzero")))
     return rep
 
@@ -267,9 +267,9 @@ def pos(f):
 
 
 def supply_due(f):
-    rep = Report("supply_due", _("Supply due to customers (prepaid / overpaid balances)"), f.text())
+    rep = Report("supply_due", _("Supply due to agents and POS (prepaid / overpaid balances)"), f.text())
     rows = _customer_rows(f, only="due")
-    rep.tables.append(Table(_("Customers with supply due (as of end of period)"), CUSTOMER_COLS, rows))
+    rep.tables.append(Table(_("Agents and POS with supply due (as of end of period)"), CUSTOMER_COLS, rows))
     return rep
 
 
@@ -628,6 +628,7 @@ RECON_GROUPS = [
     ("adjust", _l("Reconciliation adj."), [TxType.RECON_ADJUSTMENT]),
     ("reversal", _l("Correction reversals"), [TxType.REVERSAL]),
     ("capital", _l("Capital movements"), [TxType.CAPITAL_IN, TxType.CAPITAL_OUT, TxType.CAPITAL_MOVE]),
+    ("float_ex", _l("Float exchanged for UVE"), [TxType.FLOAT_EXCHANGE]),
     ("shops", _l("Transfers with shops"), [t for t in TxType.values if t.startswith("SHOP_")] + [TxType.DESK_TO_SHOP]),
 ]
 
@@ -714,8 +715,8 @@ def reconciliation(f):
     due = -sum((r["s"] for r in cust if r["s"] < 0), Z)
     period_sum = money(Entry.objects.filter(period).aggregate(s=Sum("amount"))["s"])
     rep.summary = [
-        (_("Customers owe the company (end of period)"), owed, "money"),
-        (_("Supply due to customers (end of period)"), due, "money"),
+        (_("Agents and POS owe the company (end of period)"), owed, "money"),
+        (_("Supply due to agents and POS (end of period)"), due, "money"),
         (_("Cash managers net position (end of period, + = they owe)"), tot(K.CASH_MANAGER, upto), "money"),
         (_("Expenses in period"), tot(K.EXPENSE, period), "money"),
         (_("Conversion uplift in period"), -tot(K.CONVERSION_UPLIFT, period), "money"),
@@ -859,8 +860,8 @@ def supply_payment(f):
     return rep
 
 REPORTS = {
-    "statement": (_l("Customer account statement"), statement),
-    "customers": (_l("Customer balances"), customers),
+    "statement": (_l("Agent / POS account statement"), statement),
+    "customers": (_l("Agent and POS balances"), customers),
     "pos": (_l("POS transactions and outstanding"), pos),
     "supplies": (_l("Supplies (UVE, ER, cash)"), supplies),
     "collections": (_l("Collections by payment method"), collections),
@@ -870,7 +871,7 @@ REPORTS = {
     "accounts": (_l("Drawer and SIM wallet movements"), accounts),
     "transfers": (_l("Transfer reconciliation"), transfers),
     "conversions": (_l("Conversions and rates"), conversions),
-    "supply_due": (_l("Supply due to customers"), supply_due),
+    "supply_due": (_l("Supply due to agents and POS"), supply_due),
     "corrections": (_l("Corrections and responsibility transfers"), corrections),
     "closings": (_l("Daily closings and differences"), closings),
     "reconciliation": (_l("Reconciliation"), reconciliation),
@@ -892,7 +893,7 @@ REPORT_CARDS = {
     "accounts": ("wallet", _l("In and out of every drawer, SIM wallet and bank")),
     "transfers": ("transfer", _l("Every transfer between desks, shops and banks: who sent what to whom, sent = received")),
     "conversions": ("convert", _l("UVE converted to ER and the rates used")),
-    "supply_due": ("percent", _l("Customers who paid in advance")),
+    "supply_due": ("percent", _l("Agents and POS who paid in advance")),
     "corrections": ("edit", _l("Corrected entries and changes of responsibility")),
     "closings": ("lock", _l("Counted versus expected, and open differences")),
     "reconciliation": ("chart", _l("Daily, weekly, monthly, custom or overall: opening + movements = closing")),

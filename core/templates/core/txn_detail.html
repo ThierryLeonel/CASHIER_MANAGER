@@ -6,7 +6,8 @@
 <div class="actions">
   {% if rt.receipt_no %}<a class="btn primary" href="{% url 'receipt' rt.pk %}">{% trans "A4 receipt / print" %}</a>
   <a class="btn" href="{% url 'receipt_pdf' rt.pk %}?download=1">{% trans "Download PDF" %}</a>{% endif %}
-  {% if settle.can_pay %}<a class="btn primary" href="{% url 'transfer_pay' settle.head.pk %}">{% icon "payment" 16 %} {% trans "Pay the sender" %}</a>{% endif %}
+  {% if settle.can_pay %}<a class="btn primary" href="{% url 'transfer_pay' settle.head.pk %}">{% icon "payment" 16 %} {% trans "Pay the sender" %}</a>
+  <form method="post" action="{% url 'transfer_no_payback' settle.head.pk %}" class="inline">{% csrf_token %}<button class="btn">{% trans "No" %}</button></form>{% endif %}
   {% if can_transfer %}<a class="btn" href="{% url 'txn_transfer' t.pk %}">{% trans "Transfer responsibility" %}</a>{% endif %}
   {% if can_correct %}<a class="btn" href="{% url 'txn_correct' t.pk %}">{% trans "Correct" %}</a>{% endif %}
   {% if can_edit %}<a class="btn" href="{% url 'txn_edit' t.pk %}">{% icon "edit" 16 %} {% trans "Edit" %}</a>{% endif %}
@@ -14,7 +15,7 @@
 </div>{% endwith %}
 {% if settle %}<div class="panel settle-box">
   <p><strong>{% trans "Payment back to the sender" %}</strong> — {% trans "transferred" %} {{ settle.total|fcfa }} FCFA · {% trans "paid back" %} {{ settle.paid|fcfa }} FCFA ·
-  {% if settle.outstanding %}<span class="neg">{% trans "still owed" %} {{ settle.outstanding|fcfa }} FCFA</span>{% else %}<span class="badge ok">{% trans "Fully paid back" %}</span>{% endif %}</p>
+  {% if settle.declined %}<span class="badge">{% trans "Not paid back" %}</span> <span class="small muted">{{ settle.declined.decided_by }} · {{ settle.declined.decided_at|date:"d/m/Y H:i" }}</span>{% elif settle.outstanding %}<span class="neg">{% trans "still owed" %} {{ settle.outstanding|fcfa }} FCFA</span>{% else %}<span class="badge ok">{% trans "Fully paid back" %}</span>{% endif %}</p>
   {% if settle.payments %}<p class="small muted meta">{% for p in settle.payments %}<a href="{% url 'txn_detail' p.pk %}">{{ p.reference }}</a> {{ p.amount|fcfa }} ({{ p.business_date|date:"d/m/Y" }}){% if not forloop.last %} · {% endif %}{% endfor %}</p>{% endif %}
 </div>{% endif %}
 {% if t.settles_id %}<p class="small muted meta">{% trans "This transfer pays back" %} <a href="{% url 'txn_detail' t.settles_id %}">{{ t.settles.reference }}</a>.</p>{% endif %}
@@ -39,6 +40,6 @@
 <h2>{% trans "Ledger entries" %}</h2>
 <div class="tbl-wrap"><table class="t"><thead><tr><th>{% trans "Account" %}</th><th>{% trans "Type" %}</th><th class="money">{% trans "Debit (+)" %}</th><th class="money">{% trans "Credit (−)" %}</th></tr></thead>
 <tbody>{% for e in entries %}<tr><td>{{ e.account }}{% if e.account.counterparty %} — {{ e.account.counterparty }}{% endif %}</td><td>{{ e.account.get_kind_display }}</td><td class="money">{% if not e.amount|negative %}{{ e.amount|fcfa }}{% endif %}</td><td class="money">{% if e.amount|negative %}{{ e.amount|absval|fcfa }}{% endif %}</td></tr>{% endfor %}</tbody></table></div>
-<p class="small muted">{% trans "Every transaction is balanced (debits = credits). Customer account: debit = owes more; credit = paid / owes less." %}</p>
+<p class="small muted">{% trans "Every transaction is balanced (debits = credits). Agent / POS account: debit = owes more; credit = paid / owes less." %}</p>
 {% endif %}
 {% endblock %}

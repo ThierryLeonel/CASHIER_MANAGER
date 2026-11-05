@@ -4,7 +4,8 @@ import uuid
 from django import forms
 from django.utils.translation import gettext_lazy as _
 
-from core.forms import MoneyField
+from core.forms import CustomerField, MoneyField
+from core.models import Account, Counterparty
 from core.services import capital as cap
 
 
@@ -59,3 +60,26 @@ class CapitalTransferForm(_CapitalForm):
     amount = MoneyField(label=_("Amount (FCFA)"))
     purpose = forms.CharField(label=_("Purpose"), max_length=255)
     description = forms.CharField(label=_("Description"), max_length=255, required=False)
+
+
+class FloatExchangeForm(_CapitalForm):
+    source = AccountChoice(label=_("Float leaves from"), queryset=None)
+    amount = MoneyField(label=_("Amount (FCFA)"))
+    to = forms.ChoiceField(label=_("UVE goes to"), choices=[("DESK", _("A cashier")), ("AGENT", _("A commercial agent"))],
+                           widget=forms.RadioSelect, initial="DESK")
+    uve_account = AccountChoice(label=_("Cashier's UVE wallet"), queryset=None, required=False)
+    agent = CustomerField(label=_("Commercial agent (business SIM)"), kind=Counterparty.Kind.AGENT, required=False)
+    description = forms.CharField(label=_("Note"), max_length=255, required=False)
+
+    def __init__(self, user, *args, **kwargs):
+        super().__init__(user, *args, **kwargs)
+        self.fields["source"].queryset = cap.account_choices().filter(kind=Account.Kind.MTN)
+        self.fields["uve_account"].queryset = cap.account_choices().filter(kind=Account.Kind.UVE, shop__isnull=True)
+
+    def clean(self):
+        cd = super().clean()
+        if cd.get("to") == "AGENT" and not cd.get("agent"):
+            self.add_error("agent", _("Choose the commercial agent who receives the UVE."))
+        if cd.get("to") == "DESK" and not cd.get("uve_account"):
+            self.add_error("uve_account", _("Choose the cashier's UVE wallet that receives the UVE."))
+        return cd

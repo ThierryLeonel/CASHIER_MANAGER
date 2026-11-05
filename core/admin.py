@@ -424,3 +424,50 @@ class ShopShiftAdmin(SuperAdminOnly):
 
     def has_change_permission(self, request, obj=None):
         return False
+
+
+# ---------------------------------------------------------------- records any user made outside the ledger
+from core.models import AgentClientEntry, AgentExchange, AgentPayback, ServiceCount, SimRetrieval  # noqa: E402
+
+
+class _RecordAdmin(SuperAdminOnly):
+    """The super administrator edits or deletes records made by any user (the ledger itself is edited from the
+    transaction page: Edit / Delete)."""
+
+    def has_add_permission(self, request):
+        return False
+
+
+@admin.register(AgentClientEntry)
+class AgentClientEntryAdmin(_RecordAdmin):
+    list_display = ("__str__", "agent", "kind", "client_kind", "uve", "er", "cash", "paid", "business_date",
+                    "cancelled_at")
+    list_filter = ("kind", "client_kind", "business_date")
+    search_fields = ("agent__name", "agent__business_sim", "pos__name", "client_phone")
+    exclude = ("idem",)
+
+
+@admin.register(AgentPayback)
+class AgentPaybackAdmin(_RecordAdmin):
+    list_display = ("__str__", "agent", "desk", "shop", "cash", "uve", "mtn", "status", "created_at")
+    list_filter = ("status",)
+    search_fields = ("agent__name", "agent__business_sim", "reference")
+    exclude = ("idem",)
+    readonly_fields = ("transaction",)
+
+
+@admin.register(AgentExchange)
+class AgentExchangeAdmin(_RecordAdmin):
+    list_display = ("__str__", "agent", "direction", "amount", "other_phone", "business_date", "cancelled_at")
+    list_filter = ("direction", "business_date")
+    exclude = ("idem",)
+
+
+@admin.register(ServiceCount)
+class ServiceCountAdmin(_RecordAdmin):
+    list_display = ("__str__", "recorded_by")
+
+
+@admin.register(SimRetrieval)
+class SimRetrievalAdmin(_RecordAdmin):
+    list_display = ("__str__", "recorded_by")

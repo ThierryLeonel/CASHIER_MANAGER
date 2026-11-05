@@ -21,7 +21,7 @@ from .shops import (  # noqa: F401,E402
     shop_stock, shop_transactions, shops, desk_to_shop,
 )
 from .capital import capital, capital_op  # noqa: F401,E402
-from .records import transfer_pay  # noqa: F401,E402
+from .records import transfer_no_payback, transfer_pay  # noqa: F401,E402
 from .agents import (  # noqa: F401,E402
     agent_activity, agent_collect, agent_entry_cancel, agent_payback, agent_payback_cancel, agent_pos, agent_pos_detail,
     agent_daily, agent_debtors, agent_exchange, agent_exchange_cancel, agent_office, agent_supply, agent_transfer, payback_decide, paybacks,

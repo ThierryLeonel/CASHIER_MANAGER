@@ -1,5 +1,5 @@
 {% load i18n cashier %}<div class="tbl-wrap"><table class="t">
-<thead><tr><th>{% trans "Recorded at" %}</th><th>{% trans "Business date" %}</th><th>{% trans "Reference" %}</th><th>{% trans "Type" %}</th><th>{% trans "Customer" %}</th><th>{% trans "Account" %}</th><th>{% trans "Cashier (ID)" %}</th><th class="money">{% trans "Amount" %}</th></tr></thead>
+<thead><tr><th>{% trans "Recorded at" %}</th><th>{% trans "Business date" %}</th><th>{% trans "Reference" %}</th><th>{% trans "Type" %}</th><th>{% trans "Agent / POS" %}</th><th>{% trans "Account" %}</th><th>{% trans "Cashier (ID)" %}</th><th class="money">{% trans "Amount" %}</th></tr></thead>
 <tbody>
 {% for t in txns %}
 <tr{% if t.is_corrected %} class="corrected"{% endif %}>

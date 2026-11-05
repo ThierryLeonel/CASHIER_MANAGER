@@ -46,8 +46,24 @@ def txn_delete(request, pk):
 @roles_required(*ADMIN)
 def txn_edit(request, pk):
     t = get_object_or_404(Transaction.objects.select_related(*TX_RELATED), pk=pk)
-    if t.type not in corr.BUILDERS:
+    if t.type == "REVERSAL":
         raise Http404
+    if t.type not in corr.BUILDERS:  # any other entry, whoever recorded it: amount, date, texts
+        form = F.AdminSimpleEditForm(t, request.POST or None, amount_editable=adm.simple_editable_amount(t))
+        if request.method == "POST" and form.is_valid():
+            cd = form.cleaned_data
+            try:
+                adm.edit_transaction_simple(request.user, t, amount=cd.get("amount"), description=cd["description"],
+                                            business_date=cd.get("business_date"),
+                                            client_phone=cd.get("client_phone"), account_name=cd.get("account_name"),
+                                            reason=cd["reason"])
+                messages.success(request, _("%(ref)s updated. The previous values are kept in the audit log.")
+                                 % {"ref": t.reference})
+                return redirect("txn_detail", pk=t.pk)
+            except BusinessError as e:
+                form.add_error(e.field if e.field in form.fields else None, e.message)
+        return render(request, "core/admin_edit.html", {"t": t, "form": form, "rows": receipt_rows(t),
+                                                        "customers": []})
     form = F.AdminEditForm(t, request.POST or None, initial={"business_date": t.business_date})
     if request.method == "POST" and form.is_valid():
         try:

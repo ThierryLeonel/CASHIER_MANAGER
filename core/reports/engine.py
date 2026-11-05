@@ -65,7 +65,7 @@ class FilterForm(forms.Form):
                                      queryset=Zone.objects.filter(parent__isnull=False))
     cashier = forms.ModelChoiceField(label=_l("Cashier"), required=False,
                                      queryset=User.objects.filter(role=User.Role.CASHIER))
-    customer_sim = forms.CharField(label=_l("Customer business SIM"), required=False,
+    customer_sim = forms.CharField(label=_l("Agent / POS business SIM"), required=False,
                                    widget=forms.TextInput(attrs={"list": "customer-list", "inputmode": "tel"}))
     tx_type = forms.ChoiceField(label=_l("Transaction type"), required=False,
                                 choices=[("", "—")] + list(TxType.choices))
@@ -160,7 +160,7 @@ class Filters:
         else:
             parts.append(_("All dates"))
         for label, val in [(_("Master zone"), self.master_zone), (_("Subzone"), self.subzone),
-                           (_("Cashier"), self.cashier), (_("Customer"), self.customer)]:
+                           (_("Cashier"), self.cashier), (_("Agent / POS"), self.customer)]:
             if val:
                 parts.append(f"{label}: {val}")
         if self.tx_type:

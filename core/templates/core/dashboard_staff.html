@@ -5,8 +5,8 @@
 <h1>{% if user.is_junior %}{% blocktrans with z=user.scope_zone %}Overview — zone {{ z }}{% endblocktrans %}{% else %}{% trans "Overview — all zones" %}{% endif %}</h1>
 <p class="muted meta">{{ user.get_role_display }} · {{ today|date:"d/m/Y" }}</p>
 <div class="grid" style="margin:12px 0">
-  <div class="tile"><div class="label">{% trans "Customers owe the company" %}</div><div class="value">{{ owed|fcfa }}</div></div>
-  <div class="tile"><div class="label">{% trans "Supply due to customers" %}</div><div class="value">{{ due|fcfa }}</div></div>
+  <div class="tile"><div class="label">{% trans "Agents and POS owe the company" %}</div><div class="value">{{ owed|fcfa }}</div></div>
+  <div class="tile"><div class="label">{% trans "Supply due to agents and POS" %}</div><div class="value">{{ due|fcfa }}</div></div>
   <div class="tile"><div class="label">{% trans "Unresolved closing differences" %}</div><div class="value">{{ open_disc|length }}</div></div>
 </div>
 <div class="quick">
