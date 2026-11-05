@@ -73,6 +73,14 @@ class Account(models.Model):
     # an account every cashier may use (e.g. a company MTN float SIM shared by all desks): payments can go into it from
     # any cashier; it is counted at the closing of the subzone that holds it
     shared = models.BooleanField(_("used by all cashiers"), default=False)
+
+    class Usage(models.TextChoices):
+        BOTH = "BOTH", _("Payments and supply")
+        COLLECTION = "COLLECTION", _("Payments (collection) only")
+        SUPPLY = "SUPPLY", _("Supply only")
+
+    # a desk may hold two SIMs of a kind: one to collect payments, one to supply (or one for both)
+    usage = models.CharField(_("used for"), max_length=10, choices=Usage.choices, default=Usage.BOTH)
     created_at = models.DateTimeField(default=timezone.now)
 
     class Meta:

@@ -127,24 +127,41 @@ def record_supply(user, idempotency_key=None, acting_for=None, **params):
 SUPPLY_PRODUCTS = (Product.CASH, Product.UVE, Product.ER)
 
 
-def _supply_account(ctx, product):
-    """The account a product leaves from: the subzone's drawer / UVE wallet, or the master SIM for ER."""
+SUPPLY_USES = ("BOTH", "SUPPLY")
+COLLECT_USES = ("BOTH", "COLLECTION")
+
+
+def _by_use(qs, uses):
+    """Accounts of the right use (a desk may hold one SIM to collect payments and one to supply); the desk's own
+    accounts before an account shared by all cashiers; then the oldest."""
+    fit = qs.filter(usage__in=uses)
+    return (fit if fit.exists() else qs).order_by("shared", "id")
+
+
+def _supply_account(ctx, product, chosen=None):
+    """The account a product leaves from: the subzone's drawer / UVE wallet (the one used for supply), or the master
+    SIM for ER. `chosen` = the account picked on the form when the desk has several."""
     kind = PRODUCT_ACCOUNT_KIND[product]
     qs = perm.usable_accounts(ctx.cashier, [kind])
+    if chosen is not None:
+        if not qs.filter(pk=chosen.pk).exists():
+            raise BusinessError(_("You cannot supply from %(acct)s.") % {"acct": chosen}, product.lower())
+        return chosen
     if product == Product.ER:
         mz = ctx.cashier.master_zone
         qs = qs.filter(sim__is_master=True, sim__master_zone=mz) if mz is not None else qs.none()
         if not qs.exists():
             raise BusinessError(_("ER is supplied from the master SIM of %(zone)s by its cashier in charge.")
                                 % {"zone": mz}, "er")
-    if qs.count() != 1:
-        raise BusinessError(_("No single %(kind)s account is set up for your subzone.")
+    qs = _by_use(qs, SUPPLY_USES)
+    if not qs.exists():
+        raise BusinessError(_("No %(kind)s account is set up for your subzone.")
                             % {"kind": Account.Kind(kind).label}, product.lower())
     return qs.first()
 
 
 def record_supplies(user, *, customer, parts, recipient=None, description="", idempotency_key=None,
-                    acting_for=None, paid=None):
+                    acting_for=None, paid=None, accounts=None):
     """One supply made of several products at once, e.g. {"CASH": 100000, "UVE": 500000, "ER": 120000}.
 
     Each product leaves from its account automatically and is posted as its own supply, all together (all or
@@ -163,7 +180,8 @@ def record_supplies(user, *, customer, parts, recipient=None, description="", id
     specs = []
     for i, (prod, amt) in enumerate(todo):
         spec = build_supply(ctx, product=prod, customer=customer, amount=amt, recipient=recipient,
-                            source_account=_supply_account(ctx, prod), description=description)
+                            source_account=_supply_account(ctx, prod, (accounts or {}).get(prod)),
+                            description=description)
         spec.fields["payment_group"] = group if len(todo) > 1 else None
         spec.receipt = i == 0
         specs.append(spec)
@@ -353,20 +371,27 @@ def transfer_desks(exclude=None):
 
 
 def desk_account(zone, kind, field=None):
-    """The account of a kind that a desk (subzone) holds: its own, or the master SIM wallet its cashier in charge
-    works with."""
+    """The account of a kind that a desk (subzone) receives into: its own (the one used to collect when it has
+    two), or the master SIM wallet its cashier in charge works with."""
     qs = Account.objects.filter(perm.zone_closing_accounts_q(zone), kind=kind, active=True, shop__isnull=True) \
-        .distinct().order_by("id")
+        .distinct()
+    qs = _by_use(qs, COLLECT_USES)
     if not qs.exists():
         raise BusinessError(_("%(zone)s has no %(kind)s.") % {"zone": zone, "kind": Account.Kind(kind).label},
                             field or kind.lower())
     return qs.first()
 
 
-def own_account(cashier, kind, field=None):
+def own_account(cashier, kind, field=None, chosen=None):
+    """The account value leaves the cashier's desk from (the supply one when the desk has two), or `chosen`."""
     qs = perm.usable_accounts(cashier, [kind]).filter(shop__isnull=True)
-    if qs.count() != 1:
-        raise BusinessError(_("No single %(kind)s account is set up for your subzone.")
+    if chosen is not None:
+        if not qs.filter(pk=chosen.pk).exists():
+            raise BusinessError(_("You cannot send from %(acct)s.") % {"acct": chosen}, field or kind.lower())
+        return chosen
+    qs = _by_use(qs, SUPPLY_USES)
+    if not qs.exists():
+        raise BusinessError(_("No %(kind)s account is set up for your subzone.")
                             % {"kind": Account.Kind(kind).label}, field or kind.lower())
     return qs.first()
 
@@ -388,7 +413,7 @@ def transfer_parts(parts, allowed=("CASH", "UVE", "MTN")):
 
 
 def record_desk_transfer(user, *, desk, cash=None, uve=None, mtn=None, description="", idempotency_key=None,
-                         acting_for=None, settles=None):
+                         acting_for=None, settles=None, accounts=None):
     """Transfer from the cashier's desk to another desk, in cash, UVE and / or MTN float at once. Each product
     leaves from the cashier's own account and arrives in the other desk's account of the same kind; the parts are
     posted together, sharing one group and one receipt."""
@@ -402,7 +427,8 @@ def record_desk_transfer(user, *, desk, cash=None, uve=None, mtn=None, descripti
         uuid.uuid4() if len(todo) > 1 else None)
     specs = []
     for i, (prod, kind, amt) in enumerate(todo):
-        spec = build_internal_transfer(ctx, source=own_account(ctx.cashier, kind, prod.lower()),
+        spec = build_internal_transfer(ctx, source=own_account(ctx.cashier, kind, prod.lower(),
+                                                               (accounts or {}).get(prod)),
                                        destination=desk_account(desk, kind, prod.lower()), amount=amt,
                                        description=description)
         spec.fields["payment_group"] = group
@@ -492,12 +518,15 @@ def create_exchange(user, *, cash_manager, amount, note="", idempotency_key=None
 
 
 def _desk_account(ctx, kind, receiving=False):
-    """The single account of this kind the cashier's subzone uses, or None."""
+    """The default account of this kind for the cashier's desk: to receive, the one used to collect payments; to
+    send, the one used to supply; the desk's own before one shared by all cashiers. None when there is none."""
     qs = perm.usable_accounts(ctx.cashier, [kind], receiving=receiving)
+    if kind == K.BANK:
+        return qs.first() if qs.count() == 1 else None
     if qs.count() == 1:
         return qs.first()
-    own = qs.filter(shared=False)  # the desk's own account first; a shared one (all cashiers) is chosen explicitly
-    return own.first() if own.count() == 1 else None
+    own = qs.filter(shared=False) if qs.filter(shared=False).exists() else qs
+    return _by_use(own, COLLECT_USES if receiving else SUPPLY_USES).first()
 
 
 def record_exchange(user, *, cash_manager, amount, give_kind, give_account=None, amount_given=None,

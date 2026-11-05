@@ -246,7 +246,7 @@ class AccountForm(forms.ModelForm):
 
     class Meta:
         model = Account
-        fields = ["kind", "name", "zone", "custodian", "shared", "active"]
+        fields = ["kind", "name", "zone", "custodian", "usage", "shared", "active"]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -263,9 +263,16 @@ class AccountForm(forms.ModelForm):
             self.fields["zone"].help_text = ("The subzone whose cashiers use this account (for an account all cashiers "
                                              "use: the subzone that keeps the SIM and counts it at closing).")
             self.fields["zone"].required = True
+        self.fields["usage"].required = False
+        self.fields["usage"].help_text = ("A desk may hold two SIMs of a kind: one to collect payments and one to "
+                                          "supply. Payments go to the collection one by default, supplies and "
+                                          "transfers out leave from the supply one; the cashier can still choose.")
         self.fields["shared"].help_text = ("Every cashier can receive payments into it and use it, whatever their "
                                            "subzone — e.g. a company MTN float SIM. It is counted at the closing of "
                                            "the subzone above.")
+
+    def clean_usage(self):
+        return self.cleaned_data.get("usage") or Account.Usage.BOTH
 
     def clean_kind(self):
         kind = self.cleaned_data["kind"]
@@ -294,7 +301,7 @@ class AccountForm(forms.ModelForm):
 @admin.register(Account)
 class AccountAdmin(SuperAdminOnly):
     form = AccountForm
-    list_display = ("name", "kind", "zone", "custodian", "sim", "shared", "active")
+    list_display = ("name", "kind", "zone", "custodian", "sim", "usage", "shared", "active")
     list_select_related = ("zone", "custodian", "sim")
     list_filter = ("kind", "zone", "active")
     search_fields = ("name", "sim__msisdn", "counterparty__business_sim")
@@ -304,8 +311,8 @@ class AccountAdmin(SuperAdminOnly):
 
     def get_fields(self, request, obj=None):
         # "cashier in charge" only applies to master-level accounts (the master SIM)
-        return ["kind", "name", "zone", "custodian", "shared", "active"] if obj else \
-            ["kind", "name", "zone", "sim_number", "shared", "active"]
+        return ["kind", "name", "zone", "custodian", "usage", "shared", "active"] if obj else \
+            ["kind", "name", "zone", "sim_number", "usage", "shared", "active"]
 
     def save_model(self, request, obj, form, change):
         if change or obj.kind not in WALLET_NETWORK:
@@ -317,8 +324,9 @@ class AccountAdmin(SuperAdminOnly):
         acct = Account.objects.get(sim=sim, kind=obj.kind)
         obj.pk = obj.id = acct.pk
         obj.name, obj.sim, obj._state.adding = acct.name, sim, False
-        if form.cleaned_data.get("shared") and not acct.shared:
-            Account.objects.filter(pk=acct.pk).update(shared=True)
+        Account.objects.filter(pk=acct.pk).update(shared=bool(form.cleaned_data.get("shared")),
+                                                  usage=form.cleaned_data.get("usage") or Account.Usage.BOTH)
+        obj.usage = form.cleaned_data.get("usage") or Account.Usage.BOTH
         obj.shared = form.cleaned_data.get("shared", False)
 
 

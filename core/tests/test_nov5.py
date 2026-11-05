@@ -156,3 +156,51 @@ class Nov5(OrgMixin, TestCase):
         self.assertContains(r, "Agent and POS balances")
         self.assertNotContains(r, "Customer balances")
         self.assertNotContains(self.client_for("cashier.fako1").get("/collection/new/"), "Paying customer")
+
+
+class TwoSims(OrgMixin, TestCase):
+    """A desk with two SIMs of a kind: one to collect payments, one to supply (or one for both)."""
+
+    def setUp(self):
+        self.make_org()
+        self.fund_all()
+        sim = CompanySim.objects.create(network="ORANGE", msisdn="690000777", label="Fako 1 collection",
+                                        master_zone=self.zones["fako"], subzone=self.zones["fako1"])
+        self.collect = Account.objects.get(sim=sim, kind=K.UVE)
+        self.collect.usage = Account.Usage.COLLECTION
+        self.collect.save(update_fields=["usage"])
+        # the desk's existing UVE wallet becomes the supply one
+        self.supply = Account.objects.filter(kind=K.UVE, zone=self.zones["fako1"], shop__isnull=True) \
+            .exclude(pk=self.collect.pk).first() or self.uve_f1
+        self.supply.usage = Account.Usage.SUPPLY
+        self.supply.save(update_fields=["usage"])
+
+    def client_for(self, u):
+        c = self.client_class()
+        self.assertTrue(c.login(username=u, password=PW))
+        return c
+
+    def test_defaults_follow_the_use(self):
+        ts = ops.record_supplies(self.c_f1, customer=self.a1, parts={"UVE": D(10000)}, idempotency_key=uuid.uuid4())
+        self.assertEqual(ts[0].source_account, self.supply)  # supplies leave from the supply SIM
+        p = ops.record_payment(self.c_f1, payer=self.a1, parts={"UVE": D(4000)}, idempotency_key=uuid.uuid4())[0]
+        self.assertEqual(p.dest_account, self.collect)  # payments arrive on the collection SIM
+        # the cashier can still choose
+        ts = ops.record_supplies(self.c_f1, customer=self.a1, parts={"UVE": D(1000)}, accounts={"UVE": self.collect},
+                                 idempotency_key=uuid.uuid4())
+        self.assertEqual(ts[0].source_account, self.collect)
+        # a transfer from another desk arrives on the collection SIM
+        t = ops.record_desk_transfer(self.c_f2, desk=self.zones["fako1"], uve=D(2000), idempotency_key=uuid.uuid4())[0]
+        self.assertEqual(t.dest_account, self.collect)
+        c = self.client_for("cashier.fako1")
+        page = c.get("/supply/agent/")
+        self.assertContains(page, 'name="uve_from"')
+        self.assertContains(page, "supply")
+        r = c.post("/supply/agent/", {"idem": str(uuid.uuid4()), "agent": self.a1.business_sim, "uve": "3 000",
+                                      "uve_from": self.collect.pk})
+        self.assertEqual(r.status_code, 302, r.content[:3000])
+        self.assertEqual(Transaction.objects.filter(type=TxType.SUPPLY).order_by("-pk").first().source_account,
+                         self.collect)
+        self.assertContains(c.get("/transfer/new/"), 'name="uve_from"')
+        self.assertEqual(self.client_for("admin").get(f"/admin/core/account/{self.collect.pk}/change/").status_code,
+                         200)

@@ -81,7 +81,8 @@ class AccountChoiceField(forms.ModelChoiceField):
     widget = AccountSelect
 
     def label_from_instance(self, obj):
-        return str(obj)
+        use = {"COLLECTION": _("payments"), "SUPPLY": _("supply")}.get(getattr(obj, "usage", ""), "")
+        return f"{obj} · {use}" if use else str(obj)
 
 
 class BaseEntryForm(forms.Form):
@@ -95,6 +96,18 @@ class BaseEntryForm(forms.Form):
 
     def accounts(self, kinds, receiving=False):
         return perm.usable_accounts(self.user, kinds, receiving=receiving).order_by("kind", "id")
+
+    def account_choice(self, name, kind, uses, label):
+        """When the desk holds several accounts of a kind (e.g. one SIM to collect payments, one to supply), add a
+        choice, set to the account of the right use; otherwise nothing to choose."""
+        from core.services.operations import _by_use
+
+        qs = self.accounts([kind]).filter(shop__isnull=True)
+        if qs.count() < 2:
+            return
+        self.fields[name] = AccountChoiceField(label=label, queryset=qs, required=False)
+        if not self.is_bound:
+            self.initial[name] = _by_use(qs.filter(shared=False) or qs, uses).first().pk
 
     # Account fields filled automatically from another field when the subzone has exactly one matching account.
     AUTO_ACCOUNT = {
@@ -147,6 +160,8 @@ class _SupplyAmounts(BaseEntryForm):
             self.fields[name].widget.attrs.update({"data-pay": name, "placeholder": "0"})
         self.fields["cash"].help_text = _("Fill what was supplied. Cash leaves your drawer, UVE your UVE wallet and "
                                           "ER the master SIM; the total is added up for you.")
+        self.account_choice("uve_from", K.UVE, ("BOTH", "SUPPLY"), _("UVE leaves from"))
+        self.account_choice("cash_from", K.CASH_DRAWER, ("BOTH", "SUPPLY"), _("Cash leaves from"))
 
     def clean(self):
         cd = super().clean()
@@ -156,6 +171,10 @@ class _SupplyAmounts(BaseEntryForm):
 
     def parts(self):
         return {p: self.cleaned_data.get(n) for n, p in self.PRODUCT_FIELDS if self.cleaned_data.get(n)}
+
+    def supply_accounts(self):
+        cd = self.cleaned_data
+        return {p: cd[n] for n, p in (("uve_from", Product.UVE), ("cash_from", Product.CASH)) if cd.get(n)}
 
     def paid(self):
         cd = self.cleaned_data
@@ -171,6 +190,7 @@ class AgentSupplyForm(_SupplyAmounts):
 
     def params(self):
         return dict(customer=self.cleaned_data["agent"], parts=self.parts(), paid=self.paid(),
+                    accounts=self.supply_accounts(),
                     description=self.cleaned_data.get("description", ""))
 
 
@@ -189,6 +209,7 @@ class PosSupplyForm(_SupplyAmounts):
         pos, agent = self.cleaned_data["pos"], self.cleaned_data.get("assign_agent")
         customer, recipient = (agent, pos) if agent else (pos, None)
         return dict(customer=customer, recipient=recipient, parts=self.parts(), paid=self.paid(),
+                    accounts=self.supply_accounts(),
                     description=self.cleaned_data.get("description", ""))
 
 
@@ -238,9 +259,11 @@ class CollectionForm(BaseEntryForm):
                 "zone", "sim", "custodian").order_by("zone__name", "id")
             if every.count() > 1:
                 self.fields[name].queryset = every
+                from core.services.operations import _by_use
+
                 mine = self.accounts([kind], receiving=True)
-                own = mine.filter(shared=False)
-                default = own.first() if own.count() == 1 else (mine.first() if mine.count() == 1 else None)
+                own = mine.filter(shared=False) or mine
+                default = _by_use(own, ("BOTH", "COLLECTION")).first() if own.exists() else None
                 if not self.is_bound and default is not None:
                     self.initial[name] = default.pk
             else:
@@ -316,12 +339,23 @@ class DeskTransferForm(BaseEntryForm):
         amount_boxes(self, ["cash", "uve", "mtn"],
                      _("Fill what you send. Cash leaves your drawer and arrives in the other desk's drawer, UVE "
                        "goes wallet to wallet, MTN float float to float."), str(_("Total transferred")))
+        self.account_choice("uve_from", K.UVE, ("BOTH", "SUPPLY"), _("UVE leaves from"))
+        self.account_choice("mtn_from", K.MTN, ("BOTH", "SUPPLY"), _("MTN float leaves from"))
+        self.account_choice("cash_from", K.CASH_DRAWER, ("BOTH", "SUPPLY"), _("Cash leaves from"))
 
     def clean(self):
         cd = super().clean()
         if not any(cd.get(n) for n in ("cash", "uve", "mtn")):
             self.add_error("cash", _("Enter the amount transferred in cash and / or UVE."))
         return cd
+
+    def params(self):
+        d = super().params()
+        d["accounts"] = {p: d.pop(n) for n, p in (("uve_from", "UVE"), ("mtn_from", "MTN"), ("cash_from", "CASH"))
+                         if n in d and d.get(n)}
+        for n in ("uve_from", "mtn_from", "cash_from"):
+            d.pop(n, None)
+        return d
 
 
 class ConversionForm(BaseEntryForm):

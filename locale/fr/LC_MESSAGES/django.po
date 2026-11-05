@@ -1233,6 +1233,9 @@ msgstr "Espèces en boutiques"
 msgid "Cash in shops at closing"
 msgstr "Espèces des boutiques à la clôture"
 
+msgid "Cash leaves from"
+msgstr "Les espèces partent de"
+
 msgid "Cash manager"
 msgstr "Gestionnaire de cash"
 
@@ -3312,6 +3315,9 @@ msgstr "Float MTN"
 msgid "MTN float SIM"
 msgstr "SIM float MTN"
 
+msgid "MTN float leaves from"
+msgstr "Le float MTN part de"
+
 msgid "MTN float wallet"
 msgstr "Portefeuille float MTN"
 
@@ -3581,6 +3587,10 @@ msgstr "Jour suivant"
 
 msgid "No"
 msgstr "Non"
+
+#, python-format
+msgid "No %(kind)s account is set up for your subzone."
+msgstr "Aucun compte %(kind)s n'est configuré pour votre sous-zone."
 
 msgid "No POS found."
 msgstr "Aucun POS trouvé."
@@ -4573,6 +4583,12 @@ msgstr "Paiement du transfert %(ref)s"
 
 msgid "Payments"
 msgstr "Paiements"
+
+msgid "Payments (collection) only"
+msgstr "Paiements (encaissement) uniquement"
+
+msgid "Payments and supply"
+msgstr "Paiements et approvisionnement"
 
 msgid "Payments confirmed"
 msgstr "Paiements confirmés"
@@ -5687,6 +5703,9 @@ msgstr "Approvisionnement dû à l'agent / POS"
 msgid "Supply due to you"
 msgstr "Approvisionnement qui vous est dû"
 
+msgid "Supply only"
+msgstr "Approvisionnement uniquement"
+
 msgid "Supply recorded"
 msgstr "Approvisionnement enregistré"
 
@@ -6478,6 +6497,9 @@ msgstr "UVE en boutiques"
 msgid "UVE in shops at closing"
 msgstr "UVE des boutiques à la clôture"
 
+msgid "UVE leaves from"
+msgstr "L'UVE part de"
+
 msgid "UVE received by agent (owes)"
 msgstr "UVE reçue par l'agent (redevable)"
 
@@ -6909,6 +6931,14 @@ msgstr "Vous ne pouvez pas modifier le stock de cette boutique."
 
 msgid "You cannot deactivate your own account."
 msgstr "Vous ne pouvez pas désactiver votre propre compte."
+
+#, python-format
+msgid "You cannot send from %(acct)s."
+msgstr "Vous ne pouvez pas envoyer depuis %(acct)s."
+
+#, python-format
+msgid "You cannot supply from %(acct)s."
+msgstr "Vous ne pouvez pas approvisionner depuis %(acct)s."
 
 msgid ""
 "You gave cash to a POS, and the POS sent the same value in UVE to an agent. "
@@ -7366,6 +7396,9 @@ msgstr ""
 "le mot de passe est obligatoire pour un nouveau compte (il devra être changé"
 " à la première connexion)"
 
+msgid "payments"
+msgstr "paiements"
+
 msgid "phone"
 msgstr "téléphone"
 
@@ -7476,6 +7509,9 @@ msgstr "sous-zone"
 msgid "supplier"
 msgstr "fournisseur"
 
+msgid "supply"
+msgstr "approvisionnement"
+
 msgid "supply due"
 msgstr "approvisionnement dû"
 
@@ -7540,6 +7576,9 @@ msgstr "taux de bonus"
 
 msgid "used by all cashiers"
 msgstr "utilisé par tous les caissiers"
+
+msgid "used for"
+msgstr "utilisé pour"
 
 msgid "usual master zone"
 msgstr "zone principale habituelle"
