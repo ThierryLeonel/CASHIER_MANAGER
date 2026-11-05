@@ -1856,6 +1856,11 @@ FR = {
     'matches': 'correspond',
     'There is a difference: the note is required. Explain it before closing.': 'Il y a un écart : la note est obligatoire. Expliquez-le avant de clôturer.',
     # commercial agent portal
+    'Float (converted to UVE)': 'Float (converti en UVE)',
+    'Float supply': 'Approvisionnement float',
+    'Float supply to agent (converted to UVE)': "Approvisionnement float à l'agent (converti en UVE)",
+    'Paid float (MTN)': 'Payé en float (MTN)',
+    'Supplies: UVE, ER, cash, float (and destockage)': 'Approvisionnements : UVE, ER, espèces, float (et déstockage)',
     'Choose the %(kind)s the payment goes to (no default account is set for payments).': "Choisissez le %(kind)s sur lequel va le paiement (aucun compte par défaut n'est défini pour les paiements).",
     'No default account is set for payments: choose where it arrived.': "Aucun compte par défaut n'est défini pour les paiements : choisissez où il est arrivé.",
     'default for payments': 'par défaut pour les paiements',

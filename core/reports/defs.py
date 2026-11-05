@@ -26,7 +26,10 @@ def money(v):
 
 
 def _desk_user(t):
-    return t.cashier or (t.cashier_day.cashier if t.cashier_day_id else t.entered_by)
+    """The recording cashier; for entries posted by finance / managers into a desk's day (capital, float exchange),
+    the person who recorded them."""
+    day_cashier = t.cashier_day.cashier if t.cashier_day_id else None
+    return t.cashier or day_cashier or t.entered_by
 
 
 def station(t):
@@ -175,6 +178,8 @@ def statement(f):
             by_product[t.product] += sign * t.amount
         elif et == TxType.DESTOCKAGE:
             by_product["DESTOCKAGE"] += sign * t.amount
+        elif et == TxType.FLOAT_EXCHANGE:  # float converted and sent to the agent: a float supply
+            by_product["FLOAT"] += sign * t.amount
         elif et == TxType.COLLECTION:
             by_method[t.payment_method] += sign * t.amount
         rows.append(dict(posted_at=t.posted_at, business_date=e.business_date, reference=t.reference,
@@ -189,7 +194,8 @@ def statement(f):
         (_("Closing balance (end of period)"), running, "money"),
         (_("Current balance (now)"), current, "money"),
         (_("Supplied UVE"), by_product["UVE"], "money"), (_("Supplied ER"), by_product["ER"], "money"),
-        (_("Supplied cash"), by_product["CASH"], "money"), (_("Destockage"), by_product["DESTOCKAGE"], "money"),
+        (_("Supplied cash"), by_product["CASH"], "money"), (_("Float supply"), by_product["FLOAT"], "money"),
+        (_("Destockage"), by_product["DESTOCKAGE"], "money"),
     ] + [(_("Paid by %(m)s") % {"m": PaymentMethod(m).label}, v, "money") for m, v in sorted(by_method.items())]
     rep.tables.append(Table(_("Movements (positive = owed to company, negative balance = supply due to the agent / POS)"), [
         Col("posted_at", _("Recorded at"), "datetime"), Col("business_date", _("Business date"), "date"),
@@ -199,6 +205,11 @@ def statement(f):
         Col("balance", _("Balance"), "money"),
     ], rows))
     return rep
+
+
+# what adds to an agent's / POS's debt, and what pays it (cashiers, finance's float sent to agents, shops)
+SUPPLIED_TYPES = [TxType.SUPPLY, TxType.DESTOCKAGE, TxType.FLOAT_EXCHANGE, TxType.SHOP_POS_UVE_OUT]
+PAID_TYPES = [TxType.COLLECTION, TxType.SHOP_AGENT_PAYBACK, TxType.SHOP_POS_UVE_IN]
 
 
 def _customer_rows(f, kind=None, only=None):
@@ -213,8 +224,8 @@ def _customer_rows(f, kind=None, only=None):
         cur=Sum("amount"),
         opening=Sum("amount", filter=Q(business_date__lt=f.date_from)) if f.date_from else Value(Z),
         upto=Sum("amount", filter=Q(business_date__lte=f.date_to)) if f.date_to else Sum("amount"),
-        supplied=Sum("amount", filter=tq & Q(transaction__type__in=[TxType.SUPPLY, TxType.DESTOCKAGE])),
-        paid=Sum("amount", filter=tq & Q(transaction__type=TxType.COLLECTION)),
+        supplied=Sum("amount", filter=tq & Q(transaction__type__in=SUPPLIED_TYPES)),
+        paid=Sum("amount", filter=tq & Q(transaction__type__in=PAID_TYPES)),
         transfers=Sum("amount", filter=tq & Q(transaction__type=TxType.RESPONSIBILITY_TRANSFER)),
         other=Sum("amount", filter=tq & Q(transaction__type__in=[TxType.REVERSAL, TxType.OPENING_BALANCE])),
     )
@@ -279,13 +290,32 @@ def _summary_table(title, label, groups):
                          Col("amount", _("Net amount"), "money", True)], rows)
 
 
+def supply_txns(f):
+    """Supplies, destockages and float converted and sent to a commercial agent (a float supply), with their
+    reversals, in scope."""
+    def keep(t):
+        b = t.reverses if t.type == TxType.REVERSAL else t
+        return b.type != TxType.FLOAT_EXCHANGE or bool(b.counterparty_id)
+    return [t for t in txns(f, [TxType.SUPPLY, TxType.DESTOCKAGE, TxType.FLOAT_EXCHANGE]) if keep(t)]
+
+
+def supply_kind(t):
+    """UVE / ER / CASH for a supply, DESTOCK for a destockage, FLOAT for float sent to an agent."""
+    b = t.reverses if t.type == TxType.REVERSAL else t
+    if b.type == TxType.DESTOCKAGE:
+        return "DESTOCK"
+    if b.type == TxType.FLOAT_EXCHANGE:
+        return "FLOAT"
+    return b.product
+
+
 def supplies(f):
-    rep = Report("supplies", _("Supplies: UVE, ER and cash (and destockage)"), f.text())
-    qs = list(txns(f, [TxType.SUPPLY, TxType.DESTOCKAGE]))
+    rep = Report("supplies", _("Supplies: UVE, ER, cash, float (and destockage)"), f.text())
+    qs = supply_txns(f)
     groups = {}
-    for p, label in [("UVE", "UVE"), ("ER", "ER"), ("CASH", _("Cash")), ("DESTOCKAGE", _("Destockage"))]:
-        sel = [t for t in qs if (effective_type(t) == TxType.DESTOCKAGE) == (p == "DESTOCKAGE")
-               and (p == "DESTOCKAGE" or t.product == p)]
+    for p, label in [("UVE", "UVE"), ("ER", "ER"), ("CASH", _("Cash")), ("FLOAT", _("Float (converted to UVE)")),
+                     ("DESTOCK", _("Destockage"))]:
+        sel = [t for t in qs if supply_kind(t) == p]
         groups[label] = (sum(1 for t in sel if t.type != TxType.REVERSAL), sum(signed(t) for t in sel))
     rep.tables.append(_summary_table(_("Totals by product"), _("Product"), groups))
     channels = {}
@@ -294,6 +324,9 @@ def supplies(f):
             sel = [t for t in qs if effective_type(t) == TxType.SUPPLY and t.supply_channel == ch and t.product == p]
             channels[f"{label} · {plabel}"] = (sum(1 for t in sel if t.type != TxType.REVERSAL),
                                                sum(signed(t) for t in sel))
+    fl = [t for t in qs if supply_kind(t) == "FLOAT"]
+    channels[f"{_('Supplies to commercial agents')} · {_('Float (converted to UVE)')}"] = (
+        sum(1 for t in fl if t.type != TxType.REVERSAL), sum(signed(t) for t in fl))
     rep.tables.append(_summary_table(_("Agents versus POS"), _("Supply"), channels))
     rep.tables.append(Table(_("Detail"), TX_COLUMNS, [txn_row(t) for t in qs]))
     return rep
@@ -815,7 +848,8 @@ def supply_payment(f):
     from core.services.ledger import balance
 
     rep = Report("supply_payment", _("Daily supplies versus payments"), f.text())
-    sup = list(txns(f, [TxType.SUPPLY, TxType.DESTOCKAGE]))
+    # a float exchange is posted by finance: it shows under the person who recorded it
+    sup = supply_txns(f)  # float converted and sent to an agent counts as a (float) supply
     pay = list(txns(f, [TxType.COLLECTION]))
 
     def desk(t):
@@ -829,7 +863,7 @@ def supply_payment(f):
     per_desk = defaultdict(lambda: defaultdict(Decimal))
     for t in sup:
         b, d, v = _base(t), desk(t)[0], signed(t)
-        prod = "DESTOCK" if b.type == TxType.DESTOCKAGE else b.product
+        prod = supply_kind(t)
         for bucket in (per_day[t.business_date], per_cust[b.counterparty] if b.counterparty_id else None):
             if bucket is not None:
                 bucket[f"s_{d}"] += v
@@ -878,8 +912,9 @@ def supply_payment(f):
                "Total balance today covers everything, all dates and all desks: positive = owes the company, "
                "negative = the company owes them (credit).")))
     # 3. per cashier, by product and payment method
-    S_COLS = [("UVE", "UVE"), ("ER", "ER"), ("CASH", _("Cash")), ("DESTOCK", _("Destockage"))]
-    P_COLS = [("P_CASH", _("Paid cash")), ("P_UVE", _("Paid UVE")), ("P_MTN", _("Paid MTN")),
+    S_COLS = [("UVE", "UVE"), ("ER", "ER"), ("CASH", _("Cash")), ("FLOAT", _("Float supply")),
+              ("DESTOCK", _("Destockage"))]
+    P_COLS = [("P_CASH", _("Paid cash")), ("P_UVE", _("Paid UVE")), ("P_MTN", _("Paid float (MTN)")),
               ("P_BANK", _("Paid bank"))]
     drow = []
     for pk, name in desks:

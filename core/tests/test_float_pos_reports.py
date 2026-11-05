@@ -161,3 +161,34 @@ class FloatPosReports(OrgMixin, TestCase):
         # a cashier sees only his own desk: no per-cashier columns
         r = self.client_for("cashier.fako1").get("/reports/supply_payment/?preset=day")
         self.assertNotContains(r, "Supplied ·")
+
+    def test_float_to_agent_is_a_supply_in_reports(self):
+        from core.reports.defs import _customer_rows, statement, supplies, supply_payment
+        from core.reports.engine import Filters
+        from core.services import capital as cap
+
+        sim = CompanySim.objects.create(network="MTN", msisdn="680000444", label="Finance float",
+                                        master_zone=self.zones["fako"], subzone=self.zones["fako1"])
+        flt = Account.objects.get(sim=sim, kind=K.MTN)
+        cap.inject(self.finance, account=flt, amount=D(200000), source="x", purpose="y")
+        cap.float_exchange(self.finance, source=flt, amount=D(80000), to="AGENT", agent=self.a1)
+        cap.float_exchange(self.finance, source=flt, amount=D(5000), to="DESK", uve_account=self.uve_f2)  # not a supply
+        ops.record_payment(self.c_f1, payer=self.a1, parts={"MTN": D(30000)}, accounts={"MTN": self.mtn_f1},
+                           idempotency_key=uuid.uuid4())
+        f = Filters(date_from=douala_today(), date_to=douala_today(), user=self.manager)
+        groups = {r["group"]: r["amount"] for r in supplies(f).tables[0].rows}
+        self.assertEqual(groups["Float (converted to UVE)"], D(80000))
+        sp = supply_payment(f)
+        row = next(r for r in sp.tables[1].rows if self.a1.name in r["customer"])
+        self.assertEqual((row["supplied"], row["paid"]), (D(80000), D(30000)))
+        by_desk = {r["cashier"]: r for r in sp.tables[2].rows}
+        self.assertEqual(by_desk[str(self.finance)]["FLOAT"], D(80000))
+        self.assertEqual(by_desk[str(self.c_f1)]["P_MTN"], D(30000))
+        self.assertIn("Paid float (MTN)", [c.label for c in sp.tables[2].columns])
+        f.customer = self.a1
+        summ = {str(k): v for k, v, _kind in statement(f).summary}
+        self.assertEqual(summ["Float supply"], D(80000))
+        f.customer = None
+        cust = next(r for r in _customer_rows(f) if r["name"] == self.a1.name)
+        self.assertEqual(cust["supplied"], D(80000))
+        self.assertEqual(cust["paid"], D(30000))

@@ -356,6 +356,8 @@ class Transaction(models.Model):
     def display_type(self):
         if self.type == TxType.SUPPLY:
             return _("Supply to POS") if self.supply_channel == "POS" else _("Supply to agent")
+        if self.type == TxType.FLOAT_EXCHANGE and self.counterparty_id:
+            return _("Float supply to agent (converted to UVE)")
         return self.get_type_display()
 
     @property

@@ -2856,6 +2856,9 @@ msgstr "Prénom"
 msgid "Float"
 msgstr "Float"
 
+msgid "Float (converted to UVE)"
+msgstr "Float (converti en UVE)"
+
 msgid "Float exchange"
 msgstr "Échange de float"
 
@@ -2870,6 +2873,12 @@ msgstr "Le float part de"
 
 msgid "Float received on"
 msgstr "Float reçu sur"
+
+msgid "Float supply"
+msgstr "Approvisionnement float"
+
+msgid "Float supply to agent (converted to UVE)"
+msgstr "Approvisionnement float à l'agent (converti en UVE)"
 
 msgid "Floating-point money values are not allowed"
 msgstr "Les montants en virgule flottante ne sont pas autorisés"
@@ -4424,6 +4433,9 @@ msgstr "Payé par les agents"
 msgid "Paid cash"
 msgstr "Payé espèces"
 
+msgid "Paid float (MTN)"
+msgstr "Payé en float (MTN)"
+
 msgid "Paid from"
 msgstr "Payé depuis"
 
@@ -5678,6 +5690,9 @@ msgstr "Approvisionnements des points de vente (PDV)"
 
 msgid "Supplies: UVE, ER and cash (and destockage)"
 msgstr "Approvisionnements : UVE, ER et espèces (et déstockage)"
+
+msgid "Supplies: UVE, ER, cash, float (and destockage)"
+msgstr "Approvisionnements : UVE, ER, espèces, float (et déstockage)"
 
 msgid "Supply"
 msgstr "Approvisionnement"
