@@ -246,7 +246,7 @@ class AccountForm(forms.ModelForm):
 
     class Meta:
         model = Account
-        fields = ["kind", "name", "zone", "custodian", "usage", "shared", "active"]
+        fields = ["kind", "name", "zone", "custodian", "usage", "default_collect", "shared", "active"]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -264,6 +264,9 @@ class AccountForm(forms.ModelForm):
                                              "use: the subzone that keeps the SIM and counts it at closing).")
             self.fields["zone"].required = True
         self.fields["usage"].required = False
+        self.fields["default_collect"].help_text = (
+            "Payments in this product go to this account by default for its subzone (only one per subzone and kind). "
+            "With none set and several possible accounts, the cashier must choose the account on each payment.")
         self.fields["usage"].help_text = ("A desk may hold two SIMs of a kind: one to collect payments and one to "
                                           "supply. Payments go to the collection one by default, supplies and "
                                           "transfers out leave from the supply one; the cashier can still choose.")
@@ -301,7 +304,8 @@ class AccountForm(forms.ModelForm):
 @admin.register(Account)
 class AccountAdmin(SuperAdminOnly):
     form = AccountForm
-    list_display = ("name", "kind", "zone", "custodian", "sim", "usage", "shared", "active")
+    list_display = ("name", "kind", "zone", "custodian", "sim", "usage", "default_collect", "shared", "active")
+    list_editable = ("default_collect",)
     list_select_related = ("zone", "custodian", "sim")
     list_filter = ("kind", "zone", "active")
     search_fields = ("name", "sim__msisdn", "counterparty__business_sim")
@@ -311,12 +315,27 @@ class AccountAdmin(SuperAdminOnly):
 
     def get_fields(self, request, obj=None):
         # "cashier in charge" only applies to master-level accounts (the master SIM)
-        return ["kind", "name", "zone", "custodian", "usage", "shared", "active"] if obj else \
-            ["kind", "name", "zone", "sim_number", "usage", "shared", "active"]
+        return ["kind", "name", "zone", "custodian", "usage", "default_collect", "shared", "active"] if obj else \
+            ["kind", "name", "zone", "sim_number", "usage", "default_collect", "shared", "active"]
+
+    @staticmethod
+    def _one_default(obj):
+        """Only one default account for payments per subzone and kind."""
+        from core.services import permissions as perm
+
+        if not obj.default_collect:
+            return
+        desk = obj.custodian.subzone if obj.custodian_id and obj.custodian.subzone_id else obj.zone
+        if desk is None:
+            return
+        Account.objects.filter(perm.zone_closing_accounts_q(desk), kind=obj.kind, default_collect=True,
+                               shop__isnull=True).exclude(pk=obj.pk).update(default_collect=False)
 
     def save_model(self, request, obj, form, change):
         if change or obj.kind not in WALLET_NETWORK:
-            return super().save_model(request, obj, form, change)
+            super().save_model(request, obj, form, change)
+            self._one_default(obj)
+            return
         # a wallet is created through its SIM, which keeps the SIM/zone rules in one place
         zone = form.cleaned_data["zone"]
         sim = CompanySim.objects.create(network=WALLET_NETWORK[obj.kind], msisdn=form.cleaned_data["sim_number"],
@@ -325,7 +344,10 @@ class AccountAdmin(SuperAdminOnly):
         obj.pk = obj.id = acct.pk
         obj.name, obj.sim, obj._state.adding = acct.name, sim, False
         Account.objects.filter(pk=acct.pk).update(shared=bool(form.cleaned_data.get("shared")),
-                                                  usage=form.cleaned_data.get("usage") or Account.Usage.BOTH)
+                                                  usage=form.cleaned_data.get("usage") or Account.Usage.BOTH,
+                                                  default_collect=bool(form.cleaned_data.get("default_collect")))
+        obj.default_collect = bool(form.cleaned_data.get("default_collect"))
+        self._one_default(obj)
         obj.usage = form.cleaned_data.get("usage") or Account.Usage.BOTH
         obj.shared = form.cleaned_data.get("shared", False)
 

@@ -204,3 +204,33 @@ class TwoSims(OrgMixin, TestCase):
         self.assertContains(c.get("/transfer/new/"), 'name="uve_from"')
         self.assertEqual(self.client_for("admin").get(f"/admin/core/account/{self.collect.pk}/change/").status_code,
                          200)
+
+    def test_default_for_payments(self):
+        # both SIMs used for payments and supply: no obvious default, the cashier must choose
+        Account.objects.filter(pk__in=[self.collect.pk, self.supply.pk]).update(usage=Account.Usage.BOTH)
+        with self.assertRaises(BusinessError):
+            ops.record_payment(self.c_f1, payer=self.a1, parts={"UVE": D(1000)}, idempotency_key=uuid.uuid4())
+        c = self.client_for("cashier.fako1")
+        r = c.post("/collection/new/", {"idem": str(uuid.uuid4()), "payer": self.a1.business_sim, "uve": "1 000"})
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "No default account is set for payments")
+        # set one as the default for payments: it is used without choosing
+        a = self.client_for("admin")
+        r = a.post(f"/admin/core/account/{self.collect.pk}/change/", {
+            "name": self.collect.name, "zone": self.collect.zone_id, "custodian": "", "usage": "BOTH",
+            "default_collect": "on", "active": "on"})
+        self.assertEqual(r.status_code, 302, r.content[:2000])
+        self.collect.refresh_from_db()
+        self.assertTrue(self.collect.default_collect)
+        p = ops.record_payment(self.c_f1, payer=self.a1, parts={"UVE": D(1000)}, idempotency_key=uuid.uuid4())[0]
+        self.assertEqual(p.dest_account, self.collect)
+        page = c.get("/collection/new/")
+        self.assertContains(page, f'value="{self.collect.pk}" selected')
+        # only one default per subzone and kind
+        self.supply.default_collect = True
+        self.supply.save()
+        from core.admin import AccountAdmin
+
+        AccountAdmin._one_default(self.supply)
+        self.collect.refresh_from_db()
+        self.assertFalse(self.collect.default_collect)

@@ -81,6 +81,8 @@ class Account(models.Model):
 
     # a desk may hold two SIMs of a kind: one to collect payments, one to supply (or one for both)
     usage = models.CharField(_("used for"), max_length=10, choices=Usage.choices, default=Usage.BOTH)
+    # the account payments go to by default for its desk and kind; without one, the cashier chooses on each payment
+    default_collect = models.BooleanField(_("default for payments"), default=False)
     created_at = models.DateTimeField(default=timezone.now)
 
     class Meta:

@@ -1856,6 +1856,9 @@ FR = {
     'matches': 'correspond',
     'There is a difference: the note is required. Explain it before closing.': 'Il y a un écart : la note est obligatoire. Expliquez-le avant de clôturer.',
     # commercial agent portal
+    'Choose the %(kind)s the payment goes to (no default account is set for payments).': "Choisissez le %(kind)s sur lequel va le paiement (aucun compte par défaut n'est défini pour les paiements).",
+    'No default account is set for payments: choose where it arrived.': "Aucun compte par défaut n'est défini pour les paiements : choisissez où il est arrivé.",
+    'default for payments': 'par défaut pour les paiements',
     'Cash leaves from': 'Les espèces partent de',
     'MTN float leaves from': 'Le float MTN part de',
     'No %(kind)s account is set up for your subzone.': "Aucun compte %(kind)s n'est configuré pour votre sous-zone.",

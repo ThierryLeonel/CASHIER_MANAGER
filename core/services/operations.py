@@ -317,8 +317,9 @@ def record_payment(user, *, payer, parts, accounts=None, bank_reference="", desc
     for i, (m, amt) in enumerate(todo):
         acct = accounts.get(m) or _desk_account(ctx, METHOD_ACCOUNT_KIND[m], receiving=True)
         if acct is None:
-            raise BusinessError(_("No single %(kind)s account is set up for your subzone.")
-                                % {"kind": Account.Kind(METHOD_ACCOUNT_KIND[m]).label}, m.lower())
+            raise BusinessError(_("Choose the %(kind)s the payment goes to (no default account is set for payments).")
+                                % {"kind": Account.Kind(METHOD_ACCOUNT_KIND[m]).label},
+                                {"UVE": "uve_account", "MTN": "mtn_account"}.get(m, m.lower()))
         spec = build_collection(ctx, payer=payer, method=m, amount=amt, account=acct,
                                 bank_reference=bank_reference if m == PaymentMethod.BANK else "",
                                 description=description)
@@ -375,6 +376,9 @@ def desk_account(zone, kind, field=None):
     two), or the master SIM wallet its cashier in charge works with."""
     qs = Account.objects.filter(perm.zone_closing_accounts_q(zone), kind=kind, active=True, shop__isnull=True) \
         .distinct()
+    dflt = qs.filter(default_collect=True).order_by("id").first()
+    if dflt is not None:
+        return dflt
     qs = _by_use(qs, COLLECT_USES)
     if not qs.exists():
         raise BusinessError(_("%(zone)s has no %(kind)s.") % {"zone": zone, "kind": Account.Kind(kind).label},
@@ -526,7 +530,15 @@ def _desk_account(ctx, kind, receiving=False):
     if qs.count() == 1:
         return qs.first()
     own = qs.filter(shared=False) if qs.filter(shared=False).exists() else qs
-    return _by_use(own, COLLECT_USES if receiving else SUPPLY_USES).first()
+    if receiving:
+        # payments: the account set as default for payments; otherwise the only one used to collect; otherwise the
+        # cashier chooses (None)
+        dflt = own.filter(default_collect=True).order_by("id").first()
+        if dflt is not None:
+            return dflt
+        fit = own.filter(usage__in=COLLECT_USES)
+        return fit.first() if fit.count() == 1 else None
+    return _by_use(own, SUPPLY_USES).first()
 
 
 def record_exchange(user, *, cash_manager, amount, give_kind, give_account=None, amount_given=None,

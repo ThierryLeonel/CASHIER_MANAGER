@@ -193,6 +193,7 @@ Commercial agents (role AGENT, linked to their agent account) have a working por
 #### A cashier with two SIMs: one to collect payments, one to supply (05/11/2026)
 * Every drawer and wallet has a **use** (`Account.usage`, Configuration › Accounts › "used for"): *payments and supply* (default), *payments (collection) only*, or *supply only*. A desk can hold two SIMs of a kind, e.g. one Orange SIM to collect and one to supply.
 * Defaults follow the use: **payments** (and transfers arriving from another desk) go to the collection account; **supplies** and **transfers out** leave from the supply account; the desk's own account before one shared by all cashiers.
+* **Default for payments** (`Account.default_collect`, Configuration › Accounts — also tickable straight from the accounts list): the account payments go to for its desk and product (one per desk and kind; ticking one unticks the other). Without a default, payments go to the only account used to collect; when there are several and none is the default, the cashier must choose the account on the payment form before recording (an agent's payback confirmed by the cashier then goes to the desk's collection account).
 * When a desk holds several accounts of a kind, the forms let the cashier choose: *UVE leaves from* / *Cash leaves from* on supplies, *UVE / MTN float / Cash leaves from* on transfers, *UVE / Float received on* on payments (set to the right default). Account pickers show "· payments" or "· supply".
 
 ### Users & passwords

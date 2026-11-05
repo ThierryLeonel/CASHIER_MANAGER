@@ -322,7 +322,16 @@ def confirm_payback(user, p):
                                              uve=p.uve or None, description=desc, idempotency_key=key)]
         else:
             parts = {PaymentMethod.CASH: p.cash, PaymentMethod.UVE: p.uve, PaymentMethod.MTN: p.mtn}
-            txns = ops.record_payment(user, payer=p.agent, parts=parts, description=desc, idempotency_key=key)
+            accounts = {}  # no default set for payments: the desk's account used to collect
+            for m, amt in parts.items():
+                if amt and ops._desk_account(ops.cashier_ctx(user), ops.METHOD_ACCOUNT_KIND[m], True) is None:
+                    own = ops.perm.usable_accounts(user, [ops.METHOD_ACCOUNT_KIND[m]], receiving=True) \
+                        .filter(shop__isnull=True)
+                    acct = ops._by_use(own.filter(shared=False) or own, ops.COLLECT_USES).first()
+                    if acct is not None:
+                        accounts[m] = acct
+            txns = ops.record_payment(user, payer=p.agent, parts=parts, accounts=accounts, description=desc,
+                                      idempotency_key=key)
         p.status = P.Status.CONFIRMED
         p.decided_by, p.decided_at, p.transaction = user, timezone.now(), txns[0]
         p.save(update_fields=["status", "decided_by", "decided_at", "transaction"])

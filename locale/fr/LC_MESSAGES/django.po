@@ -1520,6 +1520,14 @@ msgstr "Choisissez comment l'achat est payé."
 msgid "Choose the %(kind)s account the company gives from."
 msgstr "Choisissez le compte %(kind)s depuis lequel l'entreprise donne."
 
+#, python-format
+msgid ""
+"Choose the %(kind)s the payment goes to (no default account is set for "
+"payments)."
+msgstr ""
+"Choisissez le %(kind)s sur lequel va le paiement (aucun compte par défaut "
+"n'est défini pour les paiements)."
+
 msgid "Choose the MTN float account the float leaves from."
 msgstr "Choisissez le compte float MTN d'où part le float."
 
@@ -3663,6 +3671,11 @@ msgstr "Aucun détenteur"
 
 msgid "No data for these filters."
 msgstr "Aucune donnée pour ces filtres."
+
+msgid "No default account is set for payments: choose where it arrived."
+msgstr ""
+"Aucun compte par défaut n'est défini pour les paiements : choisissez où il "
+"est arrivé."
 
 msgid "No drawers or wallets configured yet."
 msgstr "Aucune caisse ni portefeuille configuré."
@@ -7213,6 +7226,9 @@ msgstr "date"
 
 msgid "date served"
 msgstr "date de service"
+
+msgid "default for payments"
+msgstr "par défaut pour les paiements"
 
 msgid "diff."
 msgstr "écart"

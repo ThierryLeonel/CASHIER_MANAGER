@@ -263,7 +263,10 @@ class CollectionForm(BaseEntryForm):
 
                 mine = self.accounts([kind], receiving=True)
                 own = mine.filter(shared=False) or mine
-                default = _by_use(own, ("BOTH", "COLLECTION")).first() if own.exists() else None
+                fit = own.filter(usage__in=("BOTH", "COLLECTION"))
+                default = (own.filter(default_collect=True).first()
+                           or (fit.first() if fit.count() == 1 else None)
+                           or (mine.first() if mine.count() == 1 else None))
                 if not self.is_bound and default is not None:
                     self.initial[name] = default.pk
             else:
@@ -271,6 +274,13 @@ class CollectionForm(BaseEntryForm):
 
     def clean(self):
         cd = super().clean()
+        from core.services.operations import _desk_account
+
+        class _C:  # the desk whose defaults apply
+            cashier = self.user
+        for amt, name, kind in (("uve", "uve_account", K.UVE), ("mtn", "mtn_account", K.MTN)):
+            if cd.get(amt) and name in self.fields and not cd.get(name) and _desk_account(_C, kind, True) is None:
+                self.add_error(name, _("No default account is set for payments: choose where it arrived."))
         if not any(cd.get(n) for n, _m in self.METHOD_FIELDS):
             self.add_error("cash", _("Enter the amount received in at least one payment method."))
         if cd.get("bank"):
