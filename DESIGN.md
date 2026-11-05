@@ -190,6 +190,11 @@ Commercial agents (role AGENT, linked to their agent account) have a working por
 * **Payments into another desk's wallet**: on the payment form, "UVE received on" / "Float received on" list the UVE and MTN wallets of every desk (own desk by default) — e.g. an agent paid UVE to Fako 2 and the cashier of Fako 1 records it; the money is on Fako 2's wallet and counted at Fako 2's closing.
 * **Exchange float for UVE** (Capital, finance / senior manager / super admin): float leaves an MTN account and the UVE goes to a cashier's UVE wallet, or to a commercial agent (who then owes it, like a UVE supply; it appears in his office supplies). `FLOAT_EXCHANGE`, with its own column in the reconciliation.
 
+#### A cashier with two SIMs: one to collect payments, one to supply (05/11/2026)
+* Every drawer and wallet has a **use** (`Account.usage`, Configuration › Accounts › "used for"): *payments and supply* (default), *payments (collection) only*, or *supply only*. A desk can hold two SIMs of a kind, e.g. one Orange SIM to collect and one to supply.
+* Defaults follow the use: **payments** (and transfers arriving from another desk) go to the collection account; **supplies** and **transfers out** leave from the supply account; the desk's own account before one shared by all cashiers.
+* When a desk holds several accounts of a kind, the forms let the cashier choose: *UVE leaves from* / *Cash leaves from* on supplies, *UVE / MTN float / Cash leaves from* on transfers, *UVE / Float received on* on payments (set to the right default). Account pickers show "· payments" or "· supply".
+
 ### Users & passwords
 
 - Passwords are stored hashed: nobody — not even the super administrator — can read them. The super administrator's **Users & passwords** page (Administration) lists every user with role, zone, staff ID, last sign-in and status, and lets them **reset** a password (a strong one generated and shown once, or one they type, checked against the password rules), optionally forcing the user to choose their own at next sign-in, and **deactivate / activate** accounts (deactivation signs the user out at once; you cannot deactivate yourself or the last active super administrator). Every action is in the audit log.
