@@ -296,7 +296,21 @@ def supply_txns(f):
     def keep(t):
         b = t.reverses if t.type == TxType.REVERSAL else t
         return b.type != TxType.FLOAT_EXCHANGE or bool(b.counterparty_id)
-    return [t for t in txns(f, [TxType.SUPPLY, TxType.DESTOCKAGE, TxType.FLOAT_EXCHANGE]) if keep(t)]
+    out = [t for t in txns(f, [TxType.SUPPLY, TxType.DESTOCKAGE, TxType.FLOAT_EXCHANGE]) if keep(t)]
+    if f.cashier:  # finance records float supplies: they belong to the desk whose float account the float left
+        from core.services import permissions as perm
+
+        held = Account.objects.filter(perm.zone_accounts_q(f.cashier), kind=K.MTN).values("id")
+        seen = {t.pk for t in out}
+        extra = Transaction.objects.filter(
+            Q(type=TxType.FLOAT_EXCHANGE, counterparty__isnull=False, source_account_id__in=held)
+            | Q(type=TxType.REVERSAL, reverses__type=TxType.FLOAT_EXCHANGE, reverses__counterparty__isnull=False,
+                reverses__source_account_id__in=held)).filter(f.date_q()).select_related(*TX_RELATED)
+        if f.customer:
+            extra = extra.filter(Q(counterparty=f.customer) | Q(reverses__counterparty=f.customer))
+        out += [t for t in extra if t.pk not in seen]
+        out.sort(key=lambda t: (t.business_date, t.posted_at, t.pk))
+    return out
 
 
 def supply_kind(t):
@@ -868,6 +882,8 @@ def supply_payment(f):
             if bucket is not None:
                 bucket[f"s_{d}"] += v
                 bucket["supplied"] += v
+                if prod == "FLOAT":
+                    bucket["float"] += v
         per_desk[d][prod] += v
         per_desk[d]["supplied"] += v
     for t in pay:
@@ -879,10 +895,14 @@ def supply_payment(f):
         per_desk[d]["P_" + b.payment_method] += v
         per_desk[d]["paid"] += v
 
+    any_float = any(supply_kind(t) == "FLOAT" for t in sup)
+
     def split_cols():
         cols = [Col(f"s_{pk}", _("Supplied · %(c)s") % {"c": name}, "money", True) for pk, name in desks] \
             if several else []
         cols.append(Col("supplied", _("Total supplied"), "money", True))
+        if any_float:
+            cols.append(Col("float", _("of which float supply"), "money", True))
         if several:
             cols += [Col(f"p_{pk}", _("Paid · %(c)s") % {"c": name}, "money", True) for pk, name in desks]
         cols.append(Col("paid", _("Total paid"), "money", True))
@@ -890,7 +910,7 @@ def supply_payment(f):
 
     def split_row(v):
         row = {k: v[k] for k in [f"s_{pk}" for pk, _n in desks] + [f"p_{pk}" for pk, _n in desks]}
-        row.update(supplied=v["supplied"], paid=v["paid"], net=v["supplied"] - v["paid"])
+        row.update(supplied=v["supplied"], paid=v["paid"], net=v["supplied"] - v["paid"], float=v["float"])
         return row
 
     # 1. day by day

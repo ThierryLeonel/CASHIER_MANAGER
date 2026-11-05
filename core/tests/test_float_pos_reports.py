@@ -192,3 +192,16 @@ class FloatPosReports(OrgMixin, TestCase):
         cust = next(r for r in _customer_rows(f) if r["name"] == self.a1.name)
         self.assertEqual(cust["supplied"], D(80000))
         self.assertEqual(cust["paid"], D(30000))
+
+    def test_float_supply_in_the_desks_own_report(self):
+        from core.services import capital as cap
+
+        cap.inject(self.finance, account=self.mtn_f1, amount=D(100000), source="x", purpose="y")
+        cap.float_exchange(self.finance, source=self.mtn_f1, amount=D(60000), to="AGENT", agent=self.a1)
+        for u in ("cashier.fako1", "manager"):
+            r = self.client_for(u).get("/reports/supply_payment/?preset=day")
+            self.assertContains(r, "of which float supply", msg_prefix=u)
+            self.assertContains(r, "60 000", msg_prefix=u)
+        # another desk does not see it
+        self.assertNotContains(self.client_for("cashier.fako2").get("/reports/supply_payment/?preset=day"),
+                               "of which float supply")

@@ -198,6 +198,7 @@ Commercial agents (role AGENT, linked to their agent account) have a working por
 
 #### Float sent to an agent is a supply; float payments in the reports (05/11/2026)
 * A float exchange whose UVE goes to a **commercial agent** is a **float supply** ("Float supply to agent (converted to UVE)"): it counts as supplied in the Supplies report (own line "Float (converted to UVE)", also under agents), the Daily supplies versus payments report (in the totals, and a "Float supply" column per cashier — shown under the finance user who recorded it), the agent / POS statement summary ("Float supply") and the balances report. A float exchange into a cashier's UVE wallet is not a supply.
+* In the supplies versus payments report the day-by-day and per agent / POS tables add an **"of which float supply"** column whenever the period has one, and a report for one cashier (or opened by a cashier) includes the float supplies sent from that desk's float account (finance records them, so a cashier filter alone would miss them).
 * Payments in MTN float are shown as **"Paid float (MTN)"** in the supplies versus payments report (and per method in the statement and collections report).
 * The balances report also counts what shops post on agents' / POS accounts (payments received by a shop; UVE sent or received on credit), so each row adds up.
 * Reports: entries posted by finance / managers into a desk's day show the person who recorded them in the "cashier" column.

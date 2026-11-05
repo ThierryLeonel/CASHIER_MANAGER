@@ -1856,6 +1856,7 @@ FR = {
     'matches': 'correspond',
     'There is a difference: the note is required. Explain it before closing.': 'Il y a un écart : la note est obligatoire. Expliquez-le avant de clôturer.',
     # commercial agent portal
+    'of which float supply': 'dont approvisionnement float',
     'Float (converted to UVE)': 'Float (converti en UVE)',
     'Float supply': 'Approvisionnement float',
     'Float supply to agent (converted to UVE)': "Approvisionnement float à l'agent (converti en UVE)",

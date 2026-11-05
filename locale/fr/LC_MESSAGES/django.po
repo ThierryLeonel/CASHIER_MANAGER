@@ -7375,6 +7375,9 @@ msgstr "note"
 msgid "notes"
 msgstr "notes"
 
+msgid "of which float supply"
+msgstr "dont approvisionnement float"
+
 msgid "of which good deal"
 msgstr "dont bon plan"
 
