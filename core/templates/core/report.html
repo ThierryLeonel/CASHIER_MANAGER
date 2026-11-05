@@ -32,7 +32,7 @@
 </div>
 {% endif %}
 {% for table in rep.tables %}
-<h2 class="tbl-head">{{ table.title }}{% if rep.tables|length > 1 %} <span class="tbl-dl"><a href="?{{ query }}&format=xlsx&table={{ forloop.counter0 }}" title="{% trans 'Download this section in Excel' %}">Excel</a> · <a href="?{{ query }}&format=pdf&table={{ forloop.counter0 }}" title="{% trans 'Download this section in PDF' %}">PDF</a></span>{% endif %}</h2>{% if table.note %}<p class="small muted">{{ table.note }}</p>{% endif %}
+<h2 class="tbl-head">{{ table.title }}{% if rep.tables|length > 1 %} <span class="tbl-dl"><a href="?{{ query }}&format=xlsx&table={{ forloop.counter0 }}" title="{% trans 'Download this section in Excel' %}">Excel</a> · <a href="?{{ query }}&format=pdf&table={{ forloop.counter0 }}" title="{% trans 'Download this section in PDF' %}">PDF</a></span>{% endif %}</h2>{% if table.note %}<p class="small muted meta">{{ table.note }}</p>{% endif %}
 {% if table.columns %}
 <div class="tbl-wrap"><table class="t">
 <thead><tr>{% for c in table.columns %}<th class="{% if c.kind == 'money' or c.kind == 'int' or c.kind == 'rate' %}money{% endif %}">{{ c.label }}</th>{% endfor %}</tr></thead>

@@ -842,8 +842,11 @@ def supply_payment(f):
     cols += [Col(k, lbl, "money", True) for k, lbl in S_COLS]
     cols += [Col("supplied", _("Total supplied"), "money", True)]
     cols += [Col(k, lbl, "money", True) for k, lbl in P_COLS]
-    cols += [Col("paid", _("Total paid"), "money", True), Col("net", _("Supplied − paid"), "money", True)]
-    rep.tables.append(Table(_("Day by day"), cols, rows))
+    cols += [Col("paid", _("Total paid"), "money", True),
+             Col("net", _("Balance of the day (+ unpaid, − overpaid)"), "money", True)]
+    rep.tables.append(Table(_("Day by day"), cols, rows, note=_(
+        "Balance of the day = supplied − paid. Positive: part of the day's supplies is still unpaid. Negative: more "
+        "was paid than supplied that day (old debts paid, or paid in advance).")))
     from core.services.ledger import balance
 
     crow = []
@@ -852,11 +855,16 @@ def supply_payment(f):
                          net=v["supplied"] - v["paid"], balance=balance(cp.account)))
     rep.tables.append(Table(_("Per agent / POS over the period"), [
         Col("customer", _("Agent / POS")), Col("kind", _("Type")), Col("supplied", _("Supplied"), "money", True),
-        Col("paid", _("Paid"), "money", True), Col("net", _("Supplied − paid"), "money", True),
-        Col("balance", _("Owes now (all desks)"), "money", True)], crow))
+        Col("paid", _("Paid"), "money", True),
+        Col("net", _("Balance for the period (+ owes, − overpaid)"), "money", True),
+        Col("balance", _("Total balance today, all desks (+ owes, − credit)"), "money", True)], crow,
+        note=_("Balance for the period = supplied − paid during the selected dates only. Positive: still owes for "
+               "these supplies. Negative: paid more than supplied in the period (old debts paid, or paid in advance). "
+               "Total balance today covers everything, all dates and all desks: positive = owes the company, "
+               "negative = the company owes them (credit).")))
     ts, tp = sum(r["supplied"] for r in rows), sum(r["paid"] for r in rows)
     rep.summary = [(_("Total supplied"), ts, "money"), (_("Total paid"), tp, "money"),
-                   (_("Supplied − paid"), ts - tp, "money")]
+                   (_("Balance for the period (+ owes, − overpaid)"), ts - tp, "money")]
     return rep
 
 REPORTS = {

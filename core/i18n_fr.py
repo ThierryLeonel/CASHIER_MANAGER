@@ -1856,6 +1856,11 @@ FR = {
     'matches': 'correspond',
     'There is a difference: the note is required. Explain it before closing.': 'Il y a un écart : la note est obligatoire. Expliquez-le avant de clôturer.',
     # commercial agent portal
+    'Balance for the period (+ owes, − overpaid)': 'Solde de la période (+ doit, − trop payé)',
+    'Balance for the period = supplied − paid during the selected dates only. Positive: still owes for these supplies. Negative: paid more than supplied in the period (old debts paid, or paid in advance). Total balance today covers everything, all dates and all desks: positive = owes the company, negative = the company owes them (credit).': "Solde de la période = approvisionné − payé sur les dates choisies uniquement. Positif : doit encore pour ces approvisionnements. Négatif : a payé plus que ce qui a été approvisionné sur la période (anciennes dettes payées, ou paiement d'avance). Le solde total aujourd'hui couvre tout, toutes dates et tous guichets : positif = doit à l'entreprise, négatif = l'entreprise lui doit (crédit).",
+    'Balance of the day (+ unpaid, − overpaid)': 'Solde du jour (+ impayé, − trop payé)',
+    "Balance of the day = supplied − paid. Positive: part of the day's supplies is still unpaid. Negative: more was paid than supplied that day (old debts paid, or paid in advance).": "Solde du jour = approvisionné − payé. Positif : une partie des approvisionnements du jour n'est pas encore payée. Négatif : plus a été payé qu'approvisionné ce jour-là (anciennes dettes payées, ou paiement d'avance).",
+    'Total balance today, all desks (+ owes, − credit)': "Solde total aujourd'hui, tous guichets (+ doit, − crédit)",
     '%(ref)s: not paid back. It stays as it is.': '%(ref)s : non remboursé. Il reste ainsi.',
     'A cashier': 'Un caissier',
     'A commercial agent': 'Un agent commercial',
