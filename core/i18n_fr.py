@@ -1856,6 +1856,10 @@ FR = {
     'matches': 'correspond',
     'There is a difference: the note is required. Explain it before closing.': 'Il y a un écart : la note est obligatoire. Expliquez-le avant de clôturer.',
     # commercial agent portal
+    '(C) = transaction later corrected (see corrections report). Amounts in FCFA.': '(C) = transaction corrigée ensuite (voir le rapport des corrections). Montants en FCFA.',
+    'Paid · %(c)s': 'Payé · %(c)s',
+    'Per cashier, by product and payment method': 'Par caissier, par produit et moyen de paiement',
+    'Supplied · %(c)s': 'Approvisionné · %(c)s',
     'Balance for the period (+ owes, − overpaid)': 'Solde de la période (+ doit, − trop payé)',
     'Balance for the period = supplied − paid during the selected dates only. Positive: still owes for these supplies. Negative: paid more than supplied in the period (old debts paid, or paid in advance). Total balance today covers everything, all dates and all desks: positive = owes the company, negative = the company owes them (credit).': "Solde de la période = approvisionné − payé sur les dates choisies uniquement. Positif : doit encore pour ces approvisionnements. Négatif : a payé plus que ce qui a été approvisionné sur la période (anciennes dettes payées, ou paiement d'avance). Le solde total aujourd'hui couvre tout, toutes dates et tous guichets : positif = doit à l'entreprise, négatif = l'entreprise lui doit (crédit).",
     'Balance of the day (+ unpaid, − overpaid)': 'Solde du jour (+ impayé, − trop payé)',

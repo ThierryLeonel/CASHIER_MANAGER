@@ -305,6 +305,12 @@ msgstr ""
 msgid "%(zone)s has no %(kind)s."
 msgstr "%(zone)s n'a pas de %(kind)s."
 
+msgid ""
+"(C) = transaction later corrected (see corrections report). Amounts in FCFA."
+msgstr ""
+"(C) = transaction corrigée ensuite (voir le rapport des corrections). "
+"Montants en FCFA."
+
 msgid "(stored encrypted, cannot be shown)"
 msgstr "(stocké chiffré, ne peut pas être affiché)"
 
@@ -4461,6 +4467,10 @@ msgstr "Payé avec"
 msgid "Paid with the supply"
 msgstr "Payé avec l'approvisionnement"
 
+#, python-format
+msgid "Paid · %(c)s"
+msgstr "Payé · %(c)s"
+
 msgid ""
 "Part of this obligation appears already settled: the transfer will be "
 "refused so that settled debt is not moved. Ask a manager."
@@ -4572,6 +4582,9 @@ msgstr "Paiements reçus : espèces, UVE, MTN, banque"
 
 msgid "Per agent / POS over the period"
 msgstr "Par agent / POS sur la période"
+
+msgid "Per cashier, by product and payment method"
+msgstr "Par caissier, par produit et moyen de paiement"
 
 msgid "Per day"
 msgstr "Par jour"
@@ -5601,6 +5614,10 @@ msgstr "Approvisionné"
 
 msgid "Supplied today"
 msgstr "Approvisionné aujourd'hui"
+
+#, python-format
+msgid "Supplied · %(c)s"
+msgstr "Approvisionné · %(c)s"
 
 msgid "Supplied − paid"
 msgstr "Approvisionné − payé"

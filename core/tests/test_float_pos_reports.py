@@ -130,3 +130,34 @@ class FloatPosReports(OrgMixin, TestCase):
         self.assertContains(c.get("/reports/"), "Daily supplies versus payments")
         self.assertEqual(self.client_for("manager").get("/reports/daily_reconciliation/?preset=month").status_code,
                          200)
+
+    def test_supply_payment_split_by_cashier(self):
+        ops.record_supply(self.c_f1, product="UVE", customer=self.a1, amount=D(70000), source_account=self.uve_f1)
+        ops.record_supply(self.c_f2, product="UVE", customer=self.a1, amount=D(30000), source_account=self.uve_f2)
+        ops.record_destockage(self.c_f2, pos=self.p1, agent=self.a1, amount=D(5000), drawer=self.d_f2)
+        ops.record_payment(self.c_f1, payer=self.a1, parts={"CASH": D(40000)}, idempotency_key=uuid.uuid4())
+        ops.record_payment(self.c_f2, payer=self.a1, parts={"UVE": D(10000)}, idempotency_key=uuid.uuid4())
+        from core.reports.defs import supply_payment
+        from core.reports.engine import Filters
+
+        f = Filters(date_from=douala_today(), date_to=douala_today(), user=self.manager)
+        rep = supply_payment(f)
+        per_agent = rep.tables[1]
+        keys = [c.key for c in per_agent.columns]
+        s1, s2 = f"s_{self.c_f1.pk}", f"s_{self.c_f2.pk}"
+        self.assertLess(keys.index(s1), keys.index("supplied"))
+        self.assertLess(keys.index("supplied"), keys.index(f"p_{self.c_f1.pk}"))
+        self.assertLess(keys.index(f"p_{self.c_f2.pk}"), keys.index("paid"))
+        row = next(r for r in per_agent.rows if self.a1.name in r["customer"])
+        self.assertEqual((row[s1], row[s2], row["supplied"]), (D(70000), D(35000), D(105000)))  # destockage included
+        self.assertEqual((row[f"p_{self.c_f1.pk}"], row[f"p_{self.c_f2.pk}"], row["paid"]),
+                         (D(40000), D(10000), D(50000)))
+        self.assertEqual(row["net"], D(55000))
+        desks = {r["cashier"]: r for r in rep.tables[2].rows}
+        self.assertEqual(desks[str(self.c_f2)]["DESTOCK"], D(5000))
+        c = self.client_for("manager")
+        for fmt_ in ("", "&format=pdf", "&format=xlsx"):
+            self.assertEqual(c.get(f"/reports/supply_payment/?preset=day{fmt_}").status_code, 200)
+        # a cashier sees only his own desk: no per-cashier columns
+        r = self.client_for("cashier.fako1").get("/reports/supply_payment/?preset=day")
+        self.assertNotContains(r, "Supplied ·")

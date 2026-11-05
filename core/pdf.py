@@ -199,7 +199,7 @@ def report_pdf(report, generated_by):
             for c in table.columns:
                 txt = cell_text(r.get(c.key), c.kind)
                 if c.key == "reference" and r.get("corrected"):
-                    txt += " ⓒ"
+                    txt += " (C)"
                 line.append(Paragraph(txt, st["s"]))
             body.append(line)
         tot = table.totals()
@@ -224,6 +224,6 @@ def report_pdf(report, generated_by):
             style.append(("BACKGROUND", (0, -1), (-1, -1), colors.HexColor("#f7f7f7")))
         t.setStyle(TableStyle(style))
         story += [t, Spacer(1, 3 * mm)]
-    story.append(Paragraph(_("ⓒ = transaction later corrected (see corrections report). Amounts in FCFA."), st["s"]))
+    story.append(Paragraph(_("(C) = transaction later corrected (see corrections report). Amounts in FCFA."), st["s"]))
     doc.build(story, onFirstPage=footer, onLaterPages=footer)
     return buf.getvalue()
