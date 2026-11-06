@@ -161,7 +161,8 @@ class Imports(OrgMixin, TestCase):
                 ["POS", "", "fako-2", "bonduma", "", 692345679, "", "", "", ""]]
         results, ok = importer.run_import(self.admin, "customers", importer.read_rows("b.xlsx", xlsx_bytes(rows)),
                                           commit=True)
-        self.assertFalse(ok)  # last row: no name at all
+        self.assertTrue(ok, results)  # last row has no name at all: named after its SIM
+        self.assertEqual(Counterparty.objects.get(business_sim="692345679").name, "POS 692 34 56 79")
         rows[-1][4] = "BMTC KIOSK (TPResIndGr)"
         results, ok = importer.run_import(self.admin, "customers", importer.read_rows("b.xlsx", xlsx_bytes(rows)),
                                           commit=True)
@@ -229,6 +230,32 @@ class Imports(OrgMixin, TestCase):
         self.assertEqual(c.get("/administration/import/template/transactions/").status_code, 200)
         # another admin's batch is not reachable
         self.assertEqual(self.client_class().get(f"/administration/import/{b.pk}/").status_code, 302)
+
+    def test_zones_matched_or_created_and_skip_errors(self):
+        """fako-1 matches "Fako 1" whatever its code; an unknown zone / subzone is created and announced; rows with
+        errors can be skipped."""
+        from core.models import ImportBatch, Zone
+
+        Zone.objects.filter(code="fako-1").update(code="f1-prod")
+        head = importer.TEMPLATES["customers"][0]
+        rows = [head, ["POS", "FAKO", "fako-1", "CHURCH STREET", "", 657538990, "", "", "", ""],
+                ["POS", "MEME NDIAN", "MEME NDIAN", "MBONGE ROAD", "BMTC X", 657538991, "", "", "", ""],
+                ["POS", "FAKO", "fako-1", "BOTA", "", 6914878476, "", "", "", ""]]
+        b = importer.start_batch(self.admin, "customers", "z.xlsx", importer.read_rows("z.xlsx", xlsx_bytes(rows)))
+        while b.stage == ImportBatch.Stage.CHECK:
+            importer.step_batch(self.admin, b)
+        self.assertEqual((b.stage, b.bad_rows, b.valid_count, b.can_skip_errors), ("FAILED", [4], 2, True))
+        self.assertIn("new zone MEME NDIAN", b.notes)
+        self.assertIn("new subzone MEME NDIAN in MEME NDIAN", b.notes)
+        self.assertFalse(Zone.objects.filter(name="MEME NDIAN").exists())  # the check created nothing
+        importer.confirm_batch(self.admin, b, skip_errors=True)
+        while b.stage == ImportBatch.Stage.IMPORT:
+            importer.step_batch(self.admin, b)
+        self.assertEqual((b.stage, b.imported), ("DONE", 2))
+        p = Counterparty.objects.get(business_sim="657538990")
+        self.assertEqual((p.microzone.subzone.code, p.microzone.name, p.name), ("f1-prod", "CHURCH STREET",
+                                                                                 "POS 657 53 89 90"))
+        self.assertEqual(Counterparty.objects.get(business_sim="657538991").master_zone.name, "MEME NDIAN")
 
     def test_large_file_in_steps(self):
         """8 000 agents and POS: checked and imported slice by slice, each step short; errors listed, nothing kept."""

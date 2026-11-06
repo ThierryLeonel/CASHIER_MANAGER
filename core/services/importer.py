@@ -301,29 +301,95 @@ def _contact(v):
     return t[:30]
 
 
+def _norm(t):
+    return "".join(ch for ch in _s(t).lower() if ch.isalnum())
+
+
+_NOTES = []  # what the current step created (new zones, subzones, microzones), shown before confirming
+
+
+def _note(msg):
+    if msg not in _NOTES:
+        _NOTES.append(msg)
+
+
+def _new_code(label):
+    from django.utils.text import slugify
+
+    base = (slugify(label) or "zone")[:26]
+    code, n = base, 2
+    while Zone.objects.filter(code=code).exists():
+        code, n = f"{base}-{n}", n + 1
+    return code
+
+
+def _master_zone(t):
+    """Master zone by code or name (spaces, dashes and case ignored); created when it does not exist yet."""
+    key = ("master", _norm(t))
+    if key not in _CACHE:
+        z = next((z for z in Zone.objects.filter(parent__isnull=True) if _norm(t) in (_norm(z.code), _norm(z.name))),
+                 None)
+        if z is None:
+            z = Zone.objects.create(code=_new_code(t), name=t.strip())
+            _note(_("new zone %(z)s") % {"z": z.name})
+        _CACHE[key] = z
+    return _CACHE[key]
+
+
+def _subzone(t, master):
+    """Subzone by code or name ("fako-1" = "Fako 1" = "FAKO1"), preferably inside the master zone; created inside
+    the master zone when it does not exist yet."""
+    key = ("subzone", _norm(t), master.pk if master else None)
+    if key not in _CACHE:
+        subs = [z for z in Zone.objects.filter(parent__isnull=False).select_related("parent")
+                if _norm(t) in (_norm(z.code), _norm(z.name))]
+        z = next((z for z in subs if master and z.parent_id == master.pk), None) or (subs[0] if subs else None)
+        if z is not None and master and z.parent_id != master.pk:
+            raise BusinessError(_("Subzone %(sub)s is not in zone %(zone)s") % {"sub": t, "zone": master.name})
+        if z is None:
+            if not master:
+                raise BusinessError(_("Unknown subzone %(v)s: give its ZONE so it can be created") % {"v": t})
+            z = Zone.objects.create(code=_new_code(t), name=t.strip(), parent=master)
+            _note(_("new subzone %(s)s in %(z)s") % {"s": z.name, "z": master.name})
+        _CACHE[key] = z
+    return _CACHE[key]
+
+
+def _micro_in(subzone, name):
+    key = ("micro", subzone.pk, _norm(name))
+    if key not in _CACHE:
+        mz = next((m for m in MicroZone.objects.filter(subzone=subzone).select_related("agent")
+                   if _norm(m.name) == _norm(name)), None)
+        if mz is None:
+            mz = MicroZone.objects.create(subzone=subzone, name=name.strip())
+            _note(_("new microzone %(m)s in %(s)s") % {"m": mz.name, "s": subzone.name})
+        _CACHE[key] = mz
+    return _CACHE[key]
+
+
 def _row_customer(user, r):
     kind = KIND_ALIASES.get(_s(r.get("type")).upper())
     if not kind:
         raise BusinessError(_("TYPE must be AGENT or POS"))
     sim = _sim(r.get("business_sim"), _("business SIM"))
     om_name = _pick(r, "om_account_name", "account_name")
-    name = _pick(r, "personal_name", "name") or om_name
-    if not name:
-        raise BusinessError(_("PERSONAL NAME (or OM ACCOUNT NAME) is required"))
+    given = _pick(r, "personal_name", "name") or om_name
+    from core.simnumbers import display_sim
+
+    name = given or f"{'POS' if kind == 'POS' else 'Agent'} {display_sim(sim)}"  # no name in the file: "POS 6XX XX XX XX"
     cp = Counterparty.objects.filter(business_sim=sim).first()
     if cp and cp.kind != kind:
         raise BusinessError(_("Business SIM %(sim)s is already registered to %(cp)s.") % {"sim": sim, "cp": cp})
-    zone = _zone(_pick(r, "zone", "master_zone"))
-    sub_code = _pick(r, "sub_zone", "subzone")
-    mz = _microzone(sub_code, _pick(r, "micro_zone", "microzone"))
-    if sub_code and zone:
-        key = ("sub", sub_code.lower())
-        if key not in _CACHE:
-            _CACHE[key] = Zone.objects.filter(parent__isnull=False).filter(
-                Q(code__iexact=sub_code) | Q(name__iexact=sub_code)).first()
-        sub = _CACHE[key]
-        if sub and sub.parent_id != zone.id:
-            raise BusinessError(_("Subzone %(sub)s is not in zone %(zone)s") % {"sub": sub_code, "zone": zone.name})
+    zone_t, sub_t, mz_t = _pick(r, "zone", "master_zone"), _pick(r, "sub_zone", "subzone"), \
+        _pick(r, "micro_zone", "microzone")
+    zone = _master_zone(zone_t) if zone_t else None
+    sub = _subzone(sub_t, zone) if sub_t else None
+    if mz_t and not sub:
+        mz = _microzone("", mz_t)  # an existing microzone with this name (must be unique)
+    else:
+        mz = _micro_in(sub, mz_t) if mz_t else None
+    if not zone and sub:
+        zone = sub.parent
     if not zone and mz:
         zone = mz.subzone.parent
     if mz and kind == K_AGENT and mz.agent_id and mz.agent.business_sim != sim:
@@ -332,7 +398,7 @@ def _row_customer(user, r):
             "other_phone": _contact(_pick(r, "other_contact", "other_phone")), "address": _pick(r, "address")[:255],
             "notes": _pick(r, "notes")}
     if cp:
-        cp.name, cp.master_zone = name, zone or cp.master_zone
+        cp.name, cp.master_zone = given or cp.name, zone or cp.master_zone  # an empty name keeps the old one
         cp.microzone = mz or cp.microzone
         for k, v in info.items():
             if v:
@@ -635,7 +701,7 @@ class _Rollback(Exception):
     pass
 
 
-def run_import(user, kind, rows, *, commit, start=2):
+def run_import(user, kind, rows, *, commit, start=2, numbers=None):
     """Returns (results, ok). results: [(row_number, ok, message)]. Everything or nothing: one error rolls the whole
     call back. `start` = sheet row number of the first row (rows sent in slices)."""
     perm.require_role(user, perm.CONFIG_ROLES, "import")
@@ -646,7 +712,7 @@ def run_import(user, kind, rows, *, commit, start=2):
     _CACHE.clear()
     try:
         with transaction.atomic():
-            for i, r in enumerate(rows, start=start):
+            for i, r in zip(numbers or range(start, start + len(rows)), rows):
                 try:
                     with transaction.atomic():
                         msg = handler(user, r)
@@ -667,6 +733,14 @@ def run_import(user, kind, rows, *, commit, start=2):
     return results, errors == 0
 
 
+def _take_notes(b):
+    for n in _NOTES:
+        if n not in b.notes:
+            b.notes.append(n)
+    b.notes = b.notes[:300]
+    _NOTES.clear()
+
+
 # ---------------------------------------------------------------- large files: check and import step by step
 def start_batch(user, kind, name, rows):
     from core.models import ImportBatch
@@ -684,18 +758,31 @@ def _slice(b, commit):
     size, t0, end = 50, time.monotonic(), b.total
     while b.position < end and time.monotonic() - t0 < STEP_SECONDS:
         rows = b.rows[b.position:b.position + size]
+        numbers = list(range(b.position + 2, b.position + 2 + len(rows)))
+        if commit and b.skip_errors:
+            skip = set(b.bad_rows)
+            kept = [(n, r) for n, r in zip(numbers, rows) if n not in skip]
+            numbers, todo = [n for n, _r in kept], [r for _n, r in kept]
+        else:
+            todo = rows
         t1 = time.monotonic()
-        results, ok = run_import(b.created_by, b.kind, rows, commit=commit, start=b.position + 2)
+        _NOTES.clear()
+        results, ok = run_import(b.created_by, b.kind, todo, commit=commit, numbers=numbers) if todo else ([], True)
+        if not commit:
+            _take_notes(b)
+        _NOTES.clear()
         bad = [[n, m] for n, good, m in results if not good]
         if commit and not ok:
             b.errors = (b.errors + bad)[:500]
             b.stage = b.Stage.FAILED
             return
         b.errors = (b.errors + bad)[:500]
-        if not commit and len(b.preview) < 30:
-            b.preview = (b.preview + [[n, m] for n, good, m in results])[:30]
+        if not commit:
+            b.bad_rows += [n for n, _m in bad]
+            if len(b.preview) < 30:
+                b.preview = (b.preview + [[n, m] for n, good, m in results if good])[:30]
         if commit:
-            b.imported += len(rows)
+            b.imported += len(todo)
         b.position += len(rows)
         per_row = (time.monotonic() - t1) / max(len(rows), 1)
         left = STEP_SECONDS - (time.monotonic() - t0)
@@ -715,14 +802,17 @@ def step_batch(user, b):
         if b.stage == b.Stage.IMPORT and b.position >= b.total:
             b.stage = b.Stage.DONE
             ops.log_event(user, "import", kind=b.kind, rows=b.total, file=b.file_name)
-    b.save(update_fields=["stage", "position", "imported", "errors", "preview", "updated_at"])  # rows stay as stored
+    b.save(update_fields=["stage", "position", "imported", "errors", "preview", "bad_rows", "notes", "updated_at"])  # rows stay as stored
     return b
 
 
-def confirm_batch(user, b):
+def confirm_batch(user, b, skip_errors=False):
+    """Import the checked file; with skip_errors, a file whose check found errors imports its valid rows only."""
     perm.require_role(user, perm.CONFIG_ROLES, "import")
-    if b.stage != b.Stage.CHECKED:
+    can_skip = skip_errors and b.stage == b.Stage.FAILED and b.imported == 0 and b.position >= b.total \
+        and len(b.bad_rows) < b.total
+    if b.stage != b.Stage.CHECKED and not can_skip:
         raise BusinessError(_("This file cannot be imported (check it again)."))
-    b.stage, b.position = b.Stage.IMPORT, 0
-    b.save(update_fields=["stage", "position", "updated_at"])
+    b.stage, b.position, b.skip_errors = b.Stage.IMPORT, 0, bool(can_skip)
+    b.save(update_fields=["stage", "position", "skip_errors", "updated_at"])
     return b

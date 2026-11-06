@@ -34,6 +34,14 @@ msgstr "%(agent)s ne doit à la boutique que %(owed)s FCFA."
 
 #, python-format
 msgid ""
+"%(bad)s rows have errors and %(good)s rows are valid. Nothing was imported "
+"yet."
+msgstr ""
+"%(bad)s lignes ont des erreurs et %(good)s lignes sont valides. Rien n'a "
+"encore été importé."
+
+#, python-format
+msgid ""
 "%(cm)s already has exchanges, so it cannot be deleted. Untick Active to stop"
 " using it; its history stays."
 msgstr ""
@@ -126,6 +134,10 @@ msgstr "%(n)s soldes d'ouverture enregistrés, total %(amt)s FCFA."
 #, python-format
 msgid "%(n)s rows imported."
 msgstr "%(n)s lignes importées."
+
+#, python-format
+msgid "%(n)s rows with errors were skipped (listed below)."
+msgstr "%(n)s lignes en erreur ont été ignorées (listées ci-dessous)."
 
 #, python-format
 msgid "%(n)s shops"
@@ -2181,6 +2193,9 @@ msgstr "Pays d'origine"
 msgid "Create the account"
 msgstr "Créer le compte"
 
+msgid "Created by this file"
+msgstr "Créé par ce fichier"
+
 msgid "Credit (−)"
 msgstr "Crédit (−)"
 
@@ -2963,6 +2978,9 @@ msgstr "Trouver une unité (IMEI / série, article ou client)"
 msgid "First name"
 msgstr "Prénom"
 
+msgid "Fix the file first"
+msgstr "Corriger d'abord le fichier"
+
 msgid "Float"
 msgstr "Float"
 
@@ -3218,6 +3236,10 @@ msgstr "Importer CSV / Excel"
 
 msgid "Import finished"
 msgstr "Import terminé"
+
+#, python-format
+msgid "Import the %(good)s valid rows and skip the rows with errors"
+msgstr "Importer les %(good)s lignes valides et ignorer les lignes en erreur"
 
 msgid "Imported"
 msgstr "Importé"
@@ -6420,6 +6442,9 @@ msgstr "Cette écriture contre-passe"
 msgid "This file cannot be imported (check it again)."
 msgstr "Ce fichier ne peut pas être importé (vérifiez-le à nouveau)."
 
+msgid "This file will create"
+msgstr "Ce fichier va créer"
+
 #, python-format
 msgid ""
 "This is not one of your duties in the shop (%(d)s). Ask the senior shop "
@@ -7007,6 +7032,10 @@ msgid "Unknown subzone %(v)s"
 msgstr "Sous-zone inconnue %(v)s"
 
 #, python-format
+msgid "Unknown subzone %(v)s: give its ZONE so it can be created"
+msgstr "Sous-zone inconnue %(v)s : indiquez sa ZONE pour la créer"
+
+#, python-format
 msgid "Unknown zone %(v)s"
 msgstr "Zone inconnue %(v)s"
 
@@ -7391,6 +7420,15 @@ msgstr "Zone / responsable"
 msgid "Zones"
 msgstr "Zones"
 
+msgid ""
+"Zones and subzones are matched by code or name, ignoring capitals, spaces "
+"and dashes (fako-1 = Fako 1). Check these are not existing zones under "
+"another name before confirming."
+msgstr ""
+"Les zones et sous-zones sont reconnues par code ou nom, sans tenir compte "
+"des majuscules, espaces et tirets (fako-1 = Fako 1). Vérifiez qu'il ne "
+"s'agit pas de zones existantes sous un autre nom avant de confirmer."
+
 msgid "Zones, users, SIMs, drawers"
 msgstr "Zones, utilisateurs, SIM, caisses"
 
@@ -7690,6 +7728,18 @@ msgstr "nom de la personne"
 
 msgid "new SIM serial (ICCID)"
 msgstr "numéro de série de la nouvelle SIM (ICCID)"
+
+#, python-format
+msgid "new microzone %(m)s in %(s)s"
+msgstr "nouvelle microzone %(m)s dans %(s)s"
+
+#, python-format
+msgid "new subzone %(s)s in %(z)s"
+msgstr "nouvelle sous-zone %(s)s dans %(z)s"
+
+#, python-format
+msgid "new zone %(z)s"
+msgstr "nouvelle zone %(z)s"
 
 msgid "not closed"
 msgstr "non clôturée"

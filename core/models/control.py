@@ -154,9 +154,22 @@ class ImportBatch(models.Model):
     imported = models.PositiveIntegerField(default=0)
     errors = models.JSONField(default=list)  # [[row number, message]]
     preview = models.JSONField(default=list)  # first messages of the check: [[row number, message]]
+    bad_rows = models.JSONField(default=list)  # every row number with an error (errors keeps the first 500 messages)
+    notes = models.JSONField(default=list)  # what the file creates: new zones, subzones, microzones
+    skip_errors = models.BooleanField(default=False)  # import the valid rows, leave the rows with errors
     created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name="+")
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         ordering = ["-created_at"]
+
+    @property
+    def valid_count(self):
+        return self.total - len(self.bad_rows)
+
+    @property
+    def can_skip_errors(self):
+        """Check finished with errors, nothing imported yet, and some rows are valid."""
+        return (self.stage == self.Stage.FAILED and not self.imported and not self.skip_errors
+                and self.position >= self.total and 0 < self.valid_count)

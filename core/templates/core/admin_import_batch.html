@@ -11,10 +11,16 @@
   <p id="imp-count" class="small">{{ b.position }} / {{ b.total }}{% if b.imported %} · {% blocktrans with n=b.imported %}{{ n }} imported{% endblocktrans %}{% endif %}</p>
   <p id="imp-keep" class="small muted meta"{% if not state.running %} hidden{% endif %}>{% trans "Keep this page open until it finishes." %}</p>
   {% if b.stage == 'CHECKED' %}<form method="post" action="{% url 'import_step' b.pk %}" class="form-foot">{% csrf_token %}<input type="hidden" name="action" value="confirm"><button class="btn primary">{% blocktrans with n=b.total %}Confirm import of {{ n }} rows{% endblocktrans %}</button><a class="btn" href="{% url 'import_data' %}">{% trans "Cancel" %}</a></form>{% endif %}
-  {% if b.stage == 'FAILED' %}<p class="msg error">{% if b.imported %}{% blocktrans with n=b.imported %}The import stopped: {{ n }} rows were imported before the error. Fix the rows below and upload the rest again.{% endblocktrans %}{% else %}{% trans "Nothing was imported. Fix the rows below and upload the file again." %}{% endif %}</p>{% endif %}
-  {% if b.stage == 'DONE' %}<p class="msg success">{% blocktrans with n=b.imported %}{{ n }} rows imported.{% endblocktrans %}</p>{% endif %}
+  {% if b.can_skip_errors %}
+  <p class="msg error">{% blocktrans with bad=b.bad_rows|length good=b.valid_count %}{{ bad }} rows have errors and {{ good }} rows are valid. Nothing was imported yet.{% endblocktrans %}</p>
+  <form method="post" action="{% url 'import_step' b.pk %}" class="form-foot">{% csrf_token %}<input type="hidden" name="action" value="confirm_skip"><button class="btn primary">{% blocktrans with good=b.valid_count %}Import the {{ good }} valid rows and skip the rows with errors{% endblocktrans %}</button><a class="btn" href="{% url 'import_data' %}">{% trans "Fix the file first" %}</a></form>
+  {% elif b.stage == 'FAILED' %}<p class="msg error">{% if b.imported %}{% blocktrans with n=b.imported %}The import stopped: {{ n }} rows were imported before the error. Fix the rows below and upload the rest again.{% endblocktrans %}{% else %}{% trans "Nothing was imported. Fix the rows below and upload the file again." %}{% endif %}</p>{% endif %}
+  {% if b.stage == 'DONE' %}<p class="msg success">{% blocktrans with n=b.imported %}{{ n }} rows imported.{% endblocktrans %}{% if b.skip_errors %} {% blocktrans with n=b.bad_rows|length %}{{ n }} rows with errors were skipped (listed below).{% endblocktrans %}{% endif %}</p>{% endif %}
   <noscript>{% if state.running %}<form method="post" action="{% url 'import_step' b.pk %}">{% csrf_token %}<button class="btn primary">{% trans "Continue" %}</button></form>{% endif %}</noscript>
 </div>
+{% if b.notes %}<div class="panel"><strong>{% if b.stage == 'DONE' %}{% trans "Created by this file" %}{% else %}{% trans "This file will create" %}{% endif %} ({{ b.notes|length }})</strong>
+<p class="small">{{ b.notes|join:" · " }}</p>
+<p class="small muted meta">{% trans "Zones and subzones are matched by code or name, ignoring capitals, spaces and dashes (fako-1 = Fako 1). Check these are not existing zones under another name before confirming." %}</p></div>{% endif %}
 {% if b.errors %}<h2>{% trans "Rows with errors" %} ({{ b.errors|length }}{% if b.errors|length >= 500 %}+{% endif %})</h2>
 <div class="tbl-wrap"><table class="t"><thead><tr><th>{% trans "Row" %}</th><th>{% trans "Details" %}</th></tr></thead>
 <tbody>{% for n, msg in b.errors %}<tr><td>{{ n }}</td><td>{{ msg }}</td></tr>{% endfor %}</tbody></table></div>

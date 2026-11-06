@@ -133,8 +133,8 @@ def import_step(request, pk):
     b = get_object_or_404(ImportBatch, pk=pk, created_by=request.user)
     action = request.POST.get("action")
     try:
-        if action == "confirm":
-            importer.confirm_batch(request.user, b)
+        if action in ("confirm", "confirm_skip"):
+            importer.confirm_batch(request.user, b, skip_errors=action == "confirm_skip")
         elif b.stage in (ImportBatch.Stage.CHECK, ImportBatch.Stage.IMPORT):
             importer.step_batch(request.user, b)
     except BusinessError as e:
