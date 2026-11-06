@@ -197,6 +197,18 @@ def statement(f):
         (_("Supplied cash"), by_product["CASH"], "money"), (_("Float supply"), by_product["FLOAT"], "money"),
         (_("Destockage"), by_product["DESTOCKAGE"], "money"),
     ] + [(_("Paid by %(m)s") % {"m": PaymentMethod(m).label}, v, "money") for m, v in sorted(by_method.items())]
+    piv = [{"label": _("Supplied"), "_head": True}]
+    for k, lbl in [("UVE", "UVE"), ("ER", "ER"), ("CASH", _("Cash")), ("FLOAT", _("Float supply")),
+                   ("DESTOCKAGE", _("Destockage"))]:
+        if by_product[k]:
+            piv.append({"label": lbl, "amount": by_product[k]})
+    piv.append({"label": _("Total supplied"), "_sub": True, "amount": sum(by_product.values(), Z)})
+    piv.append({"label": _("Paid"), "_head": True})
+    for m, v in sorted(by_method.items()):
+        piv.append({"label": PaymentMethod(m).label, "amount": v})
+    piv.append({"label": _("Total paid"), "_sub": True, "amount": sum(by_method.values(), Z)})
+    rep.tables.append(Table(_("Supplied and paid in the period"),
+                            [Col("label", _("Product / method")), Col("amount", _("Amount"), "money")], piv))
     rep.tables.append(Table(_("Movements (positive = owed to company, negative balance = supply due to the agent / POS)"), [
         Col("posted_at", _("Recorded at"), "datetime"), Col("business_date", _("Business date"), "date"),
         Col("reference", _("Reference")), Col("receipt", _("Receipt")), Col("type", _("Type")),
@@ -235,7 +247,8 @@ def _customer_rows(f, kind=None, only=None):
         r = data.get(aid, {})
         closing = money(r.get("upto"))
         mz = cp.microzone
-        row = dict(sim=cp.sim_display, name=cp.name, kind=cp.get_kind_display(),
+        row = dict(_cp=cp, customer=f"{cp.name} · {cp.sim_display}" + (" (POS)" if cp.kind == "POS" else ""),
+                   sim=cp.sim_display, name=cp.name, kind=cp.get_kind_display(),
                    microzone=f"{mz.subzone.name} › {mz.name}" if mz else "",
                    agent=(mz.agent.name if mz and mz.agent_id else ""), opening=money(r.get("opening")),
                    supplied=money(r.get("supplied")), paid=-money(r.get("paid")),
@@ -260,16 +273,34 @@ CUSTOMER_COLS = [
 ]
 
 
+PIVOT_CUSTOMER_COLS = [
+    Col("customer", _l("Agent / POS")), Col("microzones", _l("Microzones")),
+    Col("opening", _l("Opening"), "money", True), Col("supplied", _l("Supplied"), "money", True),
+    Col("paid", _l("Paid"), "money", True), Col("adjusted", _l("Transfers / corrections"), "money", True),
+    Col("closing", _l("Closing (+ owes, − credit)"), "money", True),
+    Col("current", _l("Balance now (+ owes, − credit)"), "money", True),
+]
+
+
+def _customer_pivot(rep, title, rows, cols=PIVOT_CUSTOMER_COLS):
+    for r in rows:
+        r["adjusted"] = (r.get("transfers") or Z) + (r.get("other") or Z)
+    t = group_by_subzone(title, rows, cols)
+    rep.tables.append(t)
+    tot = t.totals() or {}
+    rep.summary = [(c.label, tot.get(c.key, Z), "money") for c in cols if c.total]
+    return t
+
+
 def customers(f):
     rep = Report("customers", _("Commercial agent and POS balances"), f.text())
-    rep.tables.append(Table(_("Balances"), CUSTOMER_COLS, _customer_rows(f, only="nonzero")))
+    _customer_pivot(rep, _("Balances by subzone"), _customer_rows(f, only="nonzero"))
     return rep
 
 
 def pos(f):
     rep = Report("pos", _("Exceptional direct POS transactions and outstanding amounts"), f.text())
-    rep.tables.append(Table(_("POS balances"), CUSTOMER_COLS, _customer_rows(f, kind=Counterparty.Kind.POS,
-                                                                             only="nonzero")))
+    _customer_pivot(rep, _("POS balances by subzone"), _customer_rows(f, kind=Counterparty.Kind.POS, only="nonzero"))
     pos_ids = Counterparty.objects.filter(kind=Counterparty.Kind.POS).values("id")
     qs = Transaction.objects.filter(f.txn_q()).filter(Q(counterparty__in=pos_ids) | Q(counterparty_2__in=pos_ids)) \
         .select_related(*TX_RELATED).order_by("business_date", "posted_at")
@@ -280,8 +311,90 @@ def pos(f):
 def supply_due(f):
     rep = Report("supply_due", _("Supply due to agents and POS (prepaid / overpaid balances)"), f.text())
     rows = _customer_rows(f, only="due")
-    rep.tables.append(Table(_("Agents and POS with supply due (as of end of period)"), CUSTOMER_COLS, rows))
+    _customer_pivot(rep, _("Agents and POS with supply due (as of end of period)"), rows, [
+        Col("customer", _l("Agent / POS")), Col("microzones", _l("Microzones")),
+        Col("supplied", _l("Supplied"), "money", True), Col("paid", _l("Paid"), "money", True),
+        Col("due", _l("Supply due to the agent / POS"), "money", True),
+        Col("current", _l("Balance now (+ owes, − credit)"), "money", True)])
     return rep
+
+
+# ------------------------------------------------------------------ pivot layout shared by the reports
+def _txn_place(t):
+    """(master zone, desk) of a transaction: the master zone of its subzone, and the recording cashier's desk (or the
+    finance / manager who recorded it)."""
+    z = t.zone
+    master = (z.parent.name if z.parent_id else z.name) if z else str(_("Company"))
+    return master, _desk_label(_desk_user(t))
+
+
+def zone_pivot(title, items, cats, *, label=None, total=True, count=False, note=""):
+    """A grouped table: a heading per master zone, one line per cashier's desk, the zone's subtotal, the grand total.
+    `items` = [(master, desk, {cat: value})]; `cats` = [(key, label)]."""
+    data = defaultdict(lambda: defaultdict(lambda: defaultdict(Decimal)))
+    for master, desk, vals in items:
+        line = data[master][desk]
+        for k, v in vals.items():
+            line[k] += v
+        line["_n"] += 1
+    keys = [k for k, _l2 in cats]
+    rows = []
+    for master in sorted(data):
+        rows.append({"label": master, "_head": True})
+        sub = defaultdict(Decimal)
+        for desk in sorted(data[master]):
+            v = data[master][desk]
+            r = {"label": desk, **{k: v[k] for k in keys}}
+            if total:
+                r["total"] = sum((v[k] for k in keys), Z)
+            if count:
+                r["count"] = int(v["_n"])
+            rows.append(r)
+            for k in keys + ["_n"]:
+                sub[k] += v[k]
+        r = {"label": _("Total %(sub)s") % {"sub": master}, "_sub": True, **{k: sub[k] for k in keys}}
+        if total:
+            r["total"] = sum((sub[k] for k in keys), Z)
+        if count:
+            r["count"] = int(sub["_n"])
+        rows.append(r)
+    cols = [Col("label", label or _("Master zone / cashier"))]
+    if count:
+        cols.append(Col("count", _("Count"), "int", True))
+    cols += [Col(k, lbl, "money", True) for k, lbl in cats]
+    if total:
+        cols.append(Col("total", _("Total"), "money", True))
+    return Table(title, cols, rows, note=note)
+
+
+def pivot_summary(table, cats, total=True):
+    """Summary tiles from a pivot table's grand totals (one per column, then the total)."""
+    tot = table.totals() or {}
+    out = [(lbl, tot.get(k, Z), "money") for k, lbl in cats]
+    if total:
+        out.append((_("Total"), tot.get("total", Z), "money"))
+    return out
+
+
+def group_by_subzone(title, rows, cols, note=""):
+    """Agents / POS rows (each with `_cp`) grouped by subzone: heading, members, subtotal; grand total at the end.
+    An agent running several microzones is listed once with all of them."""
+    groups = defaultdict(list)
+    for r in rows:
+        sub, mzs = _agent_place(r["_cp"])
+        r["microzones"] = mzs
+        groups[sub].append(r)
+    money = [c.key for c in cols if c.total]
+    out = []
+    for sub in sorted(groups):
+        out.append({"customer": sub, "_head": True})
+        tot = defaultdict(Decimal)
+        for r in sorted(groups[sub], key=lambda x: (x["_cp"].kind != "AGENT", x["_cp"].name.lower())):
+            out.append(r)
+            for k in money:
+                tot[k] += r.get(k) or Z
+        out.append({"customer": _("Total %(sub)s") % {"sub": sub}, "_sub": True, **tot})
+    return Table(title, cols, out, note=note)
 
 
 def _summary_table(title, label, groups):
@@ -326,22 +439,24 @@ def supply_kind(t):
 def supplies(f):
     rep = Report("supplies", _("Supplies: UVE, ER, cash, float (and destockage)"), f.text())
     qs = supply_txns(f)
-    groups = {}
-    for p, label in [("UVE", "UVE"), ("ER", "ER"), ("CASH", _("Cash")), ("FLOAT", _("Float (converted to UVE)")),
-                     ("DESTOCK", _("Destockage"))]:
-        sel = [t for t in qs if supply_kind(t) == p]
-        groups[label] = (sum(1 for t in sel if t.type != TxType.REVERSAL), sum(signed(t) for t in sel))
-    rep.tables.append(_summary_table(_("Totals by product"), _("Product"), groups))
-    channels = {}
-    for ch, label in [("AGENT", _("Supplies to commercial agents")), ("POS", _("Supplies to points of sale (POS)"))]:
-        for p, plabel in [("UVE", "UVE"), ("ER", "ER"), ("CASH", _("Cash"))]:
-            sel = [t for t in qs if effective_type(t) == TxType.SUPPLY and t.supply_channel == ch and t.product == p]
-            channels[f"{label} · {plabel}"] = (sum(1 for t in sel if t.type != TxType.REVERSAL),
-                                               sum(signed(t) for t in sel))
-    fl = [t for t in qs if supply_kind(t) == "FLOAT"]
-    channels[f"{_('Supplies to commercial agents')} · {_('Float (converted to UVE)')}"] = (
-        sum(1 for t in fl if t.type != TxType.REVERSAL), sum(signed(t) for t in fl))
-    rep.tables.append(_summary_table(_("Agents versus POS"), _("Supply"), channels))
+    cats = [("UVE", "UVE"), ("ER", "ER"), ("CASH", _("Cash")), ("FLOAT", _("Float (converted to UVE)")),
+            ("DESTOCK", _("Destockage"))]
+    piv = zone_pivot(_("By zone and cashier"), [(*_txn_place(t), {supply_kind(t): signed(t)}) for t in qs], cats)
+    rep.tables.append(piv)
+    rep.summary = pivot_summary(piv, cats)
+    ch_rows = []
+    for ch, label in [("AGENT", _("Commercial agents")), ("POS", _("Points of sale (POS)"))]:
+        row = {"label": label, **{k: Z for k, _l2 in cats}}
+        for t in qs:
+            b = _base(t)
+            is_pos = b.type == TxType.SUPPLY and t.supply_channel == "POS"
+            if (ch == "POS") == is_pos:
+                row[supply_kind(t)] += signed(t)
+        row["total"] = sum((row[k] for k, _l2 in cats), Z)
+        ch_rows.append(row)
+    rep.tables.append(Table(_("Agents versus POS"), [Col("label", _("Supplied to"))]
+                            + [Col(k, lbl, "money", True) for k, lbl in cats]
+                            + [Col("total", _("Total"), "money", True)], ch_rows))
     rep.tables.append(Table(_("Detail"), TX_COLUMNS, [txn_row(t) for t in qs]))
     return rep
 
@@ -349,11 +464,11 @@ def supplies(f):
 def collections(f):
     rep = Report("collections", _("Collections by payment method"), f.text())
     qs = list(txns(f, [TxType.COLLECTION]))
-    groups = {}
-    for m in PaymentMethod:
-        sel = [t for t in qs if t.payment_method == m]
-        groups[m.label] = (sum(1 for t in sel if t.type != TxType.REVERSAL), sum(signed(t) for t in sel))
-    rep.tables.append(_summary_table(_("Totals by method"), _("Payment method"), groups))
+    cats = [(m.value, m.label) for m in PaymentMethod]
+    piv = zone_pivot(_("By zone and cashier"),
+                     [(*_txn_place(t), {_base(t).payment_method: signed(t)}) for t in qs], cats)
+    rep.tables.append(piv)
+    rep.summary = pivot_summary(piv, cats)
     rep.tables.append(Table(_("Detail"), TX_COLUMNS, [txn_row(t) for t in qs]))
     return rep
 
@@ -366,6 +481,11 @@ def destockage(f):
         r = txn_row(t)
         r["pos"] = str(t.counterparty_2)
         rows.append(r)
+    cats = [("amount", _("Destockage"))]
+    piv = zone_pivot(_("By zone and cashier"), [(*_txn_place(t), {"amount": signed(t)}) for t in qs], cats,
+                     total=False, count=True)
+    rep.tables.append(piv)
+    rep.summary = pivot_summary(piv, cats, total=False)
     cols = TX_COLUMNS[:4] + [Col("pos", _("POS (received cash)")), Col("customer", _("Agent (owes)"))] + TX_COLUMNS[5:]
     rep.tables.append(Table(_("Destockage operations (cash out of drawer → agent debt; company UVE unchanged)"),
                             cols, rows))
@@ -375,12 +495,12 @@ def destockage(f):
 def expenses(f):
     rep = Report("expenses", _("Expenses by category"), f.text())
     qs = list(txns(f, [TxType.EXPENSE]))
-    groups = {}
-    for c in ExpenseCategory.objects.all():
-        sel = [t for t in qs if t.expense_category_id == c.id]
-        if sel:
-            groups[str(c)] = (sum(1 for t in sel if t.type != TxType.REVERSAL), sum(signed(t) for t in sel))
-    rep.tables.append(_summary_table(_("Totals by category"), _("Category"), groups))
+    used = {_base(t).expense_category_id for t in qs}
+    cats = [(f"c{c.id}", str(c)) for c in ExpenseCategory.objects.filter(id__in=used).order_by("code")]
+    piv = zone_pivot(_("By zone and cashier"),
+                     [(*_txn_place(t), {f"c{_base(t).expense_category_id}": signed(t)}) for t in qs], cats)
+    rep.tables.append(piv)
+    rep.summary = pivot_summary(piv, cats)
     rep.tables.append(Table(_("Detail"), TX_COLUMNS, [txn_row(t) for t in qs]))
     return rep
 
@@ -423,7 +543,7 @@ def transfer_reconciliation(qs, filters_text):
 
     rep = Report("transfers", _("Transfer reconciliation"), filters_text)
     qs = qs.prefetch_related("entries")
-    rows, pairs, parties = [], OrderedDict(), OrderedDict()
+    rows, pairs, parties, kind_of = [], OrderedDict(), OrderedDict(), {}
     products = []
     sent_total, received_total = Z, Z
     for t in qs:
@@ -432,6 +552,9 @@ def transfer_reconciliation(qs, filters_text):
         if prod not in products:
             products.append(prod)
         a, b = _party(src), _party(dst)
+        for acc, who in ((src, a), (dst, b)):
+            kind_of[who] = 1 if acc is not None and acc.shop_id else (0 if acc is not None and (
+                acc.custodian_id or acc.zone_id) else 2)
         rows.append(dict(business_date=t.business_date, reference=t.reference, _id=t.pk, type=t.display_type,
                          sender=a, receiver=b, product=prod, amount=t.amount, by=str(t.entered_by),
                          description=t.description))
@@ -447,13 +570,24 @@ def transfer_reconciliation(qs, filters_text):
         sent_total += -sum((e.amount for e in t.entries.all() if e.account_id == t.source_account_id), Z)
         received_total += sum((e.amount for e in t.entries.all() if e.account_id == t.dest_account_id), Z)
     by_party = []
-    for who, p in sorted(parties.items()):
-        r = {"party": who}
-        for prod in products:
-            r[f"sent_{prod}"] = p.get(f"sent_{prod}", Z)
-            r[f"received_{prod}"] = p.get(f"received_{prod}", Z)
-        r.update(sent=p["sent"], received=p["received"], net=p["received"] - p["sent"])
-        by_party.append(r)
+    group_names = [_("Cashier desks"), _("Shops"), _("Company (bank, finance)")]
+    for g, gname in enumerate(group_names):
+        members = [(who, p) for who, p in sorted(parties.items()) if kind_of.get(who, 2) == g]
+        if not members:
+            continue
+        by_party.append({"party": gname, "_head": True})
+        sub = defaultdict(Decimal)
+        for who, p in members:
+            r = {"party": who}
+            for prod in products:
+                r[f"sent_{prod}"] = p.get(f"sent_{prod}", Z)
+                r[f"received_{prod}"] = p.get(f"received_{prod}", Z)
+            r.update(sent=p["sent"], received=p["received"], net=p["received"] - p["sent"])
+            by_party.append(r)
+            for k, v in r.items():
+                if k != "party":
+                    sub[k] += v
+        by_party.append({"party": _("Total %(sub)s") % {"sub": gname}, "_sub": True, **sub})
     cols = [Col("party", _("Desk / shop"))]
     for prod in products:
         cols += [Col(f"sent_{prod}", f"{prod} · " + str(_("sent")), "money", True),
@@ -489,6 +623,15 @@ def conversions(f):
                          rate=src.rate_used, uve=s * src.amount, er=s * src.amount_received,
                          uplift=s * (src.amount_received - src.amount), corrected=hasattr(t, "correction"),
                          _id=t.id))
+    cats = [("uve", _("UVE converted")), ("er", _("ER received")), ("uplift", _("Conversion uplift"))]
+    items = []
+    for t in txns(f, [TxType.CONVERSION]):
+        sgn, src = (-1 if t.type == TxType.REVERSAL else 1), _base(t)
+        items.append((*_txn_place(t), {"uve": sgn * src.amount, "er": sgn * src.amount_received,
+                                       "uplift": sgn * (src.amount_received - src.amount)}))
+    piv = zone_pivot(_("By zone and cashier"), items, cats, total=False, count=True)
+    rep.tables.append(piv)
+    rep.summary = pivot_summary(piv, cats, total=False)
     rep.tables.append(Table(_("Conversions"), [
         Col("posted_at", _("Recorded at"), "datetime"), Col("business_date", _("Business date"), "date"),
         Col("reference", _("Reference")), Col("type", _("Type")), Col("sim", _("Orange SIM")),
@@ -518,6 +661,12 @@ def cash_managers(f):
         Col("given", _("Company gave"), "money", True), Col("received", _("Company received"), "money", True),
         Col("closing", _("Closing"), "money", True), Col("owes_company", _("Owes company"), "money", True),
         Col("company_owes", _("Company owes"), "money", True), Col("current", _("Current"), "money", True)], rows))
+    tot = rep.tables[-1].totals() or {}
+    rep.summary = [(_("Company gave"), tot.get("given", Z), "money"),
+                   (_("Company received"), tot.get("received", Z), "money"),
+                   (_("Owes company"), tot.get("owes_company", Z), "money"),
+                   (_("Company owes"), tot.get("company_owes", Z), "money"),
+                   (_("Current"), tot.get("current", Z), "money")]
     exq = Q()
     if f.date_from:
         exq &= Q(business_date__gte=f.date_from)
@@ -547,13 +696,28 @@ def accounts(f):
     rep = Report("accounts", _("Cash drawer, SIM wallet and bank movements"), f.text())
     accs = list(scoped_asset_accounts(f))
     bals = balances_by_account(accs, f)
-    rows = []
+    groups = defaultdict(list)
     for a in accs:
         o, dr, cr, cl, cur = bals[a.id]
-        rows.append(dict(account=str(a), kind=a.get_kind_display(),
-                         custodian=(f"{a.zone} · {a.custodian}" if a.custodian_id else str(a.zone or "")), opening=o,
-                         inflow=dr, outflow=cr, closing=cl, current=cur))
-    rep.tables.append(Table(_("Balances"), [
+        z = a.zone
+        master = (z.parent.name if z.parent_id else z.name) if z else (
+            str(_("Shop %(s)s") % {"s": a.shop.name}) if a.shop_id else str(_("Company")))
+        groups[master].append(dict(account=str(a), kind=a.get_kind_display(),
+                                   custodian=(f"{a.zone} · {a.custodian}" if a.custodian_id else str(a.zone or "")),
+                                   opening=o, inflow=dr, outflow=cr, closing=cl, current=cur, _k=a.kind))
+    rows, by_kind = [], defaultdict(Decimal)
+    for master in sorted(groups):
+        rows.append({"account": master, "_head": True})
+        sub = defaultdict(Decimal)
+        for r in groups[master]:
+            rows.append(r)
+            by_kind[r["_k"]] += r["current"]
+            for k in ("opening", "inflow", "outflow", "closing", "current"):
+                sub[k] += r[k]
+        rows.append({"account": _("Total %(sub)s") % {"sub": master}, "_sub": True, **sub})
+    rep.summary = [(str(Account.Kind(k).label), v, "money") for k, v in sorted(by_kind.items())] + [
+        (_("Total balance now"), sum(by_kind.values(), Z), "money")]
+    rep.tables.append(Table(_("Balances by zone"), [
         Col("account", _("Account")), Col("kind", _("Type")), Col("custodian", _("Zone / in charge")),
         Col("opening", _("Opening balance"), "money", True), Col("inflow", _("In"), "money", True),
         Col("outflow", _("Out"), "money", True), Col("closing", _("Closing balance"), "money", True),
@@ -601,6 +765,11 @@ def corrections(f):
                          reversal=c.reversal_txn.reference,
                          replacement=c.replacement_txn.reference if c.replacement_txn else "",
                          posted_date=c.reversal_txn.business_date, by=str(c.corrected_by), _id=c.original_id))
+    counts = defaultdict(int)
+    for r in rows:
+        counts[r["kind"]] += 1
+    rep.summary = [(k, str(n), "text") for k, n in sorted(counts.items())] + [
+        (_("Corrections"), str(len(rows)), "text")]
     rep.tables.append(Table(_("Corrections"), [
         Col("created_at", _("Corrected at"), "datetime"), Col("original", _("Original")),
         Col("original_date", _("Original business date"), "date"), Col("type", _("Type")),
@@ -632,16 +801,25 @@ def closings(f):
     if f.date_to:
         lq &= Q(closing__cashier_day__business_date__lte=f.date_to)
     lq &= f.day_zone_q("closing__cashier_day")
-    rows = []
+    flat = []
     for ln in ClosingLine.objects.filter(lq).select_related("closing__cashier_day__zone", "closing__closed_by",
                                                             "account__sim") \
             .order_by("closing__cashier_day__business_date", "closing__cashier_day__zone__name", "account__kind"):
-        rows.append(dict(business_date=ln.closing.cashier_day.business_date,
+        flat.append(dict(_g=str(ln.closing.cashier_day.zone or "—"), business_date=ln.closing.cashier_day.business_date,
                          cashier=f"{ln.closing.cashier_day.zone or '—'} · {ln.closing.closed_by}",
                          closed_at=ln.closing.closed_at,
                          account=str(ln.account), opening=ln.opening_book, movements=ln.movements,
                          expected=ln.expected, actual=ln.actual, difference=ln.difference,
                          carried=ln.carried_unresolved, new=ln.new_difference))
+    rows, grouped = [], defaultdict(list)
+    for r in flat:
+        grouped[r["_g"]].append(r)
+    for g in sorted(grouped):
+        rows.append({"business_date": None, "cashier": g, "_head": True})
+        rows += grouped[g]
+        rows.append({"cashier": _("Total %(sub)s") % {"sub": g}, "_sub": True,
+                     "difference": sum((r["difference"] for r in grouped[g]), Z),
+                     "new": sum((r["new"] for r in grouped[g]), Z)})
     rep.tables.append(Table(_("Closing lines (book balance carries forward)"), [
         Col("business_date", _("Business date"), "date"), Col("cashier", _("Subzone · closed by")),
         Col("closed_at", _("Closed at"), "datetime"), Col("account", _("Account")),
@@ -656,6 +834,10 @@ def closings(f):
                   kind=str(d.kind_label), amount=d.amount, notes=d.notes.count(), _disc=d.id)
              for d in Discrepancy.objects.filter(dq).select_related("closing_line__closing__cashier_day__zone",
                                                                      "account__sim")]
+    rep.summary = [(_("Closing lines"), str(len(flat)), "text"),
+                   (_("Difference"), sum((r["difference"] for r in flat), Z), "money"),
+                   (_("New difference"), sum((r["new"] for r in flat), Z), "money"),
+                   (_("Unresolved differences (all dates)"), sum((d["amount"] for d in drows), Z), "money")]
     rep.tables.append(Table(_("Unresolved differences (all dates)"), [
         Col("date", _("Business date"), "date"), Col("cashier", _("Subzone")), Col("account", _("Account")),
         Col("kind", _("Type")), Col("amount", _("Amount"), "money", True),

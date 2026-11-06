@@ -262,8 +262,9 @@ class AgentAndPosSupplies(WebBase):
         t3 = Transaction.objects.filter(type=TxType.SUPPLY).latest("id")
         self.assertEqual(t3.supply_channel, "AGENT")
         rep = self.client_for("manager").get("/reports/supplies/?preset=all")
-        self.assertContains(rep, "Supplies to commercial agents")
-        self.assertContains(rep, "Supplies to points of sale (POS)")
+        self.assertContains(rep, "Agents versus POS")
+        self.assertContains(rep, "Points of sale (POS)")
+        self.assertContains(rep, "By zone and cashier")
         fr = self.client_for("cashier.fako1", "fr").get(f"/transactions/{t1.pk}/")
         self.assertContains(fr, "Approvisionnement PDV")
 

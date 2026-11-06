@@ -209,9 +209,33 @@ class FloatPosReports(OrgMixin, TestCase):
         cap.float_exchange(self.finance, source=self.mtn_f1, amount=D(80000), to="AGENT", agent=self.a1)
         cap.float_exchange(self.finance, source=self.mtn_f1, amount=D(5000), to="DESK", uve_account=self.uve_f2)
         f = Filters(date_from=douala_today(), date_to=douala_today(), user=self.manager)
-        groups = {r["group"]: r["amount"] for r in supplies(f).tables[0].rows}
-        self.assertEqual(groups["Float (converted to UVE)"], D(80000))
+        rep = supplies(f)
+        self.assertEqual(rep.tables[0].totals()["FLOAT"], D(80000))
+        self.assertEqual({str(k): v for k, v, _k in rep.summary}["Float (converted to UVE)"], D(80000))
+        agents_row = next(r for r in rep.tables[1].rows if r["label"] == "Commercial agents")
+        self.assertEqual(agents_row["FLOAT"], D(80000))
         f.customer = self.a1
         self.assertEqual({str(k): v for k, v, _k in statement(f).summary}["Float supply"], D(80000))
         f.customer = None
         self.assertEqual(next(r for r in _customer_rows(f) if r["name"] == self.a1.name)["supplied"], D(80000))
+
+    # every report renders, and the grouped ones carry headings and subtotals that the grand total skips
+    def test_all_reports_render_with_groups(self):
+        from core.reports.defs import REPORTS, collections, customers, supplies
+        from core.reports.engine import Filters
+
+        cap = __import__("core.services.capital", fromlist=["x"])
+        cap.inject(self.finance, account=self.mtn_f1, amount=D(200000), source="x", purpose="y")
+        cap.float_exchange(self.finance, source=self.mtn_f1, amount=D(80000), to="AGENT", agent=self.a1)
+        f = Filters(date_from=douala_today(), date_to=douala_today(), user=self.manager)
+        for key, spec in REPORTS.items():
+            spec[1](f)
+        t = supplies(f).tables[0]
+        self.assertTrue(any(r.get("_head") for r in t.rows))
+        subs = [r for r in t.rows if r.get("_sub")]
+        self.assertTrue(subs)
+        self.assertEqual(sum((r["total"] for r in subs), D(0)), t.totals()["total"])
+        for t in customers(f).tables:
+            if t.rows:
+                self.assertTrue(t.rows[0].get("_head"))
+        collections(f)

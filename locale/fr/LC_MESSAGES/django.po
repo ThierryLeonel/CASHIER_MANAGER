@@ -1002,6 +1002,9 @@ msgstr ""
 "guichets (+ doit à l'entreprise, − l'entreprise lui doit). Un agent qui gère"
 " plusieurs microzones apparaît une seule fois avec toutes."
 
+msgid "Balance now (+ owes, − credit)"
+msgstr "Solde actuel (+ doit, − crédit)"
+
 msgid "Balance of the day (+ unpaid, − overpaid)"
 msgstr "Solde du jour (+ impayé, − trop payé)"
 
@@ -1026,6 +1029,12 @@ msgstr "Soldes"
 
 msgid "Balances and statements"
 msgstr "Soldes et relevés"
+
+msgid "Balances by subzone"
+msgstr "Soldes par sous-zone"
+
+msgid "Balances by zone"
+msgstr "Soldes par zone"
 
 #, python-format
 msgid "Balances of the drawers and SIM wallets you hold · master zone %(z)s"
@@ -1117,6 +1126,9 @@ msgstr "Par boutique"
 
 msgid "By week"
 msgstr "Par semaine"
+
+msgid "By zone and cashier"
+msgstr "Par zone et par caissier"
 
 msgid "CANCELLED"
 msgstr "ANNULÉ"
@@ -1379,6 +1391,9 @@ msgstr "Compte du caissier qui reçoit"
 
 msgid "Cashier desk"
 msgstr "Poste caissier"
+
+msgid "Cashier desks"
+msgstr "Caisses"
 
 msgid "Cashier of your zone"
 msgstr "Caissier de votre zone"
@@ -1714,6 +1729,9 @@ msgstr "Fermés par le responsable"
 msgid "Closing"
 msgstr "Clôture"
 
+msgid "Closing (+ owes, − credit)"
+msgstr "Clôture (+ doit, − crédit)"
+
 msgid "Closing (book)"
 msgstr "Clôture (livre)"
 
@@ -1737,6 +1755,9 @@ msgstr "Écart de clôture"
 
 msgid "Closing differences"
 msgstr "Écarts de clôture"
+
+msgid "Closing lines"
+msgstr "Lignes de clôture"
 
 msgid "Closing lines (book balance carries forward)"
 msgstr "Lignes de clôture (le solde comptable est reporté)"
@@ -1779,6 +1800,9 @@ msgstr "Soldes des agents commerciaux et POS"
 
 msgid "Commercial agent who assumes this debt (optional)"
 msgstr "Agent commercial qui assume cette dette (facultatif)"
+
+msgid "Commercial agents"
+msgstr "Agents commerciaux"
 
 msgid "Commercial agents and POS"
 msgstr "Agents commerciaux et PDV"
@@ -1842,6 +1866,9 @@ msgstr "Entreprise"
 #, python-format
 msgid "Company %(kind)s account not found: %(v)s"
 msgstr "Compte entreprise %(kind)s introuvable : %(v)s"
+
+msgid "Company (bank, finance)"
+msgstr "Société (banque, finance)"
 
 msgid "Company SIM"
 msgstr "SIM de l'entreprise"
@@ -3384,6 +3411,9 @@ msgstr "SIM master"
 msgid "Master zone"
 msgstr "Zone principale"
 
+msgid "Master zone / cashier"
+msgstr "Zone principale / caissier"
+
 msgid "Master zone / subzone"
 msgstr "Zone master / sous-zone"
 
@@ -4409,6 +4439,9 @@ msgstr "PDV (a reçu les espèces)"
 msgid "POS balances"
 msgstr "Soldes des PDV"
 
+msgid "POS balances by subzone"
+msgstr "Soldes des POS par sous-zone"
+
 msgid "POS business SIM"
 msgstr "SIM business du POS"
 
@@ -4688,6 +4721,9 @@ msgstr "Point de vente (PDV)"
 msgid "Point of sale (business SIM)"
 msgstr "Point de vente (SIM business)"
 
+msgid "Points of sale (POS)"
+msgstr "Points de vente (POS)"
+
 msgid "Positions"
 msgstr "Positions"
 
@@ -4735,6 +4771,9 @@ msgstr "Imprimé en bas de chaque reçu, par ex. remerciements ou conditions."
 
 msgid "Product"
 msgstr "Produit"
+
+msgid "Product / method"
+msgstr "Produit / mode"
 
 msgid "Product amounts cannot be negative."
 msgstr "Les montants par produit ne peuvent pas être négatifs."
@@ -5690,6 +5729,9 @@ msgstr "ER approvisionné"
 msgid "Supplied UVE"
 msgstr "UVE approvisionnée"
 
+msgid "Supplied and paid in the period"
+msgstr "Approvisionné et payé sur la période"
+
 msgid "Supplied by cashiers"
 msgstr "Approvisionné par les caissiers"
 
@@ -5698,6 +5740,9 @@ msgstr "Espèces approvisionnées"
 
 msgid "Supplied out"
 msgstr "Approvisionné"
+
+msgid "Supplied to"
+msgstr "Approvisionné à"
 
 msgid "Supplied today"
 msgstr "Approvisionné aujourd'hui"
@@ -6336,6 +6381,9 @@ msgstr "Montant total"
 msgid "Total balance"
 msgstr "Solde total"
 
+msgid "Total balance now"
+msgstr "Solde total actuel"
+
 msgid "Total balance today, all desks (+ owes, − credit)"
 msgstr "Solde total aujourd'hui, tous guichets (+ doit, − crédit)"
 
@@ -6456,6 +6504,9 @@ msgstr "Transféré"
 
 msgid "Transfers"
 msgstr "Transferts"
+
+msgid "Transfers / corrections"
+msgstr "Transferts / corrections"
 
 msgid "Transfers and UVE"
 msgstr "Transferts et UVE"
