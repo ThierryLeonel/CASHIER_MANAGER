@@ -15,6 +15,8 @@ BOLD = Font(bold=True)
 def _value(v, kind):
     if v is None or v == "":
         return None
+    if isinstance(v, str):
+        return v
     if kind in ("money", "int"):
         return int(v)
     if kind == "datetime":

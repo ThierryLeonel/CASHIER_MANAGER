@@ -22,7 +22,7 @@ from core.models import (
 from core.services.days import douala_today
 from core.simnumbers import display_sim
 
-from .engine import Col, Report, Table
+from .engine import Col, Report, Table, group_rows
 
 K = Account.Kind
 Z = Decimal(0)
@@ -309,31 +309,29 @@ def shop_summary(form, visible_shops, viewer=None):
     if duties is None or "SERVICES" in duties:
         svc = ServiceCount.objects.filter(shop__in=shops, business_date__gte=d_from, business_date__lte=d_to) \
             .values("shop__name", "service__name").annotate(n=Sum("count")).order_by("shop__name", "service__name")
-        rep.tables.append(Table(_("Services done by type"),
-                                [Col("shop", _("Shop")), Col("service", _("Service")),
-                                 Col("n", _("Count"), "int", True)],
-                                [dict(shop=r["shop__name"], service=r["service__name"], n=r["n"]) for r in svc]))
+        scols = [Col("service", _("Service")), Col("n", _("Count"), "int", True)]
+        rep.tables.append(Table(_("Services done by type, by shop"), scols, group_rows(
+            [dict(shop=r["shop__name"], service=r["service__name"], n=r["n"]) for r in svc], scols,
+            key=lambda r: r["shop"])))
         ret = SimRetrieval.objects.filter(shop__in=shops, business_date__gte=d_from, business_date__lte=d_to) \
             .select_related("shop", "recorded_by").order_by("business_date", "recorded_at")
-        rep.tables.append(Table(
-            _("SIM retrievals"),
-            [Col("date", _("Date"), "date"), Col("shop", _("Shop")), Col("sim", _("SIM number")),
+        rcols = [Col("date", _("Date"), "date"), Col("sim", _("SIM number")),
              Col("iccid", _("New SIM serial (ICCID)")), Col("holder", _("Name of the person")),
-             Col("id", _("Identification")), Col("phone", _("Contact phone")), Col("by", _("Recorded by"))],
+             Col("id", _("Identification")), Col("phone", _("Contact phone")), Col("by", _("Recorded by"))]
+        rep.tables.append(Table(_("SIM retrievals by shop"), rcols, group_rows(
             [dict(date=r.business_date, shop=r.shop.name, sim=display_sim(r.sim_number), iccid=r.iccid or "—",
                   holder=r.holder_name, id=f"{r.get_id_type_display()} {r.id_number}", phone=r.phone or "—",
-                  by=str(r.recorded_by)) for r in ret]))
+                  by=str(r.recorded_by)) for r in ret], rcols, key=lambda r: r["shop"])))
     # attendance summary (staff with some duties: their own shifts only)
     _q, people = ss.attendance(shops, d_from, d_to, user=viewer if duties is not None else None)
-    rep.tables.append(Table(
-        _("Attendance summary"),
-        [Col("staff", _("Staff")), Col("shop", _("Shop")), Col("duties", _("Duties")),
+    acols = [Col("staff", _("Staff")), Col("duties", _("Duties")),
          Col("days", _("Days worked"), "int", True), Col("shifts", _("Shifts"), "int", True),
          Col("hours", _("Hours"), "money", True), Col("open", _("Still open"), "int", True),
-         Col("forced", _("Closed by the senior"), "int", True)],
+         Col("forced", _("Closed by the senior"), "int", True)]
+    rep.tables.append(Table(_("Attendance summary by shop"), acols, group_rows(
         [dict(staff=p["user"].label_with_id, shop=p["shop"].name, duties=str(p["user"].shop_duties_display),
               days=p["days"], shifts=p["shifts"], hours=Decimal(str(p["hours"])).quantize(Decimal("0.1")),
-              open=p["open"], forced=p["forced"]) for p in people]))
+              open=p["open"], forced=p["forced"]) for p in people], acols, key=lambda r: r["shop"])))
     tiles = [("OM", _("Cash-in"), totals["cashin"], "money"), ("OM", _("Cash-out"), totals["cashout"], "money"),
              ("OM", _("Commission"), totals["commission"], "money"),
              ("AIRTIME", _("Airtime"), totals["airtime"], "money"),

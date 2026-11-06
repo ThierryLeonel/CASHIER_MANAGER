@@ -40,6 +40,34 @@ class Table:
         return out
 
 
+def group_rows(rows, columns, key, label=None, sort=None, subtotal=True, sub_label=None):
+    """Pivot a flat table: a heading line per group (key(row)), its rows, and a bold subtotal of the money / count
+    columns (skipped when there is only one group: the grand total says it). Order of the groups: sort(key) or
+    alphabetical; rows keep their order inside a group."""
+    groups = {}
+    for r in rows:
+        groups.setdefault(key(r), []).append(r)
+    first = columns[0].key
+    summed = [c.key for c in columns if c.total]
+    out = []
+    for g in sorted(groups, key=sort or (lambda x: str(x).lower())):
+        name = label(g) if label else str(g)
+        out.append({first: name, "_head": True})
+        out += groups[g]
+        if subtotal and len(groups) > 1 and summed:
+            sub = {k: sum(((r.get(k) or Decimal(0)) for r in groups[g]), Decimal(0)) for k in summed}
+            out.append({first: _("Total %(sub)s") % {"sub": sub_label(g) if sub_label else name}, "_sub": True,
+                        **sub})
+    return out
+
+
+def drop_empty_columns(table, keep=()):
+    """Remove money columns that are zero on every line (a wide table shows only what moved)."""
+    table.columns = [c for c in table.columns if c.kind != "money" or c.key in keep
+                     or any(r.get(c.key) for r in table.rows)]
+    return table
+
+
 @dataclass
 class Report:
     key: str

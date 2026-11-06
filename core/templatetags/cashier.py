@@ -26,6 +26,8 @@ def cell(row, col):
     v = row.get(col.key)
     if v is None or v == "":
         return ""
+    if isinstance(v, str):
+        return v
     if col.kind == "money":
         return fmt(v)
     if col.kind == "date":

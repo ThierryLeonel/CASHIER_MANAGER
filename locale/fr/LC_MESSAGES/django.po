@@ -816,6 +816,9 @@ msgstr ""
 msgid "All transfers"
 msgstr "Tous les transferts"
 
+msgid "All transfers, by sender"
+msgstr "Tous les transferts, par expéditeur"
+
 msgid "All zones"
 msgstr "Toutes les zones"
 
@@ -953,6 +956,9 @@ msgstr "Présences"
 
 msgid "Attendance summary"
 msgstr "Résumé des présences"
+
+msgid "Attendance summary by shop"
+msgstr "Résumé des présences par boutique"
 
 msgid "Audit events"
 msgstr "Événements d'audit"
@@ -1879,6 +1885,11 @@ msgstr "Compte de l'entreprise"
 msgid "Company account sending"
 msgstr "Compte de l'entreprise émetteur"
 
+msgid "Company assets by product: opening + period movements = closing"
+msgstr ""
+"Actifs de la société par produit : ouverture + mouvements de la période = "
+"clôture"
+
 msgid "Company assets: opening + period movements = closing"
 msgstr ""
 "Actifs de l'entreprise : ouverture + mouvements de la période = clôture"
@@ -2003,6 +2014,9 @@ msgstr "Conversions"
 msgid "Conversions and rates"
 msgstr "Conversions et taux"
 
+msgid "Conversions by cashier"
+msgstr "Conversions par caissier"
+
 msgid "Convert UVE to ER"
 msgstr "Convertir l'UVE en ER"
 
@@ -2065,6 +2079,9 @@ msgstr "Corrections / ouverture"
 
 msgid "Corrections and responsibility transfers"
 msgstr "Corrections et transferts de responsabilité"
+
+msgid "Corrections by kind"
+msgstr "Corrections par type"
 
 msgid "Corrections posted later for this day"
 msgstr "Corrections passées ultérieurement pour cette journée"
@@ -2406,6 +2423,9 @@ msgstr "Déstockage avec un agent (approvisionnement en espèces)"
 
 msgid "Detail"
 msgstr "Détail"
+
+msgid "Detail by cashier"
+msgstr "Détail par caissier"
 
 msgid "Details"
 msgstr "Détails"
@@ -2750,6 +2770,12 @@ msgid "Exchange agreements (no money moves until a leg is recorded)"
 msgstr ""
 "Accords d'échange (aucun argent ne bouge avant qu'un volet soit enregistré)"
 
+msgid ""
+"Exchange agreements by cash manager (no money moves until a leg is recorded)"
+msgstr ""
+"Accords d'échange par gestionnaire de cash (aucun argent ne bouge tant "
+"qu'une étape n'est pas enregistrée)"
+
 msgid "Exchange cash and UVE"
 msgstr "Échanger espèces et UVE"
 
@@ -2971,6 +2997,10 @@ msgstr "Pour : %(c)s"
 
 msgid "From"
 msgstr "De"
+
+#, python-format
+msgid "From %(s)s"
+msgstr "De %(s)s"
 
 msgid "From (business date)"
 msgstr "Du (date comptable)"
@@ -3500,6 +3530,16 @@ msgid ""
 msgstr ""
 "Mouvements (positif = dû à l'entreprise, solde négatif = approvisionnement "
 "dû à l'agent / POS)"
+
+msgid "Movements by account"
+msgstr "Mouvements par compte"
+
+msgid ""
+"Movements by day (positive = owed to company, negative balance = supply due "
+"to the agent / POS)"
+msgstr ""
+"Mouvements par jour (positif = dû à la société, solde négatif = "
+"approvisionnement dû à l'agent / POS)"
 
 msgid "Moves between company accounts"
 msgstr "Mouvements entre comptes de l'entreprise"
@@ -4096,6 +4136,9 @@ msgid ""
 msgstr ""
 "Seuls les approvisionnements, déstockages et dettes d'ouverture peuvent "
 "changer de responsable."
+
+msgid "Only the kinds of movement that happened in the period are shown."
+msgstr "Seuls les types de mouvement survenus sur la période sont affichés."
 
 msgid ""
 "Only the number of services is recorded (e.g. OTT, MAX IT, identification "
@@ -5096,6 +5139,9 @@ msgstr "Transfert de responsabilité"
 msgid "Responsibility transfers"
 msgstr "Transferts de responsabilité"
 
+msgid "Responsibility transfers by cashier"
+msgstr "Transferts de responsabilité par caissier"
+
 msgid "Responsible agent / POS"
 msgstr "Agent / POS responsable"
 
@@ -5160,6 +5206,9 @@ msgstr "Retrait de SIM enregistré."
 
 msgid "SIM retrievals"
 msgstr "Retraits de SIM"
+
+msgid "SIM retrievals by shop"
+msgstr "Récupérations de SIM par boutique"
 
 msgid "Sale"
 msgstr "Vente"
@@ -5316,6 +5365,9 @@ msgstr "Services rendus"
 
 msgid "Services done by type"
 msgstr "Services réalisés par type"
+
+msgid "Services done by type, by shop"
+msgstr "Services effectués par type, par boutique"
 
 msgid "Services done:"
 msgstr "Services réalisés :"
@@ -6815,6 +6867,9 @@ msgstr "Écarts non résolus"
 
 msgid "Unresolved differences (all dates)"
 msgstr "Écarts non résolus (toutes dates)"
+
+msgid "Unresolved differences by subzone (all dates)"
+msgstr "Écarts non résolus par sous-zone (toutes dates)"
 
 msgid ""
 "Untick to close the shop: it disappears from the lists, its history stays."

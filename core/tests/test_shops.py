@@ -567,8 +567,8 @@ class ShopReports(OrgMixin, TestCase):
             rep, p, d_from, d_to = shop_summary(form, shops)
             self.assertEqual(len(rep.tables), tables)
             titles = [t.title for t in rep.tables]
-            self.assertIn("SIM retrievals", titles)
-            self.assertIn("Attendance summary", titles)
+            self.assertIn("SIM retrievals by shop", titles)
+            self.assertIn("Attendance summary by shop", titles)
             by_shop = next(t for t in rep.tables if t.title == "By shop — activity").rows[0]
             self.assertEqual((by_shop["cashin"], by_shop["commission"], by_shop["good_deal"], by_shop["services"]),
                              (D(50000), D(250), D(10000), 3))

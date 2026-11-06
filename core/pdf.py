@@ -151,6 +151,8 @@ def receipt_pdf(txn, rows, balance_after=None, amount=None):
 def cell_text(value, kind):
     if value is None or value == "":
         return ""
+    if isinstance(value, str):  # a group heading / subtotal label in a date or amount column
+        return value
     if kind == "money":
         return fmt(value)
     if kind == "date":
@@ -234,7 +236,7 @@ def report_pdf(report, generated_by):
         for i in sub_rows:
             style.append(("BACKGROUND", (0, i), (-1, i), colors.HexColor("#f3efe8")))
         for i in head_rows:
-            style.append(("BACKGROUND", (0, i), (-1, i), colors.HexColor("#fff4e5")))
+            style += [("BACKGROUND", (0, i), (-1, i), colors.HexColor("#fff4e5")), ("SPAN", (0, i), (-1, i))]
         t.setStyle(TableStyle(style))
         story += [t, Spacer(1, 3 * mm)]
     story.append(Paragraph(_("(C) = transaction later corrected (see corrections report). Amounts in FCFA."), st["s"]))

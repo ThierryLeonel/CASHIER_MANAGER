@@ -239,3 +239,21 @@ class FloatPosReports(OrgMixin, TestCase):
             if t.rows:
                 self.assertTrue(t.rows[0].get("_head"))
         collections(f)
+
+    def test_detail_and_reconciliation_are_grouped(self):
+        from core.reports.defs import reconciliation, supplies
+        from core.reports.engine import Filters
+
+        cap = __import__("core.services.capital", fromlist=["x"])
+        cap.inject(self.finance, account=self.mtn_f1, amount=D(200000), source="x", purpose="y")
+        cap.float_exchange(self.finance, source=self.mtn_f1, amount=D(80000), to="AGENT", agent=self.a1)
+        f = Filters(date_from=douala_today(), date_to=douala_today(), user=self.manager)
+        det = supplies(f).tables[-1]
+        self.assertTrue(det.rows[0].get("_head"))
+        self.assertNotIn("cashier", [c.key for c in det.columns])
+        self.assertEqual(det.totals()["amount"], D(80000))
+        rec = reconciliation(f).tables[1]
+        keys = [c.key for c in rec.columns]
+        self.assertIn("float_ex", keys)
+        self.assertNotIn("cash_mgr", keys)  # nothing moved: column hidden
+        self.assertTrue(any(r.get("_head") for r in rec.rows))
