@@ -1238,6 +1238,49 @@ def supply_payment(f):
     return rep
 
 
+def pos_stock(f):
+    """Orange stock of agents and POS as last imported, grouped by subzone; POS below the ER threshold flagged."""
+    from core.services.branding import company
+
+    limit = company().out_of_stock_er
+    rep = Report("pos_stock", _("POS and agent stock levels"), f.text())
+    cps = Counterparty.objects.filter(stock_at__isnull=False, active=True).select_related(
+        "microzone__subzone", "microzone__agent")
+    if f.customer:
+        cps = cps.filter(pk=f.customer.pk)
+    if getattr(f, "subzone", None):
+        cps = cps.filter(microzone__subzone=f.subzone)
+    if getattr(f, "master_zone", None):
+        cps = cps.filter(master_zone=f.master_zone)
+    rows, out_n = [], 0
+    for cp in cps:
+        oos = cp.kind == Counterparty.Kind.POS and cp.out_of_stock(limit)
+        out_n += oos
+        rows.append(dict(_cp=cp, customer=f"{cp.name} · {cp.sim_display}" + (" (POS)" if cp.kind == "POS" else ""),
+                         agent=cp.agent_in_charge.name if cp.kind == "POS" and cp.agent_in_charge else "",
+                         er=cp.er_stock or Z, uve=cp.uve_stock or Z, commission=cp.commission_balance or Z,
+                         status=str(_("OUT OF STOCK")) if oos else (str(_("in stock")) if cp.kind == "POS" else ""),
+                         at=cp.stock_at))
+    cols = [Col("customer", _l("Agent / POS")), Col("microzones", _l("Microzones")),
+            Col("agent", _l("Agent in charge")), Col("er", _l("ER stock"), "money", True),
+            Col("uve", _l("UVE stock"), "money", True), Col("commission", _l("Commission balance"), "money", True),
+            Col("status", _l("Status")), Col("at", _l("Imported"), "datetime")]
+    rep.tables.append(group_by_subzone(_("Stock by subzone"), rows, cols))
+    oos_rows = [r for r in rows if r["status"] == str(_("OUT OF STOCK"))]
+    for r in oos_rows:
+        r["_k"] = r["_cp"].agent_in_charge.name if r["_cp"].agent_in_charge else str(_("No agent in charge"))
+    ocols = [Col("customer", _l("POS")), Col("microzones", _l("Microzones")), Col("er", _l("ER stock"), "money", True),
+             Col("uve", _l("UVE stock"), "money", True), Col("at", _l("Imported"), "datetime")]
+    rep.tables.append(Table(_("POS out of stock, by agent in charge"), ocols,
+                            group_rows(oos_rows, ocols, key=lambda r: r["_k"])))
+    tot = rep.tables[0].totals() or {}
+    rep.summary = [(_("POS out of stock"), str(out_n), "text"),
+                   (_("Out of stock when ER is below"), limit, "money"),
+                   (_("ER stock"), tot.get("er", Z), "money"), (_("UVE stock"), tot.get("uve", Z), "money"),
+                   (_("Commission balance"), tot.get("commission", Z), "money")]
+    return rep
+
+
 REPORTS = {
     "statement": (_l("Agent / POS account statement"), statement),
     "customers": (_l("Agent and POS balances"), customers),
@@ -1256,6 +1299,7 @@ REPORTS = {
     "reconciliation": (_l("Reconciliation"), reconciliation),
     "daily_reconciliation": (_l("Daily reconciliation"), daily_reconciliation),
     "supply_payment": (_l("Daily supplies versus payments"), supply_payment),
+    "pos_stock": (_l("POS and agent stock levels"), pos_stock),
 }
 
 
@@ -1279,4 +1323,5 @@ REPORT_CARDS = {
     "daily_reconciliation": ("calendar", _l("Each day, cash, UVE, ER and MTN float: opening + in − out = closing, "
                                              "counted and difference")),
     "supply_payment": ("payment", _l("Each day, what was supplied against what was paid, and per agent / POS")),
+    "pos_stock": ("store", _l("ER, UVE and commission of each POS and agent as last imported; POS out of stock")),
 }

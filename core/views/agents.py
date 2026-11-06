@@ -43,8 +43,13 @@ def agent_home(request):
     """Portal home (the agent's dashboard): kept short — today's figures and the actions."""
     agent = request.user.counterparty
     today = douala_today()
+    from core.services.branding import company
+
+    limit = company().out_of_stock_er
+    out = ag.zone_pos(agent).filter(microzone__agent=agent, er_stock__lt=limit).count()
     return render(request, "core/agent/home.html", {
-        "cp": agent, "s": ag.summary(agent), "rec": ag.daily_reconciliation(agent, today)})
+        "cp": agent, "s": ag.summary(agent), "rec": ag.daily_reconciliation(agent, today), "out_of_stock": out,
+        "limit": limit})
 
 
 @roles_required(R.AGENT)
@@ -58,15 +63,22 @@ def agent_pos(request):
         if digits:
             cond |= Q(business_sim__contains=digits)
         qs = qs.filter(cond)
+    from core.services.branding import company
+
+    limit = company().out_of_stock_er
     mine = request.GET.get("mine") == "1"
     if mine:
         qs = qs.filter(microzone__agent=agent)
+    out = request.GET.get("out") == "1"
+    if out:
+        qs = qs.filter(er_stock__lt=limit)
     last = dict(ag.live_entries(agent).filter(kind=E.Kind.SUPPLY, pos__isnull=False).values("pos")
                 .annotate(d=Max("business_date")).values_list("pos", "d"))
-    rows = [(p, ag.pos_owed(agent, p), last.get(p.pk), p.microzone_id and p.microzone.agent_id == agent.pk)
-            for p in qs]
-    return render(request, "core/agent/pos_list.html", {"rows": rows, "q": q, "mine": mine,
-                                                        "zone": ag.zone_of(agent)})
+    rows = [(p, ag.pos_owed(agent, p), last.get(p.pk), p.microzone_id and p.microzone.agent_id == agent.pk,
+             p.out_of_stock(limit)) for p in qs]
+    rows.sort(key=lambda r: (not r[4], r[0].er_stock is None, r[0].er_stock or 0, r[0].name.lower()))
+    return render(request, "core/agent/pos_list.html", {"rows": rows, "q": q, "mine": mine, "out": out,
+                                                        "limit": limit, "zone": ag.zone_of(agent)})
 
 
 @roles_required(R.AGENT)
@@ -76,8 +88,13 @@ def agent_pos_detail(request, pk):
     if not ag.in_zone(agent, pos):
         raise Http404  # outside the agent's zone: only its name is ever shown (in the agent's own records)
     entries = ag.live_entries(agent).filter(pos=pos).select_related("recorded_by")[:100]
+    from core.services.branding import company
+
+    limit = company().out_of_stock_er
     return render(request, "core/agent/pos_detail.html", {"pos": pos, "owed": ag.pos_owed(agent, pos),
-                                                          "entries": entries})
+                                                          "entries": entries, "limit": limit,
+                                                          "out_of_stock": pos.out_of_stock(limit),
+                                                          "history": pos.stock_history.all()[:10]})
 
 
 def _wants_json(request):

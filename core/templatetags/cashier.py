@@ -13,6 +13,8 @@ register = template.Library()
 def fcfa(value):
     if value is None or value == "":
         return ""
+    if isinstance(value, str) and not value.strip().lstrip("-").isdigit():
+        return value  # a placeholder such as "—"
     return fmt(value)
 
 

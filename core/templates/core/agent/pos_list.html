@@ -4,17 +4,20 @@
 {% block content %}
 <h1>{% trans "My POS" %}</h1>
 <p class="muted">{% if zone %}{% blocktrans with z=zone.name %}Every POS connected to your zone ({{ z }}). You can also supply a POS of another zone by typing its business SIM, but you only see its name.{% endblocktrans %}{% else %}{% trans "You are not attached to a zone yet: ask the office to set your microzone." %}{% endif %}</p>
+<p class="small muted meta">{% blocktrans with n=limit|fcfa %}Out of stock = ER stock below {{ n }} FCFA (last stock import).{% endblocktrans %}</p>
 <form class="filters panel" method="get">
   <div class="field"><label>{% trans "Search" %}</label><input type="text" name="q" value="{{ q }}" placeholder="{% trans 'Name, SIM or microzone' %}"></div>
   <div class="field"><label><input type="checkbox" name="mine" value="1"{% if mine %} checked{% endif %}> {% trans "Only my microzones" %}</label></div>
+  <div class="field"><label><input type="checkbox" name="out" value="1"{% if out %} checked{% endif %}> {% trans "Only out of stock" %}</label></div>
   <div class="field"><button class="btn" type="submit">{% trans "Apply" %}</button></div>
 </form>
-<div class="tbl-wrap"><table class="t"><thead><tr><th>{% trans "POS" %}</th><th>{% trans "Business SIM" %}</th><th>{% trans "Microzone" %}</th><th>{% trans "Agent in charge" %}</th><th>{% trans "WhatsApp contact" %}</th><th>{% trans "Last supply" %}</th><th class="money">{% trans "Owes me" %}</th><th></th></tr></thead>
-<tbody>{% for p, owed, last, mine_mz in rows %}<tr{% if not p.active %} class="corrected"{% endif %}>
-<td><a href="{% url 'agent_pos_detail' p.pk %}">{{ p.name }}</a>{% if mine_mz %} <span class="badge acc">{% trans "mine" %}</span>{% endif %}{% if not p.active %} <span class="badge">{% trans "inactive" %}</span>{% endif %}</td>
+<div class="tbl-wrap"><table class="t"><thead><tr><th>{% trans "POS" %}</th><th>{% trans "Business SIM" %}</th><th>{% trans "Microzone" %}</th><th>{% trans "Agent in charge" %}</th><th>{% trans "WhatsApp contact" %}</th><th class="money">{% trans "ER stock" %}</th><th class="money">{% trans "UVE stock" %}</th><th class="money">{% trans "Commission" %}</th><th>{% trans "Last supply" %}</th><th class="money">{% trans "Owes me" %}</th><th></th></tr></thead>
+<tbody>{% for p, owed, last, mine_mz, oos in rows %}<tr class="{% if not p.active %}corrected{% elif oos %}oos{% endif %}">
+<td><a href="{% url 'agent_pos_detail' p.pk %}">{{ p.name }}</a>{% if mine_mz %} <span class="badge acc">{% trans "mine" %}</span>{% endif %}{% if not p.active %} <span class="badge">{% trans "inactive" %}</span>{% endif %}{% if oos %} <span class="badge bad">{% trans "out of stock" %}</span>{% endif %}</td>
 <td class="keep">{{ p.business_sim|sim }}</td><td class="small">{{ p.microzone.subzone.name|default:"" }}{% if p.microzone %} › {{ p.microzone.name }}{% else %}—{% endif %}</td>
 <td class="small">{{ p.microzone.agent.name|default:"—" }}</td><td class="small">{{ p.whatsapp|default:p.other_phone|default:"—" }}</td>
+<td class="money{% if oos %} neg{% endif %}">{% if p.er_stock is not None %}{{ p.er_stock|fcfa }}{% else %}—{% endif %}</td><td class="money">{% if p.uve_stock is not None %}{{ p.uve_stock|fcfa }}{% else %}—{% endif %}</td><td class="money">{% if p.commission_balance is not None %}{{ p.commission_balance|fcfa }}{% else %}—{% endif %}</td>
 <td class="small">{{ last|date:"d/m/Y"|default:"—" }}</td><td class="money{% if owed|negative %} neg{% endif %}">{{ owed|fcfa }}</td>
-<td>{% if p.active %}<a class="btn small primary" href="{% url 'agent_supply' %}?pos={{ p.business_sim }}">{% trans "Supply" %}</a>{% endif %}</td>
-</tr>{% empty %}<tr><td colspan="8" class="muted">{% trans "No POS found." %}</td></tr>{% endfor %}</tbody></table></div>
+<td>{% if p.active %}<a class="btn small{% if oos %} primary{% endif %}" href="{% url 'agent_supply' %}?pos={{ p.business_sim }}">{% trans "Supply" %}</a>{% endif %}</td>
+</tr>{% empty %}<tr><td colspan="11" class="muted">{% trans "No POS found." %}</td></tr>{% endfor %}</tbody></table></div>
 {% endblock %}

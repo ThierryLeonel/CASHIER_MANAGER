@@ -574,3 +574,8 @@ table.report-t td.money, table.report-t th.money { white-space: nowrap; }
 .bal.k-TOTAL { background: #1f1f1f; color: #fff; }
 .bal.k-TOTAL .bal-label, .bal.k-TOTAL .bal-unit { color: rgba(255,255,255,.75); }
 table.matrix tfoot tr.grand-row td { border-top: 2px solid var(--line); background: var(--accent-soft); }
+
+/* POS stock (imported): out of stock = ER below the company threshold */
+table.t tr.oos td { background: #fff1f0; }
+.bal.oos { border-color: #d92d20; box-shadow: inset 4px 0 0 #d92d20; }
+.bal .small-val { font-size: 1.05rem; }

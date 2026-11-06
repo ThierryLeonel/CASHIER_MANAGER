@@ -387,6 +387,12 @@ class Counterparty(models.Model):
     other_phone = models.CharField(_("other phone"), max_length=30, blank=True)
     address = models.CharField(_("address"), max_length=255, blank=True)
     notes = models.CharField(_("notes"), max_length=255, blank=True)
+    # Orange stock as last imported (Administration → Import → POS and agent stock); history in StockSnapshot
+    er_stock = models.DecimalField(_("ER stock"), max_digits=14, decimal_places=0, null=True, blank=True)
+    uve_stock = models.DecimalField(_("UVE stock"), max_digits=14, decimal_places=0, null=True, blank=True)
+    commission_balance = models.DecimalField(_("commission balance"), max_digits=14, decimal_places=0, null=True,
+                                             blank=True)
+    stock_at = models.DateTimeField(_("stock imported at"), null=True, blank=True)
     active = models.BooleanField(default=True)
     created_at = models.DateTimeField(default=timezone.now)
     created_by = models.ForeignKey(User, null=True, blank=True, on_delete=models.PROTECT, related_name="+")
@@ -401,6 +407,10 @@ class Counterparty(models.Model):
     @property
     def sim_display(self):
         return display_sim(self.business_sim)
+
+    def out_of_stock(self, threshold):
+        """Out of stock when the last imported ER stock is below the company threshold (no import: unknown)."""
+        return self.er_stock is not None and self.er_stock < threshold
 
     def clean(self):
         try:
@@ -432,6 +442,20 @@ class Counterparty(models.Model):
         from .ledger import Account
 
         return Account.objects.get(kind=Account.Kind.CUSTOMER, counterparty=self)
+
+
+class StockSnapshot(models.Model):
+    """One imported stock line of an agent or POS (the latest is also copied on the Counterparty)."""
+
+    counterparty = models.ForeignKey(Counterparty, on_delete=models.CASCADE, related_name="stock_history")
+    er_stock = models.DecimalField(max_digits=14, decimal_places=0, null=True, blank=True)
+    uve_stock = models.DecimalField(max_digits=14, decimal_places=0, null=True, blank=True)
+    commission_balance = models.DecimalField(max_digits=14, decimal_places=0, null=True, blank=True)
+    imported_at = models.DateTimeField(default=timezone.now)
+    imported_by = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
+
+    class Meta:
+        ordering = ["-imported_at", "-id"]
 
 
 class MicroZone(models.Model):
@@ -580,6 +604,8 @@ class CompanyProfile(models.Model):
     tax_id = models.CharField(_("taxpayer number (NIU)"), max_length=40, blank=True)
     trade_register = models.CharField(_("trade register (RCCM)"), max_length=60, blank=True)
     receipt_footer = models.CharField(_("receipt footer"), max_length=255, blank=True)
+    out_of_stock_er = models.DecimalField(_("POS out of stock when ER stock is below (FCFA)"), max_digits=14,
+                                          decimal_places=0, default=2000)
     logo = models.BinaryField(null=True, blank=True, editable=False)
     logo_updated = models.DateTimeField(null=True, blank=True, editable=False)
     updated_at = models.DateTimeField(auto_now=True)

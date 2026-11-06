@@ -767,7 +767,8 @@ class ImportForm(forms.Form):
              ("transactions", _("Transactions (supplies, payments, expenses)")),
              ("shops", _("Shops")), ("shop_staff", _("Shop staff and their duties")),
              ("shop_items", _("Shop items and categories")), ("shop_stock", _("Shop stock (IMEI / serial numbers)")),
-             ("shop_transactions", _("Shop transactions (cash-in, cash-out, airtime, conversions, services)"))]
+             ("shop_transactions", _("Shop transactions (cash-in, cash-out, airtime, conversions, services)")),
+             ("stock", _("POS and agent stock (ER, UVE, commission)"))]
     kind = forms.ChoiceField(label=_("What are you importing?"), choices=KINDS)
     file = forms.FileField(label=_("File (.xlsx or .csv)"))
 
@@ -783,12 +784,20 @@ class CompanyProfileForm(forms.ModelForm):
 
         model = CompanyProfile
         fields = ["name", "tagline", "address", "city", "phone", "email", "tax_id", "trade_register",
-                  "receipt_footer"]
+                  "receipt_footer", "out_of_stock_er"]
         help_texts = {
             "name": _("Shown in the menu, on the login page, receipts and every report."),
             "tagline": _("Short line under the name in the menu. Leave empty for none."),
             "receipt_footer": _("Printed at the bottom of every receipt, e.g. thanks or terms."),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["out_of_stock_er"].required = False
+
+    def clean_out_of_stock_er(self):
+        v = self.cleaned_data.get("out_of_stock_er")
+        return self.instance.out_of_stock_er if v is None else v
 
     def clean_logo_file(self):
         from core.services.branding import LogoError, normalise_logo

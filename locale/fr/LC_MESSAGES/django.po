@@ -5,6 +5,9 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
+msgid " · out of stock"
+msgstr " · en rupture"
+
 #, python-format
 msgid ""
 "%(a)s cannot be transferred into %(b)s. Transfer the same product (cash ↔ "
@@ -63,6 +66,10 @@ msgstr ""
 #, python-format
 msgid "%(code)s: %(amt)s FCFA to %(who)s, waiting for confirmation."
 msgstr "%(code)s : %(amt)s FCFA à %(who)s, en attente de confirmation."
+
+#, python-format
+msgid "%(col)s cannot be negative"
+msgstr "%(col)s ne peut pas être négatif"
 
 #, python-format
 msgid "%(cp)s is inactive."
@@ -1854,6 +1861,9 @@ msgstr ""
 msgid "Commission"
 msgstr "Commission"
 
+msgid "Commission balance"
+msgstr "Solde de commission"
+
 msgid "Commission earned"
 msgstr "Commission gagnée"
 
@@ -2481,6 +2491,10 @@ msgstr "ER à la clôture"
 msgid "ER balance on the shop SIM (FCFA)"
 msgstr "Solde ER sur la SIM de la boutique (FCFA)"
 
+#, python-format
+msgid "ER below %(n)s FCFA"
+msgstr "ER sous %(n)s FCFA"
+
 msgid "ER can only be transferred between SIMs of the same master zone."
 msgstr "L'ER ne peut être transféré qu'entre SIM d'une même zone principale."
 
@@ -2503,6 +2517,9 @@ msgstr ""
 msgid "ER received"
 msgstr "ER reçu"
 
+msgid "ER stock"
+msgstr "Stock ER"
+
 #, python-format
 msgid ""
 "ER supplies must be sent from the master SIM of your master zone (%(zone)s)."
@@ -2521,6 +2538,13 @@ msgstr "Portefeuille ER"
 
 msgid "ER − · cash +"
 msgstr "ER − · espèces +"
+
+msgid ""
+"ER, UVE and commission of each POS and agent as last imported; POS out of "
+"stock"
+msgstr ""
+"ER, UVE et commission de chaque POS et agent au dernier import ; POS en "
+"rupture"
 
 msgid ""
 "Each account can be initialised once, through an auditable ledger entry "
@@ -3062,6 +3086,9 @@ msgstr "Générer un mot de passe fort pour moi"
 msgid "Generated"
 msgstr "Généré le"
 
+msgid "Give at least one of er stock, uve_stock or commission balance"
+msgstr "Donnez au moins er stock, uve_stock ou commission balance"
+
 msgid "Give the reason for closing this shift."
 msgstr "Indiquez pourquoi vous fermez ce service."
 
@@ -3544,8 +3571,14 @@ msgstr ""
 msgid "Moves between company accounts"
 msgstr "Mouvements entre comptes de l'entreprise"
 
+msgid "My Orange stock"
+msgstr "Mon stock Orange"
+
 msgid "My POS"
 msgstr "Mes POS"
+
+msgid "My POS out of stock"
+msgstr "Mes POS en rupture"
 
 msgid "My account"
 msgstr "Mon compte"
@@ -3737,6 +3770,9 @@ msgstr "Aucun agent commercial actif n'a la SIM business %(sim)s."
 
 msgid "No activity."
 msgstr "Aucune activité."
+
+msgid "No agent in charge"
+msgstr "Aucun agent responsable"
 
 msgid "No agent or POS found"
 msgstr "Aucun agent ni PDV trouvé"
@@ -4001,6 +4037,9 @@ msgstr "Nom du compte OM"
 msgid "OTT, MAX IT, ID update, tickets…"
 msgstr "OTT, MAX IT, mise à jour d'identification, tickets…"
 
+msgid "OUT OF STOCK"
+msgstr "EN RUPTURE"
+
 msgid "October"
 msgstr "Octobre"
 
@@ -4120,6 +4159,9 @@ msgstr "Seuls les agents commerciaux utilisent le portail agent."
 
 msgid "Only my microzones"
 msgstr "Seulement mes microzones"
+
+msgid "Only out of stock"
+msgstr "Seulement en rupture"
 
 msgid "Only record transactions that are completed and confirmed."
 msgstr "N'enregistrez que des transactions effectuées et confirmées."
@@ -4404,6 +4446,13 @@ msgstr ""
 msgid "Out"
 msgstr "Sorties"
 
+#, python-format
+msgid "Out of stock = ER stock below %(n)s FCFA (last stock import)."
+msgstr "En rupture = stock ER sous %(n)s FCFA (dernier import de stock)."
+
+msgid "Out of stock when ER is below"
+msgstr "En rupture quand ER est sous"
+
 msgid "Outstanding"
 msgstr "Encours"
 
@@ -4485,6 +4534,12 @@ msgstr "POS (SIM business)"
 msgid "POS (received cash)"
 msgstr "PDV (a reçu les espèces)"
 
+msgid "POS and agent stock (ER, UVE, commission)"
+msgstr "Stock des POS et agents (ER, UVE, commission)"
+
+msgid "POS and agent stock levels"
+msgstr "Niveaux de stock des POS et agents"
+
 msgid "POS balances"
 msgstr "Soldes des PDV"
 
@@ -4496,6 +4551,15 @@ msgstr "SIM business du POS"
 
 msgid "POS number"
 msgstr "Numéro du POS"
+
+msgid "POS out of stock"
+msgstr "POS en rupture"
+
+msgid "POS out of stock when ER stock is below (FCFA)"
+msgstr "POS en rupture quand le stock ER est sous (FCFA)"
+
+msgid "POS out of stock, by agent in charge"
+msgstr "POS en rupture, par agent responsable"
 
 msgid "POS that received the cash (business SIM)"
 msgstr "PDV qui a reçu les espèces (SIM business)"
@@ -5735,8 +5799,14 @@ msgstr "Stock"
 msgid "Stock and cash in hand"
 msgstr "Stock et espèces en main"
 
+msgid "Stock by subzone"
+msgstr "Stock par sous-zone"
+
 msgid "Stock cannot go below zero."
 msgstr "Le stock ne peut pas être négatif."
+
+msgid "Stock history"
+msgstr "Historique du stock"
 
 msgid "Stock of gadgets and energy kits"
 msgstr "Stock de gadgets et kits énergie"
@@ -6720,6 +6790,9 @@ msgstr ""
 "UVE envoyée du portefeuille UVE de votre sous-zone vers une boutique. La "
 "boutique la voit dans ses opérations."
 
+msgid "UVE stock"
+msgstr "Stock UVE"
+
 msgid "UVE supply from an agent (appro)"
 msgstr "Approvisionnement UVE par un agent (appro)"
 
@@ -7373,6 +7446,9 @@ msgstr "agent commercial responsable"
 msgid "commission"
 msgstr "commission"
 
+msgid "commission balance"
+msgstr "solde de commission"
+
 msgid "company SIM number"
 msgstr "numéro de la SIM de l'entreprise"
 
@@ -7574,6 +7650,9 @@ msgstr "autre téléphone"
 msgid "other zone"
 msgstr "autre zone"
 
+msgid "out of stock"
+msgstr "en rupture"
+
 msgid "owed to the company"
 msgstr "dû à l'entreprise"
 
@@ -7709,6 +7788,9 @@ msgstr "ID employé"
 msgid "still owed"
 msgstr "reste dû"
 
+msgid "stock imported at"
+msgstr "stock importé le"
+
 msgid "subzone"
 msgstr "sous-zone"
 
@@ -7726,6 +7808,9 @@ msgstr "approvisionnement dû au client"
 
 msgid "supply due to the agent / POS"
 msgstr "approvisionnement dû à l'agent / POS"
+
+msgid "supply them"
+msgstr "approvisionnez-les"
 
 msgid "tagline (optional)"
 msgstr "slogan (facultatif)"

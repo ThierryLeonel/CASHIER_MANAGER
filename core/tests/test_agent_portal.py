@@ -358,3 +358,54 @@ class AgentPortal(OrgMixin, TestCase):
         page = self.client_for("admin").get("/administration/clear/")
         self.assertContains(page, 'name="target_user"')
         self.assertContains(page, 'name="agent"')
+
+
+class PosStock(OrgMixin, TestCase):
+    """Stock imported from the Orange file: agents see their POS levels, out of stock when ER < threshold."""
+
+    def setUp(self):
+        self.make_org()
+
+    def _import(self, rows, commit=True):
+        from core.services import importer
+
+        head = importer.TEMPLATES["stock"][0]
+        return importer.run_import(self.admin, "stock", [dict(zip([importer._key(h) for h in head], r)) for r in rows],
+                                   commit=commit)
+
+    def test_import_threshold_views_and_report(self):
+        from core.models import StockSnapshot
+        from core.reports.defs import pos_stock
+        from core.reports.engine import Filters
+
+        p1, p2 = self.p1, self.p2
+        results, ok = self._import([["AGENT", self.a1.business_sim, "Molyko", 10000, 5000, 5000],
+                                    ["POS", p1.business_sim, "Molyko", 1500, 2000, 10000],
+                                    ["POS", p2.business_sim, "", 6000, 2000, 100]])
+        self.assertTrue(ok, results)
+        self.assertIn("out of stock", results[1][2])
+        p1.refresh_from_db()
+        self.assertEqual((p1.er_stock, p1.uve_stock, p1.commission_balance), (D(1500), D(2000), D(10000)))
+        self.assertTrue(p1.out_of_stock(D(2000)))
+        self.assertEqual(StockSnapshot.objects.count(), 3)
+        # wrong type, unknown SIM -> nothing imported
+        results, ok = self._import([["AGENT", p1.business_sim, "", 1, 1, 1], ["POS", "699999999", "", 1, 1, 1]])
+        self.assertFalse(ok)
+        self.assertEqual(StockSnapshot.objects.count(), 3)
+        # the agent's portal
+        c = self.client_class()
+        c.login(username=self.agent_user.username, password=PW)
+        home = c.get("/")
+        mine_out = 1 if p1.microzone and p1.microzone.agent_id == self.a1.pk else 0
+        if mine_out:
+            self.assertContains(home, "My POS out of stock")
+        self.assertContains(home, "My Orange stock")
+        r = c.get("/agent/pos/?out=1")
+        self.assertContains(r, p1.name)
+        self.assertNotContains(r, p2.name)
+        self.assertContains(c.get(f"/agent/pos/{p1.pk}/"), "out of stock")
+        # report
+        rep = pos_stock(Filters(None, None, user=self.manager))
+        self.assertEqual(rep.summary[0][1], "1")
+        self.assertTrue(rep.tables[0].rows[0].get("_head"))
+        self.assertEqual(rep.tables[0].totals()["er"], D(17500))
