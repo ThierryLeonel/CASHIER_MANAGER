@@ -108,6 +108,10 @@ msgid "%(mz)s is already controlled by %(agent)s."
 msgstr "%(mz)s est déjà contrôlée par %(agent)s."
 
 #, python-format
+msgid "%(n)s POS moved to %(mz)s."
+msgstr "%(n)s POS déplacés vers %(mz)s."
+
+#, python-format
 msgid "%(n)s SIM(s)"
 msgstr "%(n)s SIM"
 
@@ -1658,6 +1662,12 @@ msgstr "Choisissez l'échange."
 
 msgid "Choose the float account the payment arrived on."
 msgstr "Choisissez le compte float sur lequel le paiement est arrivé."
+
+msgid "Choose the microzone to move the POS to."
+msgstr "Choisissez la microzone où déplacer les POS."
+
+msgid "Choose the new microzone"
+msgstr "Choisissez la nouvelle microzone"
 
 msgid "Choose the shop receiving the transfer."
 msgstr "Choisissez la boutique qui reçoit le transfert."
@@ -3576,12 +3586,26 @@ msgstr "Mensuel"
 msgid "Monthly shop report — %(m)s %(y)s"
 msgstr "Rapport mensuel des boutiques — %(m)s %(y)s"
 
+msgid "Move POS to another microzone"
+msgstr "Déplacer des POS vers une autre microzone"
+
+#, python-format
+msgid "Move all %(n)s POS of this list"
+msgstr "Déplacer les %(n)s POS de cette liste"
+
+#, python-format
+msgid "Move all %(n)s POS of this list?"
+msgstr "Déplacer les %(n)s POS de cette liste ?"
+
 msgid ""
 "Move money between any two company accounts: cashiers, master SIMs, banks "
 "and shops. The total capital does not change."
 msgstr ""
 "Déplacez de l'argent entre deux comptes de l'entreprise : caissiers, SIM "
 "maîtres, banques et boutiques. Le capital total ne change pas."
+
+msgid "Move selected"
+msgstr "Déplacer la sélection"
 
 msgid "Movement"
 msgstr "Mouvement"
@@ -3624,6 +3648,9 @@ msgstr "Mes POS"
 
 msgid "My POS out of stock"
 msgstr "Mes POS en rupture"
+
+msgid "My POS stock (OOS)"
+msgstr "Stock de mes POS (OOS)"
 
 msgid "My account"
 msgstr "Mon compte"
@@ -3796,6 +3823,13 @@ msgid "No POS has the business SIM %(sim)s. Ask the office to register it."
 msgstr ""
 "Aucun POS n'a la SIM business %(sim)s. Demandez au bureau de l'enregistrer."
 
+msgid "No POS in your microzones."
+msgstr "Aucun POS dans vos microzones."
+
+#, python-format
+msgid "No POS to move (they may already be in %(mz)s)."
+msgstr "Aucun POS à déplacer (ils sont peut-être déjà dans %(mz)s)."
+
 msgid "No UVE→ER conversion rate is configured. Ask the super administrator."
 msgstr ""
 "Aucun taux de conversion UVE→ER n'est configuré. Contactez le super "
@@ -3882,6 +3916,9 @@ msgstr "Aucun logo"
 
 msgid "No match"
 msgstr "Aucun résultat"
+
+msgid "No microzone"
+msgstr "Sans microzone"
 
 msgid "No microzone yet: type a name below to create the first one."
 msgstr ""
@@ -4089,6 +4126,9 @@ msgstr "OK — envoyé égale reçu"
 
 msgid "OM account name"
 msgstr "Nom du compte OM"
+
+msgid "OOS"
+msgstr "OOS"
 
 msgid "OTT, MAX IT, ID update, tickets…"
 msgstr "OTT, MAX IT, mise à jour d'identification, tickets…"
@@ -4502,9 +4542,16 @@ msgstr ""
 msgid "Out"
 msgstr "Sorties"
 
+msgid "Out of stock"
+msgstr "En rupture"
+
 #, python-format
 msgid "Out of stock = ER stock below %(n)s FCFA (last stock import)."
 msgstr "En rupture = stock ER sous %(n)s FCFA (dernier import de stock)."
+
+#, python-format
+msgid "Out of stock = ER stock below %(n)s FCFA."
+msgstr "En rupture = stock ER sous %(n)s FCFA."
 
 msgid "Out of stock when ER is below"
 msgstr "En rupture quand ER est sous"
@@ -5409,6 +5456,9 @@ msgstr "Rechercher"
 msgid "Search (SIM or name)"
 msgstr "Recherche (SIM ou nom)"
 
+msgid "Search (SIM, name or microzone)"
+msgstr "Recherche (SIM, nom ou microzone)"
+
 msgid "Search (SIM, name, ID)"
 msgstr "Rechercher (SIM, nom, pièce)"
 
@@ -5429,6 +5479,9 @@ msgstr "Choisissez la SIM business d'un client pour voir le relevé."
 
 msgid "Select a master zone."
 msgstr "Choisissez une zone principale."
+
+msgid "Select all on this page"
+msgstr "Tout sélectionner sur cette page"
 
 msgid "Select an agent or POS business SIM to see the statement."
 msgstr "Choisissez la SIM business d'un agent ou POS pour voir le relevé."
@@ -5890,6 +5943,10 @@ msgstr "Le stock ne peut pas être négatif."
 
 msgid "Stock history"
 msgstr "Historique du stock"
+
+#, python-format
+msgid "Stock of %(d)s."
+msgstr "Stock du %(d)s."
 
 msgid "Stock of gadgets and energy kits"
 msgstr "Stock de gadgets et kits énergie"
@@ -6529,12 +6586,25 @@ msgid "This zone has subzones, so it must stay a master zone."
 msgstr "Cette zone a des sous-zones, elle doit donc rester une zone master."
 
 msgid ""
+"Tick POS below (one or several), or filter the list (e.g. by microzone) and "
+"move all of it. The agent in charge of the new microzone supplies them from "
+"now on; balances stay with each POS."
+msgstr ""
+"Cochez des POS ci-dessous (un ou plusieurs), ou filtrez la liste (par ex. "
+"par microzone) et déplacez-la entièrement. L'agent responsable de la "
+"nouvelle microzone les approvisionne désormais ; les soldes restent avec "
+"chaque POS."
+
+msgid ""
 "Tick every unit the client buys — several items can be sold together — check"
 " the prices in the basket, then enter the client's details once."
 msgstr ""
 "Cochez chaque unité achetée par le client — plusieurs articles peuvent être "
 "vendus ensemble — vérifiez les prix dans le panier, puis saisissez une seule"
 " fois les informations du client."
+
+msgid "Tick the POS to move first."
+msgstr "Cochez d'abord les POS à déplacer."
 
 msgid "Tick the confirmation box to close the day."
 msgstr "Cochez la case de confirmation pour clôturer la journée."
@@ -7269,6 +7339,9 @@ msgstr "Rédigez la note d'enquête."
 msgid "Yes"
 msgstr "Oui"
 
+msgid "You are not allowed to move POS."
+msgstr "Vous n'êtes pas autorisé à déplacer des POS."
+
 msgid "You are not allowed to perform this action."
 msgstr "Vous n'êtes pas autorisé à effectuer cette action."
 
@@ -7299,6 +7372,9 @@ msgid ""
 msgstr ""
 "Vous êtes le dernier en service : comptez les espèces et relevez les soldes "
 "UVE et ER sur la SIM de la boutique."
+
+msgid "You can only move POS inside your zone."
+msgstr "Vous ne pouvez déplacer des POS que dans votre zone."
 
 msgid "You can only record for your own shop."
 msgstr "Vous ne pouvez enregistrer que pour votre boutique."
@@ -7751,6 +7827,9 @@ msgstr "nouvelle sous-zone %(s)s dans %(z)s"
 msgid "new zone %(z)s"
 msgstr "nouvelle zone %(z)s"
 
+msgid "no stock data"
+msgstr "pas de données de stock"
+
 msgid "not closed"
 msgstr "non clôturée"
 
@@ -7759,6 +7838,10 @@ msgstr "note"
 
 msgid "notes"
 msgstr "notes"
+
+#, python-format
+msgid "of %(n)s POS"
+msgstr "sur %(n)s POS"
 
 msgid "of which float supply"
 msgstr "dont approvisionnement float"

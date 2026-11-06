@@ -409,3 +409,42 @@ class PosStock(OrgMixin, TestCase):
         self.assertEqual(rep.summary[0][1], "1")
         self.assertTrue(rep.tables[0].rows[0].get("_head"))
         self.assertEqual(rep.tables[0].totals()["er"], D(17500))
+
+    def test_oos_view_and_stock_replaced(self):
+        from core.models import Counterparty, ImportBatch, MicroZone
+        from core.services import importer
+
+        mz = MicroZone.objects.create(subzone=self.a1.microzone.subzone if self.a1.microzone_id
+                                      else MicroZone.objects.first().subzone, name="OOS test zone", agent=self.a1)
+        mine = [Counterparty.objects.create(kind="POS", business_sim=f"69900000{i}", name=f"Mine {i}", microzone=mz)
+                for i in range(3)]
+        other = Counterparty.objects.create(kind="POS", business_sim="699000009", name="Not mine")
+
+        def upload(rows):
+            head = importer.TEMPLATES["stock"][0]
+            data = [dict(zip([importer._key(h) for h in head], r)) for r in rows]
+            b = importer.start_batch(self.admin, "stock", "s.xlsx", data)
+            while b.stage == ImportBatch.Stage.CHECK:
+                importer.step_batch(self.admin, b)
+            importer.confirm_batch(self.admin, b)
+            while b.stage == ImportBatch.Stage.IMPORT:
+                importer.step_batch(self.admin, b)
+            return b
+
+        upload([["POS", mine[0].business_sim, "", 9000, 1, 1], ["POS", mine[1].business_sim, "", 1500, 1, 1],
+                ["POS", mine[2].business_sim, "", 500, 1, 1], ["POS", other.business_sim, "", 100, 1, 1]])
+        c = self.client_class()
+        c.login(username=self.agent_user.username, password=PW)
+        r = c.get("/agent/oos/")
+        names = [p.name for p, _oos in r.context["rows"]]
+        self.assertEqual(names[:3], ["Mine 2", "Mine 1", "Mine 0"])  # POS without stock data come after  # out of stock first, highest ER last
+        self.assertEqual(r.context["n_out"], 2)
+        self.assertNotContains(r, "Not mine")
+        # the next file replaces the stock: a POS missing from it has no stock any more
+        upload([["POS", mine[0].business_sim, "", 100, 1, 1]])
+        r = c.get("/agent/oos/")
+        self.assertEqual([p.name for p, _oos in r.context["rows"]][0], "Mine 0")
+        self.assertEqual(r.context["n_unknown"], r.context["n_pos"] - 1)
+        mine[1].refresh_from_db()
+        self.assertIsNone(mine[1].er_stock)
+        self.assertEqual(mine[1].stock_history.count(), 1)  # history kept

@@ -608,3 +608,34 @@ def daily_summary(agent, d_from, d_to):
             rows.append(line)
         d -= timedelta(days=1)
     return rows
+
+
+# ---------------------------------------------------------------- moving POS between microzones
+def move_pos(user, pos_qs, target):
+    """Move POS (one, a selection or a whole list) to another microzone. The agent in charge of the new microzone
+    supplies them from now on; balances stay with each POS. Managers move anywhere, a junior manager inside his
+    zone only."""
+    from core.models import MicroZone
+
+    from .operations import log_event
+
+    if not (user.sees_all_zones or user.is_junior):
+        raise PermissionDenied(_("You are not allowed to move POS."))
+    if not isinstance(target, MicroZone):
+        raise BusinessError(_("Choose the microzone to move the POS to."))
+    pos_qs = pos_qs.filter(kind=Counterparty.Kind.POS)
+    if user.is_junior:
+        zone = user.scope_zone
+        if target.subzone.parent_id != zone.id:
+            raise PermissionDenied(_("You can only move POS inside your zone."))
+        pos_qs = pos_qs.filter(Q(microzone__subzone__parent=zone) | Q(master_zone=zone) | Q(microzone__isnull=True,
+                                                                                          master_zone__isnull=True))
+    pos_qs = pos_qs.exclude(microzone=target)
+    with transaction.atomic():
+        ids = list(pos_qs.values_list("id", flat=True))
+        if not ids:
+            raise BusinessError(_("No POS to move (they may already be in %(mz)s).") % {"mz": target.name})
+        Counterparty.objects.filter(id__in=ids).update(microzone=target, master_zone=target.subzone.parent)
+        log_event(user, "pos_moved", count=len(ids), to_microzone=target.id, to=str(target),
+                  ids=ids[:1000])
+    return len(ids)

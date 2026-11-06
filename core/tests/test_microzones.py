@@ -119,3 +119,40 @@ class PickerAndExpenses(OrgMixin, TestCase):
         form = self.c.get("/expense/new/").context["form"]
         kinds = set(form.fields["drawer"].queryset.values_list("kind", flat=True))
         self.assertEqual(kinds, {"CASH_DRAWER", "UVE", "MTN"})
+
+
+class MovePos(OrgMixin, TestCase):
+    """Move one, selected or all POS of a list to another microzone."""
+
+    def setUp(self):
+        cache.clear()
+        self.make_org()
+        self.molyko = self.o["microzones"]["molyko"]
+        self.target = MicroZone.objects.create(subzone=self.molyko.subzone, name="Bonduma")
+        self.pos = [Counterparty.objects.create(kind="POS", business_sim=f"69800000{i}", name=f"P{i}",
+                                                microzone=self.molyko) for i in range(4)]
+        self.m = self.client_class()
+        self.assertTrue(self.m.login(username="manager", password=PW))
+
+    def test_single_selected_and_all(self):
+        r = self.m.post("/customers/move/", {"ids": [self.pos[0].pk], "target": self.target.pk, "scope": "selected"})
+        self.assertEqual(r.status_code, 302)
+        self.pos[0].refresh_from_db()
+        self.assertEqual(self.pos[0].microzone, self.target)
+        self.m.post("/customers/move/", {"ids": [self.pos[1].pk, self.pos[2].pk], "target": self.target.pk,
+                                         "scope": "selected"})
+        self.assertEqual(Counterparty.objects.filter(microzone=self.target).count(), 3)
+        # all POS of the list filtered on Molyko (the agent himself is not a POS: he stays)
+        self.m.post("/customers/move/", {"mz": self.molyko.pk, "target": self.target.pk, "scope": "all"})
+        self.assertFalse(Counterparty.objects.filter(kind="POS", microzone=self.molyko).exists())
+        self.a1.refresh_from_db()
+        self.assertEqual(self.a1.kind, "AGENT")
+        self.assertContains(self.m.get("/customers/"), "Move POS to another microzone")
+
+    def test_cashier_cannot_move(self):
+        c = self.client_class()
+        c.login(username="cashier.fako1", password=PW)
+        self.assertNotContains(c.get("/customers/"), "Move POS to another microzone")
+        c.post("/customers/move/", {"ids": [self.pos[0].pk], "target": self.target.pk, "scope": "selected"})
+        self.pos[0].refresh_from_db()
+        self.assertEqual(self.pos[0].microzone, self.molyko)

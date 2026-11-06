@@ -813,6 +813,18 @@ def confirm_batch(user, b, skip_errors=False):
         and len(b.bad_rows) < b.total
     if b.stage != b.Stage.CHECKED and not can_skip:
         raise BusinessError(_("This file cannot be imported (check it again)."))
-    b.stage, b.position, b.skip_errors = b.Stage.IMPORT, 0, bool(can_skip)
-    b.save(update_fields=["stage", "position", "skip_errors", "updated_at"])
+    with transaction.atomic():
+        if b.kind == "stock":
+            clear_stock(user)
+        b.stage, b.position, b.skip_errors = b.Stage.IMPORT, 0, bool(can_skip)
+        b.save(update_fields=["stage", "position", "skip_errors", "updated_at"])
     return b
+
+
+def clear_stock(user):
+    """A new stock file replaces the old one: every agent / POS stock is emptied first (history is kept), so a POS
+    missing from the new file shows "no stock data" instead of an old figure."""
+    n = Counterparty.objects.exclude(stock_at=None).update(er_stock=None, uve_stock=None, commission_balance=None,
+                                                           stock_at=None)
+    ops.log_event(user, "stock_cleared", count=n)
+    return n

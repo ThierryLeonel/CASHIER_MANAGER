@@ -583,3 +583,5 @@ table.t tr.oos td { background: #fff1f0; }
 /* import progress */
 .progress { height: 10px; border-radius: 6px; background: var(--line, #eee); overflow: hidden; margin: 8px 0; }
 .progress-bar { height: 100%; background: var(--accent, #ff7900); transition: width .3s; }
+.move-bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.move-bar select { min-width: 220px; }

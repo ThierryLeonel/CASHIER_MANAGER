@@ -95,6 +95,42 @@ def agent_pos(request):
 
 
 @roles_required(R.AGENT)
+def agent_oos(request):
+    """OOS: only the logged-in agent's POS (those of the microzones he is in charge of), from out of stock to the
+    highest ER stock; POS without an imported stock come last."""
+    from django.core.paginator import Paginator
+    from django.db.models import F
+
+    from core.services.branding import company
+
+    agent = request.user.counterparty
+    limit = company().out_of_stock_er
+    mine = Counterparty.objects.filter(kind=Counterparty.Kind.POS, active=True, microzone__agent=agent) \
+        .select_related("microzone")
+    q = (request.GET.get("q") or "").strip()
+    qs = mine
+    if q:
+        digits = "".join(ch for ch in q if ch.isdigit())
+        cond = Q(name__icontains=q) | Q(microzone__name__icontains=q) | Q(om_account_name__icontains=q)
+        if digits:
+            cond |= Q(business_sim__contains=digits[-9:])
+        qs = qs.filter(cond)
+    if request.GET.get("out") == "1":
+        qs = qs.filter(er_stock__lt=limit)
+    qs = qs.order_by(F("er_stock").asc(nulls_last=True), F("uve_stock").asc(nulls_last=True), "name")
+    page = Paginator(qs, 200).get_page(request.GET.get("page"))
+    tot = mine.aggregate(er=Sum("er_stock"), uve=Sum("uve_stock"), com=Sum("commission_balance"))
+    last = mine.exclude(stock_at=None).order_by("-stock_at").values_list("stock_at", flat=True).first()
+    keep = request.GET.copy()
+    keep.pop("page", None)
+    return render(request, "core/agent/oos.html", {
+        "page": page, "rows": [(p, p.out_of_stock(limit)) for p in page], "limit": limit, "q": q,
+        "out": request.GET.get("out") == "1", "keep": keep.urlencode(), "last": last, "tot": tot,
+        "n_pos": mine.count(), "n_out": mine.filter(er_stock__lt=limit).count(),
+        "n_unknown": mine.filter(stock_at=None).count()})
+
+
+@roles_required(R.AGENT)
 def agent_pos_search(request):
     """POS of the agent's zone matching a name, microzone or SIM digits (a few, for the number picker)."""
     agent = request.user.counterparty

@@ -7,6 +7,7 @@ from django.core.paginator import Paginator
 from django.db.models import Q, Sum
 from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import gettext as _
 
@@ -15,9 +16,10 @@ from core.models import Correction, Counterparty, Entry, MicroZone, Transaction,
 from core.money import fmt
 from core.pdf import receipt_pdf
 from core.reports.engine import FilterForm, Filters
+from core.services import agents as ag
 from core.services import corrections as corr
 from core.services import operations as ops
-from core.services.errors import BusinessError
+from core.services.errors import BusinessError, PermissionDenied
 from core.services.ledger import balance
 from core.simnumbers import display_sim
 
@@ -29,16 +31,17 @@ TX_RELATED = ["cashier__subzone", "zone__parent", "entered_by", "cashier_day__zo
 
 
 # ---------------------------------------------------------------- customers
-@roles_required(*STAFF)
-def customers(request):
-    q = (request.GET.get("q") or "").strip()
-    kind = request.GET.get("kind") or ""
-    mz = request.GET.get("mz") or ""
+def _customer_filter(user, params):
+    q = (params.get("q") or "").strip()
+    kind = params.get("kind") or ""
+    mz = params.get("mz") or ""
     qs = Counterparty.objects.select_related("microzone__subzone", "microzone__agent")
-    microzones = MicroZone.objects.select_related("subzone", "agent")
-    if request.user.scope_zone is not None:  # junior manager: his zone only
-        microzones = microzones.filter(subzone__parent=request.user.scope_zone)
-    if mz.isdigit():
+    microzones = MicroZone.objects.select_related("subzone", "agent").order_by("subzone__name", "name")
+    if user.scope_zone is not None:  # junior manager: his zone only
+        microzones = microzones.filter(subzone__parent=user.scope_zone)
+    if mz == "none":
+        qs = qs.filter(microzone__isnull=True)
+    elif mz.isdigit():
         qs = qs.filter(Q(microzone_id=mz) | Q(controlled_microzones=mz)).distinct()
     if q:
         digits = "".join(ch for ch in q if ch.isdigit())
@@ -48,13 +51,46 @@ def customers(request):
         qs = qs.filter(cond)
     if kind:
         qs = qs.filter(kind=kind)
+    return qs, microzones, q, kind, mz
+
+
+@roles_required(*STAFF)
+def customers(request):
+    qs, microzones, q, kind, mz = _customer_filter(request.user, request.GET)
     bals = dict(Entry.objects.filter(account__counterparty__in=qs).values_list("account__counterparty")
                 .annotate(s=Sum("amount")))
     page = Paginator(qs.order_by("kind", "business_sim"), 50).get_page(request.GET.get("page"))
     rows = [(c, bals.get(c.id, 0)) for c in page]
+    can_move = request.user.sees_all_zones or request.user.is_junior
     return render(request, "core/customers.html", {"rows": rows, "page": page, "q": q, "kind": kind,
                                                    "kinds": Counterparty.Kind.choices, "mz": mz,
-                                                   "microzones": microzones})
+                                                   "microzones": microzones, "can_move": can_move,
+                                                   "pos_total": qs.filter(kind=Counterparty.Kind.POS).count()
+                                                   if can_move else 0})
+
+
+@roles_required(*STAFF)
+def customers_move(request):
+    """Move the selected POS, or every POS of the filtered list, to another microzone."""
+    from urllib.parse import urlencode
+
+    back = reverse("customers") + "?" + urlencode({k: request.POST.get(k, "") for k in ("q", "kind", "mz")})
+    if request.method != "POST":
+        return redirect(back)
+    qs, microzones, *_rest = _customer_filter(request.user, request.POST)
+    target = microzones.filter(pk=request.POST.get("target") or 0).first()
+    if request.POST.get("scope") != "all":
+        ids = [i for i in request.POST.getlist("ids") if i.isdigit()]
+        if not ids:
+            messages.error(request, _("Tick the POS to move first."))
+            return redirect(back)
+        qs = Counterparty.objects.filter(id__in=ids)
+    try:
+        n = ag.move_pos(request.user, qs, target)
+        messages.success(request, _("%(n)s POS moved to %(mz)s.") % {"n": n, "mz": target})
+    except (BusinessError, PermissionDenied) as e:
+        messages.error(request, e.message)
+    return redirect(back)
 
 
 @roles_required(*STAFF)
