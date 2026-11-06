@@ -6,7 +6,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.translation import gettext as _
 
 from core import forms as F
-from core.models import CashManager, CashManagerExchange, ConversionRate, Counterparty
+from core.models import CashManager, CashManagerExchange, ConversionRate
 from core.money import fmt
 from core.services import operations as ops
 from core.services.errors import BusinessError
@@ -48,7 +48,7 @@ def _entry(request, form_class, op, title, intro="", template="core/entry_form.h
         )
         if resp:
             return resp
-    ctx = {"form": form, "title": title, "intro": intro, "customers": Counterparty.objects.filter(active=True)}
+    ctx = {"form": form, "title": title, "intro": intro, "customers": True}
     ctx.update(extra or {})
     return render(request, template, ctx)
 
@@ -102,7 +102,7 @@ def collection_new(request):
         "form": form, "title": _("Collect a payment"), "icon": "payment", "payment_form": True,
         "intro": _("One payment can be made in cash, UVE, MTN float and bank deposit at the same time. It reduces "
                    "the customer's single combined balance."),
-        "customers": Counterparty.objects.filter(active=True)})
+        "customers": True})
 
 
 @roles_required(*DESK)

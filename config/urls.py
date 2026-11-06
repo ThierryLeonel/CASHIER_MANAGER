@@ -76,6 +76,7 @@ urlpatterns = [
     # commercial agent portal
     path("agent/pos/", v.agent_pos, name="agent_pos"),
     path("agent/pos/<int:pk>/", v.agent_pos_detail, name="agent_pos_detail"),
+    path("agent/pos/search/", v.agent_pos_search, name="agent_pos_search"),
     path("agent/supply/", v.agent_supply, name="agent_supply"),
     path("agent/transfer/", v.agent_transfer, name="agent_transfer"),
     path("agent/daily/", v.agent_daily, name="agent_daily"),

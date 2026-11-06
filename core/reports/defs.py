@@ -255,7 +255,9 @@ def _customer_rows(f, kind=None, only=None):
         cps = cps.filter(kind=kind)
     if f.customer:
         cps = cps.filter(pk=f.customer.pk)
-    accts = {c.account.id: c for c in cps.select_related("ledger_account")}
+    by_cp = {c.pk: c for c in cps}
+    accts = {aid: by_cp[cid] for aid, cid in Account.objects.filter(
+        kind=Account.Kind.CUSTOMER, counterparty_id__in=by_cp.keys()).values_list("id", "counterparty_id")}
     tq = f.date_q()
     agg = Entry.objects.filter(account_id__in=accts.keys()).values("account_id").annotate(
         cur=Sum("amount"),

@@ -4,7 +4,7 @@ from datetime import date, timedelta
 
 from django.contrib import messages
 from django.core.paginator import Paginator
-from django.db.models import Max, Q
+from django.db.models import Max, Q, Sum
 from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -72,13 +72,43 @@ def agent_pos(request):
     out = request.GET.get("out") == "1"
     if out:
         qs = qs.filter(er_stock__lt=limit)
-    last = dict(ag.live_entries(agent).filter(kind=E.Kind.SUPPLY, pos__isnull=False).values("pos")
-                .annotate(d=Max("business_date")).values_list("pos", "d"))
-    rows = [(p, ag.pos_owed(agent, p), last.get(p.pk), p.microzone_id and p.microzone.agent_id == agent.pk,
-             p.out_of_stock(limit)) for p in qs]
-    rows.sort(key=lambda r: (not r[4], r[0].er_stock is None, r[0].er_stock or 0, r[0].name.lower()))
+    from django.core.paginator import Paginator
+    from django.db.models import Case, F, IntegerField, When
+
+    # out of stock first (lowest ER first), then the others by name; 100 per page
+    qs = qs.annotate(_oos=Case(When(er_stock__lt=limit, then=0), default=1, output_field=IntegerField())) \
+        .order_by("_oos", F("er_stock").asc(nulls_last=True) if out else "name", "name")
+    page = Paginator(qs, 100).get_page(request.GET.get("page"))
+    ids = [p.pk for p in page]
+    live = ag.live_entries(agent).filter(pos_id__in=ids)
+    last = dict(live.filter(kind=E.Kind.SUPPLY).values("pos").annotate(d=Max("business_date"))
+                .values_list("pos", "d"))
+    owed = {r["pos"]: (r["t"] or 0) + (r["e"] or 0) + (r["c"] or 0) - (r["p"] or 0)
+            for r in live.values("pos").annotate(t=Sum("uve"), e=Sum("er"), c=Sum("cash"), p=Sum("paid"))}
+    rows = [(p, owed.get(p.pk, 0), last.get(p.pk), p.microzone_id and p.microzone.agent_id == agent.pk,
+             p.out_of_stock(limit)) for p in page]
+    keep = request.GET.copy()
+    keep.pop("page", None)
     return render(request, "core/agent/pos_list.html", {"rows": rows, "q": q, "mine": mine, "out": out,
-                                                        "limit": limit, "zone": ag.zone_of(agent)})
+                                                        "limit": limit, "zone": ag.zone_of(agent), "page": page,
+                                                        "keep": keep.urlencode()})
+
+
+@roles_required(R.AGENT)
+def agent_pos_search(request):
+    """POS of the agent's zone matching a name, microzone or SIM digits (a few, for the number picker)."""
+    agent = request.user.counterparty
+    q = (request.GET.get("q") or "").strip()
+    qs = ag.zone_pos(agent).filter(active=True)
+    if q:
+        digits = "".join(ch for ch in q if ch.isdigit())
+        cond = Q(name__icontains=q) | Q(microzone__name__icontains=q) | Q(om_account_name__icontains=q)
+        if digits:
+            cond |= Q(business_sim__contains=digits[-9:])
+        qs = qs.filter(cond)
+    out = [{"sim": p.business_sim, "name": p.name, "microzone": p.microzone.name if p.microzone_id else "",
+            "kind_label": ""} for p in qs[:20]]
+    return JsonResponse({"results": out})
 
 
 @roles_required(R.AGENT)
@@ -136,9 +166,8 @@ def _entry_form(request, form_class, fn, *, title, icon, ok_msg, code_of=None, l
                 return redirect(request.path)
         if _wants_json(request):
             return _json_errors(form)
-    agent = request.user.counterparty
     ctx = {"form": form, "title": title, "icon": icon, "labels": labels or {},
-           "zone_pos": ag.zone_pos(agent).filter(active=True) if "pos_sim" in form.fields else []}
+           "pos_lookup": "pos_sim" in form.fields}
     ctx.update(extra or {})
     return render(request, "core/agent/form.html", ctx)
 

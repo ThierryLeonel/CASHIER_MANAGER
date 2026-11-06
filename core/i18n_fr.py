@@ -1856,6 +1856,9 @@ FR = {
     'matches': 'correspond',
     'There is a difference: the note is required. Explain it before closing.': 'Il y a un écart : la note est obligatoire. Expliquez-le avant de clôturer.',
     # commercial agent portal
+    'Next': 'Suivant',
+    'Page %(n)s of %(t)s · %(c)s POS': 'Page %(n)s sur %(t)s · %(c)s POS',
+    'Previous': 'Précédent',
     '%(bad)s rows have errors and %(good)s rows are valid. Nothing was imported yet.': "%(bad)s lignes ont des erreurs et %(good)s lignes sont valides. Rien n'a encore été importé.",
     '%(n)s rows with errors were skipped (listed below).': '%(n)s lignes en erreur ont été ignorées (listées ci-dessous).',
     'Created by this file': 'Créé par ce fichier',

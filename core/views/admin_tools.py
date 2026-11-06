@@ -73,7 +73,7 @@ def txn_edit(request, pk):
         except BusinessError as e:
             form.add_error(e.field if e.field in form.fields else None, e.message)
     return render(request, "core/admin_edit.html", {"t": t, "form": form, "rows": receipt_rows(t),
-                                                    "customers": Counterparty.objects.filter(active=True)})
+                                                    "customers": True})
 
 
 @roles_required(*ADMIN)

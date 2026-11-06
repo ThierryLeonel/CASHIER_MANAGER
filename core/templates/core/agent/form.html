@@ -25,7 +25,7 @@
 <div class="tbl-wrap"><table class="t"><thead><tr><th>{% trans "Date" %}</th><th>{% trans "Ref." %}</th><th>{% trans "Exchange" %}</th><th class="money">{% trans "Amount" %}</th><th>{% trans "Number" %}</th><th></th></tr></thead>
 <tbody>{% for x in recent %}<tr{% if x.is_cancelled %} class="corrected"{% endif %}><td class="small">{{ x.created_at|date:"d/m H:i" }}</td><td class="keep">{{ x.reference }}{% if x.is_cancelled %} <span class="badge bad">{% trans "cancelled" %}</span>{% endif %}</td><td class="small">{{ x.get_direction_display }}</td><td class="money">{{ x.amount|fcfa }}</td><td class="small">{{ x.other_phone|sim|default:"—" }}</td>
 <td>{% if not x.is_cancelled and x.business_date == today %}<details class="reject"><summary class="btn small">{% trans "Cancel" %}</summary><form method="post" action="{% url 'agent_exchange_cancel' x.pk %}">{% csrf_token %}<input type="text" name="reason" required maxlength="255" placeholder="{% trans 'Why?' %}"><button class="btn small danger">{% trans "Cancel it" %}</button></form></details>{% endif %}</td></tr>{% endfor %}</tbody></table></div>{% endif %}
-{% if zone_pos %}<datalist id="zone-pos">{% for p in zone_pos %}<option value="{{ p.business_sim }}">{{ p.name }}{% if p.microzone %} · {{ p.microzone.name }}{% endif %}</option>{% endfor %}</datalist>{% endif %}
+{% if pos_lookup %}<datalist id="zone-pos" data-lookup="{% url 'agent_pos_search' %}"></datalist>{% endif %}
 {% if agents %}<datalist id="agents">{% for a in agents %}<option value="{{ a.business_sim }}">{{ a.name }}</option>{% endfor %}</datalist>{% endif %}
 {% endblock %}
 {% block scripts %}
@@ -35,7 +35,13 @@
   var box = document.getElementById('agent-msg');
   var $ = function (n) { return form.querySelector('[name=' + n + ']'); };
   var fld = function (n) { return document.getElementById('fld-' + n); };
-  var known = {};{% for p in zone_pos %}known['{{ p.business_sim }}'] = '{{ p.name|escapejs }}';{% endfor %}{% for a in agents %}known['{{ a.business_sim }}'] = '{{ a.name|escapejs }}';{% endfor %}
+  var known = {};{% for a in agents %}known['{{ a.business_sim }}'] = '{{ a.name|escapejs }}';{% endfor %}
+  var asked = {};
+  // POS names come from the search while typing; a full number not in the list yet is looked up once
+  form.addEventListener('lookup', function (e) {
+    (e.detail || []).forEach(function (c) { known[c.sim] = c.name; });
+    syncNumber('pos_sim');
+  }, true);
 
   // a line under a field: the POS / agent name, or the number a shop / cashier is sent to
   function note(name) {
@@ -54,6 +60,13 @@
       var v = el.value.replace(/\D/g, '').slice(-9);
       n.textContent = v.length === 9 && known[v] ? '✓ ' + known[v] : '';
       n.className = 'num-note small ok';
+      var dl = el.list;
+      if (v.length === 9 && !known[v] && !asked[v] && dl && dl.dataset.lookup) {
+        asked[v] = 1;
+        fetch(dl.dataset.lookup + '?q=' + v, {credentials: 'same-origin'}).then(function (r) { return r.json(); })
+          .then(function (d) { (d.results || []).forEach(function (c) { known[c.sim] = c.name; }); syncNumber(name); })
+          .catch(function () {});
+      }
     }
   }
 

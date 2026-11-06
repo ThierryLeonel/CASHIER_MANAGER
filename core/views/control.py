@@ -11,7 +11,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.translation import gettext as _
 
 from core import forms as F
-from core.models import Account, Closing, ConversionRate, Correction, Counterparty, Discrepancy, Entry, Transaction, TxType
+from core.models import Account, Closing, ConversionRate, Correction, Discrepancy, Entry, Transaction, TxType
 from core.money import fmt
 from core.pdf import report_pdf
 from core.reports.defs import REPORTS
@@ -404,5 +404,5 @@ def report(request, key):
         return resp
     return render(request, "core/report.html", {
         "rep": rep, "form": form, "key": key, "query": data.urlencode(),
-        "customers": Counterparty.objects.filter(active=True) if not request.user.is_agent else [],
+        "customers": not request.user.is_agent,
     })

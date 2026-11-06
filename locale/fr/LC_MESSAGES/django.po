@@ -3775,6 +3775,9 @@ msgstr ""
 msgid "New user"
 msgstr "Nouvel utilisateur"
 
+msgid "Next"
+msgstr "Suivant"
+
 msgid "Next day"
 msgstr "Jour suivant"
 
@@ -4629,6 +4632,10 @@ msgstr "PDV : la microzone où il vend. Agent : la microzone qu'il contrôle."
 msgid "Page"
 msgstr "Page"
 
+#, python-format
+msgid "Page %(n)s of %(t)s · %(c)s POS"
+msgstr "Page %(n)s sur %(t)s · %(c)s POS"
+
 msgid "Paid"
 msgstr "Payé"
 
@@ -4921,6 +4928,9 @@ msgstr "Passée à la date comptable"
 
 msgid "Preview (first rows)"
 msgstr "Aperçu (premières lignes)"
+
+msgid "Previous"
+msgstr "Précédent"
 
 msgid "Previous day"
 msgstr "Jour précédent"

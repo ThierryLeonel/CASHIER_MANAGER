@@ -20,4 +20,7 @@
 <td class="small">{{ last|date:"d/m/Y"|default:"—" }}</td><td class="money{% if owed|negative %} neg{% endif %}">{{ owed|fcfa }}</td>
 <td>{% if p.active %}<a class="btn small{% if oos %} primary{% endif %}" href="{% url 'agent_supply' %}?pos={{ p.business_sim }}">{% trans "Supply" %}</a>{% endif %}</td>
 </tr>{% empty %}<tr><td colspan="11" class="muted">{% trans "No POS found." %}</td></tr>{% endfor %}</tbody></table></div>
+{% if page.paginator.num_pages > 1 %}<div class="pager">{% if page.has_previous %}<a class="btn small" href="?{{ keep }}&amp;page={{ page.previous_page_number }}">← {% trans "Previous" %}</a>{% endif %}
+<span class="small">{% blocktrans with n=page.number t=page.paginator.num_pages c=page.paginator.count %}Page {{ n }} of {{ t }} · {{ c }} POS{% endblocktrans %}</span>
+{% if page.has_next %}<a class="btn small" href="?{{ keep }}&amp;page={{ page.next_page_number }}">{% trans "Next" %} →</a>{% endif %}</div>{% endif %}
 {% endblock %}

@@ -101,7 +101,7 @@ def txn_list(request):
     params.pop("page", None)
     return render(request, "core/txn_list.html", {"form": form, "page": page, "filters": f,
                                                   "qs_params": params.urlencode(),
-                                                  "customers": Counterparty.objects.filter(active=True)})
+                                                  "customers": True})
 
 
 def _get_visible_txn(request, pk):
@@ -316,7 +316,7 @@ def txn_correct(request, pk):
         if resp:
             return resp
     return render(request, "core/correct.html", {"t": t, "form": form, "rows": receipt_rows(t),
-                                                 "customers": Counterparty.objects.filter(active=True)})
+                                                 "customers": True})
 
 
 @roles_required(R.CASHIER, R.MANAGER, R.JUNIOR, R.FINANCE, R.SUPERADMIN)
@@ -338,7 +338,7 @@ def txn_transfer(request, pk):
     cur = ops.current_responsible(t) if t.type in ops.TRANSFERABLE_TYPES else None
     return render(request, "core/transfer.html", {
         "t": t, "form": form, "current": cur, "current_balance": balance(cur.account) if cur else None,
-        "customers": Counterparty.objects.filter(active=True)})
+        "customers": True})
 
 
 @roles_required(*STAFF, R.SHOP_MANAGER, R.SHOP_SENIOR)

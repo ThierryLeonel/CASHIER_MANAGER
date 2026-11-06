@@ -184,8 +184,36 @@
     {% block content %}{% endblock %}
   </main>
 </div>
-{% if customers %}<datalist id="customer-list">{% for c in customers %}<option value="{{ c.business_sim }}">{{ c.business_sim }} – {{ c.name }} ({{ c.get_kind_display }})</option>{% endfor %}</datalist>{% endif %}
+{% if customers %}<datalist id="customer-list" data-lookup="{% url 'customer_search' %}"></datalist>{% endif %}
 <script>
+/* Number pickers: the list of agents / POS is fetched while typing (a few matches), never the whole base. */
+document.querySelectorAll('datalist[data-lookup]').forEach(function (dl) {
+  var timer, last = '';
+  document.querySelectorAll('input[list="' + dl.id + '"]').forEach(function (inp) {
+    inp.addEventListener('input', function () {
+      var q = inp.value.trim();
+      clearTimeout(timer);
+      if (q.length < 2 || q === last) return;
+      timer = setTimeout(function () {
+        last = q;
+        fetch(dl.dataset.lookup + (dl.dataset.lookup.indexOf('?') < 0 ? '?' : '&') + 'q=' + encodeURIComponent(q),
+              {credentials: 'same-origin'})
+          .then(function (r) { return r.json(); })
+          .then(function (d) {
+            dl.innerHTML = '';
+            (d.results || []).forEach(function (c) {
+              var o = document.createElement('option');
+              o.value = c.sim;
+              o.textContent = c.sim + ' – ' + c.name + (c.kind_label ? ' (' + c.kind_label + ')' : '') +
+                              (c.microzone ? ' · ' + c.microzone : '');
+              dl.appendChild(o);
+            });
+            inp.dispatchEvent(new CustomEvent('lookup', {detail: d.results || [], bubbles: true}));
+          }).catch(function () {});
+      }, 250);
+    });
+  });
+});
 document.querySelectorAll('[data-toggle-side]').forEach(function (b) {
   b.addEventListener('click', function () { document.body.classList.toggle('side-open'); });
 });
