@@ -1853,6 +1853,14 @@ msgid "Commercial agents and transfers to cashiers"
 msgstr "Agents commerciaux et transferts aux caissiers"
 
 msgid ""
+"Commercial agents only: delete every agent with his transactions, portal "
+"records and login (microzones and POS stay, without an agent in charge)"
+msgstr ""
+"Agents commerciaux uniquement : supprimer chaque agent avec ses "
+"transactions, ses enregistrements du portail et son accès (les microzones et"
+" les POS restent, sans agent responsable)"
+
+msgid ""
 "Commercial agents pay the company at a cashier of their zone (UVE to the "
 "master SIM, cash or MTN float) or at a shop (UVE to the shop SIM or cash). "
 "Whoever receives it confirms: it is then recorded as the agent's payment, "
@@ -2497,8 +2505,14 @@ msgstr "Écart résolu."
 msgid "Download"
 msgstr "Télécharger"
 
+msgid "Download (Excel)"
+msgstr "Télécharger (Excel)"
+
 msgid "Download PDF"
 msgstr "Télécharger le PDF"
+
+msgid "Download POS stock (Excel)"
+msgstr "Télécharger le stock des POS (Excel)"
 
 msgid "Download this section in Excel"
 msgstr "Télécharger cette section en Excel"
@@ -3149,6 +3163,9 @@ msgstr "Indiquez le motif."
 #, python-format
 msgid "Give the subzone of microzone %(v)s"
 msgstr "Indiquez la sous-zone de la microzone %(v)s"
+
+msgid "Global POS"
+msgstr "POS global"
 
 msgid "Good deal"
 msgstr "Bon plan"
@@ -4655,6 +4672,14 @@ msgstr "SIM business du POS"
 msgid "POS number"
 msgstr "Numéro du POS"
 
+msgid ""
+"POS only: delete every POS with its transactions, agents' records with it "
+"and stock (agents, microzones and the rest stay)"
+msgstr ""
+"POS uniquement : supprimer chaque POS avec ses transactions, les "
+"enregistrements des agents qui le concernent et son stock (les agents, les "
+"microzones et le reste restent)"
+
 msgid "POS out of stock"
 msgstr "POS en rupture"
 
@@ -5944,6 +5969,9 @@ msgstr "Le stock ne peut pas être négatif."
 msgid "Stock history"
 msgstr "Historique du stock"
 
+msgid "Stock in import format"
+msgstr "Stock au format d'import"
+
 #, python-format
 msgid "Stock of %(d)s."
 msgstr "Stock du %(d)s."
@@ -5953,6 +5981,9 @@ msgstr "Stock de gadgets et kits énergie"
 
 msgid "Stock of items"
 msgstr "Stock d'articles"
+
+msgid "Stock report"
+msgstr "Rapport de stock"
 
 msgid "Stock updated."
 msgstr "Stock mis à jour."
@@ -7147,6 +7178,9 @@ msgid ""
 msgstr ""
 "Tant qu'aucun logo n'est chargé, la première lettre du nom de l'entreprise "
 "est affichée."
+
+msgid "Update POS stock"
+msgstr "Mettre à jour le stock des POS"
 
 msgid "Uplift"
 msgstr "Bonus"

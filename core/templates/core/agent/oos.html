@@ -13,7 +13,7 @@
 <form class="filters panel" method="get">
   <div class="field"><label>{% trans "Search (SIM, name or microzone)" %}</label><input type="text" name="q" value="{{ q }}"></div>
   <div class="field"><label><input type="checkbox" name="out" value="1"{% if out %} checked{% endif %}> {% trans "Only out of stock" %}</label></div>
-  <div class="field"><button class="btn" type="submit">{% trans "Search" %}</button></div>
+  <div class="field"><button class="btn" type="submit">{% trans "Search" %}</button> <a class="btn" href="{% url 'stock_download' %}{% if out %}?out=1{% endif %}">⬇ {% trans "Download (Excel)" %}</a></div>
 </form>
 <div class="tbl-wrap"><table class="t">
 <thead><tr><th>#</th><th>{% trans "POS" %}</th><th>{% trans "Microzone" %}</th><th class="money">{% trans "ER stock" %}</th><th class="money">{% trans "UVE stock" %}</th><th class="money">{% trans "Commission" %}</th><th>{% trans "Status" %}</th><th></th></tr></thead>

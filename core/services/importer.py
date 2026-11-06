@@ -828,3 +828,35 @@ def clear_stock(user):
                                                            stock_at=None)
     ops.log_event(user, "stock_cleared", count=n)
     return n
+
+
+def stock_xlsx(counterparties, threshold):
+    """The stock as imported, same first columns as the stock template (so the file can be uploaded again), then
+    who / where / status columns for reading."""
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "stock"
+    head = TEMPLATES["stock"][0] + ["name", "OM account name", "subzone", "agent in charge", "status", "imported at"]
+    ws.append(head)
+    for cp in counterparties:
+        mz = cp.microzone
+        oos = cp.kind == Counterparty.Kind.POS and cp.out_of_stock(threshold)
+        ws.append([cp.kind, cp.business_sim, mz.name if mz else "",
+                   int(cp.er_stock) if cp.er_stock is not None else None,
+                   int(cp.uve_stock) if cp.uve_stock is not None else None,
+                   int(cp.commission_balance) if cp.commission_balance is not None else None,
+                   cp.name, cp.om_account_name, mz.subzone.name if mz else "",
+                   mz.agent.name if mz and mz.agent_id and cp.kind == Counterparty.Kind.POS else "",
+                   "OUT OF STOCK" if oos else ("in stock" if cp.kind == Counterparty.Kind.POS else ""),
+                   cp.stock_at.astimezone().strftime("%d/%m/%Y %H:%M") if cp.stock_at else ""])
+    for i, h in enumerate(head, start=1):
+        ws.cell(1, i).font = Font(bold=True)
+        ws.column_dimensions[ws.cell(1, i).column_letter].width = max(14, len(h) + 4)
+    for row in range(2, ws.max_row + 1):
+        ws.cell(row, 2).number_format = "@"
+        for col in (4, 5, 6):
+            ws.cell(row, col).number_format = "#,##0"
+    ws.freeze_panes = "A2"
+    buf = io.BytesIO()
+    wb.save(buf)
+    return buf.getvalue()

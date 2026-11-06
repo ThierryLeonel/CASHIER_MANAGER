@@ -544,6 +544,30 @@ class ShopDataAdministration(OrgMixin, TestCase):
         adm.clear_data(self.admin, scope="everything", password=PW, confirm_text="DELETE")
         self.assertFalse(Counterparty.objects.exists())
 
+    def test_clear_pos_only_then_agents_only(self):
+        from core.models import MicroZone
+
+        p1 = Counterparty.objects.filter(kind="POS").first()
+        sup_pos = ops.record_supply(self.c_f1, product="UVE", customer=p1, amount=D(1000), source_account=self.uve_f1)
+        sup_ag = ops.record_supply(self.c_f1, product="UVE", customer=self.a1, amount=D(2000),
+                                   source_account=self.uve_f1)
+        n_agents = Counterparty.objects.filter(kind="AGENT").count()
+        counts = adm.clear_data(self.admin, scope="pos_list", password=PW, confirm_text="DELETE")
+        self.assertFalse(Counterparty.objects.filter(kind="POS").exists())
+        self.assertFalse(Transaction.objects.filter(pk=sup_pos.pk).exists())
+        self.assertTrue(Transaction.objects.filter(pk=sup_ag.pk).exists())  # agents' records stay
+        self.assertEqual(Counterparty.objects.filter(kind="AGENT").count(), n_agents)
+        self.assertGreater(counts["pos"], 0)
+        self.assertTrue(ledger_ok())
+        mz_count = MicroZone.objects.count()
+        adm.clear_data(self.admin, scope="agent_list", password=PW, confirm_text="DELETE")
+        self.assertFalse(Counterparty.objects.exists())
+        self.assertFalse(Transaction.objects.filter(pk=sup_ag.pk).exists())
+        self.assertFalse(User.objects.filter(role="AGENT").exists())
+        self.assertEqual(MicroZone.objects.count(), mz_count)  # microzones stay, without an agent
+        self.assertFalse(MicroZone.objects.filter(agent__isnull=False).exists())
+        self.assertTrue(ledger_ok())
+
     def test_cash_manager_without_sim(self):
         from core.models import CashManager
         from core.services import cash_managers as cmsvc  # noqa: F401

@@ -585,3 +585,4 @@ table.t tr.oos td { background: #fff1f0; }
 .progress-bar { height: 100%; background: var(--accent, #ff7900); transition: width .3s; }
 .move-bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .move-bar select { min-width: 220px; }
+.stock-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 12px; }

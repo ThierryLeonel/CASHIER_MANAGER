@@ -96,7 +96,8 @@ def clear_data(request):
 
 @roles_required(*ADMIN)
 def import_data(request):
-    form = F.ImportForm(request.POST or None, request.FILES or None)
+    form = F.ImportForm(request.POST or None, request.FILES or None,
+                        initial={"kind": request.GET.get("kind")} if request.GET.get("kind") else None)
     if request.method == "POST" and form.is_valid():
         f = form.cleaned_data["file"]
         if f.size > 15 * 1024 * 1024:

@@ -1,8 +1,8 @@
 {% extends "core/base.html" %}{% load i18n cashier %}
-{% block title %}{% trans "My POS" %}{% endblock %}
-{% block topbar %}{% trans "My POS" %}{% endblock %}
+{% block title %}{% trans "Global POS" %}{% endblock %}
+{% block topbar %}{% trans "Global POS" %}{% endblock %}
 {% block content %}
-<h1>{% trans "My POS" %}</h1>
+<h1>{% trans "Global POS" %}</h1>
 <p class="muted">{% if zone %}{% blocktrans with z=zone.name %}Every POS connected to your zone ({{ z }}). You can also supply a POS of another zone by typing its business SIM, but you only see its name.{% endblocktrans %}{% else %}{% trans "You are not attached to a zone yet: ask the office to set your microzone." %}{% endif %}</p>
 <p class="small muted meta">{% blocktrans with n=limit|fcfa %}Out of stock = ER stock below {{ n }} FCFA (last stock import).{% endblocktrans %}</p>
 <form class="filters panel" method="get">

@@ -38,7 +38,7 @@
     <a href="{% url 'agent_daily' %}" class="{% if u == 'agent_daily' %}on{% endif %}">{% icon "calendar" %}<span>{% trans "Daily reconciliation" %}</span></a>
     <a href="{% url 'agent_office' %}" class="{% if u == 'agent_office' %}on{% endif %}">{% icon "download" %}<span>{% trans "Office supplies" %}</span></a>
     <a href="{% url 'agent_oos' %}" class="{% if u == 'agent_oos' %}on{% endif %}">{% icon "alert" %}<span>{% trans "OOS" %}</span></a>
-    <a href="{% url 'agent_pos' %}" class="{% if u == 'agent_pos' or u == 'agent_pos_detail' %}on{% endif %}">{% icon "store" %}<span>{% trans "My POS" %}</span></a>
+    <a href="{% url 'agent_pos' %}" class="{% if u == 'agent_pos' or u == 'agent_pos_detail' %}on{% endif %}">{% icon "store" %}<span>{% trans "Global POS" %}</span></a>
     <a href="{% url 'agent_activity' %}" class="{% if u == 'agent_activity' %}on{% endif %}">{% icon "list" %}<span>{% trans "My transactions" %}</span></a>
     {% endif %}
 

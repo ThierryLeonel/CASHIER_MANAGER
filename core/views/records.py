@@ -69,6 +69,31 @@ def customers(request):
                                                    if can_move else 0})
 
 
+@roles_required(*STAFF, R.AGENT)
+def stock_download(request):
+    """Excel of the imported stock: staff get every agent / POS (a junior manager his zone), an agent his own POS."""
+    from core.services import importer
+    from core.services.branding import company
+
+    limit = company().out_of_stock_er
+    qs = Counterparty.objects.filter(stock_at__isnull=False).select_related("microzone__subzone", "microzone__agent")
+    if request.user.is_agent:
+        qs = qs.filter(kind=Counterparty.Kind.POS, microzone__agent=request.user.counterparty)
+    elif request.user.scope_zone is not None:
+        z = request.user.scope_zone
+        qs = qs.filter(Q(microzone__subzone__parent=z) | Q(master_zone=z))
+    if request.GET.get("out") == "1":
+        qs = qs.filter(kind=Counterparty.Kind.POS, er_stock__lt=limit)
+    from django.db.models import F
+
+    qs = qs.order_by("kind", F("er_stock").asc(nulls_last=True), "name")
+    resp = HttpResponse(importer.stock_xlsx(qs, limit),
+                        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    name = "stock-" + timezone.localdate().isoformat() + (".oos" if request.GET.get("out") == "1" else "") + ".xlsx"
+    resp["Content-Disposition"] = f'attachment; filename="{name}"'
+    return resp
+
+
 @roles_required(*STAFF)
 def customers_move(request):
     """Move the selected POS, or every POS of the filtered list, to another microzone."""

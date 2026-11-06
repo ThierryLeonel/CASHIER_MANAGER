@@ -9,7 +9,7 @@
   <a class="bal k-UVE bal-link" href="{% url 'agent_debtors' %}"><span class="bal-label">{% trans "My clients owe me" %}</span><span class="bal-value">{{ s.clients_owe|fcfa }}</span><span class="bal-unit">FCFA · {% trans "see my debtors" %} →</span></a>
 </div>
 {% if out_of_stock or cp.stock_at %}<div class="bal-row">
-  {% if out_of_stock %}<a class="bal k-ER oos bal-link" href="{% url 'agent_pos' %}?mine=1&amp;out=1"><span class="bal-label">{% trans "My POS out of stock" %}</span><span class="bal-value">{{ out_of_stock }}</span><span class="bal-unit">{% blocktrans with n=limit|fcfa %}ER below {{ n }} FCFA{% endblocktrans %} · {% trans "supply them" %} →</span></a>{% endif %}
+  {% if out_of_stock %}<a class="bal k-ER oos bal-link" href="{% url 'agent_oos' %}?out=1"><span class="bal-label">{% trans "My POS out of stock" %}</span><span class="bal-value">{{ out_of_stock }}</span><span class="bal-unit">{% blocktrans with n=limit|fcfa %}ER below {{ n }} FCFA{% endblocktrans %} · {% trans "supply them" %} →</span></a>{% endif %}
   {% if cp.stock_at %}<div class="bal k-UVE"><span class="bal-label">{% trans "My Orange stock" %} · {{ cp.stock_at|date:"d/m H:i" }}</span><span class="bal-value small-val">ER {{ cp.er_stock|default_if_none:"—"|fcfa }} · UVE {{ cp.uve_stock|default_if_none:"—"|fcfa }}</span><span class="bal-unit">{% trans "Commission" %} {{ cp.commission_balance|default_if_none:"—"|fcfa }} FCFA</span></div>{% endif %}
 </div>{% endif %}
 <div class="quick">

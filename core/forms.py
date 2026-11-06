@@ -737,7 +737,11 @@ class ClearDataForm(forms.Form):
               ("agents", _("Commercial agents' records only: their supplies to POS, shops and clients, client payments, "
                            "transfers between agents, float exchanges and paybacks (company records are kept)")),
               ("user", _("One user's records: everything this user entered (transactions, shifts, services, SIM "
-                         "retrievals; for an agent, his portal records)"))]
+                         "retrievals; for an agent, his portal records)")),
+              ("pos_list", _("POS only: delete every POS with its transactions, agents' records with it and stock "
+                             "(agents, microzones and the rest stay)")),
+              ("agent_list", _("Commercial agents only: delete every agent with his transactions, portal records "
+                               "and login (microzones and POS stay, without an agent in charge)"))]
     scope = forms.ChoiceField(label=_("What to clear"), choices=SCOPES, widget=forms.RadioSelect)
     agent = forms.ModelChoiceField(label=_("Commercial agent"), required=False, queryset=None,
                                    empty_label=_("All commercial agents"),

@@ -1,4 +1,5 @@
 """Commercial agent portal: supplies to clients, client payments, zone visibility, paybacks confirmed by cashiers."""
+import io
 import uuid
 
 from django.test import TestCase
@@ -448,3 +449,33 @@ class PosStock(OrgMixin, TestCase):
         mine[1].refresh_from_db()
         self.assertIsNone(mine[1].er_stock)
         self.assertEqual(mine[1].stock_history.count(), 1)  # history kept
+
+    def test_stock_download_in_import_format(self):
+        from openpyxl import load_workbook
+
+        from core.models import Counterparty
+        from core.services import importer
+
+        self._import([["POS", self.p1.business_sim, "", 1500, 2000, 10000],
+                      ["POS", self.p2.business_sim, "", 6000, 2000, 100]])
+        m = self.client_class()
+        m.login(username="manager", password=PW)
+        r = m.get("/stock/download/")
+        ws = load_workbook(io.BytesIO(r.content)).active
+        head = [c.value for c in ws[1]]
+        self.assertEqual(head[:6], importer.TEMPLATES["stock"][0])
+        rows = {str(row[1]): row for row in ws.iter_rows(min_row=2, values_only=True)}
+        self.assertEqual(rows[self.p1.business_sim][3], 1500)
+        self.assertEqual(rows[self.p1.business_sim][10], "OUT OF STOCK")
+        # the downloaded file can be uploaded again as it is
+        results, ok = importer.run_import(self.admin, "stock", importer.read_rows("s.xlsx", r.content), commit=False)
+        self.assertTrue(ok, results)
+        # an agent downloads only his own POS
+        c = self.client_class()
+        c.login(username=self.agent_user.username, password=PW)
+        ws = load_workbook(io.BytesIO(c.get("/stock/download/").content)).active
+        sims = {str(row[1]) for row in ws.iter_rows(min_row=2, values_only=True)}
+        mine = set(Counterparty.objects.filter(microzone__agent=self.a1, kind="POS").values_list("business_sim",
+                                                                                                flat=True))
+        self.assertTrue(sims <= mine)
+        self.assertContains(c.get("/"), "Global POS")

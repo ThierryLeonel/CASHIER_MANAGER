@@ -251,7 +251,7 @@ def edit_transaction(user, t, *, new_values, reason):
         return t
 
 
-CLEAR_SCOPES = ("transactions", "everything", "shops", "agents", "user")
+CLEAR_SCOPES = ("transactions", "everything", "shops", "agents", "user", "pos_list", "agent_list")
 
 
 def _clear_agent_portal(agent=None):
@@ -288,6 +288,47 @@ def _delete_txn_ids(ids):
     _sql_delete_transactions("id = ANY(%s)", [ids])
     _check_assets(acct_ids, before)
     return len(ids)
+
+
+def _clear_counterparties(kind):
+    """Delete every POS (kind POS) or every commercial agent (kind AGENT) with everything recorded on them: their
+    ledger transactions (supplies, payments, transfers…), their portal records, stock and accounts; agents also lose
+    their logins and leave their microzones without an agent (the microzones and their POS stay)."""
+    from core.models import AgentClientEntry, AgentExchange, AgentPayback
+
+    cps = Counterparty.objects.filter(kind=kind)
+    cp_ids = list(cps.values_list("id", flat=True))
+    counts = {"pos" if kind == "POS" else "agents": len(cp_ids)}
+    if not cp_ids:
+        return counts
+    if kind == "POS":
+        portal = [AgentClientEntry.objects.filter(pos_id__in=cp_ids)]
+    else:
+        portal = [AgentClientEntry.objects.filter(Q(agent_id__in=cp_ids) | Q(to_agent_id__in=cp_ids)),
+                  AgentExchange.objects.filter(agent_id__in=cp_ids), AgentPayback.objects.filter(agent_id__in=cp_ids)]
+    counts["agent_records"] = sum(q.count() for q in portal)
+    for q in portal:
+        q.delete()
+    accts = Account.objects.filter(Q(counterparty_id__in=cp_ids) | Q(shop_agent_id__in=cp_ids))
+    ids = set(Transaction.objects.filter(Q(counterparty_id__in=cp_ids) | Q(counterparty_2_id__in=cp_ids))
+              .values_list("id", flat=True))
+    ids |= set(Entry.objects.filter(account__in=accts).values_list("transaction_id", flat=True))
+    while True:  # entries settling or linked to a deleted supply go with it
+        more = set(Transaction.objects.filter(Q(settles_id__in=ids) | Q(related_supply_id__in=ids))
+                   .exclude(id__in=ids).values_list("id", flat=True))
+        if not more:
+            break
+        ids |= more
+    counts["transactions"] = _delete_txn_ids(ids)
+    accts.delete()
+    if kind == "AGENT":
+        users = User.objects.filter(counterparty_id__in=cp_ids)
+        counts["agent_logins"] = users.count()
+        AuditEvent.objects.filter(user__in=users).update(user=None)
+        users.delete()
+        MicroZone.objects.filter(agent_id__in=cp_ids).update(agent=None)
+    cps.delete()  # stock history goes with them
+    return counts
 
 
 def _clear_user_records(target):
@@ -330,6 +371,11 @@ def clear_data(user, *, scope, password, confirm_text, agent=None, target_user=N
     if authenticate(username=user.username, password=password or "") is None:
         raise BusinessError(_("Your password is incorrect."), "password")
     counts = defaultdict(int)
+    if scope in ("pos_list", "agent_list"):
+        with admin_override():
+            counts.update(_clear_counterparties("POS" if scope == "pos_list" else "AGENT"))
+            AuditEvent.objects.create(user=user, action="data_cleared", detail={"scope": scope, **counts})
+        return dict(counts)
     if scope in ("agents", "user"):
         if scope == "user" and target_user is None:
             raise BusinessError(_("Choose the user whose records are cleared."), "target_user")

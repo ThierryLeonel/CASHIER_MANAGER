@@ -1,8 +1,8 @@
 {% extends "core/base.html" %}{% load i18n cashier %}
 {% block title %}{{ pos.name }}{% endblock %}
-{% block topbar %}{% trans "My POS" %}{% endblock %}
+{% block topbar %}{% trans "Global POS" %}{% endblock %}
 {% block content %}
-<p><a href="{% url 'agent_pos' %}">← {% trans "My POS" %}</a></p>
+<p><a href="{% url 'agent_pos' %}">← {% trans "Global POS" %}</a></p>
 <h1>{{ pos.name }}</h1>
 <div class="panel"><dl class="kv">
   <dt>{% trans "Business SIM" %}</dt><dd>{{ pos.business_sim|sim }}</dd>
