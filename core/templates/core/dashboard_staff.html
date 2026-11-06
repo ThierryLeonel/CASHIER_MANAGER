@@ -27,16 +27,19 @@
 {% for k, label, v in grand %}
   <div class="bal k-{{ k }}"><span class="bal-label">{{ label }}</span><span class="bal-value">{{ v|fcfa }}</span><span class="bal-unit">FCFA{% if zone %} · {{ zone }}{% endif %}</span></div>
 {% endfor %}
+  <div class="bal k-TOTAL"><span class="bal-label">{% trans "Total balance" %}</span><span class="bal-value{% if grand_total|negative %} neg{% endif %}">{{ grand_total|fcfa }}</span><span class="bal-unit">FCFA{% if zone %} · {{ zone }}{% endif %}</span></div>
 </div>
 <div class="tbl-wrap"><table class="t matrix">
-<thead><tr><th>{% trans "Master zone / subzone" %}</th>{% for l in kind_labels %}<th class="money">{{ l }}</th>{% endfor %}</tr></thead>
+<thead><tr><th>{% trans "Master zone / subzone" %}</th>{% for l in kind_labels %}<th class="money">{{ l }}</th>{% endfor %}<th class="money">{% trans "Total" %}</th></tr></thead>
 <tbody>
 {% for z in matrix %}
-<tr class="zone-row"><td><strong>{{ z.zone|default:"—" }}</strong></td>{% for v in z.totals %}<td class="money"><strong>{{ v|fcfa }}</strong></td>{% endfor %}</tr>
-{% for r in z.rows %}<tr><td class="indent">{% if r.master_level %}<strong>{% trans "Master SIM" %}</strong>{% if r.incharge %} · <span class="muted small">{% trans "in charge" %}: {{ r.incharge }} <span class="badge">{{ r.incharge.staff_code }}</span></span>{% endif %}{% else %}{{ r.label }}{% endif %}</td>{% for v in r.totals %}<td class="money">{{ v|fcfa }}</td>{% endfor %}</tr>{% endfor %}
-{% empty %}<tr><td colspan="5" class="muted">{% trans "No drawers or wallets configured yet." %}</td></tr>
+<tr class="zone-row"><td><strong>{{ z.zone|default:"—" }}</strong></td>{% for v in z.totals %}<td class="money"><strong>{{ v|fcfa }}</strong></td>{% endfor %}<td class="money"><strong>{{ z.total|fcfa }}</strong></td></tr>
+{% for r in z.rows %}<tr><td class="indent">{% if r.master_level %}<strong>{% trans "Master SIM" %}</strong>{% if r.incharge %} · <span class="muted small">{% trans "in charge" %}: {{ r.incharge }} <span class="badge">{{ r.incharge.staff_code }}</span></span>{% endif %}{% else %}{{ r.label }}{% endif %}</td>{% for v in r.totals %}<td class="money">{{ v|fcfa }}</td>{% endfor %}<td class="money"><strong>{{ r.total|fcfa }}</strong></td></tr>{% endfor %}
+{% empty %}<tr><td colspan="6" class="muted">{% trans "No drawers or wallets configured yet." %}</td></tr>
 {% endfor %}
-</tbody></table></div>
+</tbody>
+{% if matrix %}<tfoot><tr class="grand-row"><td><strong>{% if zone %}{% trans "Total" %} · {{ zone }}{% else %}{% trans "Company total" %}{% endif %}</strong></td>{% for v in grand_values %}<td class="money"><strong>{{ v|fcfa }}</strong></td>{% endfor %}<td class="money"><strong>{{ grand_total|fcfa }}</strong></td></tr></tfoot>{% endif %}
+</table></div>
 {% if banks %}<h2>{% trans "Bank accounts" %}</h2>
 <div class="grid">{% for a, v in banks %}<div class="tile"><div class="label">{% icon "bank" 16 %}{{ a.bank.bank_name }}</div><div class="value">{{ v|fcfa }}</div><div class="sub">{{ a.bank.label }} · {{ a.bank.account_number }}</div></div>{% endfor %}</div>{% endif %}
 <h2>{% trans "Open business days" %}</h2>

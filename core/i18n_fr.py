@@ -1856,6 +1856,8 @@ FR = {
     'matches': 'correspond',
     'There is a difference: the note is required. Explain it before closing.': 'Il y a un écart : la note est obligatoire. Expliquez-le avant de clôturer.',
     # commercial agent portal
+    'Total balance': 'Solde total',
+    'Company total': "Total de l'entreprise",
     'Agents / POS': 'Agents / POS',
     'Balance for the period = total supplied − total paid during the selected dates only (+ still owes, − paid more: old debts or in advance). Total balance today covers all dates and all desks (+ owes the company, − the company owes them). An agent running several microzones is listed once with all of them.': "Solde de la période = total approvisionné − total payé sur les dates choisies uniquement (+ doit encore, − a payé plus : anciennes dettes ou d'avance). Le solde total aujourd'hui couvre toutes les dates et tous les guichets (+ doit à l'entreprise, − l'entreprise lui doit). Un agent qui gère plusieurs microzones apparaît une seule fois avec toutes.",
     'Float supplied (finance)': 'Float approvisionné (finance)',

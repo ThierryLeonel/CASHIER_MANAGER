@@ -213,7 +213,9 @@ def zone_matrix(zone=None):
     for m in sorted(masters.values(), key=lambda x: x["zone"].name):
         rows = sorted(m["rows"].values(), key=lambda r: (r["master_level"], r["label"] or ""))
         out.append({"zone": m["zone"], "totals": [m["totals"][k] for k in KIND_ORDER],
-                    "rows": [dict(r, totals=[r["totals"][k] for k in KIND_ORDER]) for r in rows]})
+                    "total": sum(m["totals"][k] for k in KIND_ORDER),
+                    "rows": [dict(r, totals=[r["totals"][k] for k in KIND_ORDER],
+                                  total=sum(r["totals"][k] for k in KIND_ORDER)) for r in rows]})
     grand = [sum(z["totals"][i] for z in out) for i in range(len(KIND_ORDER))]
     return out, grand, Zone.objects.filter(parent__isnull=True)
 
@@ -264,6 +266,7 @@ def dashboard(request):
     ctx["zone"] = zone
     ctx["junior"] = user.is_junior
     ctx["grand"] = [(k, Account.Kind(k).label, v) for k, v in zip(KIND_ORDER, grand)]
+    ctx["grand_values"], ctx["grand_total"] = grand, sum(grand)
     ctx["kind_labels"] = [Account.Kind(k).label for k in KIND_ORDER]
     banks = list(Account.objects.filter(kind=Account.Kind.BANK, active=True).select_related("bank"))
     bb = asset_balances(banks)

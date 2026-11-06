@@ -1919,6 +1919,9 @@ msgstr "L'entreprise reçoit"
 msgid "Company sims › Add"
 msgstr "SIM de l'entreprise › Ajouter"
 
+msgid "Company total"
+msgstr "Total de l'entreprise"
+
 msgid "Completed legs"
 msgstr "Volets effectués"
 
@@ -6329,6 +6332,9 @@ msgstr "Total (FCFA)"
 
 msgid "Total amount"
 msgstr "Montant total"
+
+msgid "Total balance"
+msgstr "Solde total"
 
 msgid "Total balance today, all desks (+ owes, − credit)"
 msgstr "Solde total aujourd'hui, tous guichets (+ doit, − crédit)"
