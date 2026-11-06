@@ -2490,6 +2490,9 @@ msgstr "Détails"
 msgid "Difference"
 msgstr "Écart"
 
+msgid "Difference in the period"
+msgstr "Différence sur la période"
+
 msgid "Differences"
 msgstr "Écarts"
 
@@ -2572,6 +2575,10 @@ msgstr "ER reçu"
 
 msgid "ER stock"
 msgstr "Stock ER"
+
+#, python-format
+msgid "ER stock: out of stock below %(n)s, low stock below %(l)s FCFA."
+msgstr "Stock ER : en rupture sous %(n)s, stock faible sous %(l)s FCFA."
 
 #, python-format
 msgid ""
@@ -3246,6 +3253,9 @@ msgstr "Numéros IMEI / série"
 msgid "IMEI or serial number"
 msgstr "IMEI ou numéro de série"
 
+msgid "IN STOCK"
+msgstr "EN STOCK"
+
 msgid "Identification"
 msgstr "Pièce d'identité"
 
@@ -3410,6 +3420,9 @@ msgstr "Manager junior"
 msgid "Keep this page open until it finishes."
 msgstr "Gardez cette page ouverte jusqu'à la fin."
 
+msgid "LOW STOCK"
+msgstr "STOCK FAIBLE"
+
 msgid "Last"
 msgstr "Dernier"
 
@@ -3500,6 +3513,9 @@ msgstr "Se déconnecter maintenant"
 
 msgid "Logo"
 msgstr "Logo"
+
+msgid "Low stock"
+msgstr "Stock faible"
 
 msgid "MISMATCH"
 msgstr "ÉCART"
@@ -3948,6 +3964,9 @@ msgstr "Aucune note pour l'instant."
 msgid "No number registered"
 msgstr "Aucun numéro enregistré"
 
+msgid "No office supply or payment in this period."
+msgstr "Aucun approvisionnement ni paiement du bureau sur la période."
+
 msgid "No office supply."
 msgstr "Aucun approvisionnement du bureau."
 
@@ -3959,6 +3978,9 @@ msgstr "Aucun remboursement sur la période."
 
 msgid "No payback yet."
 msgstr "Aucun remboursement pour l'instant."
+
+msgid "No payment in this period."
+msgstr "Aucun paiement sur la période."
 
 msgid "No shift in this period."
 msgstr "Aucun service sur cette période."
@@ -4144,6 +4166,9 @@ msgstr "OK — envoyé égale reçu"
 msgid "OM account name"
 msgstr "Nom du compte OM"
 
+msgid "OM stock"
+msgstr "Stock OM"
+
 msgid "OOS"
 msgstr "OOS"
 
@@ -4161,6 +4186,9 @@ msgstr "Approvisionnements du bureau"
 
 msgid "Office supplies of the day"
 msgstr "Approvisionnements du bureau du jour"
+
+msgid "Office supply vs payments"
+msgstr "Approvisionnement du bureau vs paiements"
 
 msgid "On a computer the dialpad cannot open: dial the code on your phone."
 msgstr ""
@@ -4669,6 +4697,9 @@ msgstr "Soldes des POS par sous-zone"
 msgid "POS business SIM"
 msgstr "SIM business du POS"
 
+msgid "POS low stock when ER stock is below (FCFA)"
+msgstr "POS en stock faible quand le stock ER est sous (FCFA)"
+
 msgid "POS number"
 msgstr "Numéro du POS"
 
@@ -4808,6 +4839,9 @@ msgstr "Payé aux agents"
 msgid "Paid to cashiers"
 msgstr "Payé aux caissiers"
 
+msgid "Paid to the office"
+msgstr "Payé au bureau"
+
 msgid "Paid with"
 msgstr "Payé avec"
 
@@ -4932,6 +4966,9 @@ msgstr "Paiements confirmés"
 
 msgid "Payments received: cash, UVE, MTN, bank"
 msgstr "Paiements reçus : espèces, UVE, MTN, banque"
+
+msgid "Payments to the office"
+msgstr "Paiements au bureau"
 
 msgid "Per agent / POS over the period"
 msgstr "Par agent / POS sur la période"
@@ -5105,6 +5142,9 @@ msgstr "Recevoir des unités en stock"
 
 msgid "Received"
 msgstr "Reçu"
+
+msgid "Received by"
+msgstr "Reçu par"
 
 msgid "Received by POS"
 msgstr "Reçu par le PDV"
@@ -6037,6 +6077,9 @@ msgstr "Approvisionné et payé sur la période"
 
 msgid "Supplied by cashiers"
 msgstr "Approvisionné par les caissiers"
+
+msgid "Supplied by the office"
+msgstr "Approvisionné par le bureau"
 
 msgid "Supplied cash"
 msgstr "Espèces approvisionnées"
@@ -8083,6 +8126,9 @@ msgstr "l'agent doit à la boutique"
 
 msgid "the shop owes the agent"
 msgstr "la boutique doit à l'agent"
+
+msgid "today"
+msgstr "aujourd'hui"
 
 msgid "total"
 msgstr "total"

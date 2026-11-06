@@ -586,3 +586,25 @@ table.t tr.oos td { background: #fff1f0; }
 .move-bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .move-bar select { min-width: 220px; }
 .stock-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 12px; }
+
+/* OOS: one card per POS (phone first) */
+.lvl-tabs { display: flex; gap: 6px; overflow-x: auto; margin: 6px 0 10px; }
+.lvl-tabs a { flex: 0 0 auto; padding: 7px 12px; border-radius: 999px; border: 1px solid var(--line, #ddd); background: var(--card, #fff); color: inherit; text-decoration: none; font-size: .9rem; white-space: nowrap; }
+.lvl-tabs a.on { border-color: currentColor; font-weight: 600; }
+.lvl-tabs .lvl-out { color: #b42318; } .lvl-tabs .lvl-low { color: #b54708; } .lvl-tabs .lvl-in { color: #067647; }
+.oos-search { display: flex; gap: 6px; margin-bottom: 10px; }
+.oos-search input { flex: 1; min-width: 0; }
+.pos-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; }
+.pos-card { background: var(--card, #fff); border: 1px solid var(--line, #e5e5e5); border-left: 5px solid #98a2b3; border-radius: 10px; padding: 10px 12px; }
+.pos-card.lvl-out { border-left-color: #d92d20; } .pos-card.lvl-low { border-left-color: #f79009; } .pos-card.lvl-in { border-left-color: #17b26a; }
+.pos-card .pos-name { display: block; font-weight: 700; font-size: 1.02rem; color: inherit; text-decoration: none; text-transform: uppercase; }
+.pos-card .pos-biz { font-size: .88rem; color: var(--muted, #667085); }
+.pos-card .pos-sim { font-size: .8rem; color: var(--muted, #667085); margin-top: 2px; }
+.pos-card .pos-stock { display: grid; grid-template-columns: repeat(3, 1fr); margin: 8px 0; border-top: 1px solid var(--line, #eee); border-bottom: 1px solid var(--line, #eee); }
+.pos-card .pos-stock span { padding: 6px 4px; font-weight: 600; font-variant-numeric: tabular-nums; text-align: center; }
+.pos-card .pos-stock span + span { border-left: 1px solid var(--line, #eee); }
+.pos-card .pos-stock small { display: block; font-weight: 400; font-size: .7rem; color: var(--muted, #667085); text-transform: uppercase; }
+.pos-card .pos-foot { display: flex; justify-content: space-between; align-items: center; }
+.pos-card .pos-lvl { font-weight: 700; font-size: .85rem; letter-spacing: .02em; color: #667085; }
+.pos-card.lvl-out .pos-lvl { color: #b42318; } .pos-card.lvl-low .pos-lvl { color: #b54708; } .pos-card.lvl-in .pos-lvl { color: #067647; }
+.pos-card.fixed { margin-bottom: 12px; }

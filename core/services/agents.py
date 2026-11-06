@@ -509,6 +509,12 @@ def office_supplies(agent):
         .select_related("counterparty_2", "zone", "entered_by").order_by("-posted_at")
 
 
+def office_payments(agent):
+    """What the agent paid the office (payments recorded by a cashier / finance, confirmed paybacks)."""
+    return Transaction.objects.filter(type=TxType.COLLECTION, counterparty=agent, correction__isnull=True) \
+        .select_related("zone", "entered_by").order_by("-posted_at")
+
+
 def _flows(agent, d_from=None, d_to=None):
     """Stock movements per product between two dates (inclusive; None = open-ended)."""
     def rng(qs, field):

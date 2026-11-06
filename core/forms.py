@@ -788,7 +788,7 @@ class CompanyProfileForm(forms.ModelForm):
 
         model = CompanyProfile
         fields = ["name", "tagline", "address", "city", "phone", "email", "tax_id", "trade_register",
-                  "receipt_footer", "out_of_stock_er"]
+                  "receipt_footer", "out_of_stock_er", "low_stock_er"]
         help_texts = {
             "name": _("Shown in the menu, on the login page, receipts and every report."),
             "tagline": _("Short line under the name in the menu. Leave empty for none."),
@@ -798,6 +798,11 @@ class CompanyProfileForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["out_of_stock_er"].required = False
+        self.fields["low_stock_er"].required = False
+
+    def clean_low_stock_er(self):
+        v = self.cleaned_data.get("low_stock_er")
+        return self.instance.low_stock_er if v is None else v
 
     def clean_out_of_stock_er(self):
         v = self.cleaned_data.get("out_of_stock_er")

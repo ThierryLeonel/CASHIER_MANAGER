@@ -1,20 +1,31 @@
 {% extends "core/base.html" %}{% load i18n cashier %}
-{% block title %}{% trans "Office supplies" %}{% endblock %}
-{% block topbar %}{% trans "Office supplies" %}{% endblock %}
+{% block title %}{% trans "Office supply vs payments" %}{% endblock %}
+{% block topbar %}{% trans "Office supply vs payments" %}{% endblock %}
 {% block content %}
-<h1>{% trans "Office supplies" %}</h1>
-<p class="small muted">{% trans "Every supply and destockage the office recorded on your account, also those delivered straight to a POS for you." %}</p>
+<h1>{% trans "Office supply vs payments" %}</h1>
+<div class="bal-row">
+  <div class="bal k-UVE"><span class="bal-label">{% trans "Supplied by the office" %}</span><span class="bal-value">{{ totals.supplied|fcfa }}</span><span class="bal-unit">FCFA</span></div>
+  <div class="bal k-MTN"><span class="bal-label">{% trans "Paid to the office" %}</span><span class="bal-value">{{ totals.paid|fcfa }}</span><span class="bal-unit">FCFA</span></div>
+  <div class="bal k-ER"><span class="bal-label">{% trans "Difference in the period" %}</span><span class="bal-value">{{ totals.net|fcfa }}</span><span class="bal-unit">FCFA</span></div>
+  <div class="bal k-TOTAL"><span class="bal-label">{% if s.owed_company|negative %}{% trans "The company owes you" %}{% else %}{% trans "I owe the company" %}{% endif %}</span><span class="bal-value">{{ s.owed_company|absval|fcfa }}</span><span class="bal-unit">{% trans "today" %}</span></div>
+</div>
 <form class="filters panel" method="get">
   <div class="field"><label>{% trans "From" %}</label><input type="date" name="from" value="{{ d_from|date:'Y-m-d' }}"></div>
   <div class="field"><label>{% trans "To" %}</label><input type="date" name="to" value="{{ d_to|date:'Y-m-d' }}"></div>
   <div class="field"><button class="btn" type="submit">{% trans "Apply" %}</button></div>
 </form>
 <h2>{% trans "Per day" %}</h2>
-<div class="tbl-wrap"><table class="t"><thead><tr><th>{% trans "Day" %}</th><th class="money">UVE</th><th class="money">ER</th><th class="money">{% trans "Cash" %}</th><th class="money">{% trans "Destockage" %}</th><th class="money">{% trans "Total" %}</th></tr></thead>
-<tbody>{% for r in days %}<tr><td><a href="{% url 'agent_daily' %}?date={{ r.day|date:'Y-m-d' }}">{{ r.day|date:"D d/m/Y" }}</a></td><td class="money">{{ r.UVE|fcfa }}</td><td class="money">{{ r.ER|fcfa }}</td><td class="money">{{ r.CASH|fcfa }}</td><td class="money">{{ r.DESTOCK|fcfa }}</td><td class="money"><strong>{{ r.total|fcfa }}</strong></td></tr>
-{% empty %}<tr><td colspan="6" class="muted">{% trans "No office supply." %}</td></tr>{% endfor %}</tbody>
-{% if days %}<tfoot><tr><th>{% trans "Total" %}</th><th class="money">{{ totals.UVE|fcfa }}</th><th class="money">{{ totals.ER|fcfa }}</th><th class="money">{{ totals.CASH|fcfa }}</th><th class="money">{{ totals.DESTOCK|fcfa }}</th><th class="money">{{ totals.total|fcfa }}</th></tr></tfoot>{% endif %}</table></div>
-<h2>{% trans "All records" %}</h2>
+<div class="tbl-wrap"><table class="t report-t"><thead>
+<tr><th rowspan="2">{% trans "Day" %}</th><th colspan="5" class="grp">{% trans "Supplied by the office" %}</th><th colspan="4" class="grp">{% trans "Paid to the office" %}</th><th rowspan="2" class="money">{% trans "Difference" %}</th></tr>
+<tr><th class="money">UVE</th><th class="money">ER</th><th class="money">{% trans "Cash" %}</th><th class="money">{% trans "Destockage" %}</th><th class="money">{% trans "Total" %}</th><th class="money">{% trans "Cash" %}</th><th class="money">UVE</th><th class="money">{% trans "Float" %}</th><th class="money">{% trans "Total" %}</th></tr></thead>
+<tbody>{% for r in days %}<tr><td><a href="{% url 'agent_daily' %}?date={{ r.day|date:'Y-m-d' }}">{{ r.day|date:"D d/m/Y" }}</a></td><td class="money">{{ r.UVE|fcfa }}</td><td class="money">{{ r.ER|fcfa }}</td><td class="money">{{ r.CASH|fcfa }}</td><td class="money">{{ r.DESTOCK|fcfa }}</td><td class="money"><strong>{{ r.supplied|fcfa }}</strong></td><td class="money">{{ r.p_CASH|fcfa }}</td><td class="money">{{ r.p_UVE|fcfa }}</td><td class="money">{{ r.p_MTN|fcfa }}</td><td class="money"><strong>{{ r.paid|fcfa }}</strong></td><td class="money{% if r.net|negative %} neg{% endif %}"><strong>{{ r.net|fcfa }}</strong></td></tr>
+{% empty %}<tr><td colspan="11" class="muted">{% trans "No office supply or payment in this period." %}</td></tr>{% endfor %}</tbody>
+{% if days %}<tfoot><tr class="grand-row"><th>{% trans "Total" %}</th><th class="money">{{ totals.UVE|fcfa }}</th><th class="money">{{ totals.ER|fcfa }}</th><th class="money">{{ totals.CASH|fcfa }}</th><th class="money">{{ totals.DESTOCK|fcfa }}</th><th class="money">{{ totals.supplied|fcfa }}</th><th class="money">{{ totals.p_CASH|fcfa }}</th><th class="money">{{ totals.p_UVE|fcfa }}</th><th class="money">{{ totals.p_MTN|fcfa }}</th><th class="money">{{ totals.paid|fcfa }}</th><th class="money">{{ totals.net|fcfa }}</th></tr></tfoot>{% endif %}</table></div>
+<h2>{% trans "Payments to the office" %}</h2>
+<div class="tbl-wrap"><table class="t"><thead><tr><th>{% trans "Date" %}</th><th>{% trans "Ref." %}</th><th>{% trans "Paid in" %}</th><th>{% trans "Received by" %}</th><th class="money">{% trans "Amount" %}</th></tr></thead>
+<tbody>{% for t in payments %}<tr><td class="small">{{ t.posted_at|date:"d/m/Y H:i" }}</td><td class="keep">{{ t.reference }}</td><td class="small">{{ t.get_payment_method_display }}</td><td class="small">{{ t.zone.name|default:"" }}{% if t.entered_by %} · {{ t.entered_by.get_full_name|default:t.entered_by.username }}{% endif %}</td><td class="money">{{ t.amount|fcfa }}</td></tr>
+{% empty %}<tr><td colspan="5" class="muted">{% trans "No payment in this period." %}</td></tr>{% endfor %}</tbody></table></div>
+<h2>{% trans "Office supplies" %}</h2>
 {% include "core/agent/inc/office_supply_rows.html" with rows=page %}
 <div class="pager">{% if page.has_previous %}<a class="btn small" href="?from={{ d_from|date:'Y-m-d' }}&to={{ d_to|date:'Y-m-d' }}&page={{ page.previous_page_number }}">←</a>{% endif %}<span class="muted small">{{ page.number }} / {{ page.paginator.num_pages }}</span>{% if page.has_next %}<a class="btn small" href="?from={{ d_from|date:'Y-m-d' }}&to={{ d_to|date:'Y-m-d' }}&page={{ page.next_page_number }}">→</a>{% endif %}</div>
 {% endblock %}

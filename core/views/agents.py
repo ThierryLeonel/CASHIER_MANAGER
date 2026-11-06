@@ -104,7 +104,7 @@ def agent_oos(request):
     from core.services.branding import company
 
     agent = request.user.counterparty
-    limit = company().out_of_stock_er
+    limit, low = company().out_of_stock_er, company().low_stock_er
     mine = Counterparty.objects.filter(kind=Counterparty.Kind.POS, active=True, microzone__agent=agent) \
         .select_related("microzone")
     q = (request.GET.get("q") or "").strip()
@@ -115,8 +115,13 @@ def agent_oos(request):
         if digits:
             cond |= Q(business_sim__contains=digits[-9:])
         qs = qs.filter(cond)
-    if request.GET.get("out") == "1":
+    level = request.GET.get("level") or ("OUT" if request.GET.get("out") == "1" else "")
+    if level == "OUT":
         qs = qs.filter(er_stock__lt=limit)
+    elif level == "LOW":
+        qs = qs.filter(er_stock__gte=limit, er_stock__lt=low)
+    elif level == "IN":
+        qs = qs.filter(er_stock__gte=low)
     qs = qs.order_by(F("er_stock").asc(nulls_last=True), F("uve_stock").asc(nulls_last=True), "name")
     page = Paginator(qs, 200).get_page(request.GET.get("page"))
     tot = mine.aggregate(er=Sum("er_stock"), uve=Sum("uve_stock"), com=Sum("commission_balance"))
@@ -124,10 +129,11 @@ def agent_oos(request):
     keep = request.GET.copy()
     keep.pop("page", None)
     return render(request, "core/agent/oos.html", {
-        "page": page, "rows": [(p, p.out_of_stock(limit)) for p in page], "limit": limit, "q": q,
-        "out": request.GET.get("out") == "1", "keep": keep.urlencode(), "last": last, "tot": tot,
+        "page": page, "rows": [(p, p.stock_level(limit, low)) for p in page], "limit": limit, "low": low, "q": q,
+        "level": level, "out": level == "OUT", "keep": keep.urlencode(), "last": last, "tot": tot,
         "n_pos": mine.count(), "n_out": mine.filter(er_stock__lt=limit).count(),
-        "n_unknown": mine.filter(stock_at=None).count()})
+        "n_low": mine.filter(er_stock__gte=limit, er_stock__lt=low).count(),
+        "n_in": mine.filter(er_stock__gte=low).count(), "n_unknown": mine.filter(er_stock=None).count()})
 
 
 @roles_required(R.AGENT)
@@ -184,6 +190,21 @@ def _entry_form(request, form_class, fn, *, title, icon, ok_msg, code_of=None, l
     elif g.get("phone"):
         initial = {"client_kind": "OTHER", "client_phone": g["phone"]}
     form = form_class(request.user, request.POST or None, initial=initial)
+    fixed_pos = None
+    pos_sim = (request.POST.get("fixed_pos") or g.get("pos") or "") if "client_kind" in form.fields else ""
+    if pos_sim:  # opened from OOS / a POS page: the client is this POS, nothing to choose
+        fixed_pos = Counterparty.objects.filter(kind=Counterparty.Kind.POS, business_sim=ag._norm(pos_sim)).first()
+        if fixed_pos:
+            from django import forms as djforms
+
+            form.fields["client_kind"].widget = djforms.HiddenInput()
+            form.fields["pos_sim"].widget = djforms.HiddenInput()
+            for n in ("shop", "client_phone"):
+                form.fields.pop(n, None)
+            if not form.is_bound:
+                form.initial.update({"client_kind": "POS", "pos_sim": fixed_pos.business_sim})
+                if "product" in form.fields:
+                    form.initial["product"] = "ER"  # out of stock = out of ER
     if request.method == "POST":
         if form.is_valid():
             try:
@@ -202,8 +223,12 @@ def _entry_form(request, form_class, fn, *, title, icon, ok_msg, code_of=None, l
                 return redirect(request.path)
         if _wants_json(request):
             return _json_errors(form)
+    from core.services.branding import company
+
+    co = company()
     ctx = {"form": form, "title": title, "icon": icon, "labels": labels or {},
-           "pos_lookup": "pos_sim" in form.fields}
+           "pos_lookup": "pos_sim" in form.fields and not fixed_pos, "fixed_pos": fixed_pos,
+           "fixed_level": fixed_pos.stock_level(co.out_of_stock_er, co.low_stock_er) if fixed_pos else None}
     ctx.update(extra or {})
     return render(request, "core/agent/form.html", ctx)
 
@@ -319,18 +344,28 @@ def agent_office(request):
     agent = request.user.counterparty
     d_from, d_to = _period(request)
     qs = ag.office_supplies(agent).filter(business_date__gte=d_from, business_date__lte=d_to)
+    pays = ag.office_payments(agent).filter(business_date__gte=d_from, business_date__lte=d_to)
+    keys = ("UVE", "ER", "CASH", "DESTOCK", "supplied", "p_CASH", "p_UVE", "p_MTN", "paid", "net")
     per_day = {}
+
+    def day(d):
+        return per_day.setdefault(d, {"day": d, **{k: 0 for k in keys}})
     for t in qs:
-        row = per_day.setdefault(t.business_date, {"day": t.business_date, "UVE": 0, "ER": 0, "CASH": 0,
-                                                   "DESTOCK": 0, "total": 0})
-        key = "DESTOCK" if t.type == "DESTOCKAGE" else t.product
-        row[key] += t.amount
-        row["total"] += t.amount
+        row = day(t.business_date)
+        row["DESTOCK" if t.type == "DESTOCKAGE" else t.product] += t.amount
+        row["supplied"] += t.amount
+    for t in pays:
+        row = day(t.business_date)
+        m = t.payment_method if t.payment_method in ("CASH", "UVE", "MTN") else "CASH"
+        row[f"p_{m}"] += t.amount
+        row["paid"] += t.amount
+    for r in per_day.values():
+        r["net"] = r["supplied"] - r["paid"]
     days = sorted(per_day.values(), key=lambda r: r["day"], reverse=True)
-    totals = {k: sum(r[k] for r in days) for k in ("UVE", "ER", "CASH", "DESTOCK", "total")}
+    totals = {k: sum(r[k] for r in days) for k in keys}
     return render(request, "core/agent/office.html", {
         "days": days, "totals": totals, "page": Paginator(qs, 50).get_page(request.GET.get("page")),
-        "d_from": d_from, "d_to": d_to})
+        "payments": pays[:100], "s": ag.summary(agent), "d_from": d_from, "d_to": d_to})
 
 
 TABS = (("clients", _l("My clients")), ("agents", _l("Agents")), ("paybacks", _l("My paybacks")),

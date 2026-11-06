@@ -11,9 +11,16 @@
   {% if s.pending %}<div><span>{% trans "Waiting for confirmation" %}</span><strong>{{ s.pending_total|fcfa }}</strong></div>{% endif %}
 </div>{% endif %}
 <div id="agent-msg" class="agent-msg" aria-live="polite"></div>
+{% if fixed_pos %}<div class="pos-card fixed{% if fixed_level %} lvl-{{ fixed_level|lower }}{% endif %}">
+  <div class="pos-name">{{ fixed_pos.name }}</div>
+  {% if fixed_pos.om_account_name and fixed_pos.om_account_name != fixed_pos.name %}<div class="pos-biz">{{ fixed_pos.om_account_name }}</div>{% endif %}
+  <div class="pos-sim">{{ fixed_pos.business_sim|sim }}{% if fixed_pos.microzone %} · {{ fixed_pos.microzone.name }}{% endif %}</div>
+  {% if fixed_pos.stock_at %}<div class="pos-stock"><span><small>ER</small>{{ fixed_pos.er_stock|default_if_none:"—"|fcfa }}</span><span><small>OM</small>{{ fixed_pos.uve_stock|default_if_none:"—"|fcfa }}</span><span><small>{% trans "Commission" %}</small>{{ fixed_pos.commission_balance|default_if_none:"—"|fcfa }}</span></div>{% endif %}
+</div>{% endif %}
 <div class="panel">
 <form method="post" class="entry agent-form" novalidate id="agent-form"
-      data-dial="{{ labels.dial|default:'' }}" data-plain="{{ labels.plain|default:'' }}">{% csrf_token %}
+      data-dial="{{ labels.dial|default:'' }}" data-plain="{{ labels.plain|default:'' }}" data-fixed="{{ fixed_pos.business_sim|default:'' }}">{% csrf_token %}
+  {% if fixed_pos %}<input type="hidden" name="fixed_pos" value="{{ fixed_pos.business_sim }}">{% endif %}
   {% include "core/inc/fields.html" %}
   <div class="form-foot">
     <button type="submit" class="btn primary big" id="submit-btn">{% trans "Record" %}</button>
@@ -76,7 +83,7 @@
   function syncKind() {
     var groups = [[kinds, ['pos_sim', 'shop', 'client_phone']], [tos, ['desk', 'shop']]];
     groups.forEach(function (g) {
-      if (!g[0].length) return;
+      if (!g[0].length || g[0][0].type === 'hidden') return;
       g[0][0].closest('.field').classList.add('choice-pills');
       var k = (form.querySelector('input[name=' + g[0][0].name + ']:checked') || g[0][0]).value;
       var want = k === 'SHOP' ? ['shop'] : showFor[k] || [];
@@ -168,7 +175,8 @@
         }
         ['amount', 'paid_cash', 'paid_uve', 'paid_mtn', 'cash', 'uve', 'mtn', 'note', 'reference', 'pos_sim',
          'client_phone', 'agent_sim', 'other_phone'].forEach(function (n) {
-          var el = $(n); if (el) { el.value = ''; el.dispatchEvent(new Event('input')); }
+          var el = $(n); if (!el || (n === 'pos_sim' && form.dataset.fixed)) return;  // the chosen POS stays
+          el.value = ''; el.dispatchEvent(new Event('input'));
         });
         $('idem').value = d.idem;
         var tel = d.code ? 'tel:' + d.code.replace(/#/g, '%23') : '';

@@ -408,6 +408,12 @@ class Counterparty(models.Model):
     def sim_display(self):
         return display_sim(self.business_sim)
 
+    def stock_level(self, out_below, low_below):
+        """OUT (ER below the out-of-stock limit), LOW (below the low-stock limit), IN, or None (no stock imported)."""
+        if self.er_stock is None:
+            return None
+        return "OUT" if self.er_stock < out_below else ("LOW" if self.er_stock < low_below else "IN")
+
     def out_of_stock(self, threshold):
         """Out of stock when the last imported ER stock is below the company threshold (no import: unknown)."""
         return self.er_stock is not None and self.er_stock < threshold
@@ -606,6 +612,8 @@ class CompanyProfile(models.Model):
     receipt_footer = models.CharField(_("receipt footer"), max_length=255, blank=True)
     out_of_stock_er = models.DecimalField(_("POS out of stock when ER stock is below (FCFA)"), max_digits=14,
                                           decimal_places=0, default=2000)
+    low_stock_er = models.DecimalField(_("POS low stock when ER stock is below (FCFA)"), max_digits=14,
+                                       decimal_places=0, default=5000)
     logo = models.BinaryField(null=True, blank=True, editable=False)
     logo_updated = models.DateTimeField(null=True, blank=True, editable=False)
     updated_at = models.DateTimeField(auto_now=True)

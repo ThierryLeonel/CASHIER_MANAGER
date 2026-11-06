@@ -3,6 +3,7 @@ import io
 import uuid
 
 from django.test import TestCase
+from django.utils import timezone
 
 from core.models import AgentClientEntry, AgentPayback, Transaction, TxType
 from core.services import agents as ag
@@ -479,3 +480,35 @@ class PosStock(OrgMixin, TestCase):
                                                                                                 flat=True))
         self.assertTrue(sims <= mine)
         self.assertContains(c.get("/"), "Global POS")
+
+    def test_oos_levels_fixed_pos_supply_and_office_vs_payments(self):
+        from core.models import Counterparty, MicroZone
+
+        mz = MicroZone.objects.create(subzone=MicroZone.objects.first().subzone, name="Levels", agent=self.a1)
+        pos = {lvl: Counterparty.objects.create(kind="POS", business_sim=f"69700000{i}", name=f"P {lvl}",
+                                                microzone=mz, er_stock=D(er), uve_stock=D(1), commission_balance=D(1),
+                                                stock_at=timezone.now())
+               for i, (lvl, er) in enumerate((("OUT", 1500), ("LOW", 3000), ("IN", 9000)))}
+        c = self.client_class()
+        c.login(username=self.agent_user.username, password=PW)
+        r = c.get("/agent/oos/")
+        levels = {p.name: lvl for p, lvl in r.context["rows"]}
+        self.assertEqual((levels["P OUT"], levels["P LOW"], levels["P IN"]), ("OUT", "LOW", "IN"))
+        self.assertContains(r, "LOW STOCK")
+        self.assertEqual([p.name for p, _l in c.get("/agent/oos/?level=LOW").context["rows"]], ["P LOW"])
+        # supply from OOS: the POS is fixed, no client choice
+        r = c.get(f"/agent/supply/?pos={pos['OUT'].business_sim}")
+        self.assertEqual(r.context["fixed_pos"], pos["OUT"])
+        self.assertNotContains(r, 'name="client_kind" value="SHOP"')
+        r = c.post(f"/agent/supply/?pos={pos['OUT'].business_sim}",
+                   {"idem": str(uuid.uuid4()), "client_kind": "POS", "pos_sim": pos["OUT"].business_sim,
+                    "fixed_pos": pos["OUT"].business_sim, "product": "ER", "amount": "5000"},
+                   HTTP_X_REQUESTED_WITH="fetch")
+        self.assertTrue(r.json()["ok"], r.content)
+        # office supply vs payments
+        ops.record_supply(self.c_f1, product="UVE", customer=self.a1, amount=D(10000), source_account=self.uve_f1)
+        ops.record_payment(self.c_f1, payer=self.a1, parts={"CASH": D(4000)})
+        r = c.get("/agent/office/")
+        self.assertContains(r, "Office supply vs payments")
+        self.assertEqual((r.context["totals"]["supplied"], r.context["totals"]["paid"], r.context["totals"]["net"]),
+                         (D(10000), D(4000), D(6000)))
