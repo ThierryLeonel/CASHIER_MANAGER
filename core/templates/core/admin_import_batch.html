@@ -1,0 +1,49 @@
+{% extends "core/base.html" %}{% load i18n cashier %}
+{% block title %}{% trans "Import CSV / Excel" %}{% endblock %}
+{% block topbar %}{% trans "Import CSV / Excel" %}{% endblock %}
+{% block content %}
+<p><a href="{% url 'import_data' %}">← {% trans "Import CSV / Excel" %}</a></p>
+<h1>{{ b.file_name }}</h1>
+<p class="muted small meta">{{ label }} · {{ b.total }} {% trans "rows" %} · {{ b.created_at|date:"d/m/Y H:i" }}</p>
+<div class="panel" id="imp" data-step="{% url 'import_step' b.pk %}" data-running="{{ state.running|yesno:'1,' }}">
+  <h2 style="margin-top:0" id="imp-title">{% if b.stage == 'CHECK' %}{% trans "Checking every row…" %}{% elif b.stage == 'CHECKED' %}{% trans "Check passed: ready to import" %}{% elif b.stage == 'IMPORT' %}{% trans "Importing…" %}{% elif b.stage == 'DONE' %}{% trans "Import finished" %}{% else %}{% trans "Some rows have errors" %}{% endif %}</h2>
+  <div class="progress"><div class="progress-bar" id="imp-bar" style="width:{% widthratio b.position b.total 100 %}%"></div></div>
+  <p id="imp-count" class="small">{{ b.position }} / {{ b.total }}{% if b.imported %} · {% blocktrans with n=b.imported %}{{ n }} imported{% endblocktrans %}{% endif %}</p>
+  <p id="imp-keep" class="small muted meta"{% if not state.running %} hidden{% endif %}>{% trans "Keep this page open until it finishes." %}</p>
+  {% if b.stage == 'CHECKED' %}<form method="post" action="{% url 'import_step' b.pk %}" class="form-foot">{% csrf_token %}<input type="hidden" name="action" value="confirm"><button class="btn primary">{% blocktrans with n=b.total %}Confirm import of {{ n }} rows{% endblocktrans %}</button><a class="btn" href="{% url 'import_data' %}">{% trans "Cancel" %}</a></form>{% endif %}
+  {% if b.stage == 'FAILED' %}<p class="msg error">{% if b.imported %}{% blocktrans with n=b.imported %}The import stopped: {{ n }} rows were imported before the error. Fix the rows below and upload the rest again.{% endblocktrans %}{% else %}{% trans "Nothing was imported. Fix the rows below and upload the file again." %}{% endif %}</p>{% endif %}
+  {% if b.stage == 'DONE' %}<p class="msg success">{% blocktrans with n=b.imported %}{{ n }} rows imported.{% endblocktrans %}</p>{% endif %}
+  <noscript>{% if state.running %}<form method="post" action="{% url 'import_step' b.pk %}">{% csrf_token %}<button class="btn primary">{% trans "Continue" %}</button></form>{% endif %}</noscript>
+</div>
+{% if b.errors %}<h2>{% trans "Rows with errors" %} ({{ b.errors|length }}{% if b.errors|length >= 500 %}+{% endif %})</h2>
+<div class="tbl-wrap"><table class="t"><thead><tr><th>{% trans "Row" %}</th><th>{% trans "Details" %}</th></tr></thead>
+<tbody>{% for n, msg in b.errors %}<tr><td>{{ n }}</td><td>{{ msg }}</td></tr>{% endfor %}</tbody></table></div>
+{% elif b.preview and b.stage == 'CHECKED' %}<h2>{% trans "Preview (first rows)" %}</h2>
+<div class="tbl-wrap"><table class="t"><thead><tr><th>{% trans "Row" %}</th><th>{% trans "Details" %}</th></tr></thead>
+<tbody>{% for n, msg in b.preview %}<tr><td>{{ n }}</td><td>{{ msg }}</td></tr>{% endfor %}</tbody></table></div>{% endif %}
+{% endblock %}
+{% block scripts %}
+<script>
+(function () {
+  var box = document.getElementById('imp');
+  if (!box.dataset.running || !window.fetch) return;
+  var csrf = (document.cookie.match(/csrftoken=([^;]+)/) || [])[1] || '{{ csrf_token }}';
+  var bar = document.getElementById('imp-bar'), count = document.getElementById('imp-count');
+  var fails = 0;
+  function step() {
+    fetch(box.dataset.step, {method: 'POST', credentials: 'same-origin',
+                             headers: {'X-CSRFToken': csrf, 'X-Requested-With': 'fetch'}})
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        fails = 0;
+        bar.style.width = (d.total ? Math.round(100 * d.position / d.total) : 100) + '%';
+        count.textContent = d.position + ' / ' + d.total + (d.imported ? ' · ' + d.imported + ' {{ _("imported")|escapejs }}' : '') +
+                            (d.errors ? ' · ' + d.errors + ' {{ _("errors")|escapejs }}' : '');
+        if (d.running) step(); else location.reload();
+      })
+      .catch(function () { if (++fails < 5) setTimeout(step, 3000); else location.reload(); });
+  }
+  step();
+})();
+</script>
+{% endblock %}

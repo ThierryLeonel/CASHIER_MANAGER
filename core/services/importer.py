@@ -26,7 +26,9 @@ from . import permissions as perm
 from .errors import BusinessError
 from .ledger import Ctx, post
 
-MAX_ROWS = 5000
+MAX_ROWS = 50000
+STEP_SECONDS = 8  # each step stops after about this long, far below the web gateway timeout
+STEP_ROWS = 500
 K = Account.Kind
 K_AGENT = Counterparty.Kind.AGENT
 
@@ -133,10 +135,20 @@ def read_rows(name, content):
     head = [_key(h) for h in rows[0]]
     data = []
     for r in rows[1:]:
-        data.append({head[i]: ("" if v is None else v) for i, v in enumerate(r) if i < len(head) and head[i]})
+        data.append({head[i]: ("" if v is None else _jsonable(v)) for i, v in enumerate(r) if i < len(head) and head[i]})
     if len(data) > MAX_ROWS:
         raise BusinessError(_("Too many rows (maximum %(n)s per file).") % {"n": MAX_ROWS})
     return data
+
+
+def _jsonable(v):
+    if isinstance(v, datetime):
+        return v.date().isoformat() if (v.hour, v.minute, v.second) == (0, 0, 0) else v.strftime("%Y-%m-%d %H:%M:%S")
+    if isinstance(v, date):
+        return v.isoformat()
+    if isinstance(v, (int, float, str)) or v is None:
+        return v
+    return str(v)
 
 
 def _s(v):
@@ -179,11 +191,21 @@ def _date(v):
     raise BusinessError(_("Invalid date %(v)s (use YYYY-MM-DD or DD/MM/YYYY)") % {"v": t})
 
 
+_CACHE = {}  # lookups reused inside one step (cleared at every step: a rolled-back check must not leak objects)
+
+
 def _microzone(sub, name):
     """Microzone by subzone (code or name) and microzone name; created if it does not exist yet."""
     name, sub = _s(name), _s(sub)
     if not name:
         return None
+    key = ("mz", sub.lower(), name.lower())
+    if key not in _CACHE:
+        _CACHE[key] = _find_microzone(sub, name)
+    return _CACHE[key]
+
+
+def _find_microzone(sub, name):
     if not sub:
         mz = MicroZone.objects.filter(name__iexact=name)
         if mz.count() == 1:
@@ -199,6 +221,13 @@ def _zone(v):
     t = _s(v)
     if not t:
         return None
+    key = ("zone", t.lower())
+    if key not in _CACHE:
+        _CACHE[key] = _find_zone(t)
+    return _CACHE[key]
+
+
+def _find_zone(t):
     z = Zone.objects.filter(parent__isnull=True).filter(code__iexact=t).first() or \
         Zone.objects.filter(parent__isnull=True, name__iexact=t).first()
     if not z:
@@ -288,8 +317,11 @@ def _row_customer(user, r):
     sub_code = _pick(r, "sub_zone", "subzone")
     mz = _microzone(sub_code, _pick(r, "micro_zone", "microzone"))
     if sub_code and zone:
-        sub = Zone.objects.filter(parent__isnull=False).filter(Q(code__iexact=sub_code) | Q(name__iexact=sub_code)) \
-            .first()
+        key = ("sub", sub_code.lower())
+        if key not in _CACHE:
+            _CACHE[key] = Zone.objects.filter(parent__isnull=False).filter(
+                Q(code__iexact=sub_code) | Q(name__iexact=sub_code)).first()
+        sub = _CACHE[key]
         if sub and sub.parent_id != zone.id:
             raise BusinessError(_("Subzone %(sub)s is not in zone %(zone)s") % {"sub": sub_code, "zone": zone.name})
     if not zone and mz:
@@ -317,6 +349,7 @@ def _row_customer(user, r):
 def _take_charge(cp):
     if cp.kind == K_AGENT and cp.microzone_id and cp.microzone.agent_id is None:
         MicroZone.objects.filter(pk=cp.microzone_id).update(agent=cp)
+        cp.microzone.agent_id = cp.pk  # the cached microzone knows its agent for the next rows
 
 
 def _row_cash_manager(user, r):
@@ -602,16 +635,18 @@ class _Rollback(Exception):
     pass
 
 
-def run_import(user, kind, rows, *, commit):
-    """Returns (results, ok). results: [(row_number, ok, message)]."""
+def run_import(user, kind, rows, *, commit, start=2):
+    """Returns (results, ok). results: [(row_number, ok, message)]. Everything or nothing: one error rolls the whole
+    call back. `start` = sheet row number of the first row (rows sent in slices)."""
     perm.require_role(user, perm.CONFIG_ROLES, "import")
     if kind not in HANDLERS:
         raise BusinessError(_("Choose what you are importing."))
     handler = HANDLERS[kind]
     results, errors = [], 0
+    _CACHE.clear()
     try:
         with transaction.atomic():
-            for i, r in enumerate(rows, start=2):
+            for i, r in enumerate(rows, start=start):
                 try:
                     with transaction.atomic():
                         msg = handler(user, r)
@@ -627,4 +662,67 @@ def run_import(user, kind, rows, *, commit):
             ops.log_event(user, "import", kind=kind, rows=len(rows))
     except _Rollback:
         pass
+    finally:
+        _CACHE.clear()
     return results, errors == 0
+
+
+# ---------------------------------------------------------------- large files: check and import step by step
+def start_batch(user, kind, name, rows):
+    from core.models import ImportBatch
+
+    perm.require_role(user, perm.CONFIG_ROLES, "import")
+    if kind not in HANDLERS:
+        raise BusinessError(_("Choose what you are importing."))
+    return ImportBatch.objects.create(kind=kind, file_name=name[:255], rows=rows, total=len(rows), created_by=user)
+
+
+def _slice(b, commit):
+    """Handle the next rows of the batch for at most STEP_SECONDS: grows the slice while it stays quick."""
+    import time
+
+    size, t0, end = 50, time.monotonic(), b.total
+    while b.position < end and time.monotonic() - t0 < STEP_SECONDS:
+        rows = b.rows[b.position:b.position + size]
+        t1 = time.monotonic()
+        results, ok = run_import(b.created_by, b.kind, rows, commit=commit, start=b.position + 2)
+        bad = [[n, m] for n, good, m in results if not good]
+        if commit and not ok:
+            b.errors = (b.errors + bad)[:500]
+            b.stage = b.Stage.FAILED
+            return
+        b.errors = (b.errors + bad)[:500]
+        if not commit and len(b.preview) < 30:
+            b.preview = (b.preview + [[n, m] for n, good, m in results])[:30]
+        if commit:
+            b.imported += len(rows)
+        b.position += len(rows)
+        per_row = (time.monotonic() - t1) / max(len(rows), 1)
+        left = STEP_SECONDS - (time.monotonic() - t0)
+        size = min(STEP_ROWS, max(10, int(left * 0.8 / per_row) if per_row else STEP_ROWS))  # fits the time left
+
+
+def step_batch(user, b):
+    """One step of the batch (check or import). Returns the batch."""
+    perm.require_role(user, perm.CONFIG_ROLES, "import")
+    if b.stage == b.Stage.CHECK:
+        _slice(b, commit=False)
+        if b.position >= b.total:
+            b.stage = b.Stage.CHECKED if not b.errors else b.Stage.FAILED
+            b.position = 0 if not b.errors else b.position
+    elif b.stage == b.Stage.IMPORT:
+        _slice(b, commit=True)
+        if b.stage == b.Stage.IMPORT and b.position >= b.total:
+            b.stage = b.Stage.DONE
+            ops.log_event(user, "import", kind=b.kind, rows=b.total, file=b.file_name)
+    b.save(update_fields=["stage", "position", "imported", "errors", "preview", "updated_at"])  # rows stay as stored
+    return b
+
+
+def confirm_batch(user, b):
+    perm.require_role(user, perm.CONFIG_ROLES, "import")
+    if b.stage != b.Stage.CHECKED:
+        raise BusinessError(_("This file cannot be imported (check it again)."))
+    b.stage, b.position = b.Stage.IMPORT, 0
+    b.save(update_fields=["stage", "position", "updated_at"])
+    return b

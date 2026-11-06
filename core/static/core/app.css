@@ -579,3 +579,7 @@ table.matrix tfoot tr.grand-row td { border-top: 2px solid var(--line); backgrou
 table.t tr.oos td { background: #fff1f0; }
 .bal.oos { border-color: #d92d20; box-shadow: inset 4px 0 0 #d92d20; }
 .bal .small-val { font-size: 1.05rem; }
+
+/* import progress */
+.progress { height: 10px; border-radius: 6px; background: var(--line, #eee); overflow: hidden; margin: 8px 0; }
+.progress-bar { height: 100%; background: var(--accent, #ff7900); transition: width .3s; }

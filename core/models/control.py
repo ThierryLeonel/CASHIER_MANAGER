@@ -132,3 +132,31 @@ class TransferNoPayback(models.Model):
 
     def __str__(self):
         return f"{self.transfer_id} not paid back"
+
+
+class ImportBatch(models.Model):
+    """An uploaded import file processed in small steps (check, then import), so a large file never runs longer than
+    one web request allows. Rows are stored once at upload; each step handles the next slice."""
+
+    class Stage(models.TextChoices):
+        CHECK = "CHECK", _("checking")
+        CHECKED = "CHECKED", _("checked, waiting for confirmation")
+        IMPORT = "IMPORT", _("importing")
+        DONE = "DONE", _("imported")
+        FAILED = "FAILED", _("stopped on errors")
+
+    kind = models.CharField(max_length=30)
+    file_name = models.CharField(max_length=255)
+    rows = models.JSONField()
+    total = models.PositiveIntegerField()
+    stage = models.CharField(max_length=10, choices=Stage.choices, default=Stage.CHECK)
+    position = models.PositiveIntegerField(default=0)  # rows handled in the current stage
+    imported = models.PositiveIntegerField(default=0)
+    errors = models.JSONField(default=list)  # [[row number, message]]
+    preview = models.JSONField(default=list)  # first messages of the check: [[row number, message]]
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name="+")
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]

@@ -1,14 +1,13 @@
 """Super-administrator tools: hub, delete/edit rows, clear data, import, audit log."""
-import base64
 
 from django.contrib import messages
 from django.core.paginator import Paginator
-from django.http import Http404, HttpResponse
+from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.translation import gettext as _
 
 from core import forms as F
-from core.models import AuditEvent, Counterparty, Transaction, User
+from core.models import AuditEvent, Counterparty, ImportBatch, Transaction, User
 from core.services import admin as adm
 from core.services import corrections as corr
 from core.services import importer
@@ -95,42 +94,56 @@ def clear_data(request):
     return render(request, "core/admin_clear.html", {"form": form})
 
 
-SESSION_KEY = "import_upload"
+@roles_required(*ADMIN)
+def import_data(request):
+    form = F.ImportForm(request.POST or None, request.FILES or None)
+    if request.method == "POST" and form.is_valid():
+        f = form.cleaned_data["file"]
+        if f.size > 15 * 1024 * 1024:
+            form.add_error("file", _("The file is too large (maximum 15 MB)."))
+        else:
+            try:
+                rows = importer.read_rows(f.name, f.read())
+                b = importer.start_batch(request.user, form.cleaned_data["kind"], f.name, rows)
+                return redirect("import_batch", b.pk)
+            except BusinessError as e:
+                form.add_error("file", e.message)
+    recent = ImportBatch.objects.filter(created_by=request.user)[:5]
+    return render(request, "core/admin_import.html", {"form": form, "kinds": F.ImportForm.KINDS, "recent": recent,
+                                                      "templates": importer.TEMPLATES})
+
+
+def _batch_state(b):
+    return {"stage": b.stage, "stage_label": str(b.get_stage_display()), "position": b.position, "total": b.total,
+            "imported": b.imported, "errors": len(b.errors),
+            "running": b.stage in (ImportBatch.Stage.CHECK, ImportBatch.Stage.IMPORT)}
 
 
 @roles_required(*ADMIN)
-def import_data(request):
-    result = None
-    form = F.ImportForm(request.POST or None, request.FILES or None)
-    if request.method == "POST" and request.POST.get("action") == "confirm":
-        up = request.session.get(SESSION_KEY)
-        if not up:
-            messages.error(request, _("The uploaded file has expired. Upload it again."))
-            return redirect("import_data")
-        rows = importer.read_rows(up["name"], base64.b64decode(up["content"]))
-        results, ok = importer.run_import(request.user, up["kind"], rows, commit=True)
-        if ok:
-            request.session.pop(SESSION_KEY, None)
-            messages.success(request, _("%(n)s rows imported.") % {"n": len(results)})
-            return redirect("import_data")
-        result = {"results": results, "ok": ok, "kind": up["kind"], "name": up["name"], "committed": False}
-    elif request.method == "POST" and form.is_valid():
-        f = form.cleaned_data["file"]
-        if f.size > 3 * 1024 * 1024:
-            form.add_error("file", _("The file is too large (maximum 3 MB)."))
-        else:
-            content = f.read()
-            try:
-                rows = importer.read_rows(f.name, content)
-                results, ok = importer.run_import(request.user, form.cleaned_data["kind"], rows, commit=False)
-                request.session[SESSION_KEY] = {"name": f.name, "kind": form.cleaned_data["kind"],
-                                                "content": base64.b64encode(content).decode()}
-                result = {"results": results, "ok": ok, "kind": form.cleaned_data["kind"], "name": f.name}
-            except BusinessError as e:
-                form.add_error("file", e.message)
-    return render(request, "core/admin_import.html", {"form": form, "result": result,
-                                                      "kinds": F.ImportForm.KINDS,
-                                                      "templates": importer.TEMPLATES})
+def import_batch(request, pk):
+    b = get_object_or_404(ImportBatch.objects.defer("rows"), pk=pk, created_by=request.user)
+    label = dict(F.ImportForm.KINDS).get(b.kind, b.kind)
+    return render(request, "core/admin_import_batch.html", {"b": b, "label": label, "state": _batch_state(b)})
+
+
+@roles_required(*ADMIN)
+def import_step(request, pk):
+    if request.method != "POST":
+        return redirect("import_batch", pk)
+    b = get_object_or_404(ImportBatch, pk=pk, created_by=request.user)
+    action = request.POST.get("action")
+    try:
+        if action == "confirm":
+            importer.confirm_batch(request.user, b)
+        elif b.stage in (ImportBatch.Stage.CHECK, ImportBatch.Stage.IMPORT):
+            importer.step_batch(request.user, b)
+    except BusinessError as e:
+        if request.headers.get("X-Requested-With") == "fetch":
+            return JsonResponse({"ok": False, "error": e.message}, status=400)
+        messages.error(request, e.message)
+    if request.headers.get("X-Requested-With") == "fetch":
+        return JsonResponse({"ok": True, **_batch_state(b)})
+    return redirect("import_batch", pk)
 
 
 @roles_required(*ADMIN)

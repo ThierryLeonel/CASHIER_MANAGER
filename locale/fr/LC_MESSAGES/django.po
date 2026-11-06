@@ -112,6 +112,10 @@ msgid "%(n)s cashier(s)"
 msgstr "%(n)s caissier(s)"
 
 #, python-format
+msgid "%(n)s imported"
+msgstr "%(n)s importées"
+
+#, python-format
 msgid "%(n)s microzone(s)"
 msgstr "%(n)s microzone(s)"
 
@@ -1465,6 +1469,9 @@ msgstr "Contrôle réussi : prêt à importer"
 msgid "Check the price of %(i)s."
 msgstr "Vérifiez le prix de %(i)s."
 
+msgid "Checking every row…"
+msgstr "Vérification de chaque ligne…"
+
 msgid "Choose UVE, ER or cash."
 msgstr "Choisissez UVE, ER ou espèces."
 
@@ -1979,6 +1986,10 @@ msgstr "Configuration"
 msgid "Confirm import"
 msgstr "Confirmer l'importation"
 
+#, python-format
+msgid "Confirm import of %(n)s rows"
+msgstr "Confirmer l'import de %(n)s lignes"
+
 msgid ""
 "Confirm once you have received the money (UVE on the SIM, cash or MTN float "
 "in hand). It is then recorded as the agent's payment, with a receipt."
@@ -2005,6 +2016,9 @@ msgstr "Contact"
 
 msgid "Contact phone"
 msgstr "Téléphone de contact"
+
+msgid "Continue"
+msgstr "Continuer"
 
 msgid "Control accounts: cash, UVE and ER"
 msgstr "Comptes de contrôle : espèces, UVE et ER"
@@ -3202,8 +3216,14 @@ msgstr ""
 msgid "Import CSV / Excel"
 msgstr "Importer CSV / Excel"
 
+msgid "Import finished"
+msgstr "Import terminé"
+
 msgid "Imported"
 msgstr "Importé"
+
+msgid "Importing…"
+msgstr "Import en cours…"
 
 msgid "In"
 msgstr "Entrées"
@@ -3337,6 +3357,9 @@ msgstr "Juin"
 
 msgid "Junior manager"
 msgstr "Manager junior"
+
+msgid "Keep this page open until it finishes."
+msgstr "Gardez cette page ouverte jusqu'à la fin."
 
 msgid "Last"
 msgstr "Dernier"
@@ -3609,6 +3632,9 @@ msgstr "Mes remboursements"
 
 msgid "My portal"
 msgstr "Mon portail"
+
+msgid "My recent imports"
+msgstr "Mes imports récents"
 
 msgid "My recent shifts"
 msgstr "Mes services récents"
@@ -4005,6 +4031,11 @@ msgstr "Rien d'enregistré pour l'instant."
 
 msgid "Nothing waiting."
 msgstr "Rien en attente."
+
+msgid "Nothing was imported. Fix the rows below and upload the file again."
+msgstr ""
+"Rien n'a été importé. Corrigez les lignes ci-dessous et chargez le fichier à"
+" nouveau."
 
 msgid "Nothing yet."
 msgstr "Rien pour le moment."
@@ -4866,6 +4897,9 @@ msgstr "Passer un ajustement de rapprochement (perte / constatation)"
 msgid "Posted on business date"
 msgstr "Passée à la date comptable"
 
+msgid "Preview (first rows)"
+msgstr "Aperçu (premières lignes)"
+
 msgid "Previous day"
 msgstr "Jour précédent"
 
@@ -5252,6 +5286,9 @@ msgstr "Rôle"
 
 msgid "Row"
 msgstr "Ligne"
+
+msgid "Rows with errors"
+msgstr "Lignes en erreur"
 
 msgid "SHOPS"
 msgstr "BOUTIQUES"
@@ -5723,6 +5760,9 @@ msgstr "Vendu"
 msgid "Sold to"
 msgstr "Vendu à"
 
+msgid "Some rows have errors"
+msgstr "Certaines lignes ont des erreurs"
+
 msgid "Some rows have errors: nothing was imported"
 msgstr "Certaines lignes contiennent des erreurs : rien n'a été importé"
 
@@ -5786,6 +5826,17 @@ msgstr ""
 "Étape 1 : téléchargez le modèle et remplissez-le. Étape 2 : chargez-le pour "
 "contrôler chaque ligne. Étape 3 : confirmez. Si une ligne contient une "
 "erreur, rien n'est importé."
+
+msgid ""
+"Step 1: download the template and fill it. Step 2: upload it: every row is "
+"checked. Step 3: confirm. If any row has an error, nothing is imported. "
+"Large files (thousands of rows) are handled in small steps with a progress "
+"bar: keep the page open."
+msgstr ""
+"Étape 1 : téléchargez le modèle et remplissez-le. Étape 2 : chargez-le : "
+"chaque ligne est vérifiée. Étape 3 : confirmez. Si une ligne a une erreur, "
+"rien n'est importé. Les gros fichiers (des milliers de lignes) sont traités "
+"par petites étapes avec une barre de progression : gardez la page ouverte."
 
 msgid "Still open"
 msgstr "Encore ouverts"
@@ -6159,8 +6210,19 @@ msgstr "Le fichier est vide."
 msgid "The file is larger than 3 MB."
 msgstr "Le fichier dépasse 3 Mo."
 
+msgid "The file is too large (maximum 15 MB)."
+msgstr "Le fichier est trop volumineux (maximum 15 Mo)."
+
 msgid "The file is too large (maximum 3 MB)."
 msgstr "Le fichier est trop volumineux (maximum 3 Mo)."
+
+#, python-format
+msgid ""
+"The import stopped: %(n)s rows were imported before the error. Fix the rows "
+"below and upload the rest again."
+msgstr ""
+"L'import s'est arrêté : %(n)s lignes ont été importées avant l'erreur. "
+"Corrigez les lignes ci-dessous et chargez le reste à nouveau."
 
 msgid "The name on the client's Orange Money account."
 msgstr "Le nom sur le compte Orange Money du client."
@@ -6354,6 +6416,9 @@ msgstr ""
 
 msgid "This entry reverses"
 msgstr "Cette écriture contre-passe"
+
+msgid "This file cannot be imported (check it again)."
+msgstr "Ce fichier ne peut pas être importé (vérifiez-le à nouveau)."
 
 #, python-format
 msgid ""
@@ -7409,6 +7474,12 @@ msgstr "catégorie"
 msgid "category and name are required"
 msgstr "la catégorie et le nom sont obligatoires"
 
+msgid "checked, waiting for confirmation"
+msgstr "vérifié, en attente de confirmation"
+
+msgid "checking"
+msgstr "vérification"
+
 msgid "city"
 msgstr "ville"
 
@@ -7534,6 +7605,12 @@ msgstr "pièce d'identité"
 
 msgid "identification number"
 msgstr "numéro de pièce"
+
+msgid "imported"
+msgstr "importé"
+
+msgid "importing"
+msgstr "import en cours"
 
 msgid "in charge"
 msgstr "responsable"
@@ -7790,6 +7867,9 @@ msgstr "reste dû"
 
 msgid "stock imported at"
 msgstr "stock importé le"
+
+msgid "stopped on errors"
+msgstr "arrêté sur erreurs"
 
 msgid "subzone"
 msgstr "sous-zone"

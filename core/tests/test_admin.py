@@ -213,12 +213,53 @@ class Imports(OrgMixin, TestCase):
         c.login(username="admin", password=PW)
         up = SimpleUploadedFile("o.xlsx", xlsx_bytes(rows))
         r = c.post("/administration/import/", {"kind": "opening", "file": up})
-        self.assertContains(r, "Confirm import")
+        from core.models import ImportBatch
+
+        b = ImportBatch.objects.get()
+        self.assertRedirects(r, f"/administration/import/{b.pk}/")
+        step = f"/administration/import/{b.pk}/step/"
+        st = c.post(step, HTTP_X_REQUESTED_WITH="fetch").json()  # check
+        self.assertEqual((st["stage"], st["running"]), ("CHECKED", False))
+        self.assertContains(c.get(f"/administration/import/{b.pk}/"), "Confirm import of 3 rows")
         self.assertEqual(self.bal(self.mtn_f1), D(0))
-        r = c.post("/administration/import/", {"action": "confirm"})
-        self.assertEqual(r.status_code, 302)
+        c.post(step, {"action": "confirm"})
+        st = c.post(step, HTTP_X_REQUESTED_WITH="fetch").json()
+        self.assertEqual((st["stage"], st["imported"]), ("DONE", 3))
         self.assertEqual((self.bal(self.mtn_f1), self.cbal(self.a3)), (D(7000), D(-15000)))
         self.assertEqual(c.get("/administration/import/template/transactions/").status_code, 200)
+        # another admin's batch is not reachable
+        self.assertEqual(self.client_class().get(f"/administration/import/{b.pk}/").status_code, 302)
+
+    def test_large_file_in_steps(self):
+        """8 000 agents and POS: checked and imported slice by slice, each step short; errors listed, nothing kept."""
+        from core.models import ImportBatch
+
+        importer.STEP_SECONDS, old = 0.5, importer.STEP_SECONDS
+        try:
+            head = importer.TEMPLATES["customers"][0]
+            rows = [head] + [["POS", "fako", "fako-1", f"mz {i % 40}", f"OM {i}", 650000000 + i, f"POS {i}", "", "", ""]
+                             for i in range(8000)]
+            data = importer.read_rows("big.xlsx", xlsx_bytes(rows))
+            self.assertEqual(len(data), 8000)
+            b = importer.start_batch(self.admin, "customers", "big.xlsx", data)
+            steps = 0
+            while b.stage == ImportBatch.Stage.CHECK:
+                importer.step_batch(self.admin, b)
+                steps += 1
+            self.assertGreater(steps, 1)
+            self.assertEqual(b.stage, ImportBatch.Stage.CHECKED)
+            self.assertFalse(Counterparty.objects.filter(business_sim="650000001").exists())  # check kept nothing
+            importer.confirm_batch(self.admin, b)
+            while b.stage == ImportBatch.Stage.IMPORT:
+                importer.step_batch(self.admin, b)
+            self.assertEqual((b.stage, b.imported), (ImportBatch.Stage.DONE, 8000))
+            self.assertEqual(Counterparty.objects.filter(business_sim__startswith="65").count(), 8000)
+            bad = importer.start_batch(self.admin, "customers", "bad.csv", data[:10] + [{"type": "XX"}])
+            while bad.stage == ImportBatch.Stage.CHECK:
+                importer.step_batch(self.admin, bad)
+            self.assertEqual((bad.stage, bad.errors[0][0]), (ImportBatch.Stage.FAILED, 12))
+        finally:
+            importer.STEP_SECONDS = old
 
 
 class DashboardsAndLanguage(OrgMixin, TestCase):
