@@ -155,10 +155,15 @@ class FloatPosReports(OrgMixin, TestCase):
         ops.record_payment(self.c_f2, payer=self.a1, parts={"MTN": D(10000)}, idempotency_key=uuid.uuid4())
         rep = self._sp()
         summary = {str(k): v for k, v, _k in rep.summary}
-        self.assertEqual((summary["Supplied by cashiers"], summary["Float supplied (finance)"],
-                          summary["Total supplied"]), (D(113000), D(60000), D(173000)))
-        self.assertEqual((summary["Paid to cashiers"], summary["Paid in float"], summary["Total paid"]),
+        f1, f2 = self.c_f1.subzone.name, self.c_f2.subzone.name
+        self.assertEqual((summary[f"Supplied · {f1}"], summary[f"Supplied · {f2}"],
+                          summary["Float supplied (finance)"], summary["Total supplied"]),
+                         (D(70000), D(43000), D(60000), D(173000)))
+        self.assertEqual((summary[f"Paid · {f1}"], summary["Paid in float"], summary["Total paid"]),
                          (D(40000), D(10000), D(50000)))
+        self.assertNotIn(f"Paid · {f2}", summary)  # Fako 2 only received float
+        self.assertEqual(summary["Total balance today, all desks (+ owes, − credit)"],
+                         self.cbal(self.a1) + self.cbal(self.a2) + self.cbal(self.p1))
         subs, table = rep.tables[0], rep.tables[1]
         rows = table.rows
         ndive = [r for r in rows if r["customer"].startswith(self.a1.name)]
@@ -166,9 +171,13 @@ class FloatPosReports(OrgMixin, TestCase):
         r = ndive[0]
         self.assertIn("Mile 4 road", r["microzones"])
         self.assertIn(self.a1.microzone.name, r["microzones"])
-        self.assertEqual((r["by_cashiers"], r["float_sup"], r["supplied"], r["paid_cashiers"], r["paid_float"],
-                          r["paid"], r["net"]), (D(105000), D(60000), D(165000), D(40000), D(10000), D(50000),
-                                                 D(115000)))
+        s1, s2, p1 = f"s_{self.c_f1.pk}", f"s_{self.c_f2.pk}", f"p_{self.c_f1.pk}"
+        self.assertEqual((r[s1], r[s2], r["float_sup"], r["supplied"], r[p1], r["paid_float"], r["paid"], r["net"]),
+                         (D(70000), D(35000), D(60000), D(165000), D(40000), D(10000), D(50000), D(115000)))
+        cols = [c.key for c in table.columns]
+        self.assertLess(cols.index(s2), cols.index("float_sup"))
+        self.assertLess(cols.index("supplied"), cols.index(p1))
+        self.assertLess(cols.index(p1), cols.index("paid_float"))
         heads = [x["customer"] for x in rows if x.get("_head")]
         self.assertIn(self.a1.microzone.subzone.name, heads)
         subtotal = next(x for x in rows if x.get("_sub") and self.a1.microzone.subzone.name in x["customer"])
@@ -176,8 +185,9 @@ class FloatPosReports(OrgMixin, TestCase):
         self.assertEqual(table.totals()["supplied"], D(173000))  # subtotals not counted twice
         self.assertEqual(subs.totals()["supplied"], D(173000))
         desks = {x["cashier"]: x for x in rep.tables[3].rows}
-        self.assertEqual(desks[str(self.c_f2)]["DESTOCK"], D(5000))
-        self.assertEqual(desks[str(self.c_f2)]["P_MTN"], D(10000))
+        self.c_f2.refresh_from_db()
+        self.assertEqual(desks[self.c_f2.subzone.name]["DESTOCK"], D(5000))
+        self.assertEqual(desks[self.c_f2.subzone.name]["P_MTN"], D(10000))
         c = self.client_for("manager")
         for fmt_ in ("", "&format=pdf", "&format=xlsx"):
             self.assertEqual(c.get(f"/reports/supply_payment/?preset=day{fmt_}").status_code, 200)
@@ -188,7 +198,7 @@ class FloatPosReports(OrgMixin, TestCase):
         mine = self._sp(self.c_f1)
         s1 = {str(k): v for k, v, _k in mine.summary}
         self.assertEqual(s1["Float supplied (finance)"], D(60000))
-        self.assertEqual(self._sp(self.c_f2).summary[1][1], D(0))
+        self.assertEqual({str(k): v for k, v, _k in self._sp(self.c_f2).summary}["Float supplied (finance)"], D(0))
 
     def test_float_to_agent_in_other_reports(self):
         from core.reports.defs import _customer_rows, statement, supplies

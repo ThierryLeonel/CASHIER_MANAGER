@@ -218,6 +218,7 @@ def report_pdf(report, generated_by):
         if not body:
             body = [[Paragraph(_("No data for these filters."), st["s"])] + [""] * (len(table.columns) - 1)]
         weights = [3.2 if c.key in ("details", "account", "changes", "reason") else
+                   2.4 if c.key == "customer" else
                    1.3 if c.kind in ("money", "int", "rate") else 1.6 for c in table.columns]
         tw = sum(weights)
         t = Table([head] + body, colWidths=[width * w / tw for w in weights], repeatRows=1)
