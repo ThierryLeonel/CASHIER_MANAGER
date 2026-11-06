@@ -683,6 +683,9 @@ msgstr "Agents"
 msgid "Agents & POS"
 msgstr "Agents & PDV"
 
+msgid "Agents / POS"
+msgstr "Agents / POS"
+
 msgid "Agents and POS"
 msgstr "Agents et PDV"
 
@@ -985,6 +988,19 @@ msgstr ""
 "payées, ou paiement d'avance). Le solde total aujourd'hui couvre tout, "
 "toutes dates et tous guichets : positif = doit à l'entreprise, négatif = "
 "l'entreprise lui doit (crédit)."
+
+msgid ""
+"Balance for the period = total supplied − total paid during the selected "
+"dates only (+ still owes, − paid more: old debts or in advance). Total "
+"balance today covers all dates and all desks (+ owes the company, − the "
+"company owes them). An agent running several microzones is listed once with "
+"all of them."
+msgstr ""
+"Solde de la période = total approvisionné − total payé sur les dates "
+"choisies uniquement (+ doit encore, − a payé plus : anciennes dettes ou "
+"d'avance). Le solde total aujourd'hui couvre toutes les dates et tous les "
+"guichets (+ doit à l'entreprise, − l'entreprise lui doit). Un agent qui gère"
+" plusieurs microzones apparaît une seule fois avec toutes."
 
 msgid "Balance of the day (+ unpaid, − overpaid)"
 msgstr "Solde du jour (+ impayé, − trop payé)"
@@ -2874,6 +2890,9 @@ msgstr "Le float part de"
 msgid "Float received on"
 msgstr "Float reçu sur"
 
+msgid "Float supplied (finance)"
+msgstr "Float approvisionné (finance)"
+
 msgid "Float supply"
 msgstr "Approvisionnement float"
 
@@ -3386,6 +3405,9 @@ msgstr "Microzone · agent responsable"
 msgid "Microzone, name or SIM number"
 msgstr "Microzone, nom ou numéro SIM"
 
+msgid "Microzones"
+msgstr "Microzones"
+
 msgid ""
 "Money a client paid you for earlier supplies. It reduces what the client "
 "owes you."
@@ -3758,6 +3780,9 @@ msgstr ""
 #, python-format
 msgid "No single %(kind)s account is set up for your subzone."
 msgstr "Aucun compte %(kind)s unique n'est configuré pour votre sous-zone."
+
+msgid "No subzone"
+msgstr "Sans sous-zone"
 
 msgid ""
 "No subzone exists yet. The super administrator creates zones in "
@@ -4465,6 +4490,9 @@ msgstr "Payé en espèces maintenant"
 msgid "Paid in cash, UVE or MTN float"
 msgstr "Payé en espèces, UVE ou float MTN"
 
+msgid "Paid in float"
+msgstr "Payé en float"
+
 msgid "Paid now"
 msgstr "Payé maintenant"
 
@@ -4495,6 +4523,9 @@ msgstr "Payé à / destination"
 
 msgid "Paid to agents"
 msgstr "Payé aux agents"
+
+msgid "Paid to cashiers"
+msgstr "Payé aux caissiers"
 
 msgid "Paid with"
 msgstr "Payé avec"
@@ -4623,6 +4654,12 @@ msgstr "Paiements reçus : espèces, UVE, MTN, banque"
 
 msgid "Per agent / POS over the period"
 msgstr "Par agent / POS sur la période"
+
+msgid "Per agent / POS, by subzone"
+msgstr "Par agent / POS, par sous-zone"
+
+msgid "Per cashier / finance, by product and payment method"
+msgstr "Par caissier / finance, par produit et moyen de paiement"
 
 msgid "Per cashier, by product and payment method"
 msgstr "Par caissier, par produit et moyen de paiement"
@@ -5628,6 +5665,9 @@ msgstr "Sous-zone · clôturée par"
 msgid "Subzones"
 msgstr "Sous-zones"
 
+msgid "Summary by subzone"
+msgstr "Résumé par sous-zone"
+
 msgid "Super administrator"
 msgstr "Super administrateur"
 
@@ -5646,6 +5686,9 @@ msgstr "ER approvisionné"
 
 msgid "Supplied UVE"
 msgstr "UVE approvisionnée"
+
+msgid "Supplied by cashiers"
+msgstr "Approvisionné par les caissiers"
 
 msgid "Supplied cash"
 msgstr "Espèces approvisionnées"
@@ -6276,6 +6319,10 @@ msgstr "Trop de lignes (maximum %(n)s par fichier)."
 
 msgid "Total"
 msgstr "Total"
+
+#, python-format
+msgid "Total %(sub)s"
+msgstr "Total %(sub)s"
 
 msgid "Total (FCFA)"
 msgstr "Total (FCFA)"

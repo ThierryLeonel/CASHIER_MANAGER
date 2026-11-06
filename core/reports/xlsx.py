@@ -66,6 +66,10 @@ def report_xlsx(report, generated_by):
                 elif c.kind == "rate":
                     cell.number_format = "0.00%"
                 widths[i] = max(widths.get(i, 10), min(48, len(str(r.get(c.key) or "")) + 2))
+                if r.get("_sub") or r.get("_head"):
+                    cell.font = BOLD
+                    if r.get("_sub"):
+                        cell.fill = HEAD
         tot = table.totals()
         if tot is not None and table.rows:
             ws.append([_("Total") if i == 0 and c.key not in tot else (_value(tot[c.key], c.kind) if c.key in tot

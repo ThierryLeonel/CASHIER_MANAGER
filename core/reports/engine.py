@@ -35,8 +35,8 @@ class Table:
             return None
         out = {}
         for c in self.columns:
-            if c.total:
-                out[c.key] = sum((r.get(c.key) or Decimal(0)) for r in self.rows)
+            if c.total:  # subtotal rows (_sub) are not added again
+                out[c.key] = sum((r.get(c.key) or Decimal(0)) for r in self.rows if not r.get("_sub"))
         return out
 
 

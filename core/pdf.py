@@ -37,6 +37,7 @@ def _styles(condensed=False):
         "n": ParagraphStyle("n", fontName=f, fontSize=9, leading=11.5),
         "s": ParagraphStyle("s", fontName=f, fontSize=7, leading=8.6),
         "sb": ParagraphStyle("sb", fontName=fb, fontSize=7, leading=8.6),
+        "sr": ParagraphStyle("sr", fontName=f, fontSize=7, leading=8.6, alignment=2),  # amounts, right-aligned
         "big": ParagraphStyle("big", fontName=fb, fontSize=20, leading=24),
     }
 
@@ -193,19 +194,26 @@ def report_pdf(report, generated_by):
         if not table.columns:
             continue
         head = [Paragraph(f"<b>{c.label}</b>", st["s"]) for c in table.columns]
-        body = []
+        body, sub_rows, head_rows = [], [], []
         for r in table.rows:
             line = []
             for c in table.columns:
                 txt = cell_text(r.get(c.key), c.kind)
                 if c.key == "reference" and r.get("corrected"):
                     txt += " (C)"
-                line.append(Paragraph(txt, st["s"]))
+                if r.get("_sub") or r.get("_head") or r.get("_bold"):
+                    txt = f"<b>{txt}</b>"
+                line.append(Paragraph(txt, st["sr"] if c.kind in ("money", "int", "rate") else st["s"]))
             body.append(line)
+            if r.get("_sub"):
+                sub_rows.append(len(body))
+            elif r.get("_head"):
+                head_rows.append(len(body))
         tot = table.totals()
         if tot is not None and table.rows:
             body.append([Paragraph(f"<b>{cell_text(tot[c.key], c.kind)}</b>" if c.key in tot else
-                                   (f"<b>{_('Total')}</b>" if i == 0 else ""), st["s"])
+                                   (f"<b>{_('Total')}</b>" if i == 0 else ""),
+                                   st["sr"] if c.key in tot else st["s"])
                          for i, c in enumerate(table.columns)])
         if not body:
             body = [[Paragraph(_("No data for these filters."), st["s"])] + [""] * (len(table.columns) - 1)]
@@ -222,6 +230,10 @@ def report_pdf(report, generated_by):
                 style.append(("ALIGN", (i, 0), (i, -1), "RIGHT"))
         if tot is not None and table.rows:
             style.append(("BACKGROUND", (0, -1), (-1, -1), colors.HexColor("#f7f7f7")))
+        for i in sub_rows:
+            style.append(("BACKGROUND", (0, i), (-1, i), colors.HexColor("#f3efe8")))
+        for i in head_rows:
+            style.append(("BACKGROUND", (0, i), (-1, i), colors.HexColor("#fff4e5")))
         t.setStyle(TableStyle(style))
         story += [t, Spacer(1, 3 * mm)]
     story.append(Paragraph(_("(C) = transaction later corrected (see corrections report). Amounts in FCFA."), st["s"]))

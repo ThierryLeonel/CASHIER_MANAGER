@@ -855,102 +855,113 @@ def _base(t):
     return t.reverses if t.type == TxType.REVERSAL else t
 
 
+def _agent_place(cp):
+    """(subzone name, microzones) of an agent / POS. An agent controlling several microzones (distribution roads)
+    is listed once, under the subzone of his own microzone, with all his microzones."""
+    mzs = []
+    if cp.kind == "AGENT":
+        mzs = list(cp.controlled_microzones.select_related("subzone").order_by("name"))
+    if cp.microzone_id and cp.microzone not in mzs:
+        mzs.insert(0, cp.microzone)
+    home = cp.microzone if cp.microzone_id else (mzs[0] if mzs else None)
+    if home is not None:
+        sub = home.subzone.name
+    else:
+        sub = cp.master_zone.name if cp.master_zone_id else _("No subzone")
+    return sub, ", ".join(m.name for m in mzs)
+
+
+SP_COLS = [("by_cashiers", _l("Supplied by cashiers")), ("float_sup", _l("Float supplied (finance)")),
+           ("supplied", _l("Total supplied")), ("paid_cashiers", _l("Paid to cashiers")),
+           ("paid_float", _l("Paid in float")), ("paid", _l("Total paid")),
+           ("net", _l("Balance for the period (+ owes, − overpaid)"))]
+
+
 def supply_payment(f):
-    """What was supplied (UVE, ER, cash, destockage) against what was paid (cash, UVE, MTN, bank). With several
-    cashiers in scope, every table shows each cashier's supplies, then the total supplied, then each cashier's
-    payments, then the total paid — destockage counts as supply of the cashier who recorded it."""
+    """Supplies against payments, as a pivot: agents and POS grouped by subzone (with subzone totals and the grand
+    total), supplied by the cashiers / float supplied by finance, paid to the cashiers / paid in float."""
     from core.services.ledger import balance
 
     rep = Report("supply_payment", _("Daily supplies versus payments"), f.text())
-    # a float exchange is posted by finance: it shows under the person who recorded it
-    sup = supply_txns(f)  # float converted and sent to an agent counts as a (float) supply
+    sup = supply_txns(f)  # cashiers' supplies and destockages, and float converted and sent to an agent by finance
     pay = list(txns(f, [TxType.COLLECTION]))
-
-    def desk(t):
-        u = _desk_user(t)
-        return (u.pk, str(u))
-
-    desks = sorted({desk(t) for t in sup + pay}, key=lambda d: d[1])
-    several = len(desks) > 1
-    per_day = defaultdict(lambda: defaultdict(Decimal))
-    per_cust = defaultdict(lambda: defaultdict(Decimal))
-    per_desk = defaultdict(lambda: defaultdict(Decimal))
+    blank = lambda: defaultdict(Decimal)  # noqa: E731
+    per_cust, per_day, per_desk = defaultdict(blank), defaultdict(blank), defaultdict(blank)
     for t in sup:
-        b, d, v = _base(t), desk(t)[0], signed(t)
-        prod = supply_kind(t)
+        b, v, kind = _base(t), signed(t), supply_kind(t)
+        key = "float_sup" if kind == "FLOAT" else "by_cashiers"
         for bucket in (per_day[t.business_date], per_cust[b.counterparty] if b.counterparty_id else None):
             if bucket is not None:
-                bucket[f"s_{d}"] += v
+                bucket[key] += v
                 bucket["supplied"] += v
-                if prod == "FLOAT":
-                    bucket["float"] += v
-        per_desk[d][prod] += v
-        per_desk[d]["supplied"] += v
+        d = per_desk[str(_desk_user(t))]
+        d[kind] += v
+        d["supplied"] += v
     for t in pay:
-        b, d, v = _base(t), desk(t)[0], signed(t)
+        b, v = _base(t), signed(t)
+        key = "paid_float" if b.payment_method == PaymentMethod.MTN else "paid_cashiers"
         for bucket in (per_day[t.business_date], per_cust[b.counterparty] if b.counterparty_id else None):
             if bucket is not None:
-                bucket[f"p_{d}"] += v
+                bucket[key] += v
                 bucket["paid"] += v
-        per_desk[d]["P_" + b.payment_method] += v
-        per_desk[d]["paid"] += v
+        d = per_desk[str(_desk_user(t))]
+        d["P_" + b.payment_method] += v
+        d["paid"] += v
 
-    any_float = any(supply_kind(t) == "FLOAT" for t in sup)
+    def vals(v):
+        out = {k: v[k] for k, _l2 in SP_COLS if k != "net"}
+        out["net"] = v["supplied"] - v["paid"]
+        return out
 
-    def split_cols():
-        cols = [Col(f"s_{pk}", _("Supplied · %(c)s") % {"c": name}, "money", True) for pk, name in desks] \
-            if several else []
-        cols.append(Col("supplied", _("Total supplied"), "money", True))
-        if any_float:
-            cols.append(Col("float", _("of which float supply"), "money", True))
-        if several:
-            cols += [Col(f"p_{pk}", _("Paid · %(c)s") % {"c": name}, "money", True) for pk, name in desks]
-        cols.append(Col("paid", _("Total paid"), "money", True))
-        return cols
-
-    def split_row(v):
-        row = {k: v[k] for k in [f"s_{pk}" for pk, _n in desks] + [f"p_{pk}" for pk, _n in desks]}
-        row.update(supplied=v["supplied"], paid=v["paid"], net=v["supplied"] - v["paid"], float=v["float"])
-        return row
-
-    # 1. day by day
-    rows = [dict(day=d, **split_row(per_day[d])) for d in sorted(per_day)]
-    rep.tables.append(Table(_("Day by day"), [Col("day", _("Business date"), "date")] + split_cols() + [
-        Col("net", _("Balance of the day (+ unpaid, − overpaid)"), "money", True)], rows, note=_(
-        "Balance of the day = supplied − paid. Positive: part of the day's supplies is still unpaid. Negative: more "
-        "was paid than supplied that day (old debts paid, or paid in advance).")))
-    # 2. per agent / POS
-    crow = []
-    for cp, v in sorted(per_cust.items(), key=lambda x: -(x[1]["supplied"] - x[1]["paid"])):
-        crow.append(dict(customer=str(cp), kind=cp.get_kind_display(), balance=balance(cp.account), **split_row(v)))
-    rep.tables.append(Table(_("Per agent / POS over the period"),
-                            [Col("customer", _("Agent / POS")), Col("kind", _("Type"))] + split_cols() + [
-        Col("net", _("Balance for the period (+ owes, − overpaid)"), "money", True),
-        Col("balance", _("Total balance today, all desks (+ owes, − credit)"), "money", True)], crow,
-        note=_("Balance for the period = supplied − paid during the selected dates only. Positive: still owes for "
-               "these supplies. Negative: paid more than supplied in the period (old debts paid, or paid in advance). "
-               "Total balance today covers everything, all dates and all desks: positive = owes the company, "
-               "negative = the company owes them (credit).")))
-    # 3. per cashier, by product and payment method
-    S_COLS = [("UVE", "UVE"), ("ER", "ER"), ("CASH", _("Cash")), ("FLOAT", _("Float supply")),
-              ("DESTOCK", _("Destockage"))]
-    P_COLS = [("P_CASH", _("Paid cash")), ("P_UVE", _("Paid UVE")), ("P_MTN", _("Paid float (MTN)")),
-              ("P_BANK", _("Paid bank"))]
-    drow = []
-    for pk, name in desks:
-        v = per_desk[pk]
-        r = dict(cashier=name, supplied=v["supplied"], paid=v["paid"], net=v["supplied"] - v["paid"])
-        r.update({k: v[k] for k, _l2 in S_COLS + P_COLS})
-        drow.append(r)
-    rep.tables.append(Table(_("Per cashier, by product and payment method"),
-                            [Col("cashier", _("Cashier"))] + [Col(k, lbl, "money", True) for k, lbl in S_COLS] +
-                            [Col("supplied", _("Total supplied"), "money", True)] +
-                            [Col(k, lbl, "money", True) for k, lbl in P_COLS] +
-                            [Col("paid", _("Total paid"), "money", True),
-                             Col("net", _("Balance for the period (+ owes, − overpaid)"), "money", True)], drow))
-    ts, tp = sum(r["supplied"] for r in rows), sum(r["paid"] for r in rows)
-    rep.summary = [(_("Total supplied"), ts, "money"), (_("Total paid"), tp, "money"),
-                   (_("Balance for the period (+ owes, − overpaid)"), ts - tp, "money")]
+    money_cols = [Col(k, lbl, "money", True) for k, lbl in SP_COLS]
+    # group agents / POS by subzone
+    groups = defaultdict(list)
+    for cp, v in per_cust.items():
+        sub, mzs = _agent_place(cp)
+        groups[sub].append((cp, mzs, v))
+    sub_rows, cust_rows = [], []
+    for sub in sorted(groups):
+        members = sorted(groups[sub], key=lambda x: (x[0].kind != "AGENT", x[0].name.lower()))
+        tot, bal_tot = defaultdict(Decimal), Z
+        cust_rows.append(dict(customer=sub, _head=True))
+        for cp, mzs, v in members:
+            bal = balance(cp.account)
+            name = f"{cp.name} · {cp.sim_display}" + (" (POS)" if cp.kind == "POS" else "")
+            cust_rows.append(dict(customer=name, microzones=mzs, balance=bal, **vals(v)))
+            for k, _l2 in SP_COLS:
+                if k != "net":
+                    tot[k] += v[k]
+            bal_tot += bal
+        cust_rows.append(dict(customer=_("Total %(sub)s") % {"sub": sub}, balance=bal_tot, _sub=True, **vals(tot)))
+        sub_rows.append(dict(subzone=sub, count=len(members), balance=bal_tot, **vals(tot)))
+    bal_col = Col("balance", _("Total balance today, all desks (+ owes, − credit)"), "money", True)
+    rep.tables.append(Table(_("Summary by subzone"), [Col("subzone", _("Subzone")),
+                                                     Col("count", _("Agents / POS"), "int", True)]
+                            + money_cols + [bal_col], sub_rows))
+    rep.tables.append(Table(_("Per agent / POS, by subzone"), [
+        Col("customer", _("Agent / POS")), Col("microzones", _("Microzones"))]
+        + money_cols + [bal_col], cust_rows,
+        note=_("Balance for the period = total supplied − total paid during the selected dates only (+ still owes, "
+               "− paid more: old debts or in advance). Total balance today covers all dates and all desks "
+               "(+ owes the company, − the company owes them). An agent running several microzones is listed once "
+               "with all of them.")))
+    day_rows = [dict(day=d, **vals(per_day[d])) for d in sorted(per_day)]
+    rep.tables.append(Table(_("Day by day"), [Col("day", _("Business date"), "date")]
+                            + [Col(k, lbl if k != "net" else _("Balance of the day (+ unpaid, − overpaid)"), "money",
+                                   True) for k, lbl in SP_COLS], day_rows))
+    D_COLS = [("UVE", "UVE"), ("ER", "ER"), ("CASH", _("Cash")), ("DESTOCK", _("Destockage")),
+              ("FLOAT", _("Float supply")), ("supplied", _("Total supplied")), ("P_CASH", _("Paid cash")),
+              ("P_UVE", _("Paid UVE")), ("P_MTN", _("Paid float (MTN)")), ("P_BANK", _("Paid bank")),
+              ("paid", _("Total paid"))]
+    desk_rows = [dict(cashier=name, **{k: v[k] for k, _l2 in D_COLS}) for name, v in sorted(per_desk.items())]
+    rep.tables.append(Table(_("Per cashier / finance, by product and payment method"),
+                            [Col("cashier", _("Recorded by"))] + [Col(k, lbl, "money", True) for k, lbl in D_COLS],
+                            desk_rows))
+    t_all = defaultdict(Decimal)
+    for r in day_rows:
+        for k, _l2 in SP_COLS:
+            t_all[k] += r[k]
+    rep.summary = [(lbl, t_all[k], "money") for k, lbl in SP_COLS]
     return rep
 
 

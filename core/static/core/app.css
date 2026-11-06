@@ -567,3 +567,7 @@ main > p.muted:not(.meta), main > p.small.muted:not(.meta), .form-head p.muted, 
 .panel > p.small.muted:not(.meta), .panel > p.muted:not(.meta), section > p.small.muted:not(.meta) { display: none; }
 h2 + p.muted:not(.meta), h2 + p.small.muted:not(.meta), h3 + p.small.muted:not(.meta), .form-foot span.small.muted { display: none; }
 .paid-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(140px, 100%), 1fr)); gap: 0 12px; }
+table.t tr.subtotal td { font-weight: 700; background: var(--accent-soft); }
+table.t tr.group-head td { font-weight: 800; background: var(--panel-2, rgba(0,0,0,.03)); padding-top: 12px; }
+table.report-t td:first-child, table.report-t th:first-child { min-width: 200px; }
+table.report-t td.money, table.report-t th.money { white-space: nowrap; }

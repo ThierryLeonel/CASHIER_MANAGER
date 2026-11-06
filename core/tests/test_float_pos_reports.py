@@ -131,77 +131,77 @@ class FloatPosReports(OrgMixin, TestCase):
         self.assertEqual(self.client_for("manager").get("/reports/daily_reconciliation/?preset=month").status_code,
                          200)
 
-    def test_supply_payment_split_by_cashier(self):
-        ops.record_supply(self.c_f1, product="UVE", customer=self.a1, amount=D(70000), source_account=self.uve_f1)
-        ops.record_supply(self.c_f2, product="UVE", customer=self.a1, amount=D(30000), source_account=self.uve_f2)
-        ops.record_destockage(self.c_f2, pos=self.p1, agent=self.a1, amount=D(5000), drawer=self.d_f2)
-        ops.record_payment(self.c_f1, payer=self.a1, parts={"CASH": D(40000)}, idempotency_key=uuid.uuid4())
-        ops.record_payment(self.c_f2, payer=self.a1, parts={"UVE": D(10000)}, idempotency_key=uuid.uuid4())
+    def _sp(self, user=None):
         from core.reports.defs import supply_payment
         from core.reports.engine import Filters
 
-        f = Filters(date_from=douala_today(), date_to=douala_today(), user=self.manager)
-        rep = supply_payment(f)
-        per_agent = rep.tables[1]
-        keys = [c.key for c in per_agent.columns]
-        s1, s2 = f"s_{self.c_f1.pk}", f"s_{self.c_f2.pk}"
-        self.assertLess(keys.index(s1), keys.index("supplied"))
-        self.assertLess(keys.index("supplied"), keys.index(f"p_{self.c_f1.pk}"))
-        self.assertLess(keys.index(f"p_{self.c_f2.pk}"), keys.index("paid"))
-        row = next(r for r in per_agent.rows if self.a1.name in r["customer"])
-        self.assertEqual((row[s1], row[s2], row["supplied"]), (D(70000), D(35000), D(105000)))  # destockage included
-        self.assertEqual((row[f"p_{self.c_f1.pk}"], row[f"p_{self.c_f2.pk}"], row["paid"]),
+        u = user or self.manager
+        return supply_payment(Filters(date_from=douala_today(), date_to=douala_today(), user=u,
+                                      cashier=u if u.is_cashier else None))
+
+    def test_supply_payment_pivot_by_subzone(self):
+        from core.models import MicroZone
+        from core.services import capital as cap
+
+        # agent Ndive also runs a second microzone (distribution road)
+        extra = MicroZone.objects.create(name="Mile 4 road", subzone=self.a1.microzone.subzone, agent=self.a1)
+        ops.record_supply(self.c_f1, product="UVE", customer=self.a1, amount=D(70000), source_account=self.uve_f1)
+        ops.record_supply(self.c_f2, product="UVE", customer=self.a1, amount=D(30000), source_account=self.uve_f2)
+        ops.record_destockage(self.c_f2, pos=self.p1, agent=self.a1, amount=D(5000), drawer=self.d_f2)
+        ops.record_supply(self.c_f2, product="CASH", customer=self.a2, amount=D(8000), source_account=self.d_f2)
+        cap.inject(self.finance, account=self.mtn_f1, amount=D(100000), source="x", purpose="y")
+        cap.float_exchange(self.finance, source=self.mtn_f1, amount=D(60000), to="AGENT", agent=self.a1)
+        ops.record_payment(self.c_f1, payer=self.a1, parts={"CASH": D(40000)}, idempotency_key=uuid.uuid4())
+        ops.record_payment(self.c_f2, payer=self.a1, parts={"MTN": D(10000)}, idempotency_key=uuid.uuid4())
+        rep = self._sp()
+        summary = {str(k): v for k, v, _k in rep.summary}
+        self.assertEqual((summary["Supplied by cashiers"], summary["Float supplied (finance)"],
+                          summary["Total supplied"]), (D(113000), D(60000), D(173000)))
+        self.assertEqual((summary["Paid to cashiers"], summary["Paid in float"], summary["Total paid"]),
                          (D(40000), D(10000), D(50000)))
-        self.assertEqual(row["net"], D(55000))
-        desks = {r["cashier"]: r for r in rep.tables[2].rows}
+        subs, table = rep.tables[0], rep.tables[1]
+        rows = table.rows
+        ndive = [r for r in rows if r["customer"].startswith(self.a1.name)]
+        self.assertEqual(len(ndive), 1)  # once, even with two microzones
+        r = ndive[0]
+        self.assertIn("Mile 4 road", r["microzones"])
+        self.assertIn(self.a1.microzone.name, r["microzones"])
+        self.assertEqual((r["by_cashiers"], r["float_sup"], r["supplied"], r["paid_cashiers"], r["paid_float"],
+                          r["paid"], r["net"]), (D(105000), D(60000), D(165000), D(40000), D(10000), D(50000),
+                                                 D(115000)))
+        heads = [x["customer"] for x in rows if x.get("_head")]
+        self.assertIn(self.a1.microzone.subzone.name, heads)
+        subtotal = next(x for x in rows if x.get("_sub") and self.a1.microzone.subzone.name in x["customer"])
+        self.assertGreaterEqual(subtotal["supplied"], D(165000))
+        self.assertEqual(table.totals()["supplied"], D(173000))  # subtotals not counted twice
+        self.assertEqual(subs.totals()["supplied"], D(173000))
+        desks = {x["cashier"]: x for x in rep.tables[3].rows}
         self.assertEqual(desks[str(self.c_f2)]["DESTOCK"], D(5000))
+        self.assertEqual(desks[str(self.c_f2)]["P_MTN"], D(10000))
         c = self.client_for("manager")
         for fmt_ in ("", "&format=pdf", "&format=xlsx"):
             self.assertEqual(c.get(f"/reports/supply_payment/?preset=day{fmt_}").status_code, 200)
-        # a cashier sees only his own desk: no per-cashier columns
-        r = self.client_for("cashier.fako1").get("/reports/supply_payment/?preset=day")
-        self.assertNotContains(r, "Supplied ·")
+        page = c.get("/reports/supply_payment/?preset=day")
+        self.assertContains(page, "Summary by subzone")
+        self.assertContains(page, "subtotal")
+        # a cashier's own report includes the float supplied from his desk's float account
+        mine = self._sp(self.c_f1)
+        s1 = {str(k): v for k, v, _k in mine.summary}
+        self.assertEqual(s1["Float supplied (finance)"], D(60000))
+        self.assertEqual(self._sp(self.c_f2).summary[1][1], D(0))
 
-    def test_float_to_agent_is_a_supply_in_reports(self):
-        from core.reports.defs import _customer_rows, statement, supplies, supply_payment
+    def test_float_to_agent_in_other_reports(self):
+        from core.reports.defs import _customer_rows, statement, supplies
         from core.reports.engine import Filters
         from core.services import capital as cap
 
-        sim = CompanySim.objects.create(network="MTN", msisdn="680000444", label="Finance float",
-                                        master_zone=self.zones["fako"], subzone=self.zones["fako1"])
-        flt = Account.objects.get(sim=sim, kind=K.MTN)
-        cap.inject(self.finance, account=flt, amount=D(200000), source="x", purpose="y")
-        cap.float_exchange(self.finance, source=flt, amount=D(80000), to="AGENT", agent=self.a1)
-        cap.float_exchange(self.finance, source=flt, amount=D(5000), to="DESK", uve_account=self.uve_f2)  # not a supply
-        ops.record_payment(self.c_f1, payer=self.a1, parts={"MTN": D(30000)}, accounts={"MTN": self.mtn_f1},
-                           idempotency_key=uuid.uuid4())
+        cap.inject(self.finance, account=self.mtn_f1, amount=D(200000), source="x", purpose="y")
+        cap.float_exchange(self.finance, source=self.mtn_f1, amount=D(80000), to="AGENT", agent=self.a1)
+        cap.float_exchange(self.finance, source=self.mtn_f1, amount=D(5000), to="DESK", uve_account=self.uve_f2)
         f = Filters(date_from=douala_today(), date_to=douala_today(), user=self.manager)
         groups = {r["group"]: r["amount"] for r in supplies(f).tables[0].rows}
         self.assertEqual(groups["Float (converted to UVE)"], D(80000))
-        sp = supply_payment(f)
-        row = next(r for r in sp.tables[1].rows if self.a1.name in r["customer"])
-        self.assertEqual((row["supplied"], row["paid"]), (D(80000), D(30000)))
-        by_desk = {r["cashier"]: r for r in sp.tables[2].rows}
-        self.assertEqual(by_desk[str(self.finance)]["FLOAT"], D(80000))
-        self.assertEqual(by_desk[str(self.c_f1)]["P_MTN"], D(30000))
-        self.assertIn("Paid float (MTN)", [c.label for c in sp.tables[2].columns])
         f.customer = self.a1
-        summ = {str(k): v for k, v, _kind in statement(f).summary}
-        self.assertEqual(summ["Float supply"], D(80000))
+        self.assertEqual({str(k): v for k, v, _k in statement(f).summary}["Float supply"], D(80000))
         f.customer = None
-        cust = next(r for r in _customer_rows(f) if r["name"] == self.a1.name)
-        self.assertEqual(cust["supplied"], D(80000))
-        self.assertEqual(cust["paid"], D(30000))
-
-    def test_float_supply_in_the_desks_own_report(self):
-        from core.services import capital as cap
-
-        cap.inject(self.finance, account=self.mtn_f1, amount=D(100000), source="x", purpose="y")
-        cap.float_exchange(self.finance, source=self.mtn_f1, amount=D(60000), to="AGENT", agent=self.a1)
-        for u in ("cashier.fako1", "manager"):
-            r = self.client_for(u).get("/reports/supply_payment/?preset=day")
-            self.assertContains(r, "of which float supply", msg_prefix=u)
-            self.assertContains(r, "60 000", msg_prefix=u)
-        # another desk does not see it
-        self.assertNotContains(self.client_for("cashier.fako2").get("/reports/supply_payment/?preset=day"),
-                               "of which float supply")
+        self.assertEqual(next(r for r in _customer_rows(f) if r["name"] == self.a1.name)["supplied"], D(80000))
