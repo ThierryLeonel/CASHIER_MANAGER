@@ -3995,6 +3995,9 @@ msgstr "OK"
 msgid "OK — sent equals received"
 msgstr "OK — envoyé égale reçu"
 
+msgid "OM account name"
+msgstr "Nom du compte OM"
+
 msgid "OTT, MAX IT, ID update, tickets…"
 msgstr "OTT, MAX IT, mise à jour d'identification, tickets…"
 
@@ -4462,6 +4465,9 @@ msgstr "Propriétaires"
 
 msgid "Owners take money out"
 msgstr "Les propriétaires retirent de l'argent"
+
+msgid "PERSONAL NAME (or OM ACCOUNT NAME) is required"
+msgstr "PERSONAL NAME (ou OM ACCOUNT NAME) est obligatoire"
 
 msgid ""
 "PNG, JPEG or WEBP, up to 3 MB. A square or wide logo on a transparent or "
@@ -5750,6 +5756,10 @@ msgstr "Arrêter d'enregistrer pour un caissier"
 msgid "Subzone"
 msgstr "Sous-zone"
 
+#, python-format
+msgid "Subzone %(sub)s is not in zone %(zone)s"
+msgstr "La sous-zone %(sub)s n'est pas dans la zone %(zone)s"
+
 msgid "Subzone of the new microzone"
 msgstr "Sous-zone de la nouvelle microzone"
 
@@ -5923,6 +5933,9 @@ msgstr "TOTAL DES PRODUITS"
 
 msgid "TOTAL OPENING"
 msgstr "TOTAL OUVERTURE"
+
+msgid "TYPE must be AGENT or POS"
+msgstr "TYPE doit être AGENT ou POS"
 
 msgid "Telephone"
 msgstr "Téléphone"

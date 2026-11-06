@@ -9,7 +9,10 @@
   <dt>{% trans "Zone" %}</dt><dd>{{ pos.master_zone|default:"—" }}</dd>
   <dt>{% trans "Microzone" %}</dt><dd>{% if pos.microzone %}{{ pos.microzone.subzone.name }} › {{ pos.microzone.name }}{% else %}—{% endif %}</dd>
   <dt>{% trans "Agent in charge" %}</dt><dd>{{ pos.agent_in_charge.name|default:"—" }}</dd>
+  <dt>{% trans "OM account name" %}</dt><dd>{{ pos.om_account_name|default:"—" }}</dd>
+  <dt>{% trans "WhatsApp contact" %}</dt><dd>{{ pos.whatsapp|default:"—" }}</dd>
   <dt>{% trans "Other phone" %}</dt><dd>{{ pos.other_phone|default:"—" }}</dd>
+  <dt>{% trans "Address" %}</dt><dd>{{ pos.address|default:"—" }}</dd>
   <dt>{% trans "Notes" %}</dt><dd>{{ pos.notes|default:"—" }}</dd>
   <dt>{% trans "Status" %}</dt><dd>{% if pos.active %}{% trans "active" %}{% else %}{% trans "inactive" %}{% endif %}</dd>
 </dl></div>

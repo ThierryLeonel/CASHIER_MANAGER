@@ -337,3 +337,9 @@ Every transaction stores its **recording cashier** (`Transaction.cashier`), and 
 2. Posts a reversal (and optional replacement re-validated with the original cashier's permissions and zone; conversions keep their original rate) in one database transaction; overspending is checked on the net effect.
 3. Posted on the **current open day of the original cashier**, with `original_business_date`. Established closings are never rewritten; the closing page lists corrections posted later for that day, and the next closing absorbs them as movements.
 4. A supply whose responsibility was transferred must have the transfer cancelled first, so customer balances stay consistent.
+
+
+## Agent / POS base import (template v2)
+* Template `customers` (Administration → Import → Agents and POS) now matches the company's base file: **TYPE, ZONE, SUB_ZONE, micro_zone, OM ACCOUNT NAME, BUSINESS_SIM, PERSONAL NAME, WHATSAPP CONTACT, OTHER CONTACT, ADDRESS**. Headers are read case-insensitively (spaces = underscores); the old names (name, subzone, microzone, master_zone, other_phone, notes) are still accepted.
+* New Counterparty fields (migration 0042): `om_account_name`, `whatsapp`, `address` (with `other_phone`). Shown in the add / edit forms, the admin list (searchable) and the agent's POS pages.
+* Rules: TYPE AGENT / POS (aliases PDV, AG…); PERSONAL NAME, else OM ACCOUNT NAME, becomes the name; ZONE optional (taken from the subzone) but refused if the subzone is in another zone; microzones are created when missing; the same agent SIM on several rows = one agent running several microzones; existing SIMs are updated (empty cells keep the old value). Phone contacts typed as Excel numbers are kept whole, 237 prefix removed; the template formats phone columns as text. Up to 5 000 rows per file; the dry run checks every row, nothing is imported if one fails.

@@ -481,12 +481,13 @@ class CounterpartyForm(forms.ModelForm):
     new_microzone_subzone = forms.ModelChoiceField(label=_("Subzone of the new microzone"), required=False,
                                                    queryset=Zone.objects.none())
 
-    field_order = ["kind", "business_sim", "name", "microzone", "new_microzone", "new_microzone_subzone",
-                   "other_phone", "notes", "active"]
+    field_order = ["kind", "business_sim", "om_account_name", "name", "microzone", "new_microzone",
+                   "new_microzone_subzone", "whatsapp", "other_phone", "address", "notes", "active"]
 
     class Meta:
         model = Counterparty
-        fields = ["kind", "business_sim", "name", "microzone", "other_phone", "notes"]
+        fields = ["kind", "business_sim", "om_account_name", "name", "microzone", "whatsapp", "other_phone",
+                  "address", "notes"]
 
     def __init__(self, *args, user=None, **kwargs):
         super().__init__(*args, **kwargs)
@@ -564,7 +565,7 @@ class CounterpartyEditForm(CounterpartyForm):
     """The business SIM and type are the identity: not editable after creation."""
 
     class Meta(CounterpartyForm.Meta):
-        fields = ["name", "microzone", "other_phone", "notes", "active"]
+        fields = ["om_account_name", "name", "microzone", "whatsapp", "other_phone", "address", "notes", "active"]
 
 
 class ResponsibilityTransferForm(forms.Form):

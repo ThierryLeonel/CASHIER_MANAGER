@@ -31,9 +31,12 @@ K = Account.Kind
 K_AGENT = Counterparty.Kind.AGENT
 
 TEMPLATES = {
-    "customers": (["type", "business_sim", "name", "subzone", "microzone", "master_zone", "other_phone", "notes"],
-                  [["AGENT", "691234567", "Agent Ndive", "fako-1", "Molyko", "", "", ""],
-                   ["POS", "692345678", "POS Molyko", "fako-1", "Molyko", "", "677000000", ""]]),
+    "customers": (["TYPE", "ZONE", "SUB_ZONE", "micro_zone", "OM ACCOUNT NAME", "BUSINESS_SIM", "PERSONAL NAME",
+                   "WHATSAPP CONTACT", "OTHER CONTACT", "ADDRESS"],
+                  [["AGENT", "fako", "fako-1", "molyko", "BMTC SARL HALF MILE (N1IndirGr)", "691234567", "Agent Ndive",
+                    "677000000", "697000000", "bota island"],
+                   ["POS", "fako", "fako-1", "molyko", "BMTC DW (TPResIndGr)", "692345678", "POS Molyko", "677000000",
+                    "677000000", "lumsom"]]),
     "cash_managers": (["name", "phone", "notes"], [["Cash manager Buea", "650123456", ""],
                                                    ["Mama Rose (no SIM)", "", "phone is optional"]]),
     "opening": (["kind", "identifier", "amount", "date", "note"],
@@ -75,6 +78,15 @@ TEMPLATES = {
 }
 
 
+# columns holding phone numbers: written as text so Excel keeps them whole
+PHONE_COLUMNS = {"business_sim", "whatsapp_contact", "other_contact", "phone", "sim_number", "identifier",
+                 "customer_sim", "agent_sim", "client_phone", "other_phone"}
+
+
+def _key(h):
+    return str(h or "").strip().lower().replace(" ", "_")
+
+
 def template_xlsx(kind):
     head, rows = TEMPLATES[kind]
     wb = Workbook()
@@ -85,7 +97,12 @@ def template_xlsx(kind):
         ws.append(r)
     for i, h in enumerate(head, start=1):
         ws.cell(1, i).font = Font(bold=True)
-        ws.column_dimensions[ws.cell(1, i).column_letter].width = max(14, len(h) + 4)
+        letter = ws.cell(1, i).column_letter
+        width = max([len(str(h))] + [len(str(r[i - 1])) for r in rows if i - 1 < len(r)])
+        ws.column_dimensions[letter].width = max(14, width + 4)
+        if _key(h) in PHONE_COLUMNS:
+            for row in range(2, 2001):
+                ws.cell(row, i).number_format = "@"
     buf = io.BytesIO()
     wb.save(buf)
     return buf.getvalue()
@@ -110,7 +127,7 @@ def read_rows(name, content):
     rows = [r for r in rows if any(str(c).strip() for c in r if c is not None)]
     if not rows:
         raise BusinessError(_("The file is empty."))
-    head = [str(h or "").strip().lower().replace(" ", "_") for h in rows[0]]
+    head = [_key(h) for h in rows[0]]
     data = []
     for r in rows[1:]:
         data.append({head[i]: ("" if v is None else v) for i, v in enumerate(r) if i < len(head) and head[i]})
@@ -234,31 +251,62 @@ def _asset_account(kind, ident, cashier=None):
 
 
 # ---------------------------------------------------------------- row handlers
+def _pick(r, *names):
+    """First non-empty value among the accepted column names (new template first, older names still read)."""
+    for n in names:
+        v = _s(r.get(n))
+        if v:
+            return v
+    return ""
+
+
+def _contact(v):
+    """A phone contact as digits (+ kept), without the 237 country code; free text is kept as typed."""
+    t = _s(v)
+    digits = "".join(c for c in t if c.isdigit())
+    if digits and len(digits) >= len(t.replace(" ", "").replace("+", "").replace("-", "").replace(".", "")):
+        return digits[3:] if digits.startswith("237") and len(digits) == 12 else digits
+    return t[:30]
+
+
 def _row_customer(user, r):
     kind = KIND_ALIASES.get(_s(r.get("type")).upper())
     if not kind:
-        raise BusinessError(_("type must be AGENT or POS"))
+        raise BusinessError(_("TYPE must be AGENT or POS"))
     sim = _sim(r.get("business_sim"), _("business SIM"))
-    name = _s(r.get("name"))
+    om_name = _pick(r, "om_account_name", "account_name")
+    name = _pick(r, "personal_name", "name") or om_name
     if not name:
-        raise BusinessError(_("name is required"))
+        raise BusinessError(_("PERSONAL NAME (or OM ACCOUNT NAME) is required"))
     cp = Counterparty.objects.filter(business_sim=sim).first()
     if cp and cp.kind != kind:
         raise BusinessError(_("Business SIM %(sim)s is already registered to %(cp)s.") % {"sim": sim, "cp": cp})
-    zone = _zone(r.get("master_zone"))
-    mz = _microzone(r.get("subzone"), r.get("microzone"))
+    zone = _zone(_pick(r, "zone", "master_zone"))
+    sub_code = _pick(r, "sub_zone", "subzone")
+    mz = _microzone(sub_code, _pick(r, "micro_zone", "microzone"))
+    if sub_code and zone:
+        sub = Zone.objects.filter(parent__isnull=False).filter(Q(code__iexact=sub_code) | Q(name__iexact=sub_code)) \
+            .first()
+        if sub and sub.parent_id != zone.id:
+            raise BusinessError(_("Subzone %(sub)s is not in zone %(zone)s") % {"sub": sub_code, "zone": zone.name})
+    if not zone and mz:
+        zone = mz.subzone.parent
     if mz and kind == K_AGENT and mz.agent_id and mz.agent.business_sim != sim:
         raise BusinessError(_("%(mz)s is already controlled by %(agent)s.") % {"mz": mz.name, "agent": mz.agent.name})
+    info = {"om_account_name": om_name[:150], "whatsapp": _contact(r.get("whatsapp_contact")),
+            "other_phone": _contact(_pick(r, "other_contact", "other_phone")), "address": _pick(r, "address")[:255],
+            "notes": _pick(r, "notes")}
     if cp:
         cp.name, cp.master_zone = name, zone or cp.master_zone
         cp.microzone = mz or cp.microzone
-        cp.other_phone = _s(r.get("other_phone")) or cp.other_phone
-        cp.notes = _s(r.get("notes")) or cp.notes
+        for k, v in info.items():
+            if v:
+                setattr(cp, k, v)
         cp.save()
         _take_charge(cp)
         return _("updated %(cp)s") % {"cp": cp}
     cp = Counterparty.objects.create(kind=kind, business_sim=sim, name=name, master_zone=zone, microzone=mz,
-                                     other_phone=_s(r.get("other_phone")), notes=_s(r.get("notes")), created_by=user)
+                                     created_by=user, **info)
     _take_charge(cp)
     return _("created %(cp)s") % {"cp": cp}
 

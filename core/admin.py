@@ -367,9 +367,9 @@ class AccountAccessAdmin(SuperAdminOnly):
 
 @admin.register(Counterparty)
 class CounterpartyAdmin(SuperAdminOnly):
-    list_display = ("business_sim", "name", "kind", "microzone", "master_zone", "active")
+    list_display = ("business_sim", "om_account_name", "name", "kind", "microzone", "master_zone", "whatsapp", "active")
     list_filter = ("kind", "active", "master_zone", "microzone")
-    search_fields = ("business_sim", "name")
+    search_fields = ("business_sim", "name", "om_account_name", "whatsapp", "other_phone")
 
     def get_readonly_fields(self, request, obj=None):
         return ("kind", "business_sim", "master_zone", "created_by", "created_at") if obj \

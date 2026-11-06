@@ -1856,6 +1856,10 @@ FR = {
     'matches': 'correspond',
     'There is a difference: the note is required. Explain it before closing.': 'Il y a un écart : la note est obligatoire. Expliquez-le avant de clôturer.',
     # commercial agent portal
+    'OM account name': 'Nom du compte OM',
+    'PERSONAL NAME (or OM ACCOUNT NAME) is required': 'PERSONAL NAME (ou OM ACCOUNT NAME) est obligatoire',
+    'Subzone %(sub)s is not in zone %(zone)s': "La sous-zone %(sub)s n'est pas dans la zone %(zone)s",
+    'TYPE must be AGENT or POS': 'TYPE doit être AGENT ou POS',
     'All transfers, by sender': 'Tous les transferts, par expéditeur',
     'Attendance summary by shop': 'Résumé des présences par boutique',
     'Company assets by product: opening + period movements = closing': 'Actifs de la société par produit : ouverture + mouvements de la période = clôture',

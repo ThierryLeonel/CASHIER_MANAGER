@@ -142,6 +142,47 @@ class Imports(OrgMixin, TestCase):
         self.assertEqual(Counterparty.objects.get(business_sim="699112233").name, "New agent")
         self.assertEqual(Counterparty.objects.get(business_sim="692000001").name, "Renamed POS")
 
+    def test_customers_new_template(self):
+        """The agent / POS base file: TYPE, ZONE, SUB_ZONE, micro_zone, OM ACCOUNT NAME, BUSINESS_SIM, PERSONAL NAME,
+        WHATSAPP CONTACT, OTHER CONTACT, ADDRESS — numbers typed as Excel numbers, an agent on two microzones."""
+        from openpyxl import load_workbook
+
+        tpl = load_workbook(io.BytesIO(importer.template_xlsx("customers"))).active
+        head = [c.value for c in tpl[1]]
+        self.assertEqual(head, ["TYPE", "ZONE", "SUB_ZONE", "micro_zone", "OM ACCOUNT NAME", "BUSINESS_SIM",
+                                "PERSONAL NAME", "WHATSAPP CONTACT", "OTHER CONTACT", "ADDRESS"])
+        rows = [head,
+                ["AGENT", "fako", "fako-1", "bokwai", "BMTC SARL HALF MILE (N1IndirGr)", 699111222, "Agent Ndive",
+                 677000000, 237697000000, "bota island"],
+                ["AGENT", "fako", "fako-1", "great soppo", "BMTC SARL HALF MILE (N1IndirGr)", 699111222, "Agent Ndive",
+                 677000000, 697000000, "bota island"],
+                ["POS", "fako", "fako-1", "bokwai", "BMTC DW (TPResIndGr)", "692 34 56 78", "POS Bokwai", 677000001,
+                 "", "lumsom"],
+                ["POS", "", "fako-2", "bonduma", "", 692345679, "", "", "", ""]]
+        results, ok = importer.run_import(self.admin, "customers", importer.read_rows("b.xlsx", xlsx_bytes(rows)),
+                                          commit=True)
+        self.assertFalse(ok)  # last row: no name at all
+        rows[-1][4] = "BMTC KIOSK (TPResIndGr)"
+        results, ok = importer.run_import(self.admin, "customers", importer.read_rows("b.xlsx", xlsx_bytes(rows)),
+                                          commit=True)
+        self.assertTrue(ok, results)
+        ag = Counterparty.objects.get(business_sim="699111222")
+        self.assertEqual((ag.kind, ag.name, ag.om_account_name, ag.whatsapp, ag.other_phone, ag.address),
+                         ("AGENT", "Agent Ndive", "BMTC SARL HALF MILE (N1IndirGr)", "677000000", "697000000",
+                          "bota island"))
+        self.assertEqual(sorted(ag.controlled_microzones.values_list("name", flat=True)), ["bokwai", "great soppo"])
+        self.assertEqual(ag.master_zone.code, "fako")
+        pos = Counterparty.objects.get(business_sim="692345678")
+        self.assertEqual((pos.microzone.name, pos.microzone.agent, pos.om_account_name), ("bokwai", ag,
+                                                                                         "BMTC DW (TPResIndGr)"))
+        kiosk = Counterparty.objects.get(business_sim="692345679")
+        self.assertEqual((kiosk.name, kiosk.master_zone.code), ("BMTC KIOSK (TPResIndGr)", "fako"))
+        bad = [head, ["POS", "meme", "fako-1", "bokwai", "X", 692345670, "Y", "", "", ""]]
+        results, ok = importer.run_import(self.admin, "customers", importer.read_rows("b.xlsx", xlsx_bytes(bad)),
+                                          commit=True)
+        self.assertFalse(ok)
+        self.assertIn("not in zone", results[0][2])
+
     def test_transactions_dry_run_error_and_commit(self):
         head = importer.TEMPLATES["transactions"][0]
         good = [["2026-10-01", "cashier.fako1", "SUPPLY_AGENT", "691000001", "", "UVE", "690000001", 100000, "", "", ""],

@@ -382,7 +382,10 @@ class Counterparty(models.Model):
                                     help_text="Filled automatically from the microzone.")
     microzone = models.ForeignKey("MicroZone", null=True, blank=True, on_delete=models.PROTECT,
                                   related_name="members", verbose_name=_("microzone"))
+    om_account_name = models.CharField(_("OM account name"), max_length=150, blank=True)
+    whatsapp = models.CharField(_("WhatsApp contact"), max_length=30, blank=True)
     other_phone = models.CharField(_("other phone"), max_length=30, blank=True)
+    address = models.CharField(_("address"), max_length=255, blank=True)
     notes = models.CharField(_("notes"), max_length=255, blank=True)
     active = models.BooleanField(default=True)
     created_at = models.DateTimeField(default=timezone.now)
