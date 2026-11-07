@@ -81,8 +81,8 @@ def agent_pos(request):
     from django.core.paginator import Paginator
     from django.db.models import F
 
-    # like OOS: from the lowest ER stock to the highest, POS without stock data last; 100 per page
-    qs = qs.order_by(F("er_stock").asc(nulls_last=True), "name")
+    # every POS of the zone by name; a stock tab orders from the lowest ER stock to the highest; 100 per page
+    qs = qs.order_by(F("er_stock").asc(nulls_last=True), "name") if level else qs.order_by("name")
     page = Paginator(qs, 100).get_page(request.GET.get("page"))
     ids = [p.pk for p in page]
     live = ag.live_entries(agent).filter(pos_id__in=ids)

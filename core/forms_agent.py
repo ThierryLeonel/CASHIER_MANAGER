@@ -174,7 +174,7 @@ class PosInfoForm(forms.ModelForm):
 
         model = Counterparty
         fields = ["name", "om_account_name", "whatsapp", "other_phone", "address", "notes"]
-        labels = {"name": _("Name"), "om_account_name": _("Business name (OM account name)"),
+        labels = {"name": _("Personal name"), "om_account_name": _("Business name (OM account name)"),
                   "whatsapp": _("WhatsApp contact"), "other_phone": _("Other contact"), "address": _("Address"),
                   "notes": _("Notes")}
         widgets = {"whatsapp": forms.TextInput(attrs={"inputmode": "tel"}),

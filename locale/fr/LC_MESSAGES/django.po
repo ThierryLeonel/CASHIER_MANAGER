@@ -3573,6 +3573,9 @@ msgstr "Ajustement lié"
 msgid "Linked correction"
 msgstr "Correction liée"
 
+msgid "Linked to"
+msgstr "Rattaché à"
+
 msgid "Log out"
 msgstr "Déconnexion"
 
@@ -5117,6 +5120,9 @@ msgstr "Personne"
 
 msgid "Person and SIM registered"
 msgstr "Personne et SIM enregistrées"
+
+msgid "Personal name"
+msgstr "Nom personnel"
 
 msgid "Phone / SIM number"
 msgstr "Téléphone / numéro SIM"

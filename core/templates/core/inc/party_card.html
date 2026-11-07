@@ -1,0 +1,29 @@
+{% load i18n cashier %}<div class="pos-card party{% if lvl %} lvl-{{ lvl|lower }}{% endif %}{% if c.kind == 'AGENT' %} is-agent{% endif %}{% if not c.active %} inactive{% endif %}">
+  <div class="party-top">
+    {% if can_move and c.kind == "POS" %}<label class="sel-box"><input type="checkbox" name="ids" value="{{ c.pk }}" class="sel" form="move-form"></label>{% endif %}
+    <span class="badge{% if c.kind == 'AGENT' %} acc{% endif %}">{{ c.get_kind_display }}</span>
+    {% if not c.active %}<span class="badge">{% trans "inactive" %}</span>{% endif %}
+    {% if c.login_user %}<span class="badge acc">{% trans "has login" %}</span>{% endif %}
+  </div>
+  <a class="pos-name" href="{% url 'customer_detail' c.pk %}">{{ c.name }}</a>
+  {% if c.om_account_name and c.om_account_name != c.name %}<div class="pos-biz">{{ c.om_account_name }}</div>{% endif %}
+  <div class="pos-sim">{{ c.business_sim|sim }}</div>
+  <div class="pos-info small">
+    {% if c.microzone %}<span>{{ c.microzone.subzone.name }} › {{ c.microzone.name }}</span>{% else %}<span class="muted">{% trans "No microzone" %}</span>{% endif %}
+    {% if c.kind == 'POS' %}<span>{% trans "Linked to" %}: <strong>{{ c.microzone.agent.name|default:"—" }}</strong></span>
+    {% elif c.microzone.agent_id == c.pk %}<span class="badge acc">{% trans "in charge" %}</span>{% endif %}
+    {% if c.whatsapp %}<a href="https://wa.me/237{{ c.whatsapp }}">WhatsApp {{ c.whatsapp|sim }}</a>{% endif %}
+    {% if c.other_phone %}<a href="tel:{{ c.other_phone }}">☎ {{ c.other_phone|sim }}</a>{% endif %}
+    {% if c.address %}<span>📍 {{ c.address }}</span>{% endif %}
+  </div>
+  {% if c.stock_at %}<div class="pos-stock">
+    <span><small>{% trans "ER stock" %}</small>{{ c.er_stock|default_if_none:"—"|fcfa }}</span>
+    <span><small>{% trans "OM stock" %}</small>{{ c.uve_stock|default_if_none:"—"|fcfa }}</span>
+    <span><small>{% trans "Commission" %}</small>{{ c.commission_balance|default_if_none:"—"|fcfa }}</span>
+  </div>{% endif %}
+  <div class="pos-foot">
+    <span class="party-bal">{% if bal|negative %}<span class="pos">{{ bal|absval|fcfa }}</span> <small>{% trans "due to the agent / POS" %}</small>{% elif bal %}<strong>{{ bal|fcfa }}</strong> <small>{% trans "owed to the company" %}</small>{% else %}<small class="muted">{% trans "Balance" %} 0</small>{% endif %}
+    {% if lvl %}<br><span class="pos-lvl">{% if lvl == 'OUT' %}{% trans "OUT OF STOCK" %}{% elif lvl == 'LOW' %}{% trans "LOW STOCK" %}{% else %}{% trans "IN STOCK" %}{% endif %}</span>{% endif %}</span>
+    <span class="pos-btns"><a class="btn small" href="{% url 'customer_detail' c.pk %}">{% trans "Statement" %}</a>{% if user.sees_all_zones or user.is_junior %}<a class="btn small" href="{% url 'customer_edit' c.pk %}">✎ {% trans "Edit" %}</a>{% endif %}</span>
+  </div>
+</div>

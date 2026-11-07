@@ -156,3 +156,14 @@ class MovePos(OrgMixin, TestCase):
         c.post("/customers/move/", {"ids": [self.pos[0].pk], "target": self.target.pk, "scope": "selected"})
         self.pos[0].refresh_from_db()
         self.assertEqual(self.pos[0].microzone, self.molyko)
+
+    def test_agents_and_pos_cards(self):
+        r = self.m.get("/customers/?kind=POS")
+        self.assertContains(r, 'class="pos-card party')
+        self.assertContains(r, "Linked to")
+        self.assertContains(r, "Statement")
+        self.assertContains(r, 'form="move-form"')
+        # the card checkbox still moves POS
+        self.m.post("/customers/move/", {"ids": [self.pos[3].pk], "target": self.target.pk, "scope": "selected"})
+        self.pos[3].refresh_from_db()
+        self.assertEqual(self.pos[3].microzone, self.target)

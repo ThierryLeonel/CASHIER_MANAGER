@@ -1856,6 +1856,8 @@ FR = {
     'matches': 'correspond',
     'There is a difference: the note is required. Explain it before closing.': 'Il y a un écart : la note est obligatoire. Expliquez-le avant de clôturer.',
     # commercial agent portal
+    'Linked to': 'Rattaché à',
+    'Personal name': 'Nom personnel',
     'Different POS': 'POS différents',
     '% of his POS this month': '% de ses POS ce mois',
     '% of my POS': '% de mes POS',

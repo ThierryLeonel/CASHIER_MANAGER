@@ -620,3 +620,12 @@ table.t tr.oos td { background: #fff1f0; }
 .oos-search .chk { display: flex; align-items: center; gap: 4px; white-space: nowrap; }
 .oos-search { flex-wrap: wrap; }
 .oos-search input[type=search] { flex: 1 1 180px; }
+
+/* agent / POS cards (staff Agents & POS, agent Global POS) */
+.pos-card .pos-info { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 6px; color: var(--muted, #667085); }
+.pos-card .pos-info a { color: inherit; }
+.pos-card .pos-btns { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.pos-card.party .party-top { display: flex; gap: 6px; align-items: center; margin-bottom: 4px; }
+.pos-card.party .sel-box input { width: 18px; height: 18px; }
+.pos-card.party.is-agent { border-left-color: #7a5af8; }
+.pos-card.party .party-bal small { color: var(--muted, #667085); }

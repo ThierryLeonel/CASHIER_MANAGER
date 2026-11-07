@@ -598,3 +598,16 @@ class PosStock(OrgMixin, TestCase):
         rep = pos_coverage(Filters(None, None, user=self.manager))
         row = next(x for x in rep.tables[0].rows if x.get("_cp") == self.a1)
         self.assertEqual((row["day"], row["month"], row["supplies"]), (2, 2, 3))
+
+    def test_global_pos_shows_info_and_edit(self):
+        from core.models import Counterparty
+
+        p = Counterparty.objects.filter(kind="POS", microzone__agent=self.a1).first()
+        p.address, p.whatsapp = "Bota island", "677000000"
+        p.save()
+        c = self.client_class()
+        c.login(username=self.agent_user.username, password=PW)
+        r = c.get("/agent/pos/")
+        self.assertContains(r, "Bota island")
+        self.assertContains(r, f"/agent/pos/{p.pk}/edit/")
+        self.assertContains(c.get(f"/agent/pos/{p.pk}/edit/"), "Personal name")

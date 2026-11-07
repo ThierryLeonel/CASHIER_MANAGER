@@ -3,6 +3,12 @@
   <a class="pos-name" href="{% url 'agent_pos_detail' p.pk %}">{{ p.name }}</a>
   {% if p.om_account_name and p.om_account_name != p.name %}<div class="pos-biz">{{ p.om_account_name }}</div>{% endif %}
   <div class="pos-sim">{{ p.business_sim|sim }}{% if p.microzone %} · {{ p.microzone.name }}{% endif %}{% if mode == 'global' %}{% if p.microzone.agent %} · {{ p.microzone.agent.name }}{% endif %}{% if mine_mz %} <span class="badge acc">{% trans "mine" %}</span>{% endif %}{% endif %}</div>
+  {% if mode == 'global' %}<div class="pos-info small">
+    {% if p.microzone %}<span>{{ p.microzone.subzone.name }} › {{ p.microzone.name }}</span>{% endif %}
+    {% if p.whatsapp %}<a href="https://wa.me/237{{ p.whatsapp }}">WhatsApp {{ p.whatsapp|sim }}</a>{% endif %}
+    {% if p.other_phone %}<a href="tel:{{ p.other_phone }}">☎ {{ p.other_phone|sim }}</a>{% endif %}
+    {% if p.address %}<span>📍 {{ p.address }}</span>{% endif %}
+  </div>{% endif %}
   <div class="pos-stock">
     {% if mode == 'destock' %}<span class="hl"><small>{% trans "OM stock" %}</small>{% if p.uve_stock is not None %}{{ p.uve_stock|fcfa }}{% else %}—{% endif %}</span>
     <span><small>{% trans "ER stock" %}</small>{% if p.er_stock is not None %}{{ p.er_stock|fcfa }}{% else %}—{% endif %}</span>
@@ -15,6 +21,7 @@
     {% if mode == 'destock' %}<span class="pos-lvl">{% trans "POSSIBLE DESTOCASH" %}</span>
     <a class="btn small primary" href="{% url 'agent_supply' %}?pos={{ p.business_sim }}&amp;product=CASH">{% trans "Destocash" %}</a>
     {% else %}<span class="pos-lvl">{% if lvl == 'OUT' %}{% trans "OUT OF STOCK" %}{% elif lvl == 'LOW' %}{% trans "LOW STOCK" %}{% elif lvl == 'IN' %}{% trans "IN STOCK" %}{% else %}{% trans "no stock data" %}{% endif %}</span>
-    {% if p.active %}<a class="btn small{% if lvl == 'OUT' or lvl == 'LOW' %} primary{% endif %}" href="{% url 'agent_supply' %}?pos={{ p.business_sim }}">{% trans "Supply" %}</a>{% else %}<span class="badge">{% trans "inactive" %}</span>{% endif %}{% endif %}
+    <span class="pos-btns">{% if mode == 'global' %}<a class="btn small" href="{% url 'agent_pos_edit' p.pk %}">✎ {% trans "Edit" %}</a>{% endif %}
+    {% if p.active %}<a class="btn small{% if lvl == 'OUT' or lvl == 'LOW' %} primary{% endif %}" href="{% url 'agent_supply' %}?pos={{ p.business_sim }}">{% trans "Supply" %}</a>{% else %}<span class="badge">{% trans "inactive" %}</span>{% endif %}</span>{% endif %}
   </div>
 </div>

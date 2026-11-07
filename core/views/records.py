@@ -12,7 +12,7 @@ from django.utils import timezone
 from django.utils.translation import gettext as _
 
 from core import forms as F
-from core.models import Correction, Counterparty, Entry, MicroZone, Transaction, TxType
+from core.models import Account, Correction, Counterparty, Entry, MicroZone, Transaction, TxType
 from core.money import fmt
 from core.pdf import receipt_pdf
 from core.reports.engine import FilterForm, Filters
@@ -57,10 +57,15 @@ def _customer_filter(user, params):
 @roles_required(*STAFF)
 def customers(request):
     qs, microzones, q, kind, mz = _customer_filter(request.user, request.GET)
-    bals = dict(Entry.objects.filter(account__counterparty__in=qs).values_list("account__counterparty")
-                .annotate(s=Sum("amount")))
-    page = Paginator(qs.order_by("kind", "business_sim"), 50).get_page(request.GET.get("page"))
-    rows = [(c, bals.get(c.id, 0)) for c in page]
+    from core.services.branding import company
+
+    co = company()
+    page = Paginator(qs.order_by("kind", "name", "business_sim"), 48).get_page(request.GET.get("page"))
+    ids = [c.id for c in page]
+    bals = dict(Entry.objects.filter(account__counterparty_id__in=ids, account__kind=Account.Kind.CUSTOMER)
+                .values_list("account__counterparty").annotate(s=Sum("amount")))
+    rows = [(c, bals.get(c.id, 0), c.stock_level(co.out_of_stock_er, co.low_stock_er) if c.kind == "POS" else None)
+            for c in page]
     can_move = request.user.sees_all_zones or request.user.is_junior
     return render(request, "core/customers.html", {"rows": rows, "page": page, "q": q, "kind": kind,
                                                    "kinds": Counterparty.Kind.choices, "mz": mz,
