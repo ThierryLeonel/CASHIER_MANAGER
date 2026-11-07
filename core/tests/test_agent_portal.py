@@ -544,6 +544,9 @@ class PosStock(OrgMixin, TestCase):
         # clear the import list (one, then all); the stock stays
         m = self.client_class()
         m.login(username="admin", password=PW)
+        page = m.get("/administration/import/")
+        self.assertContains(page, "Clear the list")
+        self.assertContains(page, "Update POS stock")
         m.post("/administration/import/history/clear/", {"pk": b.pk})
         self.assertFalse(ImportBatch.objects.filter(pk=b.pk).exists())
         m.post("/administration/import/history/clear/")
