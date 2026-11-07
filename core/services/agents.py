@@ -9,10 +9,11 @@ cashier of the chosen desk confirms it; it is then posted as an ordinary company
 it reduces what the agent owes exactly like a payment the cashier records himself."""
 import uuid
 from collections import OrderedDict
+from datetime import timedelta
 from decimal import Decimal
 
 from django.db import IntegrityError, transaction
-from django.db.models import Q, Sum
+from django.db.models import Count, F, Q, Sum
 from django.utils import timezone
 from django.utils.translation import gettext as _
 
@@ -645,3 +646,46 @@ def move_pos(user, pos_qs, target):
         log_event(user, "pos_moved", count=len(ids), to_microzone=target.id, to=str(target),
                   ids=ids[:1000])
     return len(ids)
+
+
+# ---------------------------------------------------------------- coverage: different POS supplied per day / week / month
+def _period_starts(today):
+    week = today - timedelta(days=today.weekday())
+    return week, today.replace(day=1)
+
+
+def unique_pos(agent_ids, d_from, d_to):
+    """{agent id: number of different POS supplied between two dates} (cancelled supplies left out)."""
+    return dict(E.objects.filter(agent_id__in=agent_ids, kind=E.Kind.SUPPLY, pos__isnull=False,
+                                 cancelled_at__isnull=True, business_date__gte=d_from, business_date__lte=d_to)
+                .values("agent").annotate(n=Count("pos", distinct=True)).values_list("agent", "n"))
+
+
+def pos_coverage(agent, today):
+    """Tiles (today / this week / this month, out of the POS in his charge) and day, week, month tables."""
+    from django.db.models.functions import TruncMonth, TruncWeek
+
+    week, month = _period_starts(today)
+    sup = E.objects.filter(agent=agent, kind=E.Kind.SUPPLY, pos__isnull=False, cancelled_at__isnull=True)
+    in_charge = Counterparty.objects.filter(kind=Counterparty.Kind.POS, active=True, microzone__agent=agent).count()
+
+    def uniq(d_from, d_to):
+        return sup.filter(business_date__gte=d_from, business_date__lte=d_to).values("pos").distinct().count()
+
+    def table(qs, trunc, label):
+        rows = qs.annotate(p=trunc).values("p").annotate(
+            n=Count("pos", distinct=True), supplies=Count("id"), uve=Sum("uve"), er=Sum("er"), cash=Sum("cash")) \
+            .order_by("-p")
+        return [{"label": label(r["p"]), "start": r["p"], "n": r["n"], "supplies": r["supplies"],
+                 "amount": (r["uve"] or Z) + (r["er"] or Z) + (r["cash"] or Z),
+                 "pct": round(100 * r["n"] / in_charge) if in_charge else None} for r in rows]
+
+    days = table(sup.filter(business_date__gte=today - timedelta(days=30)), F("business_date"),
+                 lambda d: d.strftime("%a %d/%m/%Y"))
+    weeks = table(sup.filter(business_date__gte=week - timedelta(weeks=11)), TruncWeek("business_date"),
+                  lambda d: f"{d:%d/%m} – {(d + timedelta(days=6)):%d/%m/%Y}")
+    months = table(sup.filter(business_date__gte=(month - timedelta(days=330)).replace(day=1)),
+                   TruncMonth("business_date"), lambda d: d.strftime("%m/%Y"))
+    return {"today": today, "in_charge": in_charge, "n_day": uniq(today, today), "n_week": uniq(week, today),
+            "n_month": uniq(month, today), "days": days, "weeks": weeks, "months": months, "week_start": week,
+            "month_start": month}

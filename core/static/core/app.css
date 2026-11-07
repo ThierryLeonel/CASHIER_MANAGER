@@ -609,3 +609,14 @@ table.t tr.oos td { background: #fff1f0; }
 .pos-card.lvl-out .pos-lvl { color: #b42318; } .pos-card.lvl-low .pos-lvl { color: #b54708; } .pos-card.lvl-in .pos-lvl { color: #067647; }
 .pos-card.fixed { margin-bottom: 12px; }
 .panel-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 6px; }
+
+.pos-card { position: relative; }
+.pos-card.lvl-om { border-left-color: #2e90fa; }
+.pos-card.lvl-om .pos-lvl { color: #175cd3; }
+.pos-card .pos-stock span.hl { color: #175cd3; }
+.pos-card .pos-rank { position: absolute; top: 8px; right: 10px; font-size: .75rem; color: var(--muted, #667085); font-weight: 600; }
+.pos-card .pos-extra { display: flex; gap: 12px; justify-content: space-between; margin-bottom: 6px; color: var(--muted, #667085); }
+.pos-card.inactive { opacity: .6; }
+.oos-search .chk { display: flex; align-items: center; gap: 4px; white-space: nowrap; }
+.oos-search { flex-wrap: wrap; }
+.oos-search input[type=search] { flex: 1 1 180px; }

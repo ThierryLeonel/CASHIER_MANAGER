@@ -8,6 +8,12 @@ msgstr ""
 msgid " · out of stock"
 msgstr " · en rupture"
 
+msgid "% of his POS this month"
+msgstr "% de ses POS ce mois"
+
+msgid "% of my POS"
+msgstr "% de mes POS"
+
 #, python-format
 msgid ""
 "%(a)s cannot be transferred into %(b)s. Transfer the same product (cash ↔ "
@@ -199,6 +205,10 @@ msgstr ""
 "%(ref)s. Une partie est déjà réglée : l'approvisionnement complet ne peut "
 "pas être transféré sans déplacer une dette réglée. Un responsable doit "
 "décider comment traiter ce cas."
+
+#, python-format
+msgid "%(pos)s updated."
+msgstr "%(pos)s mis à jour."
 
 #, python-format
 msgid "%(ref)s cancelled."
@@ -1169,6 +1179,9 @@ msgid ""
 msgstr ""
 "Journée du %(d)s clôturée. Les nouvelles saisies appartiennent désormais à "
 "la journée suivante."
+
+msgid "Business name (OM account name)"
+msgstr "Nom commercial (nom du compte OM)"
 
 msgid "By"
 msgstr "Par"
@@ -2490,6 +2503,9 @@ msgstr "Guichet"
 msgid "Desk / shop"
 msgstr "Guichet / boutique"
 
+msgid "Destocash"
+msgstr "Déstocker"
+
 msgid "Destockage"
 msgstr "Déstockage"
 
@@ -2523,6 +2539,24 @@ msgstr "Différence sur la période"
 
 msgid "Differences"
 msgstr "Écarts"
+
+msgid "Different POS"
+msgstr "POS différents"
+
+msgid "Different POS each commercial agent supplied per day, week and month"
+msgstr ""
+"POS différents approvisionnés par chaque agent commercial par jour, semaine "
+"et mois"
+
+msgid "Different POS supplied"
+msgstr "POS différents approvisionnés"
+
+#, python-format
+msgid "Different POS supplied on %(d)s"
+msgstr "POS différents approvisionnés le %(d)s"
+
+msgid "Different POS supplied, by subzone"
+msgstr "POS différents approvisionnés, par sous-zone"
 
 msgid "Direct POS supplies and their outstanding amounts"
 msgstr "Approvisionnements directs des PDV et montants dus"
@@ -2677,6 +2711,9 @@ msgstr "Modifier %(s)s"
 
 msgid "Edit / transfer"
 msgstr "Modifier / muter"
+
+msgid "Edit POS"
+msgstr "Modifier le POS"
 
 msgid "Edit category"
 msgstr "Modifier la catégorie"
@@ -3231,6 +3268,9 @@ msgstr "Combien"
 
 msgid "I confirm these are the actual counted/read balances."
 msgstr "Je confirme qu'il s'agit des soldes réellement comptés/relevés."
+
+msgid "I owe"
+msgstr "Je dois"
 
 msgid "I owe the company"
 msgstr "Je dois à l'entreprise"
@@ -3887,6 +3927,9 @@ msgstr ""
 msgid "No POS in your microzones."
 msgstr "Aucun POS dans vos microzones."
 
+msgid "No POS supplied yet."
+msgstr "Aucun POS approvisionné pour le moment."
+
 #, python-format
 msgid "No POS to move (they may already be in %(mz)s)."
 msgstr "Aucun POS à déplacer (ils sont peut-être déjà dans %(mz)s)."
@@ -4085,6 +4128,9 @@ msgstr ""
 "Aucune valeur n'a été modifiée. Utilisez « Annuler » pour contre-passer sans"
 " remplacement."
 
+msgid "None of your POS has OM stock in the last stock file."
+msgstr "Aucun de vos POS n'a de stock OM dans le dernier fichier de stock."
+
 msgid "None yet."
 msgstr "Aucun pour l'instant."
 
@@ -4179,6 +4225,14 @@ msgstr "Enregistrement en cours pour %(c)s"
 msgid "Number"
 msgstr "Numéro"
 
+#, python-format
+msgid ""
+"Number of different POS you supplied (a POS supplied several times counts "
+"once). POS in your charge: %(n)s."
+msgstr ""
+"Nombre de POS différents que vous avez approvisionnés (un POS approvisionné "
+"plusieurs fois compte une fois). POS à votre charge : %(n)s."
+
 msgid "Number of units bought"
 msgstr "Nombre d'unités achetées"
 
@@ -4196,6 +4250,9 @@ msgstr "Nom du compte OM"
 
 msgid "OM stock"
 msgstr "Stock OM"
+
+msgid "OM stock of my POS"
+msgstr "Stock OM de mes POS"
 
 msgid "OOS"
 msgstr "OOS"
@@ -4593,6 +4650,9 @@ msgstr "Autre"
 msgid "Other client"
 msgstr "Autre client"
 
+msgid "Other contact"
+msgstr "Autre contact"
+
 msgid "Other item"
 msgstr "Autre article"
 
@@ -4634,6 +4694,9 @@ msgstr "Encours"
 
 msgid "Outstanding amount owed"
 msgstr "Montant restant dû"
+
+msgid "Over the period"
+msgstr "Sur la période"
 
 msgid "Overall (since launch)"
 msgstr "Global (depuis le démarrage)"
@@ -4725,6 +4788,12 @@ msgstr "Soldes des POS par sous-zone"
 msgid "POS business SIM"
 msgstr "SIM business du POS"
 
+msgid "POS in his charge"
+msgstr "POS à sa charge"
+
+msgid "POS in the agents' charge"
+msgstr "POS à la charge des agents"
+
 msgid "POS low stock when ER stock is below (FCFA)"
 msgstr "POS en stock faible quand le stock ER est sous (FCFA)"
 
@@ -4757,17 +4826,29 @@ msgstr ""
 "Stock des POS — mettre à jour seulement les changements (les POS absents du "
 "fichier gardent leur stock)"
 
+msgid "POS supplied"
+msgstr "POS approvisionnés"
+
+msgid "POS supplied by commercial agents"
+msgstr "POS approvisionnés par les agents commerciaux"
+
 msgid "POS that received the cash (business SIM)"
 msgstr "PDV qui a reçu les espèces (SIM business)"
 
 msgid "POS transactions and outstanding"
 msgstr "Transactions PDV et montants dus"
 
+msgid "POS with OM stock"
+msgstr "POS avec stock OM"
+
 msgid "POS, shop or other · UVE, ER, cash"
 msgstr "POS, boutique ou autre · UVE, ER, espèces"
 
 msgid "POS: the microzone where it sells. Agent: the microzone he controls."
 msgstr "PDV : la microzone où il vend. Agent : la microzone qu'il contrôle."
+
+msgid "POSSIBLE DESTOCASH"
+msgstr "DÉSTOCKAGE POSSIBLE"
 
 msgid "Page"
 msgstr "Page"
@@ -5022,6 +5103,12 @@ msgstr "Par caissier, par produit et moyen de paiement"
 msgid "Per day"
 msgstr "Par jour"
 
+msgid "Per month"
+msgstr "Par mois"
+
+msgid "Per week"
+msgstr "Par semaine"
+
 msgid "Period"
 msgstr "Période"
 
@@ -5062,6 +5149,9 @@ msgstr ""
 
 msgid "Positive = received; negative = adjustment."
 msgstr "Positif = reçu ; négatif = ajustement."
+
+msgid "Possible destocash"
+msgstr "Déstockage possible"
 
 msgid "Post correction"
 msgstr "Passer la correction"
@@ -6143,6 +6233,10 @@ msgstr "Approvisionné par le bureau"
 msgid "Supplied cash"
 msgstr "Espèces approvisionnées"
 
+#, python-format
+msgid "Supplied on %(d)s"
+msgstr "Approvisionnés le %(d)s"
+
 msgid "Supplied out"
 msgstr "Approvisionné"
 
@@ -6177,6 +6271,9 @@ msgid ""
 msgstr ""
 "Approvisionnements reçus du bureau, paiements faits aux caissiers et autres "
 "écritures de l'entreprise sur votre compte."
+
+msgid "Supplies to POS"
+msgstr "Approvisionnements des POS"
 
 msgid "Supplies to commercial agents"
 msgstr "Approvisionnements des agents commerciaux"
@@ -6297,6 +6394,9 @@ msgstr ""
 
 msgid "The POS pays cash now"
 msgstr "Le POS paie en espèces maintenant"
+
+msgid "The SIM, microzone and stock are managed by the office."
+msgstr "La SIM, la microzone et le stock sont gérés par le bureau."
 
 msgid ""
 "The account follows the exchange: cash or MTN float given, UVE served; UVE "
@@ -6445,6 +6545,9 @@ msgid ""
 msgstr ""
 "L'import s'est arrêté : %(n)s lignes ont été importées avant l'erreur. "
 "Corrigez les lignes ci-dessous et chargez le reste à nouveau."
+
+msgid "The name is required."
+msgstr "Le nom est obligatoire."
 
 msgid "The name on the client's Orange Money account."
 msgstr "Le nom sur le compte Orange Money du client."
@@ -6665,6 +6768,13 @@ msgstr "Cet article n'est pas dans la catégorie choisie."
 msgid "This microzone already exists: choose it in the list."
 msgstr "Cette microzone existe déjà : choisissez-la dans la liste."
 
+msgid "This month"
+msgstr "Ce mois"
+
+#, python-format
+msgid "This month (since %(d)s)"
+msgstr "Ce mois (depuis le %(d)s)"
+
 msgid ""
 "This receipt confirms a completed transaction recorded in the company "
 "ledger. Amounts in FCFA (XAF)."
@@ -6714,6 +6824,13 @@ msgstr "Cette unité n'est pas en stock (%(s)s)."
 
 msgid "This username is already taken."
 msgstr "Ce nom d'utilisateur est déjà pris."
+
+msgid "This week"
+msgstr "Cette semaine"
+
+#, python-format
+msgid "This week (since %(d)s)"
+msgstr "Cette semaine (depuis le %(d)s)"
 
 msgid "This zone has subzones, so it must stay a master zone."
 msgstr "Cette zone a des sous-zones, elle doit donc rester une zone master."
@@ -7553,6 +7670,13 @@ msgstr ""
 " pour continuer."
 
 msgid ""
+"Your POS holding OM stock, from the most to the least. Destocash = give the "
+"POS cash for its OM."
+msgstr ""
+"Vos POS qui ont du stock OM, du plus élevé au plus faible. Déstocker = "
+"donner au POS du cash contre son OM."
+
+msgid ""
 "Your account is not linked to a shop yet. Ask the super administrator to "
 "assign your shop."
 msgstr ""
@@ -8133,6 +8257,10 @@ msgstr "tâches en boutique"
 #, python-format
 msgid "signed off by %(u)s on %(t)s"
 msgstr "validé par %(u)s le %(t)s"
+
+#, python-format
+msgid "since %(d)s"
+msgstr "depuis le %(d)s"
 
 #, python-format
 msgid "since %(t)s at %(shop)s"

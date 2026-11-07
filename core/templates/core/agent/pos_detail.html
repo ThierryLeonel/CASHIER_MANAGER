@@ -3,7 +3,7 @@
 {% block topbar %}{% trans "Global POS" %}{% endblock %}
 {% block content %}
 <p><a href="{% url 'agent_pos' %}">← {% trans "Global POS" %}</a></p>
-<h1>{{ pos.name }}</h1>
+<div class="form-head compact"><h1>{{ pos.name }}</h1><a class="btn small" href="{% url 'agent_pos_edit' pos.pk %}">✎ {% trans "Edit" %}</a> <a class="btn small primary" href="{% url 'agent_supply' %}?pos={{ pos.business_sim }}">{% trans "Supply" %}</a></div>
 <div class="panel"><dl class="kv">
   <dt>{% trans "Business SIM" %}</dt><dd>{{ pos.business_sim|sim }}</dd>
   <dt>{% trans "Zone" %}</dt><dd>{{ pos.master_zone|default:"—" }}</dd>

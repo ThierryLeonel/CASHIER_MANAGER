@@ -4,10 +4,11 @@ from datetime import date, timedelta
 
 from django.contrib import messages
 from django.core.paginator import Paginator
-from django.db.models import Max, Q, Sum
+from django.db.models import Count, Max, Q, Sum
 from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.utils.translation import get_language
 from django.utils.translation import gettext as _
@@ -65,19 +66,23 @@ def agent_pos(request):
         qs = qs.filter(cond)
     from core.services.branding import company
 
-    limit = company().out_of_stock_er
+    limit, low = company().out_of_stock_er, company().low_stock_er
     mine = request.GET.get("mine") == "1"
     if mine:
         qs = qs.filter(microzone__agent=agent)
-    out = request.GET.get("out") == "1"
-    if out:
+    level = request.GET.get("level") or ("OUT" if request.GET.get("out") == "1" else "")
+    if level == "OUT":
         qs = qs.filter(er_stock__lt=limit)
+    elif level == "LOW":
+        qs = qs.filter(er_stock__gte=limit, er_stock__lt=low)
+    elif level == "IN":
+        qs = qs.filter(er_stock__gte=low)
+    out = level == "OUT"
     from django.core.paginator import Paginator
-    from django.db.models import Case, F, IntegerField, When
+    from django.db.models import F
 
-    # out of stock first (lowest ER first), then the others by name; 100 per page
-    qs = qs.annotate(_oos=Case(When(er_stock__lt=limit, then=0), default=1, output_field=IntegerField())) \
-        .order_by("_oos", F("er_stock").asc(nulls_last=True) if out else "name", "name")
+    # like OOS: from the lowest ER stock to the highest, POS without stock data last; 100 per page
+    qs = qs.order_by(F("er_stock").asc(nulls_last=True), "name")
     page = Paginator(qs, 100).get_page(request.GET.get("page"))
     ids = [p.pk for p in page]
     live = ag.live_entries(agent).filter(pos_id__in=ids)
@@ -86,12 +91,16 @@ def agent_pos(request):
     owed = {r["pos"]: (r["t"] or 0) + (r["e"] or 0) + (r["c"] or 0) - (r["p"] or 0)
             for r in live.values("pos").annotate(t=Sum("uve"), e=Sum("er"), c=Sum("cash"), p=Sum("paid"))}
     rows = [(p, owed.get(p.pk, 0), last.get(p.pk), p.microzone_id and p.microzone.agent_id == agent.pk,
-             p.out_of_stock(limit)) for p in page]
+             p.stock_level(limit, low)) for p in page]
     keep = request.GET.copy()
     keep.pop("page", None)
+    base = keep.copy()
+    base.pop("level", None)
+    base.pop("out", None)
     return render(request, "core/agent/pos_list.html", {"rows": rows, "q": q, "mine": mine, "out": out,
-                                                        "limit": limit, "zone": ag.zone_of(agent), "page": page,
-                                                        "keep": keep.urlencode()})
+                                                        "level": level, "limit": limit, "zone": ag.zone_of(agent),
+                                                        "page": page, "keep": keep.urlencode(),
+                                                        "base": base.urlencode()})
 
 
 @roles_required(R.AGENT)
@@ -134,6 +143,62 @@ def agent_oos(request):
         "n_pos": mine.count(), "n_out": mine.filter(er_stock__lt=limit).count(),
         "n_low": mine.filter(er_stock__gte=limit, er_stock__lt=low).count(),
         "n_in": mine.filter(er_stock__gte=low).count(), "n_unknown": mine.filter(er_stock=None).count()})
+
+
+@roles_required(R.AGENT)
+def agent_destock(request):
+    """Possible destocash: the logged-in agent's POS holding OM (UVE) stock, from the most to the least."""
+    from django.core.paginator import Paginator
+
+    agent = request.user.counterparty
+    mine = Counterparty.objects.filter(kind=Counterparty.Kind.POS, active=True, microzone__agent=agent,
+                                       uve_stock__gt=0).select_related("microzone")
+    q = (request.GET.get("q") or "").strip()
+    qs = mine
+    if q:
+        digits = "".join(ch for ch in q if ch.isdigit())
+        cond = Q(name__icontains=q) | Q(microzone__name__icontains=q) | Q(om_account_name__icontains=q)
+        if digits:
+            cond |= Q(business_sim__contains=digits[-9:])
+        qs = qs.filter(cond)
+    qs = qs.order_by("-uve_stock", "name")
+    page = Paginator(qs, 200).get_page(request.GET.get("page"))
+    keep = request.GET.copy()
+    keep.pop("page", None)
+    tot = mine.aggregate(om=Sum("uve_stock"), n=Count("id"))
+    return render(request, "core/agent/destock.html", {
+        "page": page, "q": q, "keep": keep.urlencode(), "tot": tot,
+        "last": mine.exclude(stock_at=None).order_by("-stock_at").values_list("stock_at", flat=True).first()})
+
+
+@roles_required(R.AGENT)
+def agent_coverage(request):
+    """How many different POS the agent supplied per day, week and month (a POS supplied twice counts once)."""
+    agent = request.user.counterparty
+    rep = ag.pos_coverage(agent, timezone.localdate())
+    return render(request, "core/agent/coverage.html", rep)
+
+
+@roles_required(R.AGENT)
+def agent_pos_edit(request, pk):
+    """The agent corrects a POS's details (name, business name, contacts, address). The SIM, microzone and stock
+    stay with the office."""
+    agent = request.user.counterparty
+    pos = get_object_or_404(Counterparty, pk=pk, kind=Counterparty.Kind.POS)
+    if not ag.in_zone(agent, pos):
+        raise Http404
+    form = AF.PosInfoForm(request.POST or None, instance=pos)
+    if request.method == "POST" and form.is_valid():
+        before = {f: getattr(Counterparty.objects.get(pk=pos.pk), f) for f in form.fields}
+        form.save()
+        from core.services.operations import log_event
+
+        log_event(request.user, "pos_edited_by_agent", pos=pos.pk,
+                  changes={f: [str(before[f]), str(getattr(pos, f))] for f in form.fields
+                           if before[f] != getattr(pos, f)})
+        messages.success(request, _("%(pos)s updated.") % {"pos": pos.name})
+        return redirect("agent_pos_detail", pos.pk)
+    return render(request, "core/agent/pos_edit.html", {"form": form, "pos": pos})
 
 
 @roles_required(R.AGENT)
@@ -203,8 +268,8 @@ def _entry_form(request, form_class, fn, *, title, icon, ok_msg, code_of=None, l
                 form.fields.pop(n, None)
             if not form.is_bound:
                 form.initial.update({"client_kind": "POS", "pos_sim": fixed_pos.business_sim})
-                if "product" in form.fields:
-                    form.initial["product"] = "ER"  # out of stock = out of ER
+                if "product" in form.fields:  # out of stock = out of ER; Destocash = give cash for the POS's OM
+                    form.initial["product"] = g.get("product") if g.get("product") in ("UVE", "ER", "CASH") else "ER"
     if request.method == "POST":
         if form.is_valid():
             try:

@@ -17,20 +17,7 @@
   <a class="btn" href="{% url 'stock_download' %}{% if level == 'OUT' %}?out=1{% endif %}" title="{% trans 'Download (Excel)' %}">⬇</a>
 </form>
 <div class="pos-cards">
-{% for p, lvl in rows %}<div class="pos-card{% if lvl %} lvl-{{ lvl|lower }}{% endif %}">
-  <a class="pos-name" href="{% url 'agent_pos_detail' p.pk %}">{{ p.name }}</a>
-  {% if p.om_account_name and p.om_account_name != p.name %}<div class="pos-biz">{{ p.om_account_name }}</div>{% endif %}
-  <div class="pos-sim">{{ p.business_sim|sim }}{% if p.microzone %} · {{ p.microzone.name }}{% endif %}</div>
-  <div class="pos-stock">
-    <span><small>{% trans "ER stock" %}</small>{% if p.er_stock is not None %}{{ p.er_stock|fcfa }}{% else %}—{% endif %}</span>
-    <span><small>{% trans "OM stock" %}</small>{% if p.uve_stock is not None %}{{ p.uve_stock|fcfa }}{% else %}—{% endif %}</span>
-    <span><small>{% trans "Commission" %}</small>{% if p.commission_balance is not None %}{{ p.commission_balance|fcfa }}{% else %}—{% endif %}</span>
-  </div>
-  <div class="pos-foot">
-    <span class="pos-lvl">{% if lvl == 'OUT' %}{% trans "OUT OF STOCK" %}{% elif lvl == 'LOW' %}{% trans "LOW STOCK" %}{% elif lvl == 'IN' %}{% trans "IN STOCK" %}{% else %}{% trans "no stock data" %}{% endif %}</span>
-    <a class="btn small{% if lvl == 'OUT' or lvl == 'LOW' %} primary{% endif %}" href="{% url 'agent_supply' %}?pos={{ p.business_sim }}">{% trans "Supply" %}</a>
-  </div>
-</div>
+{% for p, lvl in rows %}{% include "core/agent/inc/pos_card.html" with mode="oos" %}
 {% empty %}<p class="muted">{% trans "No POS in your microzones." %}</p>{% endfor %}
 </div>
 {% if page.paginator.num_pages > 1 %}<div class="pager">{% if page.has_previous %}<a class="btn small" href="?{{ keep }}&amp;page={{ page.previous_page_number }}">← {% trans "Previous" %}</a>{% endif %}

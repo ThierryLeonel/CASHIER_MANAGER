@@ -1,0 +1,18 @@
+{% extends "core/base.html" %}{% load i18n cashier %}
+{% block title %}{% trans "POS supplied" %}{% endblock %}
+{% block topbar %}{% trans "POS supplied" %}{% endblock %}
+{% block content %}
+<h1>{% trans "POS supplied" %}</h1>
+<p class="small muted meta">{% blocktrans with n=in_charge %}Number of different POS you supplied (a POS supplied several times counts once). POS in your charge: {{ n }}.{% endblocktrans %}</p>
+<div class="bal-row">
+  <div class="bal k-UVE"><span class="bal-label">{% trans "Today" %}</span><span class="bal-value">{{ n_day }}</span><span class="bal-unit">{% if in_charge %}{% widthratio n_day in_charge 100 %}% {% endif %}{% blocktrans with n=in_charge %}of {{ n }} POS{% endblocktrans %}</span></div>
+  <div class="bal k-ER"><span class="bal-label">{% trans "This week" %}</span><span class="bal-value">{{ n_week }}</span><span class="bal-unit">{% if in_charge %}{% widthratio n_week in_charge 100 %}% · {% endif %}{% blocktrans with d=week_start|date:"d/m" %}since {{ d }}{% endblocktrans %}</span></div>
+  <div class="bal k-MTN"><span class="bal-label">{% trans "This month" %}</span><span class="bal-value">{{ n_month }}</span><span class="bal-unit">{% if in_charge %}{% widthratio n_month in_charge 100 %}% · {% endif %}{% blocktrans with d=month_start|date:"d/m" %}since {{ d }}{% endblocktrans %}</span></div>
+</div>
+<h2>{% trans "Per day" %}</h2>
+{% include "core/agent/inc/coverage_rows.html" with rows=days head=_("Day") %}
+<h2>{% trans "Per week" %}</h2>
+{% include "core/agent/inc/coverage_rows.html" with rows=weeks head=_("Week") %}
+<h2>{% trans "Per month" %}</h2>
+{% include "core/agent/inc/coverage_rows.html" with rows=months head=_("Month") %}
+{% endblock %}

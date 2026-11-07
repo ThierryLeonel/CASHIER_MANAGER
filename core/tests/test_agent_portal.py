@@ -553,3 +553,48 @@ class PosStock(OrgMixin, TestCase):
         self.assertFalse(ImportBatch.objects.filter(created_by=self.admin).exists())
         self.p1.refresh_from_db()
         self.assertEqual(self.p1.er_stock, D(8000))
+
+    def test_destocash_global_cards_pos_edit_and_coverage(self):
+        from core.models import Counterparty, MicroZone
+        from core.reports.defs import pos_coverage
+        from core.reports.engine import Filters
+
+        mz = MicroZone.objects.create(subzone=MicroZone.objects.first().subzone, name="Destock", agent=self.a1)
+        now = timezone.now()
+        a = Counterparty.objects.create(kind="POS", business_sim="695000001", name="Small OM", microzone=mz,
+                                        er_stock=D(100), uve_stock=D(3000), stock_at=now)
+        b = Counterparty.objects.create(kind="POS", business_sim="695000002", name="Big OM", microzone=mz,
+                                        er_stock=D(9000), uve_stock=D(90000), stock_at=now)
+        Counterparty.objects.create(kind="POS", business_sim="695000003", name="No OM", microzone=mz,
+                                    er_stock=D(9000), uve_stock=D(0), stock_at=now)
+        c = self.client_class()
+        c.login(username=self.agent_user.username, password=PW)
+        r = c.get("/agent/destocash/")
+        self.assertEqual([p.name for p in r.context["page"]], ["Big OM", "Small OM"])  # most OM first, no OM out
+        self.assertContains(r, "product=CASH")
+        r = c.get(f"/agent/supply/?pos={b.business_sim}&product=CASH")
+        self.assertEqual(r.context["form"].initial["product"], "CASH")
+        # Global POS as cards
+        r = c.get("/agent/pos/?level=OUT")
+        self.assertContains(r, "pos-card")
+        self.assertIn(a, [row[0] for row in r.context["rows"]])
+        # the agent edits a POS
+        r = c.post(f"/agent/pos/{a.pk}/edit/", {"name": "Small OM shop", "om_account_name": "BMTC SMALL",
+                                                 "whatsapp": "677000000", "other_phone": "", "address": "Molyko",
+                                                 "notes": ""})
+        self.assertEqual(r.status_code, 302)
+        a.refresh_from_db()
+        self.assertEqual((a.name, a.om_account_name, a.address, a.business_sim), ("Small OM shop", "BMTC SMALL",
+                                                                                 "Molyko", "695000001"))
+        # coverage: two supplies to the same POS count once
+        for amt in ("1000", "2000"):
+            c.post("/agent/supply/", {"idem": str(uuid.uuid4()), "client_kind": "POS", "pos_sim": a.business_sim,
+                                      "product": "ER", "amount": amt}, HTTP_X_REQUESTED_WITH="fetch")
+        c.post("/agent/supply/", {"idem": str(uuid.uuid4()), "client_kind": "POS", "pos_sim": b.business_sim,
+                                  "product": "ER", "amount": "500"}, HTTP_X_REQUESTED_WITH="fetch")
+        r = c.get("/agent/pos-supplied/")
+        self.assertEqual((r.context["n_day"], r.context["n_week"], r.context["n_month"]), (2, 2, 2))
+        self.assertEqual(r.context["days"][0]["supplies"], 3)
+        rep = pos_coverage(Filters(None, None, user=self.manager))
+        row = next(x for x in rep.tables[0].rows if x.get("_cp") == self.a1)
+        self.assertEqual((row["day"], row["month"], row["supplies"]), (2, 2, 3))

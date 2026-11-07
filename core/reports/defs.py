@@ -5,7 +5,7 @@ correction."""
 from collections import defaultdict
 from decimal import Decimal
 
-from django.db.models import Q, Sum, Value
+from django.db.models import Count, Q, Sum, Value
 from django.utils.translation import gettext as _
 from django.utils.translation import gettext_lazy as _l
 
@@ -1283,6 +1283,57 @@ def pos_stock(f):
     return rep
 
 
+def pos_coverage(f):
+    """Per commercial agent: how many different POS he supplied on the last day of the period, in its week, its month
+    and over the whole period (a POS supplied several times counts once), against the POS in his charge."""
+    from datetime import timedelta
+
+    from core.models import AgentClientEntry as E
+    from core.services import agents as ag
+
+    from core.services.days import douala_today
+
+    day = f.date_to or douala_today()
+    start = f.date_from or day.replace(day=1)
+    week, month = day - timedelta(days=day.weekday()), day.replace(day=1)
+    rep = Report("pos_coverage", _("POS supplied by commercial agents"), f.text())
+    agents = Counterparty.objects.filter(kind=Counterparty.Kind.AGENT, active=True).select_related(
+        "microzone__subzone")
+    if f.customer:
+        agents = agents.filter(pk=f.customer.pk)
+    if getattr(f, "master_zone", None):
+        agents = agents.filter(Q(master_zone=f.master_zone) | Q(microzone__subzone__parent=f.master_zone))
+    ids = [a.pk for a in agents]
+    charge = dict(Counterparty.objects.filter(kind=Counterparty.Kind.POS, active=True, microzone__agent_id__in=ids)
+                  .values("microzone__agent").annotate(n=Count("id")).values_list("microzone__agent", "n"))
+    d, w, m = (ag.unique_pos(ids, a, day) for a in (day, week, month))
+    p = ag.unique_pos(ids, start, day)
+    sup = dict(E.objects.filter(agent_id__in=ids, kind=E.Kind.SUPPLY, pos__isnull=False, cancelled_at__isnull=True,
+                                business_date__gte=start, business_date__lte=day)
+               .values("agent").annotate(n=Count("id")).values_list("agent", "n"))
+    rows = []
+    for a in agents:
+        n = charge.get(a.pk, 0)
+        rows.append(dict(_cp=a, customer=f"{a.name} · {a.sim_display}", in_charge=n, day=d.get(a.pk, 0),
+                         week=w.get(a.pk, 0), month=m.get(a.pk, 0), period=p.get(a.pk, 0),
+                         supplies=sup.get(a.pk, 0),
+                         pct=f"{round(100 * m.get(a.pk, 0) / n)}%" if n else "—"))
+    cols = [Col("customer", _l("Commercial agent")), Col("microzones", _l("Microzones")),
+            Col("in_charge", _l("POS in his charge"), "int", True),
+            Col("day", _("Different POS supplied on %(d)s") % {"d": day.strftime("%d/%m")}, "int", True),
+            Col("week", _("This week (since %(d)s)") % {"d": week.strftime("%d/%m")}, "int", True),
+            Col("month", _("This month (since %(d)s)") % {"d": month.strftime("%d/%m")}, "int", True),
+            Col("pct", _l("% of his POS this month")),
+            Col("period", _l("Over the period"), "int", True), Col("supplies", _l("Supplies to POS"), "int", True)]
+    rep.tables.append(group_by_subzone(_("Different POS supplied, by subzone"), rows, cols))
+    tot = rep.tables[0].totals() or {}
+    rep.summary = [(_("POS in the agents' charge"), str(tot.get("in_charge", 0)), "text"),
+                   (_("Supplied on %(d)s") % {"d": day.strftime("%d/%m")}, str(tot.get("day", 0)), "text"),
+                   (_("This week"), str(tot.get("week", 0)), "text"), (_("This month"), str(tot.get("month", 0)), "text"),
+                   (_("Over the period"), str(tot.get("period", 0)), "text")]
+    return rep
+
+
 REPORTS = {
     "statement": (_l("Agent / POS account statement"), statement),
     "customers": (_l("Agent and POS balances"), customers),
@@ -1302,6 +1353,7 @@ REPORTS = {
     "daily_reconciliation": (_l("Daily reconciliation"), daily_reconciliation),
     "supply_payment": (_l("Daily supplies versus payments"), supply_payment),
     "pos_stock": (_l("POS and agent stock levels"), pos_stock),
+    "pos_coverage": (_l("POS supplied by commercial agents"), pos_coverage),
 }
 
 
@@ -1326,4 +1378,5 @@ REPORT_CARDS = {
                                              "counted and difference")),
     "supply_payment": ("payment", _l("Each day, what was supplied against what was paid, and per agent / POS")),
     "pos_stock": ("store", _l("ER, UVE and commission of each POS and agent as last imported; POS out of stock")),
+    "pos_coverage": ("chart", _l("Different POS each commercial agent supplied per day, week and month")),
 }

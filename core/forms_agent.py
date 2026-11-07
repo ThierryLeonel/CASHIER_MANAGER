@@ -164,3 +164,24 @@ class PaybackForm(_AgentForm):
 
 class CancelForm(forms.Form):
     reason = forms.CharField(label=_("Reason"), max_length=255)
+
+
+class PosInfoForm(forms.ModelForm):
+    """What a commercial agent may correct on a POS: names, contacts and address (not the SIM, microzone or stock)."""
+
+    class Meta:
+        from core.models import Counterparty
+
+        model = Counterparty
+        fields = ["name", "om_account_name", "whatsapp", "other_phone", "address", "notes"]
+        labels = {"name": _("Name"), "om_account_name": _("Business name (OM account name)"),
+                  "whatsapp": _("WhatsApp contact"), "other_phone": _("Other contact"), "address": _("Address"),
+                  "notes": _("Notes")}
+        widgets = {"whatsapp": forms.TextInput(attrs={"inputmode": "tel"}),
+                   "other_phone": forms.TextInput(attrs={"inputmode": "tel"})}
+
+    def clean_name(self):
+        v = (self.cleaned_data.get("name") or "").strip()
+        if not v:
+            raise forms.ValidationError(_("The name is required."))
+        return v

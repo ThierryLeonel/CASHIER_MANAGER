@@ -1,0 +1,22 @@
+{% extends "core/base.html" %}{% load i18n cashier %}
+{% block title %}{% trans "Possible destocash" %}{% endblock %}
+{% block topbar %}{% trans "Possible destocash" %}{% endblock %}
+{% block content %}
+<h1>{% trans "Possible destocash" %}</h1>
+<p class="small muted meta">{% trans "Your POS holding OM stock, from the most to the least. Destocash = give the POS cash for its OM." %}{% if last %} {% blocktrans with d=last|date:"d/m/Y H:i" %}Stock of {{ d }}.{% endblocktrans %}{% endif %}</p>
+<div class="bal-row">
+  <div class="bal k-UVE"><span class="bal-label">{% trans "OM stock of my POS" %}</span><span class="bal-value">{{ tot.om|default:0|fcfa }}</span><span class="bal-unit">FCFA</span></div>
+  <div class="bal k-CASH"><span class="bal-label">{% trans "POS with OM stock" %}</span><span class="bal-value">{{ tot.n }}</span><span class="bal-unit">POS</span></div>
+</div>
+<form class="oos-search" method="get">
+  <input type="search" name="q" value="{{ q }}" placeholder="{% trans 'Search (SIM, name or microzone)' %}">
+  <button class="btn" type="submit">{% trans "Search" %}</button>
+</form>
+<div class="pos-cards">
+{% for p in page %}{% include "core/agent/inc/pos_card.html" with mode="destock" rank=page.start_index|add:forloop.counter0 %}
+{% empty %}<p class="muted">{% trans "None of your POS has OM stock in the last stock file." %}</p>{% endfor %}
+</div>
+{% if page.paginator.num_pages > 1 %}<div class="pager">{% if page.has_previous %}<a class="btn small" href="?{{ keep }}&amp;page={{ page.previous_page_number }}">← {% trans "Previous" %}</a>{% endif %}
+<span class="small">{% blocktrans with n=page.number t=page.paginator.num_pages c=page.paginator.count %}Page {{ n }} of {{ t }} · {{ c }} POS{% endblocktrans %}</span>
+{% if page.has_next %}<a class="btn small" href="?{{ keep }}&amp;page={{ page.next_page_number }}">{% trans "Next" %} →</a>{% endif %}</div>{% endif %}
+{% endblock %}
