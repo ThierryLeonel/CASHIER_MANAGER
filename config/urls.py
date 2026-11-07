@@ -50,6 +50,7 @@ urlpatterns = [
     path("administration/import/", v.import_data, name="import_data"),
     path("administration/import/template/<slug:kind>/", v.import_template, name="import_template"),
     path("administration/import/<int:pk>/", v.import_batch, name="import_batch"),
+    path("administration/import/history/clear/", v.import_history_clear, name="import_history_clear"),
     path("administration/import/<int:pk>/step/", v.import_step, name="import_step"),
     path("administration/clear/", v.clear_data, name="clear_data"),
     path("administration/audit/", v.audit_log, name="audit_log"),

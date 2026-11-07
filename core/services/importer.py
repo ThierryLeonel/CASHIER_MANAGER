@@ -42,6 +42,8 @@ TEMPLATES = {
     "stock": (["type", "business_sim", "microzone", "er stock", "uve_stock", "commision balance"],
               [["AGENT", "691234567", "Molyko", 10000, 5000, 5000],
                ["POS", "692345678", "Molyko", 6000, 2000, 10000]]),
+    "stock_update": (["type", "business_sim", "microzone", "er stock", "uve_stock", "commision balance"],
+                     [["POS", "692345678", "Molyko", 1500, 2000, 10000]]),
     "cash_managers": (["name", "phone", "notes"], [["Cash manager Buea", "650123456", ""],
                                                    ["Mama Rose (no SIM)", "", "phone is optional"]]),
     "opening": (["kind", "identifier", "amount", "date", "note"],
@@ -661,7 +663,16 @@ def _stock_amount(r, *names):
     return None
 
 
-def _row_stock(user, r):
+_STATS = {}  # counters of the current step (stock update: changed / same)
+
+
+def _row_stock_update(user, r):
+    """Update only what changed: a POS / agent whose figures differ gets the new ones (and a history line); the same
+    figures are left alone; an empty cell keeps the current value; POS missing from the file keep their stock."""
+    return _row_stock(user, r, only_changes=True)
+
+
+def _row_stock(user, r, only_changes=False):
     """Latest Orange stock of an agent / POS (by business SIM); kept with its history."""
     from django.utils import timezone
 
@@ -680,6 +691,14 @@ def _row_stock(user, r):
     com = _stock_amount(r, "commision_balance", "commission_balance", "commission")
     if er is None and uve is None and com is None:
         raise BusinessError(_("Give at least one of er stock, uve_stock or commission balance"))
+    if only_changes:
+        er = cp.er_stock if er is None else er
+        uve = cp.uve_stock if uve is None else uve
+        com = cp.commission_balance if com is None else com
+        if cp.stock_at and (cp.er_stock, cp.uve_stock, cp.commission_balance) == (er, uve, com):
+            _STATS["same"] = _STATS.get("same", 0) + 1
+            return _("%(cp)s · unchanged") % {"cp": cp}
+        _STATS["changed"] = _STATS.get("changed", 0) + 1
     now = timezone.now()
     cp.er_stock, cp.uve_stock, cp.commission_balance, cp.stock_at = er, uve, com, now
     cp.save(update_fields=["er_stock", "uve_stock", "commission_balance", "stock_at"])
@@ -691,7 +710,7 @@ def _row_stock(user, r):
     return f"{cp} · ER {er if er is not None else '—'} · UVE {uve if uve is not None else '—'}{flag}"
 
 
-HANDLERS = {"stock": _row_stock, "customers": _row_customer, "cash_managers": _row_cash_manager, "opening": _row_opening,
+HANDLERS = {"stock": _row_stock, "stock_update": _row_stock_update, "customers": _row_customer, "cash_managers": _row_cash_manager, "opening": _row_opening,
             "transactions": _row_transaction, "shops": _row_shop, "shop_staff": _row_shop_staff,
             "shop_items": _row_shop_item, "shop_stock": _row_shop_stock,
             "shop_transactions": _row_shop_transaction}
@@ -767,10 +786,16 @@ def _slice(b, commit):
             todo = rows
         t1 = time.monotonic()
         _NOTES.clear()
+        _STATS.clear()
         results, ok = run_import(b.created_by, b.kind, todo, commit=commit, numbers=numbers) if todo else ([], True)
         if not commit:
             _take_notes(b)
+        if _STATS and (ok or not commit):
+            st = b.stats.setdefault("import" if commit else "check", {})
+            for k, v in _STATS.items():
+                st[k] = st.get(k, 0) + v
         _NOTES.clear()
+        _STATS.clear()
         bad = [[n, m] for n, good, m in results if not good]
         if commit and not ok:
             b.errors = (b.errors + bad)[:500]
@@ -802,7 +827,8 @@ def step_batch(user, b):
         if b.stage == b.Stage.IMPORT and b.position >= b.total:
             b.stage = b.Stage.DONE
             ops.log_event(user, "import", kind=b.kind, rows=b.total, file=b.file_name)
-    b.save(update_fields=["stage", "position", "imported", "errors", "preview", "bad_rows", "notes", "updated_at"])  # rows stay as stored
+    b.save(update_fields=["stage", "position", "imported", "errors", "preview", "bad_rows", "notes", "stats",
+                          "updated_at"])  # rows stay as stored
     return b
 
 

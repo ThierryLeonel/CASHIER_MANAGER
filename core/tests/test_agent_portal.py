@@ -512,3 +512,41 @@ class PosStock(OrgMixin, TestCase):
         self.assertContains(r, "Office supply vs payments")
         self.assertEqual((r.context["totals"]["supplied"], r.context["totals"]["paid"], r.context["totals"]["net"]),
                          (D(10000), D(4000), D(6000)))
+
+    def test_stock_update_changes_only_and_history_clear(self):
+        from core.models import ImportBatch, StockSnapshot
+        from core.services import importer
+
+        def run(kind, rows):
+            head = importer.TEMPLATES[kind][0]
+            data = [dict(zip([importer._key(h) for h in head], r)) for r in rows]
+            b = importer.start_batch(self.admin, kind, "s.xlsx", data)
+            while b.stage == ImportBatch.Stage.CHECK:
+                importer.step_batch(self.admin, b)
+            importer.confirm_batch(self.admin, b)
+            while b.stage == ImportBatch.Stage.IMPORT:
+                importer.step_batch(self.admin, b)
+            return b
+
+        run("stock", [["POS", self.p1.business_sim, "", 1500, 2000, 10000],
+                      ["POS", self.p2.business_sim, "", 6000, 2000, 100]])
+        n = StockSnapshot.objects.count()
+        b = run("stock_update", [["POS", self.p1.business_sim, "", 8000, "", ""],  # changed (ER only)
+                                 ["POS", self.p2.business_sim, "", 6000, 2000, 100]])  # same
+        self.assertEqual((b.stage, b.stats["check"], b.stats["import"]),
+                         ("DONE", {"changed": 1, "same": 1}, {"changed": 1, "same": 1}))
+        self.p1.refresh_from_db()
+        self.p2.refresh_from_db()
+        self.assertEqual((self.p1.er_stock, self.p1.uve_stock, self.p1.commission_balance), (D(8000), D(2000),
+                                                                                             D(10000)))
+        self.assertEqual(self.p2.er_stock, D(6000))  # kept, not cleared
+        self.assertEqual(StockSnapshot.objects.count(), n + 1)  # only the change is recorded
+        # clear the import list (one, then all); the stock stays
+        m = self.client_class()
+        m.login(username="admin", password=PW)
+        m.post("/administration/import/history/clear/", {"pk": b.pk})
+        self.assertFalse(ImportBatch.objects.filter(pk=b.pk).exists())
+        m.post("/administration/import/history/clear/")
+        self.assertFalse(ImportBatch.objects.filter(created_by=self.admin).exists())
+        self.p1.refresh_from_db()
+        self.assertEqual(self.p1.er_stock, D(8000))

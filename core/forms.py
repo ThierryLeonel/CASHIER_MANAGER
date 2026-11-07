@@ -772,7 +772,8 @@ class ImportForm(forms.Form):
              ("shops", _("Shops")), ("shop_staff", _("Shop staff and their duties")),
              ("shop_items", _("Shop items and categories")), ("shop_stock", _("Shop stock (IMEI / serial numbers)")),
              ("shop_transactions", _("Shop transactions (cash-in, cash-out, airtime, conversions, services)")),
-             ("stock", _("POS and agent stock (ER, UVE, commission)"))]
+             ("stock_update", _("POS stock — update only the changes (POS not in the file keep their stock)")),
+             ("stock", _("POS stock — replace all (the old stock is cleared first)"))]
     kind = forms.ChoiceField(label=_("What are you importing?"), choices=KINDS)
     file = forms.FileField(label=_("File (.xlsx or .csv)"))
 

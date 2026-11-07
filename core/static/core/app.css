@@ -608,3 +608,4 @@ table.t tr.oos td { background: #fff1f0; }
 .pos-card .pos-lvl { font-weight: 700; font-size: .85rem; letter-spacing: .02em; color: #667085; }
 .pos-card.lvl-out .pos-lvl { color: #b42318; } .pos-card.lvl-low .pos-lvl { color: #b54708; } .pos-card.lvl-in .pos-lvl { color: #067647; }
 .pos-card.fixed { margin-bottom: 12px; }
+.panel-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 6px; }

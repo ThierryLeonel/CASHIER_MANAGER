@@ -14,7 +14,7 @@
   </select>
   <a class="btn" data-dl="xlsx" href="?{{ query }}&format=xlsx">⬇ Excel (.xlsx)</a>
   <a class="btn" data-dl="pdf" href="?{{ query }}&format=pdf">⬇ PDF</a>
-  {% if rep.key == "pos_stock" %}<a class="btn" href="{% url 'stock_download' %}">⬇ {% trans "Stock in import format" %}</a>{% if user.is_superadmin %} <a class="btn primary" href="{% url 'import_data' %}?kind=stock">⟳ {% trans "Update POS stock" %}</a>{% endif %}{% endif %}
+  {% if rep.key == "pos_stock" %}<a class="btn" href="{% url 'stock_download' %}">⬇ {% trans "Stock in import format" %}</a>{% if user.is_superadmin %} <a class="btn primary" href="{% url 'import_data' %}?kind=stock_update">⟳ {% trans "Update POS stock" %}</a>{% endif %}{% endif %}
 </div>
 <script>
 (function () {

@@ -157,6 +157,7 @@ class ImportBatch(models.Model):
     bad_rows = models.JSONField(default=list)  # every row number with an error (errors keeps the first 500 messages)
     notes = models.JSONField(default=list)  # what the file creates: new zones, subzones, microzones
     skip_errors = models.BooleanField(default=False)  # import the valid rows, leave the rows with errors
+    stats = models.JSONField(default=dict)  # e.g. stock update: {"check": {"changed": n, "same": n}, "import": {…}}
     created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name="+")
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)

@@ -42,6 +42,19 @@ msgstr ""
 
 #, python-format
 msgid ""
+"%(c)s POS / agents have new figures and will be updated; %(s)s are unchanged"
+" and left alone. POS not in the file keep their stock."
+msgstr ""
+"%(c)s POS / agents ont de nouveaux chiffres et seront mis à jour ; %(s)s "
+"sont inchangés et laissés tels quels. Les POS absents du fichier gardent "
+"leur stock."
+
+#, python-format
+msgid "%(c)s updated, %(s)s unchanged."
+msgstr "%(c)s mis à jour, %(s)s inchangés."
+
+#, python-format
+msgid ""
 "%(cm)s already has exchanges, so it cannot be deleted. Untick Active to stop"
 " using it; its history stays."
 msgstr ""
@@ -92,6 +105,10 @@ msgid "%(cp)s registered."
 msgstr "%(cp)s enregistré."
 
 #, python-format
+msgid "%(cp)s · unchanged"
+msgstr "%(cp)s · inchangé"
+
+#, python-format
 msgid "%(i)s is no longer sold."
 msgstr "%(i)s n'est plus vendu."
 
@@ -122,6 +139,14 @@ msgstr "%(n)s caisse(s)"
 #, python-format
 msgid "%(n)s cashier(s)"
 msgstr "%(n)s caissier(s)"
+
+#, python-format
+msgid ""
+"%(n)s import record(s) removed from the list. The data already imported is "
+"not changed."
+msgstr ""
+"%(n)s enregistrement(s) d'import retiré(s) de la liste. Les données déjà "
+"importées ne changent pas."
 
 #, python-format
 msgid "%(n)s imported"
@@ -1716,6 +1741,9 @@ msgstr "Effacer les données"
 
 msgid "Clear the data"
 msgstr "Effacer les données"
+
+msgid "Clear the list"
+msgstr "Vider la liste"
 
 msgid "Client"
 msgstr "Client"
@@ -4720,6 +4748,15 @@ msgstr "POS en rupture quand le stock ER est sous (FCFA)"
 msgid "POS out of stock, by agent in charge"
 msgstr "POS en rupture, par agent responsable"
 
+msgid "POS stock — replace all (the old stock is cleared first)"
+msgstr "Stock des POS — tout remplacer (l'ancien stock est d'abord effacé)"
+
+msgid ""
+"POS stock — update only the changes (POS not in the file keep their stock)"
+msgstr ""
+"Stock des POS — mettre à jour seulement les changements (les POS absents du "
+"fichier gardent leur stock)"
+
 msgid "POS that received the cash (business SIM)"
 msgstr "PDV qui a reçu les espèces (SIM business)"
 
@@ -5308,6 +5345,16 @@ msgstr "Retirer une unité du stock"
 msgid "Remove all transactions, or everything"
 msgstr "Supprimer toutes les transactions, ou tout"
 
+msgid ""
+"Remove every import record from this list? The data already imported is not "
+"changed."
+msgstr ""
+"Retirer tous les enregistrements d'import de cette liste ? Les données déjà "
+"importées ne changent pas."
+
+msgid "Remove from the list"
+msgstr "Retirer de la liste"
+
 msgid "Remove the current logo"
 msgstr "Supprimer le logo actuel"
 
@@ -5316,6 +5363,18 @@ msgstr "Retiré"
 
 msgid "Removed from stock"
 msgstr "Retiré du stock"
+
+msgid "Replace all stock"
+msgstr "Remplacer tout le stock"
+
+msgid ""
+"Replace all: when you confirm, the stock of every POS and agent is cleared "
+"first, then this file is loaded. To change only some POS, use “POS stock — "
+"update only the changes”."
+msgstr ""
+"Tout remplacer : à la confirmation, le stock de tous les POS et agents est "
+"d'abord effacé, puis ce fichier est chargé. Pour ne changer que certains "
+"POS, utilisez « Stock des POS — mettre à jour seulement les changements »."
 
 msgid "Replace the password"
 msgstr "Remplacer le mot de passe"
@@ -7224,6 +7283,9 @@ msgstr ""
 
 msgid "Update POS stock"
 msgstr "Mettre à jour le stock des POS"
+
+msgid "Update stock"
+msgstr "Mettre à jour le stock"
 
 msgid "Uplift"
 msgstr "Bonus"

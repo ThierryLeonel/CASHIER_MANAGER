@@ -109,7 +109,10 @@ def import_data(request):
                 return redirect("import_batch", b.pk)
             except BusinessError as e:
                 form.add_error("file", e.message)
-    recent = ImportBatch.objects.filter(created_by=request.user)[:5]
+    recent = list(ImportBatch.objects.filter(created_by=request.user).defer("rows")[:8])
+    labels = dict(F.ImportForm.KINDS)
+    for r in recent:
+        r.kind_label = labels.get(r.kind, r.kind)
     return render(request, "core/admin_import.html", {"form": form, "kinds": F.ImportForm.KINDS, "recent": recent,
                                                       "templates": importer.TEMPLATES})
 
@@ -125,6 +128,21 @@ def import_batch(request, pk):
     b = get_object_or_404(ImportBatch.objects.defer("rows"), pk=pk, created_by=request.user)
     label = dict(F.ImportForm.KINDS).get(b.kind, b.kind)
     return render(request, "core/admin_import_batch.html", {"b": b, "label": label, "state": _batch_state(b)})
+
+
+@roles_required(*ADMIN)
+def import_history_clear(request):
+    """Remove import records from the list (one, or all of mine). What was imported stays imported."""
+    if request.method == "POST":
+        qs = ImportBatch.objects.filter(created_by=request.user)
+        pk = request.POST.get("pk")
+        if pk and pk.isdigit():
+            qs = qs.filter(pk=pk)
+        n = qs.count()
+        qs.delete()
+        messages.success(request, _("%(n)s import record(s) removed from the list. The data already imported is "
+                                    "not changed.") % {"n": n})
+    return redirect("import_data")
 
 
 @roles_required(*ADMIN)

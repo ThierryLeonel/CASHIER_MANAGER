@@ -12,7 +12,7 @@
 <div class="stock-actions">
   <a class="btn" href="{% url 'stock_download' %}">⬇ {% trans "Download POS stock (Excel)" %}</a>
   <a class="btn" href="{% url 'report' 'pos_stock' %}">{% trans "Stock report" %}</a>
-  {% if user.is_superadmin %}<a class="btn primary" href="{% url 'import_data' %}?kind=stock">⟳ {% trans "Update POS stock" %}</a>{% endif %}
+  {% if user.is_superadmin %}<a class="btn primary" href="{% url 'import_data' %}?kind=stock_update">⟳ {% trans "Update POS stock" %}</a>{% endif %}
 </div>
 {% if can_move %}<form method="post" action="{% url 'customers_move' %}" id="move-form">{% csrf_token %}
 <input type="hidden" name="q" value="{{ q }}"><input type="hidden" name="kind" value="{{ kind }}"><input type="hidden" name="mz" value="{{ mz }}">

@@ -9,11 +9,14 @@
   <strong>{% trans "Templates" %}</strong>
   <div class="actions" style="margin-bottom:0">{% for k, label in kinds %}<a class="btn small" href="{% url 'import_template' k %}">{% icon "download" 16 %} {{ label }}</a>{% endfor %}</div>
 </div>
-{% if recent %}<div class="panel"><strong>{% trans "My recent imports" %}</strong>
-<div class="tbl-wrap"><table class="t"><tbody>{% for r in recent %}<tr><td class="small">{{ r.created_at|date:"d/m/Y H:i" }}</td><td><a href="{% url 'import_batch' r.pk %}">{{ r.file_name }}</a></td><td class="small">{{ r.total }} {% trans "rows" %}</td><td><span class="badge{% if r.stage == 'DONE' %} ok{% elif r.stage == 'FAILED' %} bad{% endif %}">{{ r.get_stage_display }}</span></td></tr>{% endfor %}</tbody></table></div></div>{% endif %}
+<div class="stock-actions"><a class="btn primary" href="?kind=stock_update">⟳ {% trans "Update POS stock" %}</a><a class="btn" href="{% url 'stock_download' %}">⬇ {% trans "Download POS stock (Excel)" %}</a></div>
+{% if recent %}<div class="panel"><div class="panel-head"><strong>{% trans "My recent imports" %}</strong>
+<form method="post" action="{% url 'import_history_clear' %}" onsubmit="return confirm(this.dataset.q)" data-q="{% trans 'Remove every import record from this list? The data already imported is not changed.' %}">{% csrf_token %}<button class="btn small">{% trans "Clear the list" %}</button></form></div>
+<div class="tbl-wrap"><table class="t"><tbody>{% for r in recent %}<tr><td class="small">{{ r.created_at|date:"d/m/Y H:i" }}</td><td><a href="{% url 'import_batch' r.pk %}">{{ r.file_name }}</a><br><span class="small muted">{{ r.kind_label }}</span></td><td class="small">{{ r.total }} {% trans "rows" %}</td><td><span class="badge{% if r.stage == 'DONE' %} ok{% elif r.stage == 'FAILED' %} bad{% endif %}">{{ r.get_stage_display }}</span></td>
+<td><form method="post" action="{% url 'import_history_clear' %}">{% csrf_token %}<input type="hidden" name="pk" value="{{ r.pk }}"><button class="btn small" title="{% trans 'Remove from the list' %}">×</button></form></td></tr>{% endfor %}</tbody></table></div></div>{% endif %}">{{ r.get_stage_display }}</span></td></tr>{% endfor %}</tbody></table></div></div>{% endif %}
 <div class="panel"><form method="post" enctype="multipart/form-data" class="entry" novalidate>{% csrf_token %}
 {% include "core/inc/fields.html" %}
-<div class="form-foot"><button class="btn primary" type="submit">{% trans "Upload and check" %}</button></div>
+<div class="form-foot"><button class="btn primary" type="submit" id="imp-btn" data-plain="{% trans 'Upload and check' %}" data-update="{% trans 'Update stock' %}" data-replace="{% trans 'Replace all stock' %}">{% trans "Upload and check" %}</button></div>
 </form></div>
 <div class="panel small">
   <strong>{% trans "Column guide" %}</strong>
@@ -21,3 +24,11 @@
   <p class="muted">{% trans "Transactions: type is SUPPLY_AGENT, SUPPLY_POS, PAYMENT or EXPENSE; cashier is the username or staff ID; account is the company SIM number or bank account number (leave empty to use the cashier's own drawer or wallet)." %}</p>
 </div>
 {% endblock %}
+{% block scripts %}<script>
+(function () {
+  var k = document.querySelector('select[name=kind]'), b = document.getElementById('imp-btn');
+  if (!k || !b) return;
+  function sync() { b.textContent = k.value === 'stock_update' ? b.dataset.update : (k.value === 'stock' ? b.dataset.replace : b.dataset.plain); }
+  k.addEventListener('change', sync); sync();
+})();
+</script>{% endblock %}
