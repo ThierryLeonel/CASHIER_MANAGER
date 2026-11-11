@@ -19,9 +19,9 @@
   {% if mode == 'global' and owed or mode == 'global' and last %}<div class="pos-extra small">{% if owed %}<span class="{% if owed|negative %}neg{% endif %}">{% if owed|negative %}{% trans "I owe" %}{% else %}{% trans "Owes me" %}{% endif %} {{ owed|absval|fcfa }}</span>{% endif %}{% if last %}<span>{% trans "Last supply" %} {{ last|date:"d/m" }}</span>{% endif %}</div>{% endif %}
   <div class="pos-foot">
     {% if mode == 'destock' %}<span class="pos-lvl">{% trans "POSSIBLE DESTOCASH" %}</span>
-    <a class="btn small primary" href="{% url 'agent_supply' %}?pos={{ p.business_sim }}&amp;product=CASH">{% trans "Destocash" %}</a>
+    <a class="btn small primary" data-return href="{% url 'agent_supply' %}?pos={{ p.business_sim }}&amp;product=CASH">{% trans "Destocash" %}</a>
     {% else %}<span class="pos-lvl">{% if lvl == 'OUT' %}{% trans "OUT OF STOCK" %}{% elif lvl == 'LOW' %}{% trans "LOW STOCK" %}{% elif lvl == 'IN' %}{% trans "IN STOCK" %}{% else %}{% trans "no stock data" %}{% endif %}</span>
-    <span class="pos-btns">{% if mode == 'global' %}<a class="btn small" href="{% url 'agent_pos_edit' p.pk %}">✎ {% trans "Edit" %}</a>{% endif %}
-    {% if p.active %}<a class="btn small{% if lvl == 'OUT' or lvl == 'LOW' %} primary{% endif %}" href="{% url 'agent_supply' %}?pos={{ p.business_sim }}">{% trans "Supply" %}</a>{% else %}<span class="badge">{% trans "inactive" %}</span>{% endif %}</span>{% endif %}
+    <span class="pos-btns">{% if mode == 'global' %}<a class="btn small" data-return href="{% url 'agent_pos_edit' p.pk %}">✎ {% trans "Edit" %}</a>{% endif %}
+    {% if p.active %}<a class="btn small{% if lvl == 'OUT' or lvl == 'LOW' %} primary{% endif %}" data-return href="{% url 'agent_supply' %}?pos={{ p.business_sim }}">{% trans "Supply" %}</a>{% else %}<span class="badge">{% trans "inactive" %}</span>{% endif %}</span>{% endif %}
   </div>
 </div>

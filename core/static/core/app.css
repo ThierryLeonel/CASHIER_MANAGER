@@ -629,3 +629,9 @@ table.t tr.oos td { background: #fff1f0; }
 .pos-card.party .sel-box input { width: 18px; height: 18px; }
 .pos-card.party.is-agent { border-left-color: #7a5af8; }
 .pos-card.party .party-bal small { color: var(--muted, #667085); }
+
+/* message brought back to the list after a supply (fixed, so the scroll position is kept) */
+.back-msg { position: fixed; left: 12px; right: 12px; bottom: 16px; z-index: 60; max-width: 520px; margin: 0 auto;
+  box-shadow: 0 6px 24px rgba(0,0,0,.18); padding-right: 40px; transition: opacity .6s; }
+.back-msg.fade { opacity: 0; pointer-events: none; }
+.back-msg .back-msg-x { position: absolute; top: 6px; right: 8px; border: 0; background: none; font-size: 1.2rem; cursor: pointer; color: inherit; }

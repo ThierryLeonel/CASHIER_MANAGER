@@ -197,8 +197,8 @@ def agent_pos_edit(request, pk):
                   changes={f: [str(before[f]), str(getattr(pos, f))] for f in form.fields
                            if before[f] != getattr(pos, f)})
         messages.success(request, _("%(pos)s updated.") % {"pos": pos.name})
-        return redirect("agent_pos_detail", pos.pk)
-    return render(request, "core/agent/pos_edit.html", {"form": form, "pos": pos})
+        return redirect(_safe_next(request) or reverse("agent_pos_detail", args=[pos.pk]))
+    return render(request, "core/agent/pos_edit.html", {"form": form, "pos": pos, "next": _safe_next(request)})
 
 
 @roles_required(R.AGENT)
@@ -243,6 +243,12 @@ def _json_errors(form, status=400):
     return JsonResponse({"ok": False, "errors": errors}, status=status)
 
 
+def _safe_next(request):
+    """The page to go back to after recording (OOS, Global POS…): a path of this site only."""
+    nxt = request.POST.get("next") or request.GET.get("next") or ""
+    return nxt if nxt.startswith("/") and not nxt.startswith("//") and "\\" not in nxt else ""
+
+
 def _entry_form(request, form_class, fn, *, title, icon, ok_msg, code_of=None, labels=None, extra=None):
     """Agent entry form. Sent by the page's script (fetch), it answers in JSON: the record is saved, the form is
     cleared and — for UVE / ER — the Orange code is handed to the phone's dialpad at once."""
@@ -285,7 +291,7 @@ def _entry_form(request, form_class, fn, *, title, icon, ok_msg, code_of=None, l
                 if _wants_json(request):
                     return JsonResponse({"ok": True, "message": msg, "code": code, "idem": str(uuid.uuid4())})
                 messages.success(request, msg + (f" · {code}" if code else ""))
-                return redirect(request.path)
+                return redirect(_safe_next(request) or request.path)
         if _wants_json(request):
             return _json_errors(form)
     from core.services.branding import company
@@ -293,6 +299,7 @@ def _entry_form(request, form_class, fn, *, title, icon, ok_msg, code_of=None, l
     co = company()
     ctx = {"form": form, "title": title, "icon": icon, "labels": labels or {},
            "pos_lookup": "pos_sim" in form.fields and not fixed_pos, "fixed_pos": fixed_pos,
+           "next": _safe_next(request),
            "fixed_level": fixed_pos.stock_level(co.out_of_stock_er, co.low_stock_er) if fixed_pos else None}
     ctx.update(extra or {})
     return render(request, "core/agent/form.html", ctx)

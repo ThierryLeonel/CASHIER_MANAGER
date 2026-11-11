@@ -10,7 +10,7 @@
     <span class="small muted">{{ g.kind }}{% if g.number %} · {{ g.number|sim }}{% endif %}{% if g.pos and not g.in_zone %} · {% trans "other zone" %}{% endif %}{% if g.last_supply %} · {% blocktrans with d=g.last_supply|date:"d/m/Y" %}last supply {{ d }}{% endblocktrans %}{% endif %}</span></div>
   <div class="d-amt">{{ g.owed|fcfa }} <span class="small muted">FCFA</span></div>
   <div class="d-act">
-    <a class="btn small primary" href="{% url 'agent_collect' %}?{{ g.collect_q }}">{% trans "Receive payment" %}</a>
+    <a class="btn small primary" data-return href="{% url 'agent_collect' %}?{{ g.collect_q }}">{% trans "Receive payment" %}</a>
     {% if g.number %}<a class="btn small" href="sms:+237{{ g.number }}?body={{ g.sms|urlencode }}">{% trans "Remind" %}</a>{% endif %}
   </div>
 </div>

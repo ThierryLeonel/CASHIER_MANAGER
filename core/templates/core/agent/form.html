@@ -19,12 +19,13 @@
 </div>{% endif %}
 <div class="panel">
 <form method="post" class="entry agent-form" novalidate id="agent-form"
-      data-dial="{{ labels.dial|default:'' }}" data-plain="{{ labels.plain|default:'' }}" data-fixed="{{ fixed_pos.business_sim|default:'' }}">{% csrf_token %}
+      data-dial="{{ labels.dial|default:'' }}" data-plain="{{ labels.plain|default:'' }}" data-fixed="{{ fixed_pos.business_sim|default:'' }}" data-next="{{ next }}">{% csrf_token %}
+  {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
   {% if fixed_pos %}<input type="hidden" name="fixed_pos" value="{{ fixed_pos.business_sim }}">{% endif %}
   {% include "core/inc/fields.html" %}
   <div class="form-foot">
     <button type="submit" class="btn primary big" id="submit-btn">{% trans "Record" %}</button>
-    <a class="btn" href="{% url 'dashboard' %}">{% trans "Cancel" %}</a>
+    <a class="btn" href="{{ next|default:'/' }}">{% trans "Cancel" %}</a>
   </div>
 </form>
 </div>
@@ -180,6 +181,21 @@
         });
         $('idem').value = d.idem;
         var tel = d.code ? 'tel:' + d.code.replace(/#/g, '%23') : '';
+        if (form.dataset.next) {
+          // opened from a list (OOS, Global POS…): this page closes at once and the list comes back where it was
+          // scrolled; the dial pad opens over it. The list repeats the message with the code to dial again.
+          try { sessionStorage.setItem('agent-done', JSON.stringify({message: d.message, code: d.code || ''})); } catch (e) {}
+          var back = function () { location.replace(form.dataset.next); };
+          if (!tel) { back(); return; }
+          // the dial pad must be opened while the tap still counts, then the list is put back behind it: as soon as
+          // the dial pad covers the browser (page hidden), or after a moment if it does not
+          var gone = false;
+          var once = function () { if (!gone) { gone = true; back(); } };
+          document.addEventListener('visibilitychange', function () { if (document.hidden) once(); });
+          location.href = tel;
+          setTimeout(once, 700);
+          return;
+        }
         show('success', esc(d.message) + (d.code ? '<br><a class="dial-again" href="' + tel + '">' + esc(d.code) + '</a>' : ''));
         if (tel) location.href = tel;
       })

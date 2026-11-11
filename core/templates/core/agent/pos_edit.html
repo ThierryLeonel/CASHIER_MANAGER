@@ -6,7 +6,8 @@
 <h1>{% trans "Edit POS" %}</h1>
 <p class="small muted meta">{{ pos.business_sim|sim }}{% if pos.microzone %} · {{ pos.microzone.name }}{% endif %} · {% trans "The SIM, microzone and stock are managed by the office." %}</p>
 <div class="panel"><form method="post" class="entry" novalidate>{% csrf_token %}
+{% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
 {% include "core/inc/fields.html" %}
-<div class="form-foot"><button class="btn primary" type="submit">{% trans "Save" %}</button><a class="btn" href="{% url 'agent_pos_detail' pos.pk %}">{% trans "Cancel" %}</a></div>
+<div class="form-foot"><button class="btn primary" type="submit">{% trans "Save" %}</button><a class="btn" href="{{ next|default:'' }}{% if not next %}{% url 'agent_pos_detail' pos.pk %}{% endif %}">{% trans "Cancel" %}</a></div>
 </form></div>
 {% endblock %}

@@ -611,3 +611,24 @@ class PosStock(OrgMixin, TestCase):
         self.assertContains(r, "Bota island")
         self.assertContains(r, f"/agent/pos/{p.pk}/edit/")
         self.assertContains(c.get(f"/agent/pos/{p.pk}/edit/"), "Personal name")
+
+    def test_back_to_the_list_after_supply_and_edit(self):
+        from core.models import Counterparty
+
+        p = Counterparty.objects.filter(kind="POS", microzone__agent=self.a1).first()
+        c = self.client_class()
+        c.login(username=self.agent_user.username, password=PW)
+        r = c.get(f"/agent/supply/?pos={p.business_sim}&next=/agent/oos/%3Flevel%3DOUT")
+        self.assertContains(r, 'data-next="/agent/oos/?level=OUT"')
+        data = {"idem": str(uuid.uuid4()), "client_kind": "POS", "pos_sim": p.business_sim, "fixed_pos": p.business_sim,
+                "product": "CASH", "amount": "1000", "next": "/agent/oos/?level=OUT"}
+        r = c.post(f"/agent/supply/?pos={p.business_sim}", data)  # without JavaScript: straight back
+        self.assertRedirects(r, "/agent/oos/?level=OUT", fetch_redirect_response=False)
+        # another site is never a destination
+        data.update(idem=str(uuid.uuid4()), next="//evil.example/x")
+        r = c.post(f"/agent/supply/?pos={p.business_sim}", data)
+        self.assertEqual(r["Location"], "/agent/supply/")
+        r = c.post(f"/agent/pos/{p.pk}/edit/", {"name": p.name, "om_account_name": "", "whatsapp": "",
+                                                 "other_phone": "", "address": "x", "notes": "",
+                                                 "next": "/agent/pos/?page=2"})
+        self.assertRedirects(r, "/agent/pos/?page=2", fetch_redirect_response=False)

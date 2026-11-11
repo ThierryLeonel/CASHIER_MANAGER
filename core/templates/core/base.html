@@ -189,6 +189,47 @@
 </div>
 {% if customers %}<datalist id="customer-list" data-lookup="{% url 'customer_search' %}"></datalist>{% endif %}
 <script>
+/* Back to the same place: a link marked data-return opens with ?next=<this page> and remembers how far the page was
+   scrolled; when that page loads again it scrolls back there. */
+(function () {
+  var key = 'scroll:' + location.pathname + location.search;
+  try {
+    var y = sessionStorage.getItem(key);
+    if (y !== null) {
+      sessionStorage.removeItem(key);
+      var go = function () { window.scrollTo(0, parseInt(y, 10) || 0); };
+      if (document.readyState === 'complete') go(); else window.addEventListener('load', go);
+    }
+  } catch (e) {}
+  // back from a supply / payment: its message (and the code to dial again) at the top of the list
+  try {
+    var done = sessionStorage.getItem('agent-done');
+    if (done) {
+      sessionStorage.removeItem('agent-done');
+      done = JSON.parse(done);
+      var box = document.createElement('div');
+      box.className = 'msg success back-msg';
+      box.textContent = done.message || '';
+      if (done.code) {
+        var a = document.createElement('a');
+        a.className = 'dial-again'; a.href = 'tel:' + done.code.replace(/#/g, '%23'); a.textContent = done.code;
+        box.appendChild(document.createElement('br')); box.appendChild(a);
+      }
+      var x = document.createElement('button'); x.type = 'button'; x.className = 'back-msg-x'; x.textContent = '×';
+      x.onclick = function () { box.remove(); }; box.appendChild(x);
+      document.body.appendChild(box);
+      setTimeout(function () { box.classList.add('fade'); }, 8000);
+    }
+  } catch (e) {}
+  document.addEventListener('click', function (ev) {
+    var a = ev.target.closest && ev.target.closest('a[data-return]');
+    if (!a) return;
+    try { sessionStorage.setItem(key, String(window.scrollY)); } catch (e) {}
+    var u = new URL(a.href, location.href);
+    u.searchParams.set('next', location.pathname + location.search);
+    a.href = u.toString();
+  }, true);
+})();
 /* Number pickers: the list of agents / POS is fetched while typing (a few matches), never the whole base. */
 document.querySelectorAll('datalist[data-lookup]').forEach(function (dl) {
   var timer, last = '';
