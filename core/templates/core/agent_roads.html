@@ -1,0 +1,17 @@
+{% extends "core/base.html" %}{% load i18n cashier %}
+{% block title %}{% trans "Roads of an agent" %}{% endblock %}
+{% block content %}
+<p><a href="{% url 'customers' %}?kind=AGENT">← {% trans "Agents & POS" %}</a></p>
+<h1>{% blocktrans with a=agent.name %}Roads of {{ a }}{% endblocktrans %}</h1>
+<div class="bal-row">
+  <div class="bal k-TOTAL"><span class="bal-label">{% trans "His account (all roads together)" %}</span><span class="bal-value">{{ balance|absval|fcfa }}</span><span class="bal-unit">{% if balance|negative %}{% trans "due to the agent" %}{% else %}{% trans "owed to the company" %}{% endif %}</span></div>
+  <div class="bal k-UVE"><span class="bal-label">{% trans "POS on his roads" %}</span><span class="bal-value">{{ pos_count }}</span><span class="bal-unit">POS</span></div>
+</div>
+<p class="small muted meta">{% trans "Tick every road (microzone) this agent runs. Moving or switching an agent never splits his account: his balance and what his POS owe him stay with him; the POS of a road follow the road and are supplied by the agent now in charge of it." %}</p>
+<form method="post" class="panel">{% csrf_token %}
+{% for title, mzs in groups.items %}<div class="roads-group"><strong>{{ title }}</strong>
+<div class="roads">{% for m in mzs %}<label class="road{% if m.agent_id == agent.pk %} mine{% elif m.agent %} other{% endif %}"><input type="checkbox" name="roads" value="{{ m.pk }}"{% if m.agent_id == agent.pk %} checked{% endif %}> {{ m.name }}{% if m.agent and m.agent_id != agent.pk %} <span class="small muted">· {{ m.agent.name }}</span>{% elif not m.agent %} <span class="small muted">· {% trans "no agent" %}</span>{% endif %}</label>{% endfor %}</div></div>
+{% empty %}<p class="muted">{% trans "No microzone yet." %}</p>{% endfor %}
+<div class="form-foot"><button class="btn primary" type="submit">{% trans "Save the roads" %}</button><a class="btn" href="{% url 'customers' %}?kind=AGENT">{% trans "Cancel" %}</a></div>
+</form>
+{% endblock %}

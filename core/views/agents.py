@@ -382,8 +382,9 @@ def agent_debtors(request):
 def agent_payback(request):
     return _entry_form(
         request, AF.PaybackForm, ag.request_payback, title=_("Pay back the company"), icon="transfer",
-        ok_msg=lambda p: _("%(code)s: %(amt)s FCFA to %(who)s, waiting for confirmation.") % {
-            "code": p.code, "amt": fmt(p.total), "who": p.receiver},
+        ok_msg=lambda p: (_("%(code)s: %(amt)s FCFA to %(who)s, waiting for confirmation.") if p.shop_id else
+                          _("%(code)s: %(amt)s FCFA paid to %(who)s, kept in your records (the cashier records the "
+                            "payment on his side).")) % {"code": p.code, "amt": fmt(p.total), "who": p.receiver},
         code_of=ag.payback_code,
         labels={"dial": _verb("Pay back", "Rembourser"), "plain": _("Record")},
         extra={"s": ag.summary(request.user.counterparty)})

@@ -8,7 +8,7 @@ from .entry import (  # noqa: F401
     transfer_new,
 )
 from .records import (  # noqa: F401
-    customer_detail, customer_edit, customer_search, customers_move, stock_download, customer_new, customers, receipt, receipt_pdf_view, txn_correct, txn_detail,
+    customer_detail, customer_edit, customer_search, customers_move, stock_download, agent_roads, customer_new, customers, receipt, receipt_pdf_view, txn_correct, txn_detail,
     txn_list, txn_transfer,
 )
 from .admin_tools import (  # noqa: F401,E402

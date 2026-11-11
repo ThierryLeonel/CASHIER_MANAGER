@@ -38,11 +38,12 @@ def agent_of(user):
 
 
 def zone_of(agent):
-    """The agent's master zone."""
-    if agent.master_zone_id:
-        return agent.master_zone
-    mz = agent.controlled_microzones.select_related("subzone__parent").first()
-    return mz.subzone.parent if mz else None
+    """The agent's master zone, read from the roads (microzones) he is in charge of now — so moving an agent to other
+    roads moves his zone with him; his registered zone only when he has no road."""
+    mz = agent.controlled_microzones.select_related("subzone__parent").order_by("name").first()
+    if mz is not None:
+        return mz.subzone.parent
+    return agent.master_zone if agent.master_zone_id else None
 
 
 def zone_pos(agent):
@@ -270,7 +271,10 @@ def request_payback(user, *, desk=None, shop=None, cash=None, uve=None, mtn=None
         raise BusinessError(_("Enter what you pay back in cash, UVE and / or MTN float."), "amount")
     if shop is not None and vals["mtn"]:
         raise BusinessError(_("A shop receives cash or UVE, not MTN float."), "method")
-    return _create(P, idempotency_key, agent=agent, desk=desk, shop=shop, **vals,
+    # paid at a cashier: the cashier records the payment himself (Payments), so the agent's record is his own
+    # follow-up only — never sent to the cashier, never posted, so a payment is never counted twice
+    extra = {} if shop is not None else {"status": P.Status.RECORDED}
+    return _create(P, idempotency_key, agent=agent, desk=desk, shop=shop, **vals, **extra,
                    reference=(reference or "").strip(), note=(note or "").strip(), recorded_by=user)
 
 
@@ -278,8 +282,8 @@ def cancel_payback(user, p):
     agent = agent_of(user)
     if p.agent_id != agent.pk:
         raise PermissionDenied(_("This is not your payback."))
-    if p.status != P.Status.PENDING:
-        raise BusinessError(_("Only a payback still waiting for the cashier can be withdrawn."))
+    if p.status not in (P.Status.PENDING, P.Status.RECORDED):
+        raise BusinessError(_("Only a payback not yet confirmed can be withdrawn."))
     p.delete()
 
 
@@ -293,9 +297,8 @@ def can_decide(user, p):
 
 
 def pending_for_desk(zone):
-    if zone is None:
-        return P.objects.none()
-    return P.objects.filter(desk=zone, status=P.Status.PENDING).select_related("agent", "desk").order_by("created_at")
+    """Nothing waits for a cashier any more: he records the agents' payments himself."""
+    return P.objects.none()
 
 
 def pending_for_shop(shop):
@@ -689,3 +692,34 @@ def pos_coverage(agent, today):
     return {"today": today, "in_charge": in_charge, "n_day": uniq(today, today), "n_week": uniq(week, today),
             "n_month": uniq(month, today), "days": days, "weeks": weeks, "months": months, "week_start": week,
             "month_start": month}
+
+
+# ---------------------------------------------------------------- roads (microzones) of an agent: switch / transfer
+def assign_roads(user, agent, microzones):
+    """Give an agent exactly these roads (microzones): roads he no longer has are left without an agent, roads taken
+    from another agent change hands. The agent keeps ONE account whatever his roads: his balance, his debts and what
+    his POS owe him follow him; POS follow their road (the new agent in charge supplies them from now on)."""
+    from core.models import MicroZone
+
+    from .operations import log_event
+
+    if not (user.sees_all_zones or user.is_junior):
+        raise PermissionDenied(_("You are not allowed to change the roads of agents."))
+    if agent.kind != Counterparty.Kind.AGENT:
+        raise BusinessError(_("Only a commercial agent has roads."))
+    new = list(microzones)
+    if user.is_junior and any(m.subzone.parent_id != user.scope_zone.id for m in new):
+        raise PermissionDenied(_("You can only give roads of your zone."))
+    with transaction.atomic():
+        before = list(MicroZone.objects.filter(agent=agent).values_list("name", flat=True))
+        taken = {m.name: m.agent.name for m in new if m.agent_id and m.agent_id != agent.pk}
+        MicroZone.objects.filter(agent=agent).exclude(pk__in=[m.pk for m in new]).update(agent=None)
+        MicroZone.objects.filter(pk__in=[m.pk for m in new]).update(agent=agent)
+        if new:  # his home road and zone follow the roads
+            home = sorted(new, key=lambda m: m.name.lower())[0]
+            if agent.microzone_id not in [m.pk for m in new]:
+                agent.microzone = home
+            agent.master_zone = home.subzone.parent
+            agent.save(update_fields=["microzone", "master_zone"])
+        log_event(user, "agent_roads", agent=agent.pk, before=before, after=[m.name for m in new], taken_from=taken)
+    return taken

@@ -29,6 +29,7 @@ urlpatterns = [
     path("customers/new/", v.customer_new, name="customer_new"),
     path("customers/<int:pk>/", v.customer_detail, name="customer_detail"),
     path("customers/<int:pk>/edit/", v.customer_edit, name="customer_edit"),
+    path("customers/<int:pk>/roads/", v.agent_roads, name="agent_roads"),
     path("transactions/", v.txn_list, name="txn_list"),
     path("transactions/<int:pk>/", v.txn_detail, name="txn_detail"),
     path("transactions/<int:pk>/receipt/", v.receipt, name="receipt"),

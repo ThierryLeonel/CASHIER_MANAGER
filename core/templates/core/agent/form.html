@@ -145,6 +145,7 @@
 
   function show(kind, html) {
     box.innerHTML = '<div class="msg ' + kind + '">' + html + '</div>';
+    if (kind === 'success' && window.dismissLater) dismissLater(box.firstChild, 8000);
     box.scrollIntoView({block: 'nearest', behavior: 'smooth'});
   }
   function clearErrors() {

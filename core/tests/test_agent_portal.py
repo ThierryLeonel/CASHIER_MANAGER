@@ -85,26 +85,20 @@ class AgentPortal(OrgMixin, TestCase):
         desks = list(ag.desks_for(self.a1))
         self.assertIn(self.c_f1.subzone, desks)
         self.assertNotIn(self.c_me.subzone, desks)
-        p = ag.request_payback(self.ua, desk=self.c_f1.subzone, cash=D(100000), uve=D(50000), reference="OM123")
-        self.assertEqual(self.cbal(self.a1), owed)  # nothing until the cashier confirms
-        with self.assertRaises(PermissionDenied):
-            ag.confirm_payback(self.c_f2, p)  # another desk
-        with self.assertRaises(PermissionDenied):
-            ag.confirm_payback(self.ua, p)
+        # paid at a cashier: the agent's own record; the cashier records the payment himself, so nothing is
+        # sent to him and nothing is posted (no double payment)
         drawer_before = self.bal(self.d_f1)
-        p = ag.confirm_payback(self.c_f1, p)
-        self.assertEqual(p.status, AgentPayback.Status.CONFIRMED)
-        self.assertEqual(self.cbal(self.a1), owed - 150000)
-        self.assertEqual(self.bal(self.d_f1), drawer_before + 100000)
-        self.assertEqual(Transaction.objects.filter(type=TxType.COLLECTION, counterparty=self.a1).count(), 2)
-        self.assertIn("AP-", p.transaction.description)
+        p = ag.request_payback(self.ua, desk=self.c_f1.subzone, cash=D(100000), uve=D(50000), reference="OM123")
+        self.assertEqual(p.status, AgentPayback.Status.RECORDED)
+        self.assertFalse(ag.pending_for_desk(self.c_f1.subzone).exists())
         with self.assertRaises(PermissionDenied):
-            ag.confirm_payback(self.c_f1, p)  # only once
-        q = ag.request_payback(self.ua, desk=self.c_f1.subzone, mtn=D(5000))
-        with self.assertRaises(BusinessError):
-            ag.reject_payback(self.c_f1, q, "")
-        ag.reject_payback(self.c_f1, q, "Nothing received")
-        self.assertEqual(self.cbal(self.a1), owed - 150000)
+            ag.confirm_payback(self.c_f1, p)
+        self.assertEqual((self.cbal(self.a1), self.bal(self.d_f1)), (owed, drawer_before))
+        self.assertFalse(Transaction.objects.filter(type=TxType.COLLECTION, counterparty=self.a1).exists())
+        # the cashier's own payment is the one that counts
+        ops.record_payment(self.c_f1, payer=self.a1, parts={"CASH": D(100000)})
+        self.assertEqual(self.cbal(self.a1), owed - 100000)
+        ag.cancel_payback(self.ua, p)  # the agent can withdraw his record
         with self.assertRaises(BusinessError):  # a desk outside the zone
             ag.request_payback(self.ua, desk=self.c_me.subzone, cash=D(1))
         with self.assertRaises(BusinessError):
@@ -158,16 +152,12 @@ class AgentPortal(OrgMixin, TestCase):
                                        "method": "CASH", "amount": "40 000"}, **F).json()
         self.assertEqual((d["ok"], d["code"]), (True, ""))
         p = AgentPayback.objects.get()
-        # the cashier of the desk sees it on the home page and confirms
+        self.assertEqual(p.status, "RECORDED")
+        self.assertIn("kept in your records", d["message"])
+        # nothing waits for the cashier: he records the agent's payment himself
         cf = self.client_for("cashier.fako1")
-        self.assertContains(cf.get("/"), "Agent paybacks to confirm")
-        self.assertContains(cf.get("/paybacks/"), p.code)
-        self.assertNotContains(self.client_for("cashier.fako2").get("/"), "Agent paybacks to confirm")
-        r = cf.post(f"/paybacks/{p.pk}/decide/", {"action": "confirm"})
-        self.assertEqual(r.status_code, 302)
-        p.refresh_from_db()
-        self.assertEqual(p.status, "CONFIRMED")
-        self.assertEqual(c.get(f"/transactions/{p.transaction.pk}/").status_code, 200)  # the agent sees his receipt
+        self.assertNotContains(cf.get("/"), "Agent paybacks to confirm")
+        self.assertContains(c.get("/agent/activity/?tab=paybacks"), "My record")
         self.assertEqual(self.client_for("manager").get("/paybacks/").status_code, 200)
         for u in ("cashier.fako1", "manager"):
             self.assertEqual(self.client_for(u).get("/agent/supply/").status_code, 403)
@@ -253,13 +243,16 @@ class AgentPortal(OrgMixin, TestCase):
     def test_admin_delete_and_clear(self):
         from core.services import admin as adm
 
-        p = ag.request_payback(self.ua, desk=self.c_f1.subzone, cash=D(10000))
-        p = ag.confirm_payback(self.c_f1, p)
+        from core.services import shop_shifts as ss
+
+        ss.open_shift(self.o["shop_mgr"], cash=D(0), uve=D(0), er=D(0))
+        p = ag.request_payback(self.ua, shop=self.shop, cash=D(10000))
+        p = ag.confirm_payback(self.o["shop_mgr"], p)
         adm.delete_transaction(self.admin, p.transaction, reason="wrong")
         p.refresh_from_db()
         self.assertEqual((p.status, p.transaction), (AgentPayback.Status.REJECTED, None))
         ag.record_supply(self.ua, client_kind="OTHER", client_phone="655000002", cash=D(1000))
-        q = ag.confirm_payback(self.c_f1, ag.request_payback(self.ua, desk=self.c_f1.subzone, cash=D(5000)))
+        q = ag.confirm_payback(self.o["shop_mgr"], ag.request_payback(self.ua, shop=self.shop, cash=D(5000)))
         self.assertIsNotNone(q.transaction)
         adm.clear_data(self.admin, scope="transactions", password=PW, confirm_text="DELETE")
         self.assertFalse(AgentPayback.objects.exists() or AgentClientEntry.objects.exists())
@@ -339,7 +332,10 @@ class AgentPortal(OrgMixin, TestCase):
         ag.record_supply(self.ua, client_kind="POS", pos_sim=self.p1.business_sim, uve=D(1000))
         ag.record_exchange(self.ua, direction="SEND_FLOAT_UVE", amount=D(10))
         ag.record_supply(self.agent_user2, client_kind="POS", pos_sim=self.p1.business_sim, uve=D(2000))
-        p = ag.confirm_payback(self.c_f1, ag.request_payback(self.ua, desk=self.c_f1.subzone, cash=D(5000)))
+        from core.services import shop_shifts as ss
+
+        ss.open_shift(self.o["shop_mgr"], cash=D(0), uve=D(0), er=D(0))
+        p = ag.confirm_payback(self.o["shop_mgr"], ag.request_payback(self.ua, shop=self.shop, cash=D(5000)))
         owed = self.cbal(self.a1)
         adm.clear_data(self.admin, scope="agents", password=PW, confirm_text="DELETE", agent=self.a1)
         self.assertFalse(AgentClientEntry.objects.filter(agent=self.a1).exists())

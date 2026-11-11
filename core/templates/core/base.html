@@ -189,6 +189,14 @@
 </div>
 {% if customers %}<datalist id="customer-list" data-lookup="{% url 'customer_search' %}"></datalist>{% endif %}
 <script>
+/* Success messages leave by themselves after a few seconds (errors stay until read). */
+function dismissLater(el, ms) {
+  setTimeout(function () {
+    el.classList.add('fade');
+    setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 600);
+  }, ms);
+}
+document.querySelectorAll('.msgs .msg.success').forEach(function (m) { dismissLater(m, 6000); });
 /* Back to the same place: a link marked data-return opens with ?next=<this page> and remembers how far the page was
    scrolled; when that page loads again it scrolls back there. */
 (function () {
@@ -218,7 +226,7 @@
       var x = document.createElement('button'); x.type = 'button'; x.className = 'back-msg-x'; x.textContent = '×';
       x.onclick = function () { box.remove(); }; box.appendChild(x);
       document.body.appendChild(box);
-      setTimeout(function () { box.classList.add('fade'); }, 8000);
+      dismissLater(box, 5000);
     }
   } catch (e) {}
   document.addEventListener('click', function (ev) {

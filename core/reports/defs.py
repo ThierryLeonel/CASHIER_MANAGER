@@ -1095,11 +1095,11 @@ def _agent_place(cp):
     """(subzone name, microzones) of an agent / POS. An agent controlling several microzones (distribution roads)
     is listed once, under the subzone of his own microzone, with all his microzones."""
     mzs = []
-    if cp.kind == "AGENT":
+    if cp.kind == "AGENT":  # his roads now (agents are switched / transferred): listed once with all of them
         mzs = list(cp.controlled_microzones.select_related("subzone").order_by("name"))
-    if cp.microzone_id and cp.microzone not in mzs:
-        mzs.insert(0, cp.microzone)
-    home = cp.microzone if cp.microzone_id else (mzs[0] if mzs else None)
+    if cp.microzone_id and not mzs:
+        mzs = [cp.microzone]
+    home = (cp.microzone if cp.microzone_id and cp.microzone in mzs else None) or (mzs[0] if mzs else None)
     if home is not None:
         sub = home.subzone.name
     else:

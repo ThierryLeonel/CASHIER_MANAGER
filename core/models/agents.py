@@ -169,7 +169,8 @@ class AgentPayback(models.Model):
     company payment only once that cashier confirms receiving it."""
 
     class Status(models.TextChoices):
-        PENDING = "PENDING", _("Waiting for the cashier")
+        PENDING = "PENDING", _("Waiting for the shop")
+        RECORDED = "RECORDED", _("Recorded by the agent (the cashier records the payment)")
         CONFIRMED = "CONFIRMED", _("Confirmed")
         REJECTED = "REJECTED", _("Rejected")
 

@@ -1,9 +1,12 @@
 """Microzones: each controlled by one commercial agent; POS belong to a microzone."""
+from decimal import Decimal as D
+
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.test import TestCase
 
 from core.models import Counterparty, MicroZone, Zone
+from core.services import operations as ops
 
 from .helpers import OrgMixin
 from .test_web import PW
@@ -167,3 +170,36 @@ class MovePos(OrgMixin, TestCase):
         self.m.post("/customers/move/", {"ids": [self.pos[3].pk], "target": self.target.pk, "scope": "selected"})
         self.pos[3].refresh_from_db()
         self.assertEqual(self.pos[3].microzone, self.target)
+
+    def test_switch_and_transfer_agents_keeps_one_account(self):
+        from core.models import Counterparty as C
+        from core.services import agents as ag
+
+        a1, a2 = self.a1, self.a2
+        road2 = MicroZone.objects.create(subzone=self.molyko.subzone, name="Great Soppo")
+        # Ndive runs two roads: one account, one place in the reports
+        r = self.m.post(f"/customers/{a1.pk}/roads/", {"roads": [self.molyko.pk, road2.pk]})
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(set(a1.controlled_microzones.values_list("name", flat=True)), {self.molyko.name, "Great Soppo"})
+        ops.record_supply(self.c_f1, product="UVE", customer=a1, amount=D(10000), source_account=self.uve_f1)
+        owed = ag.summary(a1)["owed_company"]
+        self.assertEqual(C.objects.filter(kind="AGENT", pk=a1.pk).count(), 1)
+        # transfer the second road to agent 2 (another zone): the POS follow the road, the balance stays with Ndive
+        pos = C.objects.create(kind="POS", business_sim="698100001", name="Road 2 POS", microzone=road2)
+        self.m.post(f"/customers/{a2.pk}/roads/", {"roads": list(a2.controlled_microzones.values_list("pk", flat=True))
+                                                   + [road2.pk]})
+        road2.refresh_from_db()
+        pos.refresh_from_db()
+        self.assertEqual((road2.agent, pos.microzone.agent), (a2, a2))
+        self.assertEqual(ag.summary(a1)["owed_company"], owed)
+        self.assertEqual(list(a1.controlled_microzones.values_list("name", flat=True)), [self.molyko.name])
+        # move Ndive to a road of another zone: his zone follows his roads
+        meme_road = MicroZone.objects.exclude(subzone__parent=self.molyko.subzone.parent).first()
+        self.m.post(f"/customers/{a1.pk}/roads/", {"roads": [meme_road.pk]})
+        a1.refresh_from_db()
+        self.assertEqual(ag.zone_of(a1), meme_road.subzone.parent)
+        self.assertEqual(a1.master_zone, meme_road.subzone.parent)
+        self.assertEqual(ag.summary(a1)["owed_company"], owed)
+        c = self.client_class()
+        c.login(username="cashier.fako1", password=PW)
+        self.assertEqual(c.get(f"/customers/{a1.pk}/roads/").status_code, 403)

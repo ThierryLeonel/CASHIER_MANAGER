@@ -633,5 +633,12 @@ table.t tr.oos td { background: #fff1f0; }
 /* message brought back to the list after a supply (fixed, so the scroll position is kept) */
 .back-msg { position: fixed; left: 12px; right: 12px; bottom: 16px; z-index: 60; max-width: 520px; margin: 0 auto;
   box-shadow: 0 6px 24px rgba(0,0,0,.18); padding-right: 40px; transition: opacity .6s; }
-.back-msg.fade { opacity: 0; pointer-events: none; }
+.msg.fade { animation: msg-out .5s var(--ease, ease) forwards; pointer-events: none; }
+@keyframes msg-out { to { opacity: 0; transform: translateY(6px); } }
 .back-msg .back-msg-x { position: absolute; top: 6px; right: 8px; border: 0; background: none; font-size: 1.2rem; cursor: pointer; color: inherit; }
+
+.roads-group { margin-bottom: 14px; }
+.roads { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.road { border: 1px solid var(--line, #ddd); border-radius: 8px; padding: 6px 10px; display: flex; align-items: center; gap: 6px; }
+.road.mine { border-color: var(--ok, #17b26a); background: var(--ok-soft, #ecfdf3); }
+.road.other { border-style: dashed; }

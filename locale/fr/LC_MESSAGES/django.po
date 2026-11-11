@@ -35,6 +35,10 @@ msgid "%(acct)s: enter a whole FCFA amount."
 msgstr "%(acct)s : saisissez un montant entier en FCFA."
 
 #, python-format
+msgid "%(agent)s now runs %(n)s road(s)."
+msgstr "%(agent)s a maintenant %(n)s route(s)."
+
+#, python-format
 msgid "%(agent)s owes the shop only %(owed)s FCFA."
 msgstr "%(agent)s ne doit à la boutique que %(owed)s FCFA."
 
@@ -82,6 +86,14 @@ msgstr "%(code)s rejeté."
 #, python-format
 msgid "%(code)s withdrawn."
 msgstr "%(code)s retiré."
+
+#, python-format
+msgid ""
+"%(code)s: %(amt)s FCFA paid to %(who)s, kept in your records (the cashier "
+"records the payment on his side)."
+msgstr ""
+"%(code)s : %(amt)s FCFA payés à %(who)s, gardé dans vos enregistrements (le "
+"caissier enregistre le paiement de son côté)."
 
 #, python-format
 msgid ""
@@ -3254,6 +3266,9 @@ msgstr ""
 msgid "Hello, %(name)s"
 msgstr "Bonjour, %(name)s"
 
+msgid "His account (all roads together)"
+msgstr "Son compte (toutes routes confondues)"
+
 msgid "History"
 msgstr "Historique"
 
@@ -3792,6 +3807,9 @@ msgstr "Mes imports récents"
 msgid "My recent shifts"
 msgstr "Mes services récents"
 
+msgid "My record"
+msgstr "Mon enregistrement"
+
 msgid "My shift"
 msgstr "Mon service"
 
@@ -4026,6 +4044,9 @@ msgstr "Aucun résultat"
 
 msgid "No microzone"
 msgstr "Sans microzone"
+
+msgid "No microzone yet."
+msgstr "Aucune microzone pour l'instant."
 
 msgid "No microzone yet: type a name below to create the first one."
 msgstr ""
@@ -4362,6 +4383,12 @@ msgstr ""
 
 msgid "Only a commercial agent can be in charge of a microzone."
 msgstr "Seul un agent commercial peut être responsable d'une microzone."
+
+msgid "Only a commercial agent has roads."
+msgstr "Seul un agent commercial a des routes."
+
+msgid "Only a payback not yet confirmed can be withdrawn."
+msgstr "Seul un remboursement pas encore confirmé peut être retiré."
 
 msgid "Only a payback still waiting for the cashier can be withdrawn."
 msgstr "Seul un remboursement encore en attente du caissier peut être retiré."
@@ -4802,6 +4829,9 @@ msgstr "POS en stock faible quand le stock ER est sous (FCFA)"
 
 msgid "POS number"
 msgstr "Numéro du POS"
+
+msgid "POS on his roads"
+msgstr "POS sur ses routes"
 
 msgid ""
 "POS only: delete every POS with its transactions, agents' records with it "
@@ -5396,6 +5426,9 @@ msgstr "Enregistré le (Africa/Douala)"
 msgid "Recorded by"
 msgstr "Enregistré par"
 
+msgid "Recorded by the agent (the cashier records the payment)"
+msgstr "Enregistré par l'agent (le caissier enregistre le paiement)"
+
 msgid "Ref number"
 msgstr "Numéro de référence"
 
@@ -5580,6 +5613,16 @@ msgstr "Contre-passation de %(ref)s : %(reason)s"
 msgid "Reverse and replace with corrected values"
 msgstr "Contre-passer et remplacer par les valeurs corrigées"
 
+msgid "Roads"
+msgstr "Routes"
+
+#, python-format
+msgid "Roads of %(a)s"
+msgstr "Routes de %(a)s"
+
+msgid "Roads of an agent"
+msgstr "Routes d'un agent"
+
 msgid "Role"
 msgstr "Rôle"
 
@@ -5645,6 +5688,9 @@ msgstr "Enregistrer les modifications"
 
 msgid "Save the rate"
 msgstr "Enregistrer le taux"
+
+msgid "Save the roads"
+msgstr "Enregistrer les routes"
 
 msgid "Saved."
 msgstr "Enregistré."
@@ -6383,6 +6429,10 @@ msgstr "TOTAL OUVERTURE"
 msgid "TYPE must be AGENT or POS"
 msgstr "TYPE doit être AGENT ou POS"
 
+#, python-format
+msgid "Taken from: %(list)s."
+msgstr "Reprises à : %(list)s."
+
 msgid "Telephone"
 msgstr "Téléphone"
 
@@ -6850,6 +6900,17 @@ msgstr ""
 "par microzone) et déplacez-la entièrement. L'agent responsable de la "
 "nouvelle microzone les approvisionne désormais ; les soldes restent avec "
 "chaque POS."
+
+msgid ""
+"Tick every road (microzone) this agent runs. Moving or switching an agent "
+"never splits his account: his balance and what his POS owe him stay with "
+"him; the POS of a road follow the road and are supplied by the agent now in "
+"charge of it."
+msgstr ""
+"Cochez chaque route (microzone) que cet agent dessert. Déplacer ou permuter "
+"un agent ne divise jamais son compte : son solde et ce que ses POS lui "
+"doivent restent avec lui ; les POS d'une route suivent la route et sont "
+"approvisionnés par l'agent qui en a maintenant la charge."
 
 msgid ""
 "Tick every unit the client buys — several items can be sold together — check"
@@ -7463,6 +7524,9 @@ msgstr "En attente de confirmation"
 msgid "Waiting for the cashier"
 msgstr "En attente du caissier"
 
+msgid "Waiting for the shop"
+msgstr "En attente de la boutique"
+
 #, python-format
 msgid "Week %(a)s–%(b)s"
 msgstr "Semaine %(a)s–%(b)s"
@@ -7601,6 +7665,9 @@ msgstr "Rédigez la note d'enquête."
 msgid "Yes"
 msgstr "Oui"
 
+msgid "You are not allowed to change the roads of agents."
+msgstr "Vous n'êtes pas autorisé à changer les routes des agents."
+
 msgid "You are not allowed to move POS."
 msgstr "Vous n'êtes pas autorisé à déplacer des POS."
 
@@ -7634,6 +7701,9 @@ msgid ""
 msgstr ""
 "Vous êtes le dernier en service : comptez les espèces et relevez les soldes "
 "UVE et ER sur la SIM de la boutique."
+
+msgid "You can only give roads of your zone."
+msgstr "Vous ne pouvez attribuer que des routes de votre zone."
 
 msgid "You can only move POS inside your zone."
 msgstr "Vous ne pouvez déplacer des POS que dans votre zone."
@@ -7966,6 +8036,9 @@ msgstr "écart"
 msgid "due to customer"
 msgstr "dû au client"
 
+msgid "due to the agent"
+msgstr "dû à l'agent"
+
 msgid "due to the agent / POS"
 msgstr "dû à l'agent / POS"
 
@@ -8095,6 +8168,9 @@ msgstr "nouvelle sous-zone %(s)s dans %(z)s"
 #, python-format
 msgid "new zone %(z)s"
 msgstr "nouvelle zone %(z)s"
+
+msgid "no agent"
+msgstr "sans agent"
 
 msgid "no stock data"
 msgstr "pas de données de stock"
@@ -8319,6 +8395,9 @@ msgstr "contact téléphonique"
 
 msgid "the agent owes the shop"
 msgstr "l'agent doit à la boutique"
+
+msgid "the cashier records the payment"
+msgstr "le caissier enregistre le paiement"
 
 msgid "the shop owes the agent"
 msgstr "la boutique doit à l'agent"

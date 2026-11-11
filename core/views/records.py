@@ -60,7 +60,8 @@ def customers(request):
     from core.services.branding import company
 
     co = company()
-    page = Paginator(qs.order_by("kind", "name", "business_sim"), 48).get_page(request.GET.get("page"))
+    page = Paginator(qs.order_by("kind", "name", "business_sim").prefetch_related("controlled_microzones"), 48) \
+        .get_page(request.GET.get("page"))
     ids = [c.id for c in page]
     bals = dict(Entry.objects.filter(account__counterparty_id__in=ids, account__kind=Account.Kind.CUSTOMER)
                 .values_list("account__counterparty").annotate(s=Sum("amount")))
@@ -97,6 +98,39 @@ def stock_download(request):
     name = "stock-" + timezone.localdate().isoformat() + (".oos" if request.GET.get("out") == "1" else "") + ".xlsx"
     resp["Content-Disposition"] = f'attachment; filename="{name}"'
     return resp
+
+
+@roles_required(*STAFF)
+def agent_roads(request, pk):
+    """Switch / transfer a commercial agent: tick the roads (microzones) he is in charge of."""
+    from django.core.exceptions import PermissionDenied as Forbidden
+
+    agent = get_object_or_404(Counterparty, pk=pk, kind=Counterparty.Kind.AGENT)
+    if not (request.user.sees_all_zones or request.user.is_junior):
+        raise Forbidden
+    microzones = MicroZone.objects.select_related("subzone__parent", "agent").order_by(
+        "subzone__parent__name", "subzone__name", "name")
+    if request.user.scope_zone is not None:
+        microzones = microzones.filter(subzone__parent=request.user.scope_zone)
+    if request.method == "POST":
+        ids = [i for i in request.POST.getlist("roads") if i.isdigit()]
+        try:
+            taken = ag.assign_roads(request.user, agent, microzones.filter(pk__in=ids))
+            msg = _("%(agent)s now runs %(n)s road(s).") % {"agent": agent.name, "n": len(ids)}
+            if taken:
+                msg += " " + _("Taken from: %(list)s.") % {"list": ", ".join(f"{k} ({v})" for k, v in taken.items())}
+            messages.success(request, msg)
+            return redirect(reverse("customers") + "?kind=AGENT")
+        except (BusinessError, PermissionDenied) as e:
+            messages.error(request, e.message)
+    groups = {}
+    for m in microzones:
+        groups.setdefault(f"{m.subzone.parent.name if m.subzone.parent_id else ''} › {m.subzone.name}", []).append(m)
+    bal = Entry.objects.filter(account__counterparty=agent, account__kind=Account.Kind.CUSTOMER) \
+        .aggregate(s=Sum("amount"))["s"] or 0
+    return render(request, "core/agent_roads.html", {"agent": agent, "groups": groups, "balance": bal,
+                                                     "pos_count": Counterparty.objects.filter(
+                                                         kind=Counterparty.Kind.POS, microzone__agent=agent).count()})
 
 
 @roles_required(*STAFF)
