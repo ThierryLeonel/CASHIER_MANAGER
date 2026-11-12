@@ -19,4 +19,37 @@
 {% if page.paginator.num_pages > 1 %}<div class="pager">{% if page.has_previous %}<a class="btn small" href="?{{ keep }}&amp;page={{ page.previous_page_number }}">← {% trans "Previous" %}</a>{% endif %}
 <span class="small">{% blocktrans with n=page.number t=page.paginator.num_pages c=page.paginator.count %}Page {{ n }} of {{ t }} · {{ c }} POS{% endblocktrans %}</span>
 {% if page.has_next %}<a class="btn small" href="?{{ keep }}&amp;page={{ page.next_page_number }}">{% trans "Next" %} →</a>{% endif %}</div>{% endif %}
+<dialog class="pick-dlg" id="destock-dlg" aria-labelledby="destock-title">
+  <form method="post" action="{% url 'agent_destock_record' %}">{% csrf_token %}
+    <input type="hidden" name="pos" value=""><input type="hidden" name="how" value="">
+    <input type="hidden" name="idem" value=""><input type="hidden" name="next" value="{{ request.get_full_path }}">
+    <strong id="destock-title">{% trans "Destocash" %} — <span data-f="name"></span></strong>
+    <p class="small muted" data-f="hint-CASH">{% trans "You give the POS cash; it sends you its OM (UVE)." %}</p>
+    <p class="small muted" data-f="hint-FLOAT">{% trans "You send the POS float; it sends you its OM (UVE)." %}</p>
+    <label>{% trans "Amount" %} (FCFA) <span class="small muted">· {% trans "OM stock" %} <span data-f="om"></span></span>
+      <input type="text" name="amount" inputmode="numeric" class="money-input" required autocomplete="off"></label>
+    <div class="row"><button class="btn" type="button" data-close>{% trans "Cancel" %}</button><button class="btn primary" type="submit">{% trans "Save" %}</button></div>
+  </form>
+</dialog>
 {% endblock %}
+{% block scripts %}<script>
+(function () {
+  var d = document.getElementById('destock-dlg'), fm = d.querySelector('form');
+  function uuid() { return (crypto.randomUUID ? crypto.randomUUID() : 'xxxxxxxx-xxxx-4xxx-8xxx-xxxxxxxxxxxx'.replace(/x/g, function () { return (Math.random() * 16 | 0).toString(16); })); }
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-destock]');
+    if (b) {
+      fm.pos.value = b.dataset.pos; fm.how.value = b.dataset.destock; fm.idem.value = uuid(); fm.amount.value = '';
+      fm.next.value = location.pathname + location.search + '#pos-' + b.dataset.pos;
+      d.querySelector('[data-f=name]').textContent = b.dataset.name;
+      d.querySelector('[data-f=om]').textContent = Number(b.dataset.om || 0).toLocaleString('fr-FR');
+      d.querySelector('[data-f=hint-CASH]').hidden = b.dataset.destock !== 'CASH';
+      d.querySelector('[data-f=hint-FLOAT]').hidden = b.dataset.destock !== 'FLOAT';
+      d.querySelector('#destock-title').firstChild.textContent = (b.dataset.destock === 'CASH' ? '{% trans "Destocash in cash" %}' : '{% trans "Destocash in float" %}') + ' — ';
+      d.showModal(); fm.amount.focus();
+    }
+    if (e.target.closest('#destock-dlg [data-close]')) d.close();
+  });
+  fm.addEventListener('submit', function () { fm.querySelector('[type=submit]').disabled = true; });
+})();
+</script>{% endblock %}

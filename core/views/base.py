@@ -38,6 +38,7 @@ def roles_required(*roles):
 
 
 STAFF = (R.SUPERADMIN, R.MANAGER, R.JUNIOR, R.FINANCE, R.CASHIER)
+MARKET_VIEW = STAFF + (R.MARKET,)  # pages the market supervisor reads too (agents & POS, transactions, reports)
 
 
 def acting_cashier(request):
@@ -94,6 +95,9 @@ def run_service(request, form, fn, *, success, on_success):
 def can_view_txn(user, t):
     if user.sees_all_zones:
         return True
+    if user.is_market:  # the shops' records and everything with an agent / POS
+        return bool(t.shop_id or t.counterparty_id or t.counterparty_2_id) or Entry.objects.filter(
+            transaction=t, account__kind="CUSTOMER").exists()
     if user.is_shop_user:  # shops see only their own shop's entries, and staff only their duties' operations
         from core.services.shops import can_see_type
 
@@ -230,6 +234,8 @@ def dashboard(request):
         from .agents import agent_home
 
         return agent_home(request)
+    if user.is_market:
+        return market_home(request)
     if user.is_cashier:
         from core.services.closing import zone_closing_accounts
 
@@ -289,6 +295,31 @@ def dashboard(request):
     ctx["recent"] = recent.order_by("-posted_at")[:15]
     ctx["days"] = days.order_by("zone__parent__name", "zone__name")
     return render(request, "core/dashboard_staff.html", ctx)
+
+
+def market_home(request):
+    """Market supervisor: the shops and the commercial agents / POS at a glance."""
+    from core.models import Counterparty, Shop
+    from core.services import shops as sh
+    from core.services.branding import company
+
+    co = company()
+    pos = Counterparty.objects.filter(kind=Counterparty.Kind.POS, active=True)
+    cust = Entry.objects.filter(account__kind=Account.Kind.CUSTOMER).values("account_id").annotate(s=Sum("amount"))
+    shops = []
+    for s in Shop.objects.filter(active=True).order_by("name"):
+        b = sh.shop_balances(s)
+        shops.append((s, b.get(Account.Kind.CASH_DRAWER, 0), b.get(Account.Kind.UVE, 0), b.get(Account.Kind.ER, 0)))
+    ctx = {
+        "today": douala_today(), "n_agents": Counterparty.objects.filter(kind="AGENT", active=True).count(),
+        "n_pos": pos.count(), "n_out": pos.filter(er_stock__lt=co.out_of_stock_er).count(),
+        "n_low": pos.filter(er_stock__gte=co.out_of_stock_er, er_stock__lt=co.low_stock_er).count(),
+        "owed": sum((r["s"] for r in cust if r["s"] > 0), 0), "due": -sum((r["s"] for r in cust if r["s"] < 0), 0),
+        "shops": shops,
+        "recent": Transaction.objects.filter(Q(counterparty__isnull=False) | Q(shop__isnull=False))
+        .select_related("counterparty", "shop", "entered_by").order_by("-posted_at")[:15],
+    }
+    return render(request, "core/dashboard_market.html", ctx)
 
 
 @require_POST

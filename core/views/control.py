@@ -5,7 +5,6 @@ from decimal import Decimal
 
 from django.contrib import messages
 from django.db import transaction as db_transaction
-from django.db.models import Q
 from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.translation import gettext as _
@@ -358,21 +357,26 @@ def conversion_rate(request):
 
 # ---------------------------------------------------------------- reports
 AGENT_REPORTS = ("statement",)
+# market supervisor: the commercial agents' and POS reports (the shops have their own)
+MARKET_REPORTS = ("customers", "pos", "supply_due", "statement", "supplies", "collections", "destockage",
+                  "pos_stock", "pos_coverage", "supply_payment", "transfers")
 
 
-@roles_required(*STAFF, R.AGENT)
+@roles_required(*STAFF, R.AGENT, R.MARKET)
 def reports_index(request):
     if request.user.is_agent:
         return redirect("report", key="statement")
     from core.reports.defs import REPORT_CARDS
 
-    cards = [(key, title, *REPORT_CARDS.get(key, ("chart", ""))) for key, (title, _fn) in REPORTS.items()]
+    cards = [(key, title, *REPORT_CARDS.get(key, ("chart", ""))) for key, (title, _fn) in REPORTS.items()
+             if not request.user.is_market or key in MARKET_REPORTS]
     return render(request, "core/reports_index.html", {"cards": cards})
 
 
-@roles_required(*STAFF, R.AGENT)
+@roles_required(*STAFF, R.AGENT, R.MARKET)
 def report(request, key):
-    if key not in REPORTS or (request.user.is_agent and key not in AGENT_REPORTS):
+    if key not in REPORTS or (request.user.is_agent and key not in AGENT_REPORTS) or (
+            request.user.is_market and key not in MARKET_REPORTS):
         raise Http404
     title, fn = REPORTS[key]
     data = request.GET.copy()

@@ -27,7 +27,7 @@
   </details>
   <div class="d-act">
     <a class="btn small" data-return href="{% url 'agent_collect' %}?{{ g.collect_q }}">{% trans "Record payment" %}</a>
-    {% if g.wa %}<a class="btn small wa" href="{{ g.wa }}" target="_blank" rel="noopener">{% icon "whatsapp" 14 %} WhatsApp</a>{% endif %}
+    {% if g.pos %}{% include "core/inc/contact_btns.html" with c=g.pos %}{% else %}{% if g.number %}<button type="button" class="btn small call" data-call data-name="{{ g.label }}" data-biz="" data-personal="{{ g.number }}" title="{% trans 'Call' %}">{% icon "phone" 15 %}</button>{% endif %}{% if g.wa %}<a class="btn small wa" href="{{ g.wa }}" target="_blank" rel="noopener" title="WhatsApp">{% icon "whatsapp" 15 %}</a>{% endif %}{% endif %}
     {% if g.number %}<a class="btn small" href="sms:+237{{ g.number }}?body={{ g.sms|urlencode }}">{% trans "Remind" %}</a>{% endif %}
   </div>
 </div>

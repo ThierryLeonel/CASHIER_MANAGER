@@ -26,7 +26,7 @@ from core.services.errors import BusinessError
 
 from .base import R, roles_required, run_service
 
-SHOP_ROLES = (R.SHOP_MANAGER, R.SHOP_SENIOR, R.MANAGER, R.FINANCE, R.SUPERADMIN)
+SHOP_ROLES = (R.SHOP_MANAGER, R.SHOP_SENIOR, R.MANAGER, R.FINANCE, R.SUPERADMIN, R.MARKET)
 SHOP_DESK = (R.SHOP_MANAGER, R.SHOP_SENIOR, R.SUPERADMIN)  # who records shop operations
 SHOP_CONFIG = (R.SHOP_SENIOR, R.SUPERADMIN)  # who manages services, items, stock and the shop rate
 K = Account.Kind

@@ -108,7 +108,7 @@ class FilterForm(forms.Form):
             self.fields.pop("master_zone")
             self.fields["subzone"].queryset = Zone.objects.filter(id__in=ids, parent__isnull=False)
             self.fields["cashier"].queryset = User.objects.filter(role=User.Role.CASHIER, subzone_id__in=ids)
-        elif not user.sees_all_zones:
+        elif not (user.sees_all_zones or getattr(user, "is_market", False)):
             for f in ("master_zone", "subzone", "cashier"):
                 self.fields.pop(f)
 
@@ -140,6 +140,7 @@ class Filters:
     user: object = None
     preset: str = "day"
     cashier_forced: bool = False
+    market: bool = False  # market supervisor: only what concerns shops and agents / POS
 
     @classmethod
     def from_form(cls, form, user, force_customer=None):
@@ -168,6 +169,8 @@ class Filters:
                 tx_type=cd.get("tx_type") or "", method=cd.get("method") or "", user=user, preset=preset)
         if user.is_cashier:
             f.cashier, f.master_zone, f.subzone, f.cashier_forced = user, None, None, True
+        if getattr(user, "is_market", False):
+            f.market = True
         if user.is_junior:  # a junior manager sees only the zone they supervise
             z = user.scope_zone
             ids = user.zone_ids_in_scope()
@@ -238,6 +241,9 @@ class Filters:
             q &= Q(**{f"{prefix}payment_method": self.method})
         if self.customer:
             q &= Q(**{f"{prefix}counterparty": self.customer}) | Q(**{f"{prefix}counterparty_2": self.customer})
+        if self.market:
+            q &= (Q(**{f"{prefix}counterparty__isnull": False}) | Q(**{f"{prefix}counterparty_2__isnull": False})
+                  | Q(**{f"{prefix}shop__isnull": False}))
         return q
 
 

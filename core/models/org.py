@@ -135,6 +135,7 @@ class User(AbstractUser):
         AGENT = "AGENT", _("Commercial agent")
         SHOP_MANAGER = "SHOP_MANAGER", _("Shop manager")
         SHOP_SENIOR = "SHOP_SENIOR", _("Senior shop manager")
+        MARKET = "MARKET", _("Market supervisor")
 
     role = models.CharField(_("role"), max_length=12, choices=Role.choices, default=Role.CASHIER)
     shop = models.ForeignKey("Shop", null=True, blank=True, on_delete=models.PROTECT, related_name="managers",
@@ -215,6 +216,12 @@ class User(AbstractUser):
         return self.role == self.Role.SHOP_MANAGER
 
     @property
+    def is_market(self):
+        """Market supervisor: follows the shops and the commercial agents / POS (records, transactions, stock,
+        reports); records nothing himself."""
+        return self.role == self.Role.MARKET
+
+    @property
     def is_shop_senior(self):
         return self.role == self.Role.SHOP_SENIOR
 
@@ -250,7 +257,8 @@ class User(AbstractUser):
 
     @property
     def sees_all_shops(self):
-        return self.role in (self.Role.SHOP_SENIOR, self.Role.MANAGER, self.Role.FINANCE, self.Role.SUPERADMIN)
+        return self.role in (self.Role.SHOP_SENIOR, self.Role.MANAGER, self.Role.FINANCE, self.Role.SUPERADMIN,
+                             self.Role.MARKET)
 
     @property
     def is_junior(self):

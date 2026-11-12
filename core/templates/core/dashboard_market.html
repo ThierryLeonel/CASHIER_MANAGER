@@ -1,0 +1,26 @@
+{% extends "core/base.html" %}{% load i18n cashier %}
+{% block title %}{% trans "Market supervision" %}{% endblock %}
+{% block topbar %}{% trans "Market supervision" %}{% endblock %}
+{% block content %}
+<h1>{% trans "Market supervision" %}</h1>
+<p class="small muted meta">{% trans "Shops, commercial agents and POS: records, transactions, stock and reports." %}</p>
+<div class="bal-row">
+  <a class="bal k-UVE bal-link" href="{% url 'customers' %}?kind=AGENT"><span class="bal-label">{% trans "Commercial agents" %}</span><span class="bal-value">{{ n_agents }}</span><span class="bal-unit">{% trans "active" %}</span></a>
+  <a class="bal k-ER bal-link" href="{% url 'customers' %}?kind=POS"><span class="bal-label">POS</span><span class="bal-value">{{ n_pos }}</span><span class="bal-unit">{% trans "active" %}</span></a>
+  <a class="bal k-ER oos bal-link" href="{% url 'report' 'pos_stock' %}"><span class="bal-label">{% trans "POS out of stock" %}</span><span class="bal-value">{{ n_out }}</span><span class="bal-unit">{% blocktrans with n=n_low %}{{ n }} low stock{% endblocktrans %}</span></a>
+  <a class="bal k-TOTAL bal-link" href="{% url 'report' 'customers' %}"><span class="bal-label">{% trans "Owed to the company by agents / POS" %}</span><span class="bal-value">{{ owed|fcfa }}</span><span class="bal-unit">{% blocktrans with d=due|fcfa %}due to them: {{ d }}{% endblocktrans %}</span></a>
+</div>
+<div class="stock-actions">
+  <a class="btn" href="{% url 'call_database' %}">⬇ {% trans "Download call database" %}</a>
+  <a class="btn" href="{% url 'stock_download' %}">⬇ {% trans "Download POS stock (Excel)" %}</a>
+  <a class="btn" href="{% url 'report' 'pos_coverage' %}">{% trans "POS supplied by commercial agents" %}</a>
+  <a class="btn" href="{% url 'reports' %}">{% trans "All reports" %}</a>
+  <a class="btn" href="{% url 'shop_reports' %}">{% trans "Shop reports" %}</a>
+</div>
+<h2>{% trans "Shops" %}</h2>
+<div class="tbl-wrap"><table class="t"><thead><tr><th>{% trans "Shop" %}</th><th class="money">{% trans "Cash" %}</th><th class="money">UVE</th><th class="money">ER</th></tr></thead>
+<tbody>{% for s, c, u, e in shops %}<tr><td><a href="{% url 'shop_detail' s.pk %}">{{ s.name }}</a></td><td class="money">{{ c|fcfa }}</td><td class="money">{{ u|fcfa }}</td><td class="money">{{ e|fcfa }}</td></tr>{% empty %}<tr><td colspan="4" class="muted">—</td></tr>{% endfor %}</tbody></table></div>
+<h2>{% trans "Latest records" %}</h2>
+<div class="tbl-wrap"><table class="t"><thead><tr><th>{% trans "Date" %}</th><th>{% trans "Ref." %}</th><th>{% trans "Type" %}</th><th>{% trans "Agent / POS / shop" %}</th><th class="money">{% trans "Amount" %}</th></tr></thead>
+<tbody>{% for t in recent %}<tr><td class="small">{{ t.posted_at|date:"d/m H:i" }}</td><td><a href="{% url 'txn_detail' t.pk %}">{{ t.reference }}</a></td><td class="small">{{ t.display_type }}</td><td class="small">{% if t.counterparty %}{{ t.counterparty.name }}{% elif t.shop %}{{ t.shop.name }}{% else %}—{% endif %}</td><td class="money">{{ t.amount|fcfa }}</td></tr>{% empty %}<tr><td colspan="5" class="muted">—</td></tr>{% endfor %}</tbody></table></div>
+{% endblock %}

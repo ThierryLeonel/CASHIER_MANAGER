@@ -567,7 +567,8 @@ class PosStock(OrgMixin, TestCase):
         c.login(username=self.agent_user.username, password=PW)
         r = c.get("/agent/destocash/")
         self.assertEqual([p.name for p in r.context["page"]], ["Big OM", "Small OM"])  # most OM first, no OM out
-        self.assertContains(r, "product=CASH")
+        self.assertContains(r, 'data-destock="CASH"')
+        self.assertContains(r, 'data-destock="FLOAT"')
         r = c.get(f"/agent/supply/?pos={b.business_sim}&product=CASH")
         self.assertEqual(r.context["form"].initial["product"], "CASH")
         # Global POS as cards

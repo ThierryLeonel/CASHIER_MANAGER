@@ -24,6 +24,6 @@
   <div class="pos-foot">
     <span class="party-bal">{% if bal|negative %}<span class="pos">{{ bal|absval|fcfa }}</span> <small>{% trans "due to the agent / POS" %}</small>{% elif bal %}<strong>{{ bal|fcfa }}</strong> <small>{% trans "owed to the company" %}</small>{% else %}<small class="muted">{% trans "Balance" %} 0</small>{% endif %}
     {% if lvl %}<br><span class="pos-lvl">{% if lvl == 'OUT' %}{% trans "OUT OF STOCK" %}{% elif lvl == 'LOW' %}{% trans "LOW STOCK" %}{% else %}{% trans "IN STOCK" %}{% endif %}</span>{% endif %}</span>
-    <span class="pos-btns">{% with wa=c|wa_link %}{% if wa %}<a class="btn small wa" href="{{ wa }}" target="_blank" rel="noopener" title="WhatsApp">{% icon "whatsapp" 14 %} WhatsApp</a>{% endif %}{% endwith %}<a class="btn small" href="{% url 'customer_detail' c.pk %}">{% trans "Statement" %}</a>{% if user.sees_all_zones or user.is_junior %}{% if c.kind == 'AGENT' %}<a class="btn small" href="{% url 'agent_roads' c.pk %}">{% trans "Roads" %}</a>{% endif %}<a class="btn small" href="{% url 'customer_edit' c.pk %}">✎ {% trans "Edit" %}</a>{% endif %}</span>
+    <span class="pos-btns">{% include "core/inc/contact_btns.html" %}<a class="btn small" href="{% url 'customer_detail' c.pk %}">{% trans "Statement" %}</a>{% if user.sees_all_zones and not user.is_market or user.is_junior %}{% if c.kind == 'AGENT' %}<a class="btn small" href="{% url 'agent_roads' c.pk %}">{% trans "Roads" %}</a>{% endif %}<a class="btn small" href="{% url 'customer_edit' c.pk %}">✎ {% trans "Edit" %}</a>{% endif %}</span>
   </div>
 </div>

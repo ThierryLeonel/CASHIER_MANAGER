@@ -175,6 +175,10 @@ msgid "%(n)s imported"
 msgstr "%(n)s importées"
 
 #, python-format
+msgid "%(n)s low stock"
+msgstr "%(n)s en stock faible"
+
+#, python-format
 msgid "%(n)s microzone(s)"
 msgstr "%(n)s microzone(s)"
 
@@ -730,6 +734,9 @@ msgstr "Agent (redevable)"
 msgid "Agent / POS"
 msgstr "Agent / POS"
 
+msgid "Agent / POS / shop"
+msgstr "Agent / POS / boutique"
+
 msgid "Agent / POS account"
 msgstr "Compte agent / POS"
 
@@ -893,6 +900,9 @@ msgstr "Tous les approvisionnements du bureau et paiements"
 
 msgid "All records"
 msgstr "Toutes les écritures"
+
+msgid "All reports"
+msgstr "Tous les rapports"
 
 msgid "All shops"
 msgstr "Toutes les boutiques"
@@ -1275,6 +1285,9 @@ msgid ""
 msgstr ""
 "Calculé automatiquement à partir des écritures du bureau et de vos "
 "enregistrements. Ouverture + entrées − sorties = clôture."
+
+msgid "Call"
+msgstr "Appeler"
 
 msgid "Cancel"
 msgstr "Annuler"
@@ -2613,6 +2626,20 @@ msgstr "Guichet / boutique"
 msgid "Destocash"
 msgstr "Déstocker"
 
+#, python-format
+msgid "Destocash %(pos)s"
+msgstr "Destocash %(pos)s"
+
+msgid "Destocash in cash"
+msgstr "Destocash en espèces"
+
+msgid "Destocash in float"
+msgstr "Destocash en float"
+
+#, python-format
+msgid "Destocash of %(amt)s FCFA in %(how)s recorded for %(pos)s."
+msgstr "Destocash de %(amt)s FCFA en %(how)s enregistré pour %(pos)s."
+
 msgid "Destockage"
 msgstr "Déstockage"
 
@@ -2685,6 +2712,9 @@ msgstr "Télécharger le PDF"
 
 msgid "Download POS stock (Excel)"
 msgstr "Télécharger le stock des POS (Excel)"
+
+msgid "Download call database"
+msgstr "Télécharger la base d'appel"
 
 msgid "Download this section in Excel"
 msgstr "Télécharger cette section en Excel"
@@ -2898,6 +2928,9 @@ msgstr "Saisissez le montant que le client vous a payé."
 
 msgid "Enter the amount transferred in cash and / or UVE."
 msgstr "Saisissez le montant transféré en espèces et / ou en UVE."
+
+msgid "Enter the amount."
+msgstr "Saisissez le montant."
 
 msgid "Enter the bank deposit reference."
 msgstr "Saisissez la référence du versement bancaire."
@@ -3777,6 +3810,12 @@ msgstr "Mars"
 
 msgid "Margin on items"
 msgstr "Marge sur articles"
+
+msgid "Market supervision"
+msgstr "Supervision du marché"
+
+msgid "Market supervisor"
+msgstr "Superviseur marché"
 
 msgid "Master SIM"
 msgstr "SIM master"
@@ -4919,6 +4958,9 @@ msgstr "Dû aux agents commerciaux"
 msgid "Owed to company"
 msgstr "Dû à l'entreprise"
 
+msgid "Owed to the company by agents / POS"
+msgstr "Dû à l'entreprise par les agents / POS"
+
 msgid "Owes company"
 msgstr "Doit à l'entreprise"
 
@@ -5318,6 +5360,9 @@ msgstr "Personne et SIM enregistrées"
 
 msgid "Personal name"
 msgstr "Nom personnel"
+
+msgid "Personal telephone"
+msgstr "Téléphone personnel"
 
 msgid "Phone / SIM number"
 msgstr "Téléphone / numéro SIM"
@@ -5842,6 +5887,9 @@ msgstr "Retraits de SIM"
 msgid "SIM retrievals by shop"
 msgstr "Récupérations de SIM par boutique"
 
+msgid "STKB (business SIM)"
+msgstr "STKB (SIM business)"
+
 msgid "Sale"
 msgstr "Vente"
 
@@ -6279,6 +6327,12 @@ msgstr "Rapprochement journalier des boutiques"
 
 msgid "Shops' rate"
 msgstr "Taux des boutiques"
+
+msgid ""
+"Shops, commercial agents and POS: records, transactions, stock and reports."
+msgstr ""
+"Boutiques, agents commerciaux et POS : enregistrements, transactions, stock "
+"et rapports."
 
 msgid "Short line under the name in the menu. Leave empty for none."
 msgstr "Courte ligne sous le nom dans le menu. Laissez vide pour aucune."
@@ -6970,6 +7024,9 @@ msgstr "Ils me devaient en début de journée"
 
 msgid "This POS is inactive."
 msgstr "Ce POS est inactif."
+
+msgid "This POS is not one of yours."
+msgstr "Ce POS n'est pas l'un des vôtres."
 
 msgid "This POS pays me"
 msgstr "Ce POS me paie"
@@ -7855,6 +7912,9 @@ msgstr ""
 "Quelle dette ce paiement règle : UVE, espèces et/ou ER. Les parts "
 "s'additionnent pour donner le montant reçu. Laissez vide si inconnu."
 
+msgid "Which number? It is put on the dial pad."
+msgstr "Quel numéro ? Il sera mis sur le clavier d'appel."
+
 msgid "Which report"
 msgstr "Quel rapport"
 
@@ -7981,8 +8041,14 @@ msgstr ""
 "UVE à un agent. L'agent doit à l'entreprise ; l'UVE de l'entreprise ne "
 "change pas ; le PDV ne doit rien."
 
+msgid "You give the POS cash; it sends you its OM (UVE)."
+msgstr "Vous donnez des espèces au POS ; il vous envoie son OM (UVE)."
+
 msgid "You have no open shift."
 msgstr "Vous n'avez pas de service ouvert."
+
+msgid "You send the POS float; it sends you its OM (UVE)."
+msgstr "Vous envoyez du float au POS ; il vous envoie son OM (UVE)."
 
 #, python-format
 msgid ""
@@ -8289,6 +8355,10 @@ msgstr "dû à l'agent"
 msgid "due to the agent / POS"
 msgstr "dû à l'agent / POS"
 
+#, python-format
+msgid "due to them: %(d)s"
+msgstr "dû à eux : %(d)s"
+
 msgid "email"
 msgstr "e-mail"
 
@@ -8297,6 +8367,9 @@ msgstr "entrée du destinataire"
 
 msgid "exchange"
 msgstr "échange"
+
+msgid "float"
+msgstr "float"
 
 #, python-format
 msgid "for %(ref)s"

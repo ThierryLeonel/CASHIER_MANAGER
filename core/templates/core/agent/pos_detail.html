@@ -3,7 +3,7 @@
 {% block topbar %}{% trans "Global POS" %}{% endblock %}
 {% block content %}
 <p><a href="{% url 'agent_pos' %}">← {% trans "Global POS" %}</a></p>
-<div class="form-head compact"><h1>{{ pos.name }}</h1>{% with wa=pos|wa_link %}{% if wa %}<a class="btn small wa" href="{{ wa }}" target="_blank" rel="noopener">{% icon "whatsapp" 14 %} WhatsApp</a> {% endif %}{% endwith %}<a class="btn small" href="{% url 'agent_pos_edit' pos.pk %}">✎ {% trans "Edit" %}</a> <a class="btn small primary" data-return href="{% url 'agent_supply' %}?pos={{ pos.business_sim }}">{% trans "Supply" %}</a></div>
+<div class="form-head compact"><h1>{{ pos.name }}</h1>{% include "core/inc/contact_btns.html" with c=pos %} <a class="btn small" href="{% url 'agent_pos_edit' pos.pk %}">✎ {% trans "Edit" %}</a> <a class="btn small primary" data-return href="{% url 'agent_supply' %}?pos={{ pos.business_sim }}">{% trans "Supply" %}</a></div>
 <div class="panel"><dl class="kv">
   <dt>{% trans "Business SIM" %}</dt><dd>{{ pos.business_sim|sim }}</dd>
   <dt>{% trans "Zone" %}</dt><dd>{{ pos.master_zone|default:"—" }}</dd>

@@ -856,6 +856,43 @@ def clear_stock(user):
     return n
 
 
+def call_xlsx(counterparties, threshold):
+    """Call database: every agent / POS in the agent / POS import format (the file can be uploaded again), then the
+    agent in charge, active and stock columns for calling."""
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "agents_pos"
+    head = TEMPLATES["customers"][0] + ["AGENT IN CHARGE", "ACTIVE", "ER STOCK", "OM STOCK", "STOCK STATUS"]
+    ws.append(head)
+    for cp in counterparties:
+        mz = cp.microzone
+        sub = mz.subzone if mz else None
+        zone = cp.master_zone or (sub.parent if sub else None)
+        pos = cp.kind == Counterparty.Kind.POS
+        status = ""
+        if pos and cp.er_stock is not None:
+            status = "OUT OF STOCK" if cp.out_of_stock(threshold) else "in stock"
+        ws.append([cp.kind, zone.name if zone else "", sub.name if sub else "", mz.name if mz else "",
+                   cp.om_account_name, cp.business_sim, cp.name, cp.whatsapp or "", cp.other_phone or "",
+                   cp.address or "", mz.agent.name if pos and mz and mz.agent_id else "",
+                   "yes" if cp.active else "no",
+                   int(cp.er_stock) if cp.er_stock is not None else None,
+                   int(cp.uve_stock) if cp.uve_stock is not None else None, status])
+    for i, h in enumerate(head, start=1):
+        ws.cell(1, i).font = Font(bold=True)
+        ws.column_dimensions[ws.cell(1, i).column_letter].width = max(14, len(h) + 4)
+    for row in range(2, ws.max_row + 1):
+        for col in (6, 8, 9):
+            ws.cell(row, col).number_format = "@"
+        for col in (13, 14):
+            ws.cell(row, col).number_format = "#,##0"
+    ws.freeze_panes = "A2"
+    ws.auto_filter.ref = ws.dimensions
+    buf = io.BytesIO()
+    wb.save(buf)
+    return buf.getvalue()
+
+
 def stock_xlsx(counterparties, threshold):
     """The stock as imported, same first columns as the stock template (so the file can be uploaded again), then
     who / where / status columns for reading."""

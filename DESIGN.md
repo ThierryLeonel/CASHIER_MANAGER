@@ -418,3 +418,30 @@ Every transaction stores its **recording cashier** (`Transaction.cashier`), and 
 ## WhatsApp buttons and one-tap debtor payments
 * Green **WhatsApp** button (`wa_link` filter: the WhatsApp contact, else the business SIM, +237) on every agent / POS card: Agents & POS (staff), Global POS, OOS, Possible destocash, the POS page, and on the debtors list (with the reminder text prefilled).
 * **My debtors**: each debtor has **Paid cash / Paid UVE / Paid float** (records the whole outstanding amount in that way, debt closed), **Partial payment** (amount + way, refused above what is owed) and **Record payment** (the form with cash, UVE and float boxes). One idempotency key per debtor, so a double tap never records twice (`agent_debtor_pay`).
+
+## Call button, WhatsApp icon, destocash in cash / float, Market supervisor, call database
+- **Call** (blue phone icon) on every agent / POS card (staff Agents & POS, Global POS, OOS, Possible destocash, POS
+  page, debtors). It opens one shared picker: **STKB (business SIM)** or **Personal telephone** (WhatsApp contact,
+  else other contact; hidden when there is none). The choice opens `tel:+237…`, which puts the number on the dial pad.
+  Snippet `core/inc/contact_btns.html`; dialog `#call-dlg` in `base.html`.
+- **WhatsApp** is now the green icon only (title / aria-label "WhatsApp").
+- **Possible destocash**: the single Destocash button is replaced by **Cash** and **Float**. Each opens an amount box
+  and posts to `/agent/destocash/record/` (`agent_destock_record`, one idem key per opening):
+  - Cash = a cash supply to the POS paid back in UVE at once (`record_supply(cash=x, paid_uve=x)`, nothing owed).
+  - Float = a float exchange `SEND_FLOAT_UVE` with the POS SIM.
+  - The POS's OM stock in the list goes down by the amount (until the next stock file). Only the agent's own POS.
+    The same tap twice records once. Back to the list at the card (`#pos-<id>`).
+- **Market supervisor** (`Role.MARKET`, migration 0052): follows the shops and the commercial agents / POS and
+  records nothing.
+  - Dashboard `dashboard_market.html`: active agents and POS, POS out of / low on stock, owed to the company,
+    shop balances, latest agent / POS / shop records, and download links.
+  - Can open: Agents & POS (no Register / Edit / Move), statements, transactions and receipts limited to agent / POS
+    / shop records (`Filters.market`, `can_view_txn`), and the shops space (read-only; reviews stay with the senior).
+  - Reports: only the agent / POS / shop ones (`MARKET_REPORTS`), with the zone filters.
+  - Menu: no Capital, Cash managers, Agent paybacks or End of day.
+- **Download call database** (`/customers/call-database/`, `importer.call_xlsx`): the agent / POS base as it is now,
+  in the agent / POS import format (so it can be uploaded again). After those columns: AGENT IN CHARGE, ACTIVE,
+  ER STOCK, OM STOCK, STOCK STATUS.
+  - Staff and the market supervisor get everything, a junior manager his zone, an agent the POS of his roads.
+  - Optional filter `?kind=AGENT|POS`.
+  - Buttons on Agents & POS, the market dashboard and the agent OOS page.

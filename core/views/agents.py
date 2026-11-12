@@ -4,6 +4,7 @@ from urllib.parse import quote
 from datetime import date, timedelta
 
 from django.contrib import messages
+from django.db import transaction
 from django.core.paginator import Paginator
 from django.db.models import Count, Max, Q, Sum
 from django.http import Http404, JsonResponse
@@ -170,6 +171,55 @@ def agent_destock(request):
     return render(request, "core/agent/destock.html", {
         "page": page, "q": q, "keep": keep.urlencode(), "tot": tot,
         "last": mine.exclude(stock_at=None).order_by("-stock_at").values_list("stock_at", flat=True).first()})
+
+
+@roles_required(R.AGENT)
+def agent_destock_record(request):
+    """Possible destocash, one tap: "Cash" = the agent gives the POS cash for its OM (a cash supply paid back in UVE
+    at once, nothing owed); "Float" = the agent sends the POS float for its OM (a float exchange). The POS's OM stock
+    shown in the list goes down by the amount until the next stock file."""
+    if request.method != "POST":
+        return redirect("agent_destock")
+    from core.money import to_money
+
+    agent = request.user.counterparty
+    nxt = _safe_next(request) or reverse("agent_destock")
+    pos = Counterparty.objects.filter(kind=Counterparty.Kind.POS, pk=request.POST.get("pos") or 0,
+                                      microzone__agent=agent).first()
+    how = request.POST.get("how")
+    if pos is None or how not in ("CASH", "FLOAT"):
+        messages.error(request, _("This POS is not one of yours."))
+        return redirect(nxt)
+    try:
+        amount = to_money(request.POST.get("amount") or "0")
+        if amount <= 0:
+            raise BusinessError(_("Enter the amount."), "amount")
+        idem = uuid.UUID(request.POST.get("idem")) if request.POST.get("idem") else None
+        note = _("Destocash %(pos)s") % {"pos": pos.name}
+        model = AgentClientEntry if how == "CASH" else AgentExchange
+        if idem and model.objects.filter(idem=idem).exists():  # the same tap twice: recorded once
+            messages.info(request, _("Already recorded."))
+            return redirect(nxt)
+        with transaction.atomic():
+            if how == "CASH":
+                ag.record_supply(request.user, client_kind="POS", pos_sim=pos.business_sim, cash=amount,
+                                 paid_uve=amount, note=note, idempotency_key=idem)
+            else:
+                ag.record_exchange(request.user, direction="SEND_FLOAT_UVE", amount=amount,
+                                   other_phone=pos.business_sim, note=note, idempotency_key=idem)
+            if pos.uve_stock is not None:
+                Counterparty.objects.filter(pk=pos.pk).update(uve_stock=max(pos.uve_stock - amount, 0))
+        messages.success(request, _("Destocash of %(amt)s FCFA in %(how)s recorded for %(pos)s.") % {
+            "amt": fmt(amount), "how": _("cash") if how == "CASH" else _("float"), "pos": pos.name})
+    except (BusinessError, ValueError) as e:
+        messages.error(request, getattr(e, "message", str(e)))
+    except Exception as e:  # noqa: BLE001 - the same tap twice
+        from core.services.errors import DuplicateSubmission
+
+        if not isinstance(e, DuplicateSubmission) and e.__class__.__name__ != "IntegrityError":
+            raise
+        messages.info(request, _("Already recorded."))
+    return redirect(nxt)
 
 
 @roles_required(R.AGENT)

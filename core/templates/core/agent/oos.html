@@ -15,6 +15,7 @@
   <input type="search" name="q" value="{{ q }}" placeholder="{% trans 'Search (SIM, name or microzone)' %}">
   <button class="btn" type="submit">{% trans "Search" %}</button>
   <a class="btn" href="{% url 'stock_download' %}{% if level == 'OUT' %}?out=1{% endif %}" title="{% trans 'Download (Excel)' %}">⬇</a>
+  <a class="btn" href="{% url 'call_database' %}" title="{% trans 'Download call database' %}">☎⬇</a>
 </form>
 <div class="pos-cards">
 {% for p, lvl in rows %}{% include "core/agent/inc/pos_card.html" with mode="oos" %}

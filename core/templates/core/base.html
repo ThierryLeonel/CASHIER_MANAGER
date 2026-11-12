@@ -115,6 +115,7 @@
     <div class="side-group">{% trans "Follow-up" %}</div>
     <a href="{% url 'customers' %}" class="{% if u == 'customers' or u == 'customer_new' or u == 'customer_edit' %}on{% endif %}">{% icon "users" %}<span>{% trans "Agents & POS" %}</span></a>
     <a href="{% url 'txn_list' %}" class="{% if u == 'txn_list' or u == 'txn_detail' or u == 'receipt' or u == 'txn_correct' or u == 'txn_transfer' %}on{% endif %}">{% icon "list" %}<span>{% trans "Transactions" %}</span></a>
+    {% if not user.is_market %}
     <a href="{% url 'exchanges' %}" class="{% if u == 'exchanges' or u == 'exchange_detail' or u == 'exchange_new' %}on{% endif %}">{% icon "bank" %}<span>{% trans "Cash managers" %}</span></a>
     <a href="{% url 'paybacks' %}" class="{% if u == 'paybacks' %}on{% endif %}">{% icon "payment" %}<span>{% trans "Agent paybacks" %}</span></a>
 
@@ -122,14 +123,14 @@
     {% if user.is_cashier %}<a href="{% url 'close_day' %}" class="{% if u == 'close_day' %}on{% endif %}">{% icon "lock" %}<span>{% trans "Close day" %}</span></a>{% endif %}
     <a href="{% url 'closings' %}" class="{% if u == 'closings' or u == 'closing_detail' %}on{% endif %}">{% icon "calendar" %}<span>{% trans "Closings" %}</span></a>
     <a href="{% url 'discrepancies' %}" class="{% if u == 'discrepancies' or u == 'discrepancy_detail' %}on{% endif %}">{% icon "alert" %}<span>{% trans "Differences" %}</span></a>
-    {% endif %}
+    {% endif %}{% endif %}
 
     {% if show_cash %}
     <div class="side-group">{% trans "Analysis" %}</div>
     <a href="{% url 'reports' %}" class="{% if u == 'reports' or u == 'report' %}on{% endif %}">{% if user.is_agent %}{% icon "statement" %}<span>{% trans "My statement" %}</span>{% else %}{% icon "chart" %}<span>{% trans "Reports" %}</span>{% endif %}</a>
     {% endif %}
 
-    {% if can_switch and not user.is_superadmin %}
+    {% if can_switch and not user.is_superadmin and not user.is_market %}
     <div class="side-group">{% trans "Capital" %}</div>
     <a href="{% url 'capital' %}" class="{% if u == 'capital' or u == 'capital_op' %}on{% endif %}">{% icon "bank" %}<span>{% trans "Capital" %}</span></a>
     {% endif %}
@@ -288,6 +289,37 @@ document.querySelectorAll('[data-back]').forEach(function (a) {
   cash: "{% trans 'Cash' %}", bank: "{% trans 'Bank' %}"};</script>
 <script src="{% static 'core/ui.js' %}"></script>
 {% if user.is_authenticated %}
+<dialog class="pick-dlg" id="call-dlg" aria-labelledby="call-title">
+  <form method="dialog">
+    <strong id="call-title">{% trans "Call" %} <span data-f="name"></span></strong>
+    <p class="small muted">{% trans "Which number? It is put on the dial pad." %}</p>
+    <a class="btn primary block" data-f="biz" href="#">{% icon "phone" 15 %} {% trans "STKB (business SIM)" %} <span data-f="bizn"></span></a>
+    <a class="btn block" data-f="pers" href="#">{% icon "phone" 15 %} {% trans "Personal telephone" %} <span data-f="persn"></span></a>
+    <button class="btn block" value="cancel">{% trans "Cancel" %}</button>
+  </form>
+</dialog>
+<script>
+(function () {
+  /* Call button: choose the business SIM (STKB) or the personal number; tel: puts it on the dial pad. */
+  var d = document.getElementById('call-dlg');
+  function f(k) { return d.querySelector('[data-f=' + k + ']'); }
+  function tel(n) { n = (n || '').replace(/\D/g, ''); return n.length === 9 ? '+237' + n : n; }
+  function show(n) { n = (n || '').replace(/\D/g, ''); return n.length === 9 ? n.replace(/(\d{3})(\d{2})(\d{2})(\d{2})/, '$1 $2 $3 $4') : n; }
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-call]');
+    if (b) {
+      e.preventDefault();
+      f('name').textContent = b.dataset.name || '';
+      [['biz', b.dataset.biz], ['pers', b.dataset.personal]].forEach(function (x) {
+        var a = f(x[0]); a.hidden = !x[1]; a.href = 'tel:' + tel(x[1]); f(x[0] + 'n').textContent = show(x[1]);
+      });
+      if (d.showModal) d.showModal(); else d.setAttribute('open', '');
+      return;
+    }
+    if (e.target.closest('#call-dlg a[href^="tel:"]')) setTimeout(function () { d.close ? d.close() : d.removeAttribute('open'); }, 50);
+  });
+})();
+</script>
 <div class="idle" id="idle" hidden role="alertdialog" aria-modal="true" aria-labelledby="idle-title">
   <div class="idle-box">
     <span class="qa-ic">{% icon "clock" 26 %}</span>

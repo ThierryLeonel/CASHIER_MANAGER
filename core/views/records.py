@@ -23,7 +23,7 @@ from core.services.errors import BusinessError, PermissionDenied
 from core.services.ledger import balance
 from core.simnumbers import display_sim
 
-from .base import R, STAFF, SUPERVISORS, can_view_txn, roles_required, run_service
+from .base import MARKET_VIEW, R, STAFF, SUPERVISORS, can_view_txn, roles_required, run_service
 
 TX_RELATED = ["cashier__subzone", "zone__parent", "entered_by", "cashier_day__zone", "counterparty", "counterparty_2", "source_account__sim",
               "dest_account__sim", "expense_category", "cash_manager", "exchange", "reverses", "replaces",
@@ -54,7 +54,7 @@ def _customer_filter(user, params):
     return qs, microzones, q, kind, mz
 
 
-@roles_required(*STAFF)
+@roles_required(*MARKET_VIEW)
 def customers(request):
     qs, microzones, q, kind, mz = _customer_filter(request.user, request.GET)
     from core.services.branding import company
@@ -75,7 +75,7 @@ def customers(request):
                                                    if can_move else 0})
 
 
-@roles_required(*STAFF, R.AGENT)
+@roles_required(*MARKET_VIEW, R.AGENT)
 def stock_download(request):
     """Excel of the imported stock: staff get every agent / POS (a junior manager his zone), an agent his own POS."""
     from core.services import importer
@@ -97,6 +97,28 @@ def stock_download(request):
                         content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
     name = "stock-" + timezone.localdate().isoformat() + (".oos" if request.GET.get("out") == "1" else "") + ".xlsx"
     resp["Content-Disposition"] = f'attachment; filename="{name}"'
+    return resp
+
+
+@roles_required(*MARKET_VIEW, R.AGENT)
+def call_database(request):
+    """Call database: the agent / POS base as it is now, in the import format (staff and the market supervisor get
+    every agent / POS, a junior manager his zone, a commercial agent the POS of his roads)."""
+    from core.services import importer
+    from core.services.branding import company
+
+    qs = Counterparty.objects.select_related("master_zone", "microzone__subzone__parent", "microzone__agent")
+    if request.user.is_agent:
+        qs = qs.filter(kind=Counterparty.Kind.POS, microzone__agent=request.user.counterparty)
+    elif request.user.scope_zone is not None:
+        z = request.user.scope_zone
+        qs = qs.filter(Q(microzone__subzone__parent=z) | Q(microzone__subzone=z) | Q(master_zone=z))
+    if request.GET.get("kind") in ("AGENT", "POS"):
+        qs = qs.filter(kind=request.GET["kind"])
+    qs = qs.order_by("kind", "microzone__subzone__name", "microzone__name", "name")
+    resp = HttpResponse(importer.call_xlsx(qs.iterator(chunk_size=2000), company().out_of_stock_er),
+                        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    resp["Content-Disposition"] = f'attachment; filename="call-database-{timezone.localdate().isoformat()}.xlsx"'
     return resp
 
 
@@ -184,14 +206,14 @@ def customer_edit(request, pk):
     return render(request, "core/simple_form.html", {"form": form, "title": str(cp), "agent_form": True})
 
 
-@roles_required(*STAFF)
+@roles_required(*MARKET_VIEW)
 def customer_detail(request, pk):
     cp = get_object_or_404(Counterparty, pk=pk)
     return redirect(f"/reports/statement/?preset=all&customer_sim={cp.business_sim}")
 
 
 # ---------------------------------------------------------------- transactions
-@roles_required(*STAFF)
+@roles_required(*MARKET_VIEW)
 def txn_list(request):
     form = FilterForm(request.user, request.GET or None)
     f = Filters.from_form(form, request.user)
@@ -352,7 +374,7 @@ def receipt_rows(t):
     return rows
 
 
-@roles_required(*STAFF, R.AGENT, R.SHOP_MANAGER, R.SHOP_SENIOR)
+@roles_required(*MARKET_VIEW, R.AGENT, R.SHOP_MANAGER, R.SHOP_SENIOR)
 def txn_detail(request, pk):
     t = _get_visible_txn(request, pk)
     entries = t.entries.select_related("account__sim", "account__counterparty").order_by("id") \
@@ -379,7 +401,7 @@ def txn_detail(request, pk):
     return render(request, "core/txn_detail.html", ctx)
 
 
-@roles_required(*STAFF, R.AGENT)
+@roles_required(*MARKET_VIEW, R.AGENT)
 def receipt(request, pk):
     t = _get_visible_txn(request, pk).receipt_txn
     if not t.receipt_no:
@@ -388,7 +410,7 @@ def receipt(request, pk):
                                                  "balance_after": _customer_balance_after(t)})
 
 
-@roles_required(*STAFF, R.AGENT)
+@roles_required(*MARKET_VIEW, R.AGENT)
 def receipt_pdf_view(request, pk):
     t = _get_visible_txn(request, pk).receipt_txn
     if not t.receipt_no:
@@ -441,7 +463,7 @@ def txn_transfer(request, pk):
         "customers": True})
 
 
-@roles_required(*STAFF, R.SHOP_MANAGER, R.SHOP_SENIOR)
+@roles_required(*MARKET_VIEW, R.SHOP_MANAGER, R.SHOP_SENIOR)
 def customer_search(request):
     """Live search for the customer pickers: microzone, business SIM digits or name.
 
