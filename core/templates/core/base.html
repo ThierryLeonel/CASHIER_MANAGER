@@ -52,6 +52,7 @@
     <a href="{% url 'collection_new' %}" class="{% if u == 'collection_new' %}on{% endif %}">{% icon "payment" %}<span>{% trans "Payment" %}</span></a>
     <a href="{% url 'destockage_new' %}" class="{% if u == 'destockage_new' %}on{% endif %}">{% icon "destock" %}<span>{% trans "Destockage" %}</span></a>
     <a href="{% url 'expense_new' %}" class="{% if u == 'expense_new' %}on{% endif %}">{% icon "expense" %}<span>{% trans "Expense" %}</span></a>
+    <a href="{% url 'entry_new' %}" class="{% if u == 'entry_new' %}on{% endif %}">{% icon "download" %}<span>{% trans "Entry" %}</span></a>
     <a href="{% url 'transfer_new' %}" class="{% if u == 'transfer_new' %}on{% endif %}">{% icon "transfer" %}<span>{% trans "Transfer" %}</span></a>
     <a href="{% url 'conversion_new' %}" class="{% if u == 'conversion_new' %}on{% endif %}">{% icon "convert" %}<span>{% trans "UVE→ER" %}</span></a>
     <a href="{% url 'desk_to_shop' %}" class="{% if u == 'desk_to_shop' %}on{% endif %}">{% icon "store" %}<span>{% trans "Transfer to shop" %}</span></a>

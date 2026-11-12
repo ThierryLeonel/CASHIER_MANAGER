@@ -120,6 +120,14 @@ def transfer_new(request):
 
 
 @roles_required(*DESK)
+def entry_new(request):
+    return _entry(request, F.EntryForm, ops.record_entry, _("Entry: money received"),
+                  _("Cash, UVE, ER or float you received and record yourself: taken from a shop, sent by another "
+                    "cashier, from a company account or from outside. It arrives in your account."),
+                  template="core/entry_receive.html", extra={"icon": "download"})
+
+
+@roles_required(*DESK)
 def conversion_new(request):
     rate = ConversionRate.current()
     intro = _("Current uplift: +%(pct)s%% (rate stored on each conversion; ER rounded half-up to whole FCFA).") % {

@@ -368,6 +368,54 @@ class DeskTransferForm(BaseEntryForm):
         return d
 
 
+class EntryForm(BaseEntryForm):
+    """Entry: money the cashier received — from a shop, another cashier, a company account or outside."""
+
+    source = forms.ChoiceField(label=_("Received from"), widget=forms.RadioSelect, initial="SHOP", choices=[
+        ("SHOP", _("A shop")), ("DESK", _("Another cashier")), ("COMPANY", _("A company account (finance, master SIM, "
+                                                                             "bank)")),
+        ("OTHER", _("Outside the company"))])
+    shop = forms.ModelChoiceField(label=_("Shop"), queryset=None, required=False)
+    desk = forms.ModelChoiceField(label=_("Cashier desk (subzone)"), queryset=Zone.objects.none(), required=False)
+    company_account = AccountChoiceField(label=_("Company account"), queryset=Account.objects.none(), required=False)
+    from_whom = forms.CharField(label=_("From whom"), required=False, max_length=150)
+    product = forms.ChoiceField(label=_("What you received"), initial="CASH", choices=[
+        ("CASH", _("Cash")), ("UVE", "UVE"), ("ER", "ER"), ("MTN", _("MTN float"))])
+    amount = MoneyField(label=_("Amount (FCFA)"))
+    into = AccountChoiceField(label=_("Arrives in"), queryset=Account.objects.none(), required=False)
+    reference = forms.CharField(label=_("Reference (transaction ID)"), required=False, max_length=60)
+    description = forms.CharField(label=_("Note"), required=False, max_length=255)
+    another = forms.BooleanField(label=_("This is another transfer (not one already recorded)"), required=False)
+
+    def __init__(self, user, *args, **kwargs):
+        super().__init__(user, *args, **kwargs)
+        from core.models import Shop
+        from core.services.operations import transfer_desks
+
+        self.fields["shop"].queryset = Shop.objects.filter(active=True).order_by("name")
+        self.fields["desk"].queryset = transfer_desks(exclude=getattr(user, "subzone", None))
+        mine = perm.usable_accounts(user, list(Account.ASSET_KINDS)).values_list("pk", flat=True)
+        self.fields["company_account"].queryset = Account.objects.filter(
+            kind__in=Account.ASSET_KINDS, active=True, shop__isnull=True).exclude(pk__in=mine).order_by("kind", "name")
+        own = self.accounts([K.CASH_DRAWER, K.UVE, K.ER, K.MTN], receiving=True).filter(shop__isnull=True)
+        if own.count() > 4 or own.values("kind").distinct().count() < own.count():
+            self.fields["into"].queryset = own  # several accounts of a kind: the cashier may choose
+        else:
+            del self.fields["into"]
+
+    def clean(self):
+        cd = super().clean()
+        need = {"SHOP": "shop", "DESK": "desk", "COMPANY": "company_account", "OTHER": "from_whom"}
+        f = need.get(cd.get("source"))
+        if f and not cd.get(f):
+            self.add_error(f, _("Required."))
+        into = cd.get("into")
+        kind = {"CASH": K.CASH_DRAWER, "UVE": K.UVE, "ER": K.ER, "MTN": K.MTN}.get(cd.get("product"))
+        if into is not None and cd.get("source") != "COMPANY" and into.kind != kind:
+            self.add_error("into", _("Choose an account of the product received."))
+        return cd
+
+
 class ConversionForm(BaseEntryForm):
     uve_account = AccountChoiceField(label=_("UVE wallet to convert (ER arrives on the same SIM)"),
                                      queryset=Account.objects.none())

@@ -1,0 +1,25 @@
+{% extends "core/entry_form.html" %}
+{% block scripts %}{{ block.super }}
+<script>
+(function () {
+  var form = document.getElementById('entry-form'); if (!form) return;
+  var fld = function (n) { return document.getElementById('fld-' + n); };
+  var radios = form.querySelectorAll('input[name=source]');
+  if (radios.length) radios[0].closest('.field').classList.add('choice-pills');
+  var show = {SHOP: ['shop'], DESK: ['desk'], COMPANY: ['company_account'], OTHER: ['from_whom']};
+  function sync() {
+    var s = (form.querySelector('input[name=source]:checked') || radios[0]).value;
+    ['shop', 'desk', 'company_account', 'from_whom'].forEach(function (n) {
+      var f = fld(n); if (f) f.hidden = (show[s] || []).indexOf(n) < 0;
+    });
+    var p = fld('product'); if (p) p.hidden = s === 'COMPANY';  // a company account says what it is
+    var sel = form.querySelector('[name=product]');
+    if (sel) Array.prototype.forEach.call(sel.options, function (o) {
+      var off = s === 'SHOP' && o.value === 'MTN'; o.hidden = off; o.disabled = off;
+      if (off && sel.value === 'MTN') sel.value = 'CASH';
+    });
+  }
+  radios.forEach(function (r) { r.addEventListener('change', sync); }); sync();
+})();
+</script>
+{% endblock %}

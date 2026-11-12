@@ -31,6 +31,10 @@ msgstr ""
 " le modifier."
 
 #, python-format
+msgid "%(acct)s is not one of your accounts."
+msgstr "%(acct)s n'est pas un de vos comptes."
+
+#, python-format
 msgid "%(acct)s: enter a whole FCFA amount."
 msgstr "%(acct)s : saisissez un montant entier en FCFA."
 
@@ -450,6 +454,9 @@ msgstr "Un client me paie"
 msgid "A commercial agent"
 msgstr "Un agent commercial"
 
+msgid "A company account (finance, master SIM, bank)"
+msgstr "Un compte de la société (finance, SIM maître, banque)"
+
 msgid "A company drawer/wallet/bank cannot open negative."
 msgstr ""
 "Une caisse, un portefeuille ou une banque de l'entreprise ne peut pas ouvrir"
@@ -523,6 +530,9 @@ msgstr "Une boutique rembourse en espèces et / ou UVE."
 
 msgid "A shop receives cash or UVE, not MTN float."
 msgstr "Une boutique reçoit des espèces ou de l'UVE, pas de float MTN."
+
+msgid "A shop sends cash, UVE or ER."
+msgstr "Une boutique envoie du cash, de l'UVE ou de l'ER."
 
 msgid "A subzone's parent must be a master zone."
 msgstr "Le parent d'une sous-zone doit être une zone principale."
@@ -977,6 +987,9 @@ msgstr ""
 msgid "Analysis"
 msgstr "Analyse"
 
+msgid "Another cashier"
+msgstr "Un autre caissier"
+
 msgid "Apply"
 msgstr "Appliquer"
 
@@ -991,6 +1004,9 @@ msgstr "Avril"
 
 msgid "Are you still there?"
 msgstr "Êtes-vous toujours là ?"
+
+msgid "Arrives in"
+msgstr "Arrive dans"
 
 msgid "As of"
 msgstr "Au"
@@ -1431,6 +1447,15 @@ msgstr ""
 msgid "Cash, UVE, ER and MTN · zone %(z)s"
 msgstr "Espèces, UVE, ER et MTN · zone %(z)s"
 
+msgid ""
+"Cash, UVE, ER or float you received and record yourself: taken from a shop, "
+"sent by another cashier, from a company account or from outside. It arrives "
+"in your account."
+msgstr ""
+"Cash, UVE, ER ou float que vous avez reçu et enregistrez vous-même : pris "
+"dans une boutique, envoyé par un autre caissier, depuis un compte de la "
+"société ou de l'extérieur. Il arrive dans votre compte."
+
 msgid "Cash, UVE, ER, MTN or bank"
 msgstr "Espèces, UVE, ER, MTN ou banque"
 
@@ -1474,6 +1499,9 @@ msgstr "Compte du caissier qui reçoit"
 
 msgid "Cashier desk"
 msgstr "Poste caissier"
+
+msgid "Cashier desk (subzone)"
+msgstr "Caisse (sous-zone)"
 
 msgid "Cashier desks"
 msgstr "Caisses"
@@ -1554,6 +1582,9 @@ msgstr "Choisissez un guichet caissier de votre zone."
 msgid "Choose a cashier…"
 msgstr "Choisir un caissier…"
 
+msgid "Choose a company account that is not yours."
+msgstr "Choisissez un compte de la société qui n'est pas le vôtre."
+
 msgid "Choose a counted service."
 msgstr "Choisissez un service compté."
 
@@ -1565,6 +1596,9 @@ msgstr "Choisissez une résolution."
 
 msgid "Choose a username."
 msgstr "Choisissez un nom d'utilisateur."
+
+msgid "Choose an account of the product received."
+msgstr "Choisissez un compte du produit reçu."
 
 msgid "Choose an active POS."
 msgstr "Choisissez un POS actif."
@@ -1698,6 +1732,9 @@ msgstr ""
 msgid "Choose the commercial agent who receives the UVE."
 msgstr "Choisissez l'agent commercial qui reçoit l'UVE."
 
+msgid "Choose the company account that sent it."
+msgstr "Choisissez le compte de la société qui l'a envoyé."
+
 msgid "Choose the correction type."
 msgstr "Choisissez le type de correction."
 
@@ -1718,6 +1755,9 @@ msgstr "Choisissez la microzone où déplacer les POS."
 
 msgid "Choose the new microzone"
 msgstr "Choisissez la nouvelle microzone"
+
+msgid "Choose the other cashier's desk."
+msgstr "Choisissez la caisse de l'autre caissier."
 
 msgid "Choose the shop receiving the transfer."
 msgstr "Choisissez la boutique qui reçoit le transfert."
@@ -1751,6 +1791,9 @@ msgstr "Choisissez ce qu'il faut effacer."
 
 msgid "Choose what you are importing."
 msgstr "Choisissez ce que vous importez."
+
+msgid "Choose what you received."
+msgstr "Choisissez ce que vous avez reçu."
 
 msgid "Choose which side of the exchange happened."
 msgstr "Choisissez le volet de l'échange qui a eu lieu."
@@ -2841,6 +2884,27 @@ msgstr ""
 "Vos saisies vont au poste, aux comptes et à la journée du caissier choisi. "
 "Vous restez enregistré comme auteur de la saisie."
 
+msgid "Entry"
+msgstr "Entrée"
+
+msgid "Entry from a cashier"
+msgstr "Entrée d'un caissier"
+
+msgid "Entry from a company account"
+msgstr "Entrée d'un compte de la société"
+
+msgid "Entry from a shop"
+msgstr "Entrée d'une boutique"
+
+msgid "Entry from outside"
+msgstr "Entrée de l'extérieur"
+
+msgid "Entry recorded by the cashier"
+msgstr "Entrée enregistrée par le caissier"
+
+msgid "Entry: money received"
+msgstr "Entrée : argent reçu"
+
 msgid "Error"
 msgstr "Erreur"
 
@@ -3192,6 +3256,9 @@ msgstr "Des autres boutiques"
 
 msgid "From the office"
 msgstr "Du bureau"
+
+msgid "From whom"
+msgstr "De qui"
 
 msgid ""
 "Full control of the application. Every change made here is recorded in the "
@@ -3690,6 +3757,10 @@ msgstr "Argent reçu d'un client"
 
 msgid "Money received from an agent or POS"
 msgstr "Argent reçu d'un agent ou d'un PDV"
+
+msgid "Money received: from a shop, a cashier, the company or outside"
+msgstr ""
+"Argent reçu : d'une boutique, d'un caissier, de la société ou de l'extérieur"
 
 msgid ""
 "Money taken out of the business by the owners. It decreases the chosen "
@@ -4719,6 +4790,9 @@ msgstr "En rupture = stock ER sous %(n)s FCFA."
 msgid "Out of stock when ER is below"
 msgstr "En rupture quand ER est sous"
 
+msgid "Outside the company"
+msgstr "Extérieur à la société"
+
 msgid "Outstanding"
 msgstr "Encours"
 
@@ -5312,6 +5386,9 @@ msgstr "Reçu par"
 msgid "Received by POS"
 msgstr "Reçu par le PDV"
 
+msgid "Received from"
+msgstr "Reçu de"
+
 msgid ""
 "Received from the office minus what you recorded as supplied to your "
 "clients."
@@ -5438,6 +5515,9 @@ msgstr "Réf."
 msgid "Reference"
 msgstr "Référence"
 
+msgid "Reference (transaction ID)"
+msgstr "Référence (ID de transaction)"
+
 msgid "Reference / note"
 msgstr "Référence / note"
 
@@ -5523,6 +5603,9 @@ msgstr "Rapport"
 
 msgid "Reports"
 msgstr "Rapports"
+
+msgid "Required."
+msgstr "Obligatoire."
 
 msgid "Reset password"
 msgstr "Réinitialiser le mot de passe"
@@ -5703,6 +5786,9 @@ msgstr "Indiquez d'où vient l'argent."
 
 msgid "Say who receives the money or where it goes."
 msgstr "Indiquez qui reçoit l'argent ou où il va."
+
+msgid "Say who sent the money."
+msgstr "Indiquez qui a envoyé l'argent."
 
 msgid "Say why the capital is moved."
 msgstr "Indiquez pourquoi le capital est déplacé."
@@ -6804,6 +6890,9 @@ msgstr "Ce fichier ne peut pas être importé (vérifiez-le à nouveau)."
 msgid "This file will create"
 msgstr "Ce fichier va créer"
 
+msgid "This is another transfer (not one already recorded)"
+msgstr "C'est un autre transfert (pas un déjà enregistré)"
+
 #, python-format
 msgid ""
 "This is not one of your duties in the shop (%(d)s). Ask the senior shop "
@@ -6820,6 +6909,14 @@ msgstr "Ce n'est pas votre enregistrement."
 
 msgid "This item is not in the chosen category."
 msgstr "Cet article n'est pas dans la catégorie choisie."
+
+#, python-format
+msgid ""
+"This looks already recorded: %(ref)s at %(time)s, %(amt)s FCFA by %(who)s. "
+"If it is really another one, tick “This is another transfer”."
+msgstr ""
+"Cela semble déjà enregistré : %(ref)s à %(time)s, %(amt)s FCFA par %(who)s. "
+"Si c'en est vraiment un autre, cochez « C'est un autre transfert »."
 
 msgid "This microzone already exists: choose it in the list."
 msgstr "Cette microzone existe déjà : choisissez-la dans la liste."
@@ -7586,6 +7683,9 @@ msgid "What was paid, e.g. electricity bill October, transport of stock."
 msgstr ""
 "Ce qui a été payé, par ex. facture d'électricité d'octobre, transport du "
 "stock."
+
+msgid "What you received"
+msgstr "Ce que vous avez reçu"
 
 msgid "WhatsApp"
 msgstr "WhatsApp"

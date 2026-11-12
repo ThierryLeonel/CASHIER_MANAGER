@@ -271,6 +271,7 @@ class Transaction(models.Model):
     to_settle = models.BooleanField(default=False, help_text="A transfer the receiver must pay back to the sender.")
     settles = models.ForeignKey("self", null=True, blank=True, on_delete=models.PROTECT, related_name="settlements",
                                 help_text="This transfer pays back that received transfer.")
+    is_entry = models.BooleanField(default=False)  # recorded by the receiving cashier ("Entry")
     description = models.CharField(max_length=255, blank=True)
     idempotency_key = models.UUIDField(null=True, blank=True, unique=True)
     reverses = models.OneToOneField("self", null=True, blank=True, on_delete=models.PROTECT,
@@ -354,6 +355,10 @@ class Transaction(models.Model):
 
     @property
     def display_type(self):
+        if self.is_entry:  # recorded by the cashier who received the money
+            return {TxType.SHOP_TO_DESK: _("Entry from a shop"), TxType.INTERNAL_TRANSFER: _("Entry from a cashier"),
+                    TxType.CAPITAL_MOVE: _("Entry from a company account"),
+                    TxType.CAPITAL_IN: _("Entry from outside")}.get(self.type, _("Entry"))
         if self.type == TxType.SUPPLY:
             return _("Supply to POS") if self.supply_channel == "POS" else _("Supply to agent")
         if self.type == TxType.FLOAT_EXCHANGE and self.counterparty_id:

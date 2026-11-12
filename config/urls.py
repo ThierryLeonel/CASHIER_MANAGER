@@ -20,6 +20,7 @@ urlpatterns = [
     path("collection/new/", v.collection_new, name="collection_new"),
     path("expense/new/", v.expense_new, name="expense_new"),
     path("transfer/new/", v.transfer_new, name="transfer_new"),
+    path("entries/new/", v.entry_new, name="entry_new"),
     path("conversion/new/", v.conversion_new, name="conversion_new"),
     path("cash-managers/", v.exchanges, name="exchanges"),
     path("cash-managers/exchange/new/", v.exchange_new, name="exchange_new"),

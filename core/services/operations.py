@@ -22,6 +22,7 @@ import uuid
 from decimal import Decimal
 
 from django.db import transaction
+from django.utils import timezone
 from django.db.models import Q, Sum
 from django.utils.translation import gettext as _
 
@@ -766,3 +767,96 @@ def set_conversion_rate(user, *, percent, note=""):
 def customer_balance(cp):
     return balance(cp.account)
 
+
+
+# ---------------------------------------------------------------- entries: money the cashier received
+ENTRY_SOURCES = ("SHOP", "DESK", "COMPANY", "OTHER")
+ENTRY_KINDS = {"CASH": K.CASH_DRAWER, "UVE": K.UVE, "ER": K.ER, "MTN": K.MTN}
+
+
+def entry_into(ctx, kind, chosen=None):
+    """The cashier's account receiving an entry: the one chosen, else the default one for payments, else the first."""
+    qs = perm.usable_accounts(ctx.cashier, [kind], receiving=True).filter(shop__isnull=True)
+    if chosen is not None:
+        if not qs.filter(pk=chosen.pk).exists():
+            raise BusinessError(_("%(acct)s is not one of your accounts.") % {"acct": chosen}, "into")
+        return chosen
+    acct = _desk_account(ctx, kind, receiving=True) or qs.first()
+    if acct is None:
+        raise BusinessError(_("No %(kind)s account is set up for your subzone.") % {"kind": Account.Kind(kind).label},
+                            "product")
+    return acct
+
+
+def record_entry(user, *, source, product, amount, shop=None, desk=None, company_account=None, from_whom="",
+                 into=None, reference="", description="", another=False, idempotency_key=None, acting_for=None):
+    """Entry: cash, UVE, ER or float the cashier RECEIVED and records himself — taken from a shop, sent by another
+    cashier, sent from a company account (finance, master SIM, bank), or from outside the company. It arrives in his
+    account; the sender's account goes down (outside money is recorded as capital received). Entries from a shop or
+    a cashier are to be paid back like any transfer between them. When the sender already recorded the same transfer
+    today the entry is refused (double record) unless it is really another one."""
+    ctx = cashier_ctx(user, acting_for)
+    if source not in ENTRY_SOURCES:
+        raise BusinessError(_("Say where the money comes from."), "source")
+    amount = _positive(amount)
+    if source == "COMPANY":
+        if company_account is None:
+            raise BusinessError(_("Choose the company account that sent it."), "company_account")
+        kind = company_account.kind
+        product = {v: k for k, v in ENTRY_KINDS.items()}.get(kind, "CASH" if kind == K.BANK else None)
+        kind = K.CASH_DRAWER if kind == K.BANK else kind
+    else:
+        kind = ENTRY_KINDS.get(product)
+    if kind is None:
+        raise BusinessError(_("Choose what you received."), "product")
+    dest = entry_into(ctx, kind, into)
+    note = (description or "").strip()
+    if reference:
+        note = f"{note} · {_('Ref.')} {reference.strip()}".strip(" ·")
+    fields = dict(amount=amount, dest_account=dest, product=product, description=note, is_entry=True)
+    if source == "SHOP":
+        if shop is None:
+            raise BusinessError(_("Choose the shop."), "shop")
+        if product == "MTN":
+            raise BusinessError(_("A shop sends cash, UVE or ER."), "product")
+        src = shop.account(kind)
+        spec = TxSpec(type=TxType.SHOP_TO_DESK, lines=[(dest, amount), (src, -amount)],
+                      fields=dict(fields, source_account=src, shop=shop, to_settle=True))
+        dup = Transaction.objects.filter(type=TxType.SHOP_TO_DESK, shop=shop)
+    elif source == "DESK":
+        if desk is None or desk.pk == ctx.cashier.subzone_id:
+            raise BusinessError(_("Choose the other cashier's desk."), "desk")
+        src = desk_account(desk, kind, "product")
+        spec = TxSpec(type=TxType.INTERNAL_TRANSFER, lines=[(dest, amount), (src, -amount)],
+                      fields=dict(fields, source_account=src, to_settle=True))
+        dup = Transaction.objects.filter(type=TxType.INTERNAL_TRANSFER, source_account=src)
+    elif source == "COMPANY":
+        src = company_account
+        if not src.is_asset or not src.active or src.shop_id or perm.usable_accounts(
+                ctx.cashier, [src.kind]).filter(pk=src.pk).exists():
+            raise BusinessError(_("Choose a company account that is not yours."), "company_account")
+        spec = TxSpec(type=TxType.CAPITAL_MOVE, lines=[(dest, amount), (src, -amount)],
+                      fields=dict(fields, source_account=src, fund_purpose=note or str(_("Entry recorded by the "
+                                                                                         "cashier"))))
+        dup = Transaction.objects.filter(type__in=(TxType.CAPITAL_MOVE, TxType.FLOAT_EXCHANGE), source_account=src)
+    else:
+        who = (from_whom or "").strip()
+        if not who:
+            raise BusinessError(_("Say who sent the money."), "from_whom")
+        from .capital import capital_account
+
+        spec = TxSpec(type=TxType.CAPITAL_IN, lines=[(dest, amount), (capital_account(), -amount)],
+                      fields=dict(fields, fund_source=who, fund_purpose=note or str(_("Entry recorded by the "
+                                                                                      "cashier"))))
+        dup = None
+    if dup is not None and not another:
+        same = dup.filter(dest_account=dest, amount=amount, business_date=ctx.business_date,
+                          correction__isnull=True).first()
+        if same is not None:
+            raise BusinessError(_("This looks already recorded: %(ref)s at %(time)s, %(amt)s FCFA by %(who)s. If it is "
+                                  "really another one, tick “This is another transfer”.") % {
+                "ref": same.reference, "time": timezone.localtime(same.posted_at).strftime("%H:%M"),
+                "amt": same.amount, "who": same.entered_by}, "another")
+    spec.receipt = True
+    with transaction.atomic():
+        return post([spec], ctx, idempotency_key)[0]
