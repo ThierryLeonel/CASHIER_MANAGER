@@ -79,3 +79,24 @@ class Market(OrgMixin, TestCase):
             c.post("/agent/destocash/record/", {"pos": other.pk, "how": "CASH", "amount": "1000",
                                                 "idem": str(uuid.uuid4())})
             self.assertFalse(AgentClientEntry.objects.filter(pos=other).exists())
+
+    def test_senior_manager_and_finance_see_agents_supervision(self):
+        for username in ("manager", "finance", self.admin.username):
+            u = User.objects.get(username=username)
+            c = self.login(u)
+            r = c.get("/supervision/agents/")
+            self.assertEqual(r.status_code, 200, username)
+            self.assertContains(r, "Commercial agents supervision")
+            self.assertContains(r, 'href="/supervision/agents/"')  # the Agents workspace tab
+            self.assertContains(r, "Download call database")
+            home = c.get("/")
+            self.assertContains(home, "Cashiers")  # cashiers and shops spaces stay
+            self.assertContains(home, 'href="/shops/"')
+            self.assertEqual(c.get("/shops/").status_code, 200)
+        # a cashier has no agents workspace
+        cashier = User.objects.filter(role=User.Role.CASHIER).first()
+        self.assertEqual(self.login(cashier).get("/supervision/agents/").status_code, 403)
+        # the market supervisor works in the agents and shops spaces only
+        r = self.login(self.mk).get("/")
+        self.assertContains(r, 'href="/supervision/agents/"')
+        self.assertNotContains(r, ">Cashiers<")

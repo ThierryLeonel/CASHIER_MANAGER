@@ -301,12 +301,12 @@ class ShopPages(OrgMixin, TestCase):
         r = adm.post("/setup/conversion-rate/", {"action": "shop", "shop-percent": "4.5"})
         self.assertEqual(r.status_code, 302, r.content[:1500])
         self.assertEqual(ShopConversionRate.current().percent, D("4.50"))
-        # finance and the senior manager see cashiers and shops in two separate spaces
+        # finance and the senior manager see cashiers, shops and agents in separate spaces
         fin = self.client_for("finance")
         rep = fin.get("/reports/reconciliation/?preset=all")
         self.assertContains(rep, "CASHIERS TOTAL")
         self.assertNotContains(rep, "Shop Molyko")  # shops are not mixed into the cashiers' reports
-        self.assertContains(rep, 'class="space-switch"')
+        self.assertContains(rep, 'class="space-switch three"')
         self.assertNotContains(rep, "/shops/attendance/")  # cashiers' space: no shop menu
         shops_page = fin.get("/shops/")
         self.assertContains(shops_page, "/shops/attendance/")
@@ -803,7 +803,7 @@ class AdminSpace(OrgMixin, TestCase):
         c = self.client_class()
         self.assertTrue(c.login(username="admin", password=PW))
         cash = c.get("/")
-        self.assertContains(cash, 'class="space-switch three"')
+        self.assertContains(cash, 'class="space-switch four"')
         for url in ("/administration/users/", "/administration/import/", "/shops/manage/", "/capital/"):
             self.assertNotContains(cash, f'href="{url}"')  # not crowding the cashiers' menu
         shops = c.get("/shops/")
@@ -814,11 +814,12 @@ class AdminSpace(OrgMixin, TestCase):
                     "/shops/opening-balances/", "/setup/opening-balances/", "/capital/"):
             self.assertContains(admin, f'href="{url}"')
         self.assertNotContains(admin, 'href="/closings/"')  # the Admin tab shows only administration
-        # finance keeps two tabs and its Capital link; the senior shop manager keeps Shops & staff
+        # finance has three tabs (cashiers, shops, agents) and its Capital link; the senior shop manager keeps
+        # Shops & staff
         f = self.client_class()
         f.login(username="finance", password=PW)
         page = f.get("/")
-        self.assertContains(page, 'class="space-switch"')
+        self.assertContains(page, 'class="space-switch three"')
         self.assertContains(page, 'href="/capital/"')
         s = self.client_class()
         s.login(username="shop.senior", password=PW)

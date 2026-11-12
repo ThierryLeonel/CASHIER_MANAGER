@@ -265,6 +265,12 @@ class User(AbstractUser):
         return self.role == self.Role.JUNIOR
 
     @property
+    def sees_agent_supervision(self):
+        """Commercial agents supervision space: the senior manager, finance, the super admin and the market
+        supervisor."""
+        return self.role in (self.Role.MANAGER, self.Role.FINANCE, self.Role.SUPERADMIN, self.Role.MARKET)
+
+    @property
     def sees_all_zones(self):
         return self.role in (self.Role.MANAGER, self.Role.FINANCE, self.Role.SUPERADMIN)
 

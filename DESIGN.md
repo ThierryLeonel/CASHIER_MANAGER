@@ -445,3 +445,16 @@ Every transaction stores its **recording cashier** (`Transaction.cashier`), and 
   - Staff and the market supervisor get everything, a junior manager his zone, an agent the POS of his roads.
   - Optional filter `?kind=AGENT|POS`.
   - Buttons on Agents & POS, the market dashboard and the agent OOS page.
+
+## Agents workspace for the senior manager, finance and the super admin
+- New sidebar tab **Agents** (`/supervision/agents/`, view `agents_supervision`), next to Cashiers and Shops:
+  - Senior manager and finance: Cashiers · Shops · Agents.
+  - Super admin: Cashiers · Shops · Agents · Admin, so he has every view.
+  - Market supervisor: Shops · Agents (no cashier space).
+  - `User.sees_agent_supervision`; the space is chosen in `context_processors._space` (paths `/supervision/agents/`,
+    `/customers/`, `/stock/`; a report opened from the Agents space stays in it).
+- Its overview is the market supervision page: agents, POS, out of stock / low stock, owed, shop balances, latest
+  agent / POS / shop records.
+- Its menu: Overview, Agents & POS, POS stock, POS supplied, Supplies due, Agent / POS statement, Agent paybacks
+  (not for the market supervisor), Transactions, All reports, Download call database.
+- Cashiers and junior managers get 403 on `/supervision/agents/`.

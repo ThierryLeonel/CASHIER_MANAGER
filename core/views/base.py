@@ -322,6 +322,13 @@ def market_home(request):
     return render(request, "core/dashboard_market.html", ctx)
 
 
+@roles_required(R.MANAGER, R.FINANCE, R.SUPERADMIN, R.MARKET)
+def agents_supervision(request):
+    """Commercial agents supervision for the senior manager, finance and the super admin (the market supervisor's
+    home page)."""
+    return market_home(request)
+
+
 @require_POST
 def set_lang(request):
     """Switch language; remembered on the user's profile so it follows them

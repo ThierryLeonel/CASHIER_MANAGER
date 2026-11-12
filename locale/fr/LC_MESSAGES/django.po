@@ -752,6 +752,9 @@ msgstr "SIM business de l'agent / POS"
 msgid "Agent / POS signature"
 msgstr "Signature de l'agent / POS"
 
+msgid "Agent / POS statement"
+msgstr "Relevé agent / POS"
+
 msgid "Agent / client"
 msgstr "Agent / client"
 
@@ -2042,6 +2045,9 @@ msgstr ""
 "float MTN au caissier de leur zone, puis le déclarent ici. Le caissier de ce"
 " guichet confirme dès réception : c'est alors enregistré comme paiement de "
 "l'agent, avec un reçu."
+
+msgid "Commercial agents supervision"
+msgstr "Supervision des agents commerciaux"
 
 msgid "Commercial agents who owe the shop"
 msgstr "Agents commerciaux qui doivent à la boutique"
@@ -4926,6 +4932,9 @@ msgstr "Sur la période"
 msgid "Overall (since launch)"
 msgstr "Global (depuis le démarrage)"
 
+msgid "Overview"
+msgstr "Vue d'ensemble"
+
 msgid "Overview — all zones"
 msgstr "Vue d'ensemble — toutes zones"
 
@@ -5047,6 +5056,9 @@ msgstr "POS en rupture quand le stock ER est sous (FCFA)"
 
 msgid "POS out of stock, by agent in charge"
 msgstr "POS en rupture, par agent responsable"
+
+msgid "POS stock"
+msgstr "Stock des POS"
 
 msgid "POS stock — replace all (the old stock is cleared first)"
 msgstr "Stock des POS — tout remplacer (l'ancien stock est d'abord effacé)"
@@ -6583,6 +6595,9 @@ msgstr "Approvisionnements (UVE, ER, espèces)"
 
 msgid "Supplies and destockage from the office"
 msgstr "Approvisionnements et déstockage du bureau"
+
+msgid "Supplies due"
+msgstr "Approvisionnements dus"
 
 msgid ""
 "Supplies the office gave you, payments you made to the cashiers, and other "

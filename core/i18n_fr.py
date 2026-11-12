@@ -1856,6 +1856,11 @@ FR = {
     'matches': 'correspond',
     'There is a difference: the note is required. Explain it before closing.': 'Il y a un écart : la note est obligatoire. Expliquez-le avant de clôturer.',
     # commercial agent portal
+    "Agent / POS statement": "Relevé agent / POS",
+    "Commercial agents supervision": "Supervision des agents commerciaux",
+    "Overview": "Vue d'ensemble",
+    "POS stock": "Stock des POS",
+    "Supplies due": "Approvisionnements dus",
     "%(n)s low stock": "%(n)s en stock faible",
     "Agent / POS / shop": "Agent / POS / boutique",
     "All reports": "Tous les rapports",

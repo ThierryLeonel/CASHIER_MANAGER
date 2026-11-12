@@ -673,3 +673,6 @@ table.t tr.oos td { background: #fff1f0; }
 .pick-dlg [hidden] { display: none !important; }
 .pick-dlg input { font-size: 1.2rem; padding: 10px; }
 .pick-dlg .row { display: flex; gap: 8px; } .pick-dlg .row .btn { flex: 1; }
+.space-switch.four { grid-template-columns: repeat(4, 1fr); }
+.space-switch.four a { font-size: .74rem; padding: 8px 2px; }
+.space-switch.four a svg { display: none; }
