@@ -386,11 +386,19 @@ class EntryForm(BaseEntryForm):
     reference = forms.CharField(label=_("Reference (transaction ID)"), required=False, max_length=60)
     description = forms.CharField(label=_("Note"), required=False, max_length=255)
     another = forms.BooleanField(label=_("This is another transfer (not one already recorded)"), required=False)
+    match = forms.ModelChoiceField(queryset=None, required=False, widget=forms.HiddenInput)
 
     def __init__(self, user, *args, **kwargs):
         super().__init__(user, *args, **kwargs)
         from core.models import Shop
+        from core.services import transit
         from core.services.operations import transfer_desks
+
+        self.pending = transit.pending(perm.usable_accounts(user, list(Account.ASSET_KINDS), receiving=True))
+        self.fields["match"].queryset = self.pending
+        m = self.initial.get("match") if not self.is_bound else None
+        if m is not None:  # entering a transfer listed in "Sent to you": the amount is the one sent
+            self.initial["amount"] = m.amount
 
         self.fields["shop"].queryset = Shop.objects.filter(active=True).order_by("name")
         self.fields["desk"].queryset = transfer_desks(exclude=getattr(user, "subzone", None))
@@ -407,6 +415,8 @@ class EntryForm(BaseEntryForm):
         cd = super().clean()
         need = {"SHOP": "shop", "DESK": "desk", "COMPANY": "company_account", "OTHER": "from_whom"}
         f = need.get(cd.get("source"))
+        if cd.get("match") is not None:
+            return cd  # everything comes from the transfer sent
         if f and not cd.get(f):
             self.add_error(f, _("Required."))
         into = cd.get("into")

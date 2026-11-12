@@ -98,6 +98,9 @@ def correct_transaction(user, original, *, kind, reason, new_values=None, idempo
             raise BusinessError(_("This type of entry cannot be corrected directly."))
         if Correction.objects.filter(original=original).exists():
             raise BusinessError(_("%(ref)s has already been corrected.") % {"ref": original.reference})
+        if kind == Correction.Kind.REPLACE and (original.in_transit or original.is_entry):
+            raise BusinessError(_("A transfer recorded by one side, or an entry, cannot be edited: cancel it and "
+                                  "record it again."))
         if kind == Correction.Kind.REPLACE and original.type in VOID_ONLY:
             if original.type == TxType.RESPONSIBILITY_TRANSFER:
                 raise BusinessError(_("A responsibility transfer can only be cancelled, then recorded again."))

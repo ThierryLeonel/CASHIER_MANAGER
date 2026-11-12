@@ -122,6 +122,13 @@ def transfer(user, *, source, destination, amount, purpose, description="", idem
         raise BusinessError(_("%(a)s cannot be transferred into %(b)s. Transfer the same product (cash ↔ bank is "
                               "allowed).") % {"a": K(src.kind).label, "b": K(dst.kind).label}, "destination")
     purpose = _required(purpose, "purpose", _("Say why the capital is moved."))
+    from . import transit
+
+    if transit.held_by_other_party(dst) and not transit.held_by_other_party(src):
+        # to a cashier desk or a shop: they enter it themselves (Entry); only finance's account moves now
+        return _post(user, TxType.CAPITAL_MOVE, transit.sender_lines(dst, src, a), [src], idempotency_key,
+                     amount=a, source_account=src, dest_account=dst, fund_purpose=purpose, description=description,
+                     product=_product(src), in_transit=True)
     return _post(user, TxType.CAPITAL_MOVE, [(dst, a), (src, -a)], [src, dst], idempotency_key,
                  amount=a, source_account=src, dest_account=dst, fund_purpose=purpose, description=description,
                  product=_product(src))
@@ -143,9 +150,12 @@ def float_exchange(user, *, source, amount, to="DESK", uve_account=None, agent=N
                      amount=a, source_account=source, counterparty=agent, product="UVE", description=description)
     if uve_account is None or uve_account.kind != K.UVE or not uve_account.active or uve_account.shop_id:
         raise BusinessError(_("Choose the cashier's UVE wallet that receives the UVE."), "uve_account")
-    return _post(user, TxType.FLOAT_EXCHANGE, [(uve_account, a), (source, -a)], [uve_account, source],
+    from . import transit
+
+    # the cashier enters the UVE himself (Entry from a company account): only finance's float moves now
+    return _post(user, TxType.FLOAT_EXCHANGE, transit.sender_lines(uve_account, source, a), [uve_account, source],
                  idempotency_key, amount=a, source_account=source, dest_account=uve_account, product="UVE",
-                 description=description)
+                 description=description, in_transit=True)
 
 
 def _product(acct):

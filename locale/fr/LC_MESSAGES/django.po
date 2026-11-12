@@ -454,6 +454,9 @@ msgstr "Un client me paie"
 msgid "A commercial agent"
 msgstr "Un agent commercial"
 
+msgid "A company account"
+msgstr "Un compte de la société"
+
 msgid "A company account (finance, master SIM, bank)"
 msgstr "Un compte de la société (finance, SIM maître, banque)"
 
@@ -536,6 +539,13 @@ msgstr "Une boutique envoie du cash, de l'UVE ou de l'ER."
 
 msgid "A subzone's parent must be a master zone."
 msgstr "Le parent d'une sous-zone doit être une zone principale."
+
+msgid ""
+"A transfer recorded by one side, or an entry, cannot be edited: cancel it "
+"and record it again."
+msgstr ""
+"Un transfert enregistré par un côté, ou une entrée, ne peut pas être modifié"
+" : annulez-le et enregistrez-le à nouveau."
 
 msgid "A zone cannot be its own master zone."
 msgstr "Une zone ne peut pas être sa propre zone master."
@@ -990,6 +1000,9 @@ msgstr "Analyse"
 msgid "Another cashier"
 msgstr "Un autre caissier"
 
+msgid "Another shop"
+msgstr "Une autre boutique"
+
 msgid "Apply"
 msgstr "Appliquer"
 
@@ -1317,11 +1330,25 @@ msgstr ""
 "seul enregistrement. C'est aussi enregistré côté caissier."
 
 msgid ""
+"Cash and / or UVE sent from the shop to a cashier desk. Only the shop's "
+"money moves: the cashier records it as an entry."
+msgstr ""
+"Cash et / ou UVE envoyés de la boutique vers une caisse. Seul l'argent de la"
+" boutique bouge : le caissier l'enregistre comme entrée."
+
+msgid ""
 "Cash and / or UVE sent from this shop to another shop, in one record. Both "
 "shops see it."
 msgstr ""
 "Espèces et / ou UVE envoyés de cette boutique à une autre boutique, en un "
 "seul enregistrement. Les deux boutiques le voient."
+
+msgid ""
+"Cash and / or UVE sent from this shop to another shop. Only this shop's "
+"money moves: the other shop records it as an entry."
+msgstr ""
+"Cash et / ou UVE envoyés de cette boutique vers une autre. Seul l'argent de "
+"cette boutique bouge : l'autre boutique l'enregistre comme entrée."
 
 msgid ""
 "Cash and / or UVE sent from your desk to a shop, in one record. The shop "
@@ -1442,6 +1469,14 @@ msgid ""
 msgstr ""
 "Espèces, UVE et ER remis à un agent commercial, en un seul enregistrement. "
 "Le solde de l'agent augmente du total."
+
+msgid ""
+"Cash, UVE or ER the shop received from a cashier, another shop or a company "
+"account. Only the shop's account moves; it is linked to the sender's record."
+msgstr ""
+"Cash, UVE ou ER reçu par la boutique d'un caissier, d'une autre boutique ou "
+"d'un compte de la société. Seul le compte de la boutique bouge ; c'est relié"
+" à l'enregistrement de l'expéditeur."
 
 #, python-format
 msgid "Cash, UVE, ER and MTN · zone %(z)s"
@@ -1710,6 +1745,9 @@ msgstr "Choisissez le compte du caissier qui reçoit."
 msgid "Choose the cashier desk receiving the transfer."
 msgstr "Choisissez le guichet caissier qui reçoit le transfert."
 
+msgid "Choose the cashier desk."
+msgstr "Choisissez la caisse."
+
 msgid "Choose the cashier in charge of the master SIM."
 msgstr "Choisissez le caissier responsable de la SIM master."
 
@@ -1758,6 +1796,9 @@ msgstr "Choisissez la nouvelle microzone"
 
 msgid "Choose the other cashier's desk."
 msgstr "Choisissez la caisse de l'autre caissier."
+
+msgid "Choose the other shop."
+msgstr "Choisissez l'autre boutique."
 
 msgid "Choose the shop receiving the transfer."
 msgstr "Choisissez la boutique qui reçoit le transfert."
@@ -2877,6 +2918,9 @@ msgstr "Saisissez ce que vous avez approvisionné en UVE, ER et / ou espèces."
 msgid "Entered by"
 msgstr "Saisi par"
 
+msgid "Entered by the receiver"
+msgstr "Entré par le destinataire"
+
 msgid ""
 "Entries you record go to the chosen cashier's desk, accounts and business "
 "day. You remain recorded as the person who entered them."
@@ -2886,6 +2930,14 @@ msgstr ""
 
 msgid "Entry"
 msgstr "Entrée"
+
+#, python-format
+msgid ""
+"Entry for %(ref)s: %(amt)s FCFA. Check the amount you really received and "
+"record."
+msgstr ""
+"Entrée pour %(ref)s : %(amt)s FCFA. Vérifiez le montant réellement reçu et "
+"enregistrez."
 
 msgid "Entry from a cashier"
 msgstr "Entrée d'un caissier"
@@ -2901,6 +2953,9 @@ msgstr "Entrée de l'extérieur"
 
 msgid "Entry recorded by the cashier"
 msgstr "Entrée enregistrée par le caissier"
+
+msgid "Entry recorded by the shop"
+msgstr "Entrée enregistrée par la boutique"
 
 msgid "Entry: money received"
 msgstr "Entrée : argent reçu"
@@ -3453,6 +3508,12 @@ msgid ""
 msgstr ""
 "Sur la période : %(s)s FCFA approvisionnés, %(r)s FCFA reçus des clients. Un"
 " enregistrement erroné du jour peut être annulé."
+
+msgid "In transit (sent − entered)"
+msgstr "En transit (envoyé − entré)"
+
+msgid "In transit (sent, not yet entered)"
+msgstr "En transit (envoyé, pas encore entré)"
 
 msgid "Inactive"
 msgstr "Inactif"
@@ -4336,6 +4397,9 @@ msgstr "Nombre d'unités reçues"
 
 msgid "OK"
 msgstr "OK"
+
+msgid "OK — everything sent was entered"
+msgstr "OK — tout ce qui a été envoyé a été entré"
 
 msgid "OK — sent equals received"
 msgstr "OK — envoyé égale reçu"
@@ -5476,6 +5540,9 @@ msgstr "Enregistrer les services rendus"
 msgid "Record the balance served (or another side)"
 msgstr "Enregistrer le reste servi (ou un autre côté)"
 
+msgid "Record the entry"
+msgstr "Enregistrer l'entrée"
+
 msgid "Record the purchase"
 msgstr "Enregistrer l'achat"
 
@@ -5505,6 +5572,9 @@ msgstr "Enregistré par"
 
 msgid "Recorded by the agent (the cashier records the payment)"
 msgstr "Enregistré par l'agent (le caissier enregistre le paiement)"
+
+msgid "Records"
+msgstr "Enregistrements"
 
 msgid "Ref number"
 msgstr "Numéro de référence"
@@ -5874,11 +5944,24 @@ msgstr "Gérant principal des boutiques"
 msgid "Senior shop manager(s):"
 msgstr "Responsable(s) principal(aux) des boutiques :"
 
+msgid "Sent (sender's records)"
+msgstr "Envoyé (enregistrements de l'expéditeur)"
+
+msgid ""
+"Sent = what each one recorded leaving his own accounts; received = what he "
+"entered himself. The difference is still in transit."
+msgstr ""
+"Envoyé = ce que chacun a enregistré sortant de ses propres comptes ; reçu = "
+"ce qu'il a entré lui-même. La différence est encore en transit."
+
 msgid "Sent at"
 msgstr "Envoyé le"
 
 msgid "Sent from company account"
 msgstr "Envoyé depuis le compte de l'entreprise"
+
+msgid "Sent to you, waiting for your entry"
+msgstr "Envoyé vers vous, en attente de votre entrée"
 
 msgid "September"
 msgstr "Septembre"
@@ -6205,6 +6288,9 @@ msgstr "Certaines lignes contiennent des erreurs : rien n'a été importé"
 
 msgid "Some shifts of this day are still open. Close them first."
 msgstr "Des services de ce jour sont encore ouverts. Fermez-les d'abord."
+
+msgid "Some transfers are not entered yet (see In transit)"
+msgstr "Certains transferts ne sont pas encore entrés (voir En transit)"
 
 msgid ""
 "Some units of this purchase were already sold or removed. Delete those "
@@ -6710,6 +6796,13 @@ msgid "The rest is owed to you."
 msgstr "Le reste vous est dû."
 
 msgid ""
+"The sender recorded these on his side (his balance went down). Yours goes up"
+" only when you record the entry."
+msgstr ""
+"L'expéditeur les a enregistrés de son côté (son solde a baissé). Le vôtre "
+"monte seulement quand vous enregistrez l'entrée."
+
+msgid ""
 "The shop conversion rate is not set yet (Administration › Shop conversion "
 "rate)."
 msgstr ""
@@ -6961,6 +7054,9 @@ msgstr "Cette transaction n'engage aucun agent ni POS."
 
 msgid "This transaction has no customer obligation."
 msgstr "Cette transaction ne comporte aucune obligation client."
+
+msgid "This transfer is not waiting for your entry any more."
+msgstr "Ce transfert n'attend plus votre entrée."
 
 msgid "This transfer pays back"
 msgstr "Ce transfert rembourse"
@@ -7238,6 +7334,10 @@ msgstr ""
 
 msgid "Transfers between company accounts"
 msgstr "Transferts entre comptes de l'entreprise"
+
+msgid "Transfers in transit (sent, not yet entered by the receiver)"
+msgstr ""
+"Transferts en transit (envoyés, pas encore entrés par le destinataire)"
 
 msgid "Transfers received not paid back yet"
 msgstr "Transferts reçus pas encore remboursés"
@@ -8145,6 +8245,9 @@ msgstr "dû à l'agent / POS"
 msgid "email"
 msgstr "e-mail"
 
+msgid "entry by the receiver"
+msgstr "entrée du destinataire"
+
 msgid "exchange"
 msgstr "échange"
 
@@ -8416,6 +8519,12 @@ msgstr "prix de vente (FCFA)"
 
 msgid "sent"
 msgstr "envoyé"
+
+msgid "sent, entered"
+msgstr "envoyé, entré"
+
+msgid "sent, waiting for the entry"
+msgstr "envoyé, en attente de l'entrée"
 
 msgid "serial number"
 msgstr "numéro de série"

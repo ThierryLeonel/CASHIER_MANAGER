@@ -60,11 +60,14 @@ OPS = {
     "pos_uve_out": (SF.PosUveForm, sh.uve_to_pos, _("Send UVE"), "", "supply"),
     "pos_uve_in": (SF.PosUveForm, sh.uve_from_pos, _("Receive UVE"), "", "payment"),
     "to_cashier": (SF.ToCashierForm, sh.to_cashier, _("Transfer to a cashier"),
-                   _("Cash and / or UVE sent from the shop to a cashier desk, in one record. It is recorded on the "
-                     "cashier side too."), "transfer"),
+                   _("Cash and / or UVE sent from the shop to a cashier desk. Only the shop's money moves: the "
+                     "cashier records it as an entry."), "transfer"),
     "to_shop": (SF.ToShopForm, sh.to_shop, _("Transfer to another shop"),
-                _("Cash and / or UVE sent from this shop to another shop, in one record. Both shops see it."),
-                "transfer"),
+                _("Cash and / or UVE sent from this shop to another shop. Only this shop's money moves: the other "
+                  "shop records it as an entry."), "transfer"),
+    "entry": (SF.ShopEntryForm, sh.entry, _("Entry: money received"),
+              _("Cash, UVE or ER the shop received from a cashier, another shop or a company account. Only the "
+                "shop's account moves; it is linked to the sender's record."), "download"),
     "sale": (SF.SaleForm, sh.sell, _("Sale"), "", "store"),
     "expense": (SF.ShopExpenseForm, sh.expense, _("Shop expense"),
                 _("An expense of the shop (rent, electricity, transport…), paid from its cash drawer or UVE."),
@@ -236,6 +239,8 @@ def shop_op(request, op):
         return r
     form_class, fn, title, intro, icon = OPS[op]
     kwargs = {"op": op} if form_class in (SF.AgentDealForm, SF.PosUveForm) else {}
+    if op == "entry" and request.GET.get("match", "").isdigit():
+        kwargs["initial"] = {"match": Transaction.objects.filter(pk=request.GET["match"]).first()}
     form = form_class(request.user, request.POST or None, **kwargs)
     if request.method == "POST" and form.is_valid():
         params = form.params()
@@ -252,6 +257,9 @@ def shop_op(request, op):
                                 _("The shop rate is not set yet."))
     if op == "sale":
         return render(request, "core/shop/sale.html", {"form": form})
+    if op == "entry":
+        return render(request, "core/entry_receive.html", {"form": form, "title": title, "intro": intro,
+                                                           "icon": icon, "shop_entry": True})
     return render(request, "core/entry_form.html", {"form": form, "title": title, "intro": intro, "icon": icon})
 
 

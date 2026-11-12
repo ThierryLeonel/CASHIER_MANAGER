@@ -143,6 +143,51 @@ class ToShopForm(ShopForm):
         return cd
 
 
+class ShopEntryForm(ShopForm):
+    """Entry: cash or UVE the shop received — from a cashier desk, another shop or a company account."""
+
+    source = forms.ChoiceField(label=_("Received from"), widget=forms.RadioSelect, initial="DESK", choices=[
+        ("DESK", _("A cashier")), ("SHOP", _("Another shop")), ("COMPANY", _("A company account"))])
+    desk = forms.ModelChoiceField(label=_("Cashier desk (subzone)"), queryset=Zone.objects.none(), required=False)
+    from_shop = forms.ModelChoiceField(label=_("Shop"), queryset=Shop.objects.none(), required=False)
+    company_account = forms.ModelChoiceField(label=_("Company account"), queryset=None, required=False)
+    product = forms.ChoiceField(label=_("What you received"), initial="CASH",
+                                choices=[("CASH", _("Cash")), ("UVE", "UVE"), ("ER", "ER")])
+    amount = MoneyField(label=_("Amount (FCFA)"))
+    reference = forms.CharField(label=_("Reference (transaction ID)"), required=False, max_length=60)
+    description = forms.CharField(label=_("Note"), required=False, max_length=255)
+    match = forms.ModelChoiceField(queryset=None, required=False, widget=forms.HiddenInput)
+
+    def __init__(self, user, *args, **kwargs):
+        super().__init__(user, *args, **kwargs)
+        from core.models import Account
+        from core.services import shops as sh
+        from core.services import transit
+        from core.services.operations import transfer_desks
+
+        self.fields["desk"].queryset = transfer_desks()
+        self.fields["from_shop"].queryset = Shop.objects.filter(active=True).exclude(pk=user.shop_id or 0)
+        self.fields["company_account"].queryset = Account.objects.filter(
+            kind__in=Account.ASSET_KINDS, active=True, shop__isnull=True).order_by("kind", "name")
+        shop = user.shop if user.is_shop_manager else None
+        self.pending = sh.pending_entries(shop) if shop else transit.pending(
+            Account.objects.filter(shop__isnull=False))
+        self.fields["match"].queryset = self.pending
+        m = self.initial.get("match") if not self.is_bound else None
+        if m is not None:
+            self.initial["amount"] = m.amount
+            if "shop" in self.fields:
+                self.initial["shop"] = m.dest_account.shop
+
+    def clean(self):
+        cd = super().clean()
+        if cd.get("match") is None:
+            f = {"DESK": "desk", "SHOP": "from_shop", "COMPANY": "company_account"}.get(cd.get("source"))
+            if f and not cd.get(f):
+                self.add_error(f, _("Required."))
+        return cd
+
+
 class UnitsWidget(forms.CheckboxSelectMultiple):
     """Units in stock, each tagged with its item and shop so the page shows only the matching ones."""
 

@@ -31,6 +31,7 @@ from core.models import (
 from core.money import MoneyError, conversion_er_amount, fmt, to_money
 from core.simnumbers import SimNumberError, normalize_sim
 
+from . import transit
 from .days import douala_today
 from .errors import BusinessError, PermissionDenied
 from .ledger import Ctx, TxSpec, post
@@ -386,9 +387,10 @@ def to_cashier(user, *, shop=None, desk, cash=None, uve=None, description="", id
     specs = []
     for i, (prod, kind, a) in enumerate(todo):
         dest, src = desk_account(desk, kind, prod.lower()), shop.account(kind)
-        spec = _spec(TxType.SHOP_TO_DESK, shop, [(dest, a), (src, -a)], a, dest_account=dest, source_account=src,
-                     product=prod, payment_group=group, description=description, settles=settles,
-                     to_settle=settles is None)
+        # the cashier enters it himself (Entry): only the shop's money moves now
+        spec = _spec(TxType.SHOP_TO_DESK, shop, transit.sender_lines(dest, src, a), a, dest_account=dest,
+                     source_account=src, product=prod, payment_group=group, description=description, settles=settles,
+                     to_settle=settles is None, in_transit=True)
         spec.receipt = i == 0
         specs.append(spec)
     with transaction.atomic():
@@ -411,10 +413,11 @@ def desk_to_shop(user, *, shop, cash=None, uve=None, amount=None, description=""
     specs = []
     for i, (prod, kind, a) in enumerate(todo):
         src, dest = own_account(ctx.cashier, kind, prod.lower()), shop.account(kind)
-        specs.append(TxSpec(type=TxType.DESK_TO_SHOP, lines=[(dest, a), (src, -a)], receipt=i == 0,
+        # the shop enters it itself (Entry): only the desk's money moves now
+        specs.append(TxSpec(type=TxType.DESK_TO_SHOP, lines=transit.sender_lines(dest, src, a), receipt=i == 0,
                             fields=dict(amount=a, shop=shop, source_account=src, dest_account=dest, product=prod,
                                         payment_group=group, description=description, settles=settles,
-                                        to_settle=settles is None)))
+                                        to_settle=settles is None, in_transit=True)))
     with transaction.atomic():
         return post(specs, ctx, idempotency_key)[0]
 
@@ -434,13 +437,74 @@ def to_shop(user, *, shop=None, dest_shop, cash=None, uve=None, description="", 
     specs = []
     for i, (prod, kind, a) in enumerate(todo):
         src, dest = shop.account(kind), dest_shop.account(kind)
-        spec = _spec(TxType.SHOP_TO_SHOP, shop, [(dest, a), (src, -a)], a, source_account=src, dest_account=dest,
-                     product=prod, payment_group=group, description=description, settles=settles,
-                     to_settle=settles is None)
+        spec = _spec(TxType.SHOP_TO_SHOP, shop, transit.sender_lines(dest, src, a), a, source_account=src,
+                     dest_account=dest, product=prod, payment_group=group, description=description, settles=settles,
+                     to_settle=settles is None, in_transit=True)
         spec.receipt = i == 0
         specs.append(spec)
     with transaction.atomic():
         return post(specs, _ctx(user), idempotency_key)[0]
+
+
+def entry(user, *, shop=None, source, product, amount, desk=None, from_shop=None, company_account=None,
+          reference="", description="", match=None, idempotency_key=None):
+    """Entry: cash or UVE the shop RECEIVED and records itself — from a cashier desk, another shop or a company
+    account. Only the shop's account moves: the money comes out of "transfers in transit", where the sender's record
+    put it, and the entry is linked to that record (the one chosen, else the matching one)."""
+    from django.db.models import Q
+
+    from core.models import Transaction
+
+    from .operations import desk_account
+
+    shop = shop_for(user, shop)
+    if match is not None:
+        if not match.in_transit or match.transit_entries.exists() or match.dest_account.shop_id != shop.pk:
+            raise BusinessError(_("This transfer is not waiting for your entry any more."), "match")
+        src, dest = match.source_account, match.dest_account
+        product = {K.UVE: "UVE", K.ER: "ER", K.CASH_DRAWER: "CASH"}.get(dest.kind, "CASH")
+        source = "SHOP" if src.shop_id else ("DESK" if match.type == TxType.DESK_TO_SHOP else "COMPANY")
+    else:
+        kind = {"CASH": K.CASH_DRAWER, "UVE": K.UVE, "ER": K.ER}.get(product)
+        if kind is None:
+            raise BusinessError(_("Choose what you received."), "product")
+        dest = shop.account(kind)
+        if source == "DESK":
+            if desk is None:
+                raise BusinessError(_("Choose the cashier desk."), "desk")
+            src = desk_account(desk, kind, "product")
+        elif source == "SHOP":
+            if from_shop is None or from_shop.pk == shop.pk:
+                raise BusinessError(_("Choose the other shop."), "from_shop")
+            src = from_shop.account(kind)
+        elif source == "COMPANY":
+            if company_account is None or company_account.shop_id or not company_account.is_asset:
+                raise BusinessError(_("Choose the company account that sent it."), "company_account")
+            src = company_account
+        else:
+            raise BusinessError(_("Say where the money comes from."), "source")
+    a = _amt(amount)
+    type_ = {"DESK": TxType.DESK_TO_SHOP, "SHOP": TxType.SHOP_TO_SHOP, "COMPANY": TxType.CAPITAL_MOVE}[source]
+    note = (description or "").strip()
+    if reference:
+        note = f"{note} · {_('Ref.')} {reference.strip()}".strip(" ·")
+    with transaction.atomic():
+        if match is None:
+            match = Transaction.objects.filter(
+                in_transit=True, dest_account=dest, amount=a, correction__isnull=True, transit_entries__isnull=True
+            ).filter(Q(source_account=src) | Q(source_account__zone=src.zone, source_account__kind=src.kind,
+                                                 source_account__shop=src.shop)).order_by("posted_at").first()
+        spec = _spec(type_, shop, [(dest, a), (transit.account(), -a)], a, source_account=src, dest_account=dest,
+                     product=product, description=note, is_entry=True, transit_match=match,
+                     **({"fund_purpose": note or str(_("Entry recorded by the shop"))} if source == "COMPANY" else {}))
+        return post([spec], _ctx(user), idempotency_key)[0]
+
+
+def pending_entries(shop):
+    """Transfers sent to the shop and not entered yet."""
+    from core.models import Account
+
+    return transit.pending(Account.objects.filter(shop=shop))
 
 
 def shop_txn_q(shops):

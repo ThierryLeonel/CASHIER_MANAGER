@@ -83,6 +83,13 @@ class ShopMoney(OrgMixin, TestCase):
         f1 = self.zones["fako1"]
         ubefore, dbefore, sb = self.bal(self.uve_f1), self.bal(self.d_f1), self.b()
         t = sh.to_cashier(self.m, desk=f1, cash=D(30000), uve=D(100000))
+        # only the shop's money moves: the cashier's goes up when he records the entry
+        self.assertEqual((self.bal(self.uve_f1), self.bal(self.d_f1)), (ubefore, dbefore))
+        from core.services import operations as ops
+
+        e1 = ops.record_entry(self.c_f1, source="SHOP", shop=self.shop, product="UVE", amount=D(100000))
+        ops.record_entry(self.c_f1, source="SHOP", shop=self.shop, product="CASH", amount=D(30000))
+        self.assertEqual(e1.transit_match.payment_group, t.payment_group)  # linked to the shop's record
         self.assertEqual(self.bal(self.uve_f1), ubefore + 100000)
         self.assertEqual(self.bal(self.d_f1), dbefore + 30000)
         self.assertEqual((self.b()[0], self.b()[1]), (sb[0] - 30000, sb[1] - 100000))
@@ -100,6 +107,9 @@ class ShopMoney(OrgMixin, TestCase):
         sb, ubefore, dbefore = self.b(), self.bal(self.uve_f1), self.bal(self.d_f1)
         t = sh.desk_to_shop(self.c_f1, shop=self.shop, cash=D(20000), uve=D(40000))
         self.assertEqual((t.type, t.shop, t.cashier), (TxType.DESK_TO_SHOP, self.shop, self.c_f1))
+        self.assertEqual((self.b()[0], self.b()[1]), (sb[0], sb[1]))  # the shop enters it itself
+        sh.entry(self.m, source="DESK", desk=self.zones["fako1"], product="CASH", amount=D(20000))
+        sh.entry(self.m, source="DESK", desk=self.zones["fako1"], product="UVE", amount=D(40000))
         self.assertEqual((self.b()[0], self.b()[1]), (sb[0] + 20000, sb[1] + 40000))
         self.assertEqual((self.bal(self.uve_f1), self.bal(self.d_f1)), (ubefore - 40000, dbefore - 20000))
         self.assertEqual(len(t.payment_parts), 2)
@@ -923,6 +933,9 @@ class DeskTransfers(OrgMixin, TestCase):
         d2, u2, d1, u1 = self.bal(self.d_f2), self.bal(self.uve_f2), self.bal(self.d_f1), self.bal(self.uve_f1)
         txns = ops.record_desk_transfer(self.c_f1, desk=f2, cash=D(50000), uve=D(80000), description="float")
         self.assertEqual(len(txns), 2)
+        self.assertEqual((self.bal(self.d_f2), self.bal(self.uve_f2)), (d2, u2))  # Fako 2 enters it himself
+        for prod, amt in (("CASH", 50000), ("UVE", 80000)):
+            ops.record_entry(self.c_f2, source="DESK", desk=self.zones["fako1"], product=prod, amount=D(amt))
         self.assertEqual((self.bal(self.d_f2), self.bal(self.uve_f2)), (d2 + 50000, u2 + 80000))
         self.assertEqual((self.bal(self.d_f1), self.bal(self.uve_f1)), (d1 - 50000, u1 - 80000))
         self.assertEqual(txns[0].payment_group, txns[1].payment_group)
@@ -970,6 +983,11 @@ class TransfersForEveryStaffMember(OrgMixin, TestCase):
         s = sh.to_shop(om, dest_shop=self.other, cash=D(20000), uve=D(50000), description="float for Limbe")
         self.assertEqual(len(s.payment_parts), 2)
         self.assertEqual(sum(1 for p in s.payment_parts if p.receipt_no), 1)
+        self.assertEqual((self.bal(self.other.account(K.CASH_DRAWER)), self.bal(self.other.account(K.UVE))),
+                         (D(0), D(0)))  # the other shop enters it itself
+        for prod, amt in (("CASH", 20000), ("UVE", 50000)):
+            sh.entry(self.o["shop_senior"], shop=self.other, source="SHOP", from_shop=self.shop, product=prod,
+                     amount=D(amt))
         self.assertEqual((self.bal(self.other.account(K.CASH_DRAWER)), self.bal(self.other.account(K.UVE))),
                          (D(20000), D(50000)))
         b = sh.shop_balances(self.shop)
@@ -1052,8 +1070,16 @@ class TransferReconciliation(OrgMixin, TestCase):
         cap.transfer(self.finance, source=self.d_me, destination=self.bank, amount=D(5000), purpose="deposit")
         fin = self.client_for("finance")
         r = fin.get("/reports/transfers/?preset=all")
+        self.assertContains(r, "Some transfers are not entered yet")  # each receiver still has to enter his
+        ops.record_entry(self.c_f2, source="DESK", desk=self.zones["fako1"], product="CASH", amount=D(50000))
+        ops.record_entry(self.c_f2, source="DESK", desk=self.zones["fako1"], product="UVE", amount=D(80000))
+        ops.record_entry(self.c_f2, source="SHOP", shop=self.shop, product="UVE", amount=D(30000))
+        sh.entry(self.o["shop_mgr"], source="DESK", desk=self.zones["fako1"], product="CASH", amount=D(20000))
+        sh.entry(self.o["shop_senior"], shop=self.other, source="SHOP", from_shop=self.shop, product="CASH",
+                 amount=D(10000))
+        r = fin.get("/reports/transfers/?preset=all")
         self.assertContains(r, "Transfer reconciliation")
-        self.assertContains(r, "OK — sent equals received")
+        self.assertContains(r, "OK — everything sent was entered")
         for txt in ("Who sent what to whom", "By desk and shop", "Shop [SAMPLE] Shop Molyko", "Shop Shop Limbe",
                     "Fako 2", "195 000"):  # 50 000 + 80 000 + 20 000 + 30 000 + 10 000 + 5 000
             self.assertContains(r, txt)
@@ -1122,7 +1148,11 @@ class ShiftClosingAndTransferPayments(OrgMixin, TestCase):
         d1 = self.bal(self.d_f1)
         r = c.post(f"/transactions/{t.pk}/pay/", {"idem": str(uuid.uuid4()), "cash": "50 000"})
         self.assertEqual(r.status_code, 302, r.content[:1500])
-        self.assertEqual(self.bal(self.d_f1), d1 + 50000)  # paid back to the sender's desk
+        self.assertEqual(self.bal(self.d_f1), d1)  # the sender's desk enters the payment itself
+        from core.services import operations as ops
+
+        ops.record_entry(self.c_f1, source="SHOP", shop=self.shop, product="CASH", amount=D(50000))
+        self.assertEqual(self.bal(self.d_f1), d1 + 50000)
         p = Transaction.objects.get(settles=t)
         self.assertEqual((p.type, p.to_settle), (TxType.SHOP_TO_DESK, False))  # a payment is not paid back again
         self.assertEqual(st.outstanding(t), D(20000))

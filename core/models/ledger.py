@@ -43,11 +43,12 @@ class Account(models.Model):
         SHOP_INVENTORY = "SHOP_INVENTORY", _("Shop: stock at cost")
         COST_OF_SALES = "COST_OF_SALES", _("Cost of items sold")
         STOCK_LOSS = "STOCK_LOSS", _("Stock written off")
+        TRANSIT = "TRANSIT", _("Transfers in transit (sent, not yet entered by the receiver)")
 
     ASSET_KINDS = (Kind.CASH_DRAWER, Kind.UVE, Kind.ER, Kind.MTN, Kind.BANK)
     CLOSING_KINDS = (Kind.CASH_DRAWER, Kind.UVE, Kind.ER, Kind.MTN)
     SYSTEM_KINDS = (Kind.CONVERSION_UPLIFT, Kind.RECON_ADJUSTMENT, Kind.OPENING_EQUITY, Kind.SHOP_SALES,
-                    Kind.OWNER_CAPITAL, Kind.COST_OF_SALES, Kind.STOCK_LOSS)
+                    Kind.OWNER_CAPITAL, Kind.COST_OF_SALES, Kind.STOCK_LOSS, Kind.TRANSIT)
 
     kind = models.CharField(max_length=20, choices=Kind.choices)
     name = models.CharField(_("name"), max_length=150)
@@ -272,6 +273,11 @@ class Transaction(models.Model):
     settles = models.ForeignKey("self", null=True, blank=True, on_delete=models.PROTECT, related_name="settlements",
                                 help_text="This transfer pays back that received transfer.")
     is_entry = models.BooleanField(default=False)  # recorded by the receiving cashier ("Entry")
+    # a transfer recorded by its sender only moves the sender's money (to "transfers in transit"); the receiver
+    # brings it into his own account with an Entry, linked here — so nobody records anybody else's money twice
+    in_transit = models.BooleanField(default=False)
+    transit_match = models.ForeignKey("self", null=True, blank=True, on_delete=models.SET_NULL,
+                                      related_name="transit_entries")
     description = models.CharField(max_length=255, blank=True)
     idempotency_key = models.UUIDField(null=True, blank=True, unique=True)
     reverses = models.OneToOneField("self", null=True, blank=True, on_delete=models.PROTECT,
@@ -358,6 +364,7 @@ class Transaction(models.Model):
         if self.is_entry:  # recorded by the cashier who received the money
             return {TxType.SHOP_TO_DESK: _("Entry from a shop"), TxType.INTERNAL_TRANSFER: _("Entry from a cashier"),
                     TxType.CAPITAL_MOVE: _("Entry from a company account"),
+                    TxType.DESK_TO_SHOP: _("Entry from a cashier"), TxType.SHOP_TO_SHOP: _("Entry from a shop"),
                     TxType.CAPITAL_IN: _("Entry from outside")}.get(self.type, _("Entry"))
         if self.type == TxType.SUPPLY:
             return _("Supply to POS") if self.supply_channel == "POS" else _("Supply to agent")

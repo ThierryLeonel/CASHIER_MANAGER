@@ -569,7 +569,7 @@ def transfer_reconciliation(qs, filters_text):
     from collections import OrderedDict
 
     rep = Report("transfers", _("Transfer reconciliation"), filters_text)
-    qs = qs.prefetch_related("entries")
+    qs = qs.prefetch_related("entries", "transit_entries")
     rows, pairs, parties, kind_of = [], OrderedDict(), OrderedDict(), {}
     products = []
     sent_total, received_total = Z, Z
@@ -582,20 +582,29 @@ def transfer_reconciliation(qs, filters_text):
         for acc, who in ((src, a), (dst, b)):
             kind_of[who] = 1 if acc is not None and acc.shop_id else (0 if acc is not None and (
                 acc.custodian_id or acc.zone_id) else 2)
+        # what really moved: a transfer recorded by its sender moves only the sender's account, an entry only the
+        # receiver's; older transfers moved both
+        out = -sum((e.amount for e in t.entries.all() if e.account_id == t.source_account_id), Z)
+        inn = sum((e.amount for e in t.entries.all() if e.account_id == t.dest_account_id), Z)
+        side_txt = _("entry by the receiver") if t.is_entry else (
+            _("sent, waiting for the entry") if t.in_transit and not t.transit_entries.exists() else
+            (_("sent, entered") if t.in_transit else ""))
         rows.append(dict(business_date=t.business_date, reference=t.reference, _id=t.pk, type=t.display_type,
-                         sender=a, receiver=b, product=prod, amount=t.amount, by=str(t.entered_by),
-                         description=t.description))
+                         sender=a, receiver=b, product=prod, amount=out, entered=inn, by=str(t.entered_by),
+                         description=" · ".join(x for x in (str(side_txt), t.description) if x)))
         key = (a, b, prod)
-        pr = pairs.setdefault(key, {"sender": a, "receiver": b, "product": prod, "n": 0, "amount": Z})
+        pr = pairs.setdefault(key, {"sender": a, "receiver": b, "product": prod, "n": 0, "amount": Z,
+                                    "entered": Z, "waiting": Z})
         pr["n"] += 1
-        pr["amount"] += t.amount
-        for who, side in ((a, "sent"), (b, "received")):
+        pr["amount"] += out
+        pr["entered"] += inn
+        pr["waiting"] = pr["amount"] - pr["entered"]
+        for who, side, v in ((a, "sent", out), (b, "received", inn)):
             p = parties.setdefault(who, defaultdict(Decimal))
-            p[f"{side}_{prod}"] += t.amount
-            p[side] += t.amount
-        # each transfer is one balanced entry: what leaves the sender's account arrives in the receiver's
-        sent_total += -sum((e.amount for e in t.entries.all() if e.account_id == t.source_account_id), Z)
-        received_total += sum((e.amount for e in t.entries.all() if e.account_id == t.dest_account_id), Z)
+            p[f"{side}_{prod}"] += v
+            p[side] += v
+        sent_total += out
+        received_total += inn
     by_party = []
     group_names = [_("Cashier desks"), _("Shops"), _("Company (bank, finance)")]
     for g, gname in enumerate(group_names):
@@ -622,15 +631,18 @@ def transfer_reconciliation(qs, filters_text):
     cols += [Col("sent", _("Total sent"), "money", True), Col("received", _("Total received"), "money", True),
              Col("net", _("Net (received − sent)"), "money", True)]
     rep.tables.append(Table(_("By desk and shop"), cols, by_party,
-                            note=_("Across the whole company, total sent equals total received for each product.")))
+                            note=_("Sent = what each one recorded leaving his own accounts; received = what he entered himself. The difference is still in transit.")))
     wcols = [Col("receiver", _("To")), Col("product", _("Product")),
-             Col("n", _("Transfers"), "int", True), Col("amount", _("Amount"), "money", True)]
+             Col("n", _("Records"), "int", True), Col("amount", _("Sent (sender's records)"), "money", True),
+             Col("entered", _("Entered by the receiver"), "money", True),
+             Col("waiting", _("In transit (sent − entered)"), "money", True)]
     rep.tables.append(Table(_("Who sent what to whom"), wcols,
                             group_rows(list(pairs.values()), wcols, key=lambda r: r["sender"],
                                        label=lambda g: _("From %(s)s") % {"s": g})))
     acols = [Col("business_date", _("Date"), "date"), Col("reference", _("Reference")),
              Col("type", _("Type")), Col("receiver", _("To")),
-             Col("product", _("Product")), Col("amount", _("Amount"), "money", True),
+             Col("product", _("Product")), Col("amount", _("Sent (sender's records)"), "money", True),
+             Col("entered", _("Entered by the receiver"), "money", True),
              Col("by", _("Recorded by")), Col("description", _("Note"))]
     rep.tables.append(Table(_("All transfers, by sender"), acols,
                             group_rows(rows, acols, key=lambda r: r["sender"],
@@ -638,7 +650,9 @@ def transfer_reconciliation(qs, filters_text):
     ok = sent_total == received_total
     rep.summary = [(_("Transfers"), str(len(rows)), "text"), (_("Total sent"), sent_total, "money"),
                    (_("Total received"), received_total, "money"),
-                   (_("Check"), _("OK — sent equals received") if ok else _("MISMATCH"), "text")]
+                   (_("In transit (sent, not yet entered)"), sent_total - received_total, "money"),
+                   (_("Check"), _("OK — everything sent was entered") if ok else
+                    _("Some transfers are not entered yet (see In transit)"), "text")]
     return rep
 
 

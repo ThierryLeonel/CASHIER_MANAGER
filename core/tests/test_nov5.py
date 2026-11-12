@@ -106,6 +106,10 @@ class Nov5(OrgMixin, TestCase):
         cap.float_exchange(self.finance, source=flt, amount=D(100000), to="DESK", uve_account=self.uve_f2)
         cap.float_exchange(self.finance, source=flt, amount=D(50000), to="AGENT", agent=self.a2)
         self.assertEqual(self.bal(flt), D(150000))
+        self.assertEqual(self.bal(self.uve_f2), uve_before)  # the cashier enters it himself
+        sent = Transaction.objects.get(type="FLOAT_EXCHANGE", dest_account=self.uve_f2)
+        e = ops.record_entry(self.c_f2, source="COMPANY", match=sent, amount=D(100000))
+        self.assertEqual(e.transit_match, sent)
         self.assertEqual(self.bal(self.uve_f2), uve_before + 100000)
         self.assertEqual(self.cbal(self.a2), owed + 50000)
         with self.assertRaises(BusinessError):

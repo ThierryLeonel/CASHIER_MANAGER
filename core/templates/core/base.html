@@ -89,6 +89,7 @@
     <a href="{% url 'shop_op' 'agent_repay' %}" class="{% if request.path == '/shops/do/agent_repay/' %}on{% endif %}">{% icon "payment" %}<span>{% trans "Agent pays the shop" %}</span></a>
     {% endif %}
     <div class="side-group">{% trans "Transfers and UVE" %}</div>
+    <a href="{% url 'shop_op' 'entry' %}" class="{% if request.path == '/shops/do/entry/' %}on{% endif %}">{% icon "download" %}<span>{% trans "Entry" %}</span></a>
     <a href="{% url 'shop_op' 'to_cashier' %}" class="{% if request.path == '/shops/do/to_cashier/' %}on{% endif %}">{% icon "transfer" %}<span>{% trans "Transfer to a cashier" %}</span></a>
     <a href="{% url 'shop_op' 'to_shop' %}" class="{% if request.path == '/shops/do/to_shop/' %}on{% endif %}">{% icon "store" %}<span>{% trans "Transfer to another shop" %}</span></a>
     <a href="{% url 'shop_op' 'pos_uve_out' %}" class="{% if request.path == '/shops/do/pos_uve_out/' %}on{% endif %}">{% icon "supply" %}<span>{% trans "Send UVE" %}</span></a>
