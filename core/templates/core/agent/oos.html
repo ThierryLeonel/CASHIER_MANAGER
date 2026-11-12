@@ -2,7 +2,7 @@
 {% block title %}{% trans "OOS" %}{% endblock %}
 {% block topbar %}{% trans "OOS" %}{% endblock %}
 {% block content %}
-<h1>{% trans "My POS stock (OOS)" %}</h1>
+<h1>{% if supervise %}{% trans "POS stock (OOS)" %}{% if zone %} — {{ zone.name }}{% endif %}{% else %}{% trans "My POS stock (OOS)" %}{% endif %}</h1>
 <p class="small muted meta">{% blocktrans with n=limit|fcfa l=low|fcfa %}ER stock: out of stock below {{ n }}, low stock below {{ l }} FCFA.{% endblocktrans %}{% if last %} {% blocktrans with d=last|date:"d/m/Y H:i" %}Stock of {{ d }}.{% endblocktrans %}{% endif %}</p>
 <div class="lvl-tabs">
   <a href="?" class="{% if not level %}on{% endif %}">{% trans "All" %} <b>{{ n_pos }}</b></a>
@@ -19,7 +19,7 @@
 </form>
 <div class="pos-cards">
 {% for p, lvl in rows %}{% include "core/agent/inc/pos_card.html" with mode="oos" %}
-{% empty %}<p class="muted">{% trans "No POS in your microzones." %}</p>{% endfor %}
+{% empty %}<p class="muted">{% if supervise %}{% trans "No POS." %}{% else %}{% trans "No POS in your microzones." %}{% endif %}</p>{% endfor %}
 </div>
 {% if page.paginator.num_pages > 1 %}<div class="pager">{% if page.has_previous %}<a class="btn small" href="?{{ keep }}&amp;page={{ page.previous_page_number }}">← {% trans "Previous" %}</a>{% endif %}
 <span class="small">{% blocktrans with n=page.number t=page.paginator.num_pages c=page.paginator.count %}Page {{ n }} of {{ t }} · {{ c }} POS{% endblocktrans %}</span>

@@ -5,7 +5,7 @@ import uuid
 from django.test import TestCase
 from openpyxl import load_workbook
 
-from core.models import AgentClientEntry, AgentExchange, Counterparty, User
+from core.models import AgentClientEntry, AgentExchange, Counterparty, MicroZone, User
 
 from .helpers import D, OrgMixin
 from .test_web import PW
@@ -15,7 +15,8 @@ class Market(OrgMixin, TestCase):
     def setUp(self):
         self.make_org()
         self.fund_all()
-        self.mk = User.objects.create_user("market", password=PW, role=User.Role.MARKET)
+        self.mk = User.objects.create_user("market", password=PW, role=User.Role.MARKET,
+                                           subzone=self.p1.microzone.subzone)
 
     def login(self, u):
         c = self.client_class()
@@ -100,3 +101,42 @@ class Market(OrgMixin, TestCase):
         r = self.login(self.mk).get("/")
         self.assertContains(r, 'href="/supervision/agents/"')
         self.assertNotContains(r, ">Cashiers<")
+
+    def test_market_supervisor_follows_his_subzone_with_oos_and_destocash(self):
+        sub = self.p1.microzone.subzone
+        other_mz = MicroZone.objects.exclude(subzone=sub).filter(subzone__isnull=False).first()
+        far = Counterparty.objects.create(kind="POS", business_sim="699000111", name="Far POS", microzone=other_mz,
+                                          er_stock=D(100), uve_stock=D(9000))
+        Counterparty.objects.filter(pk=self.p1.pk).update(er_stock=D(500), uve_stock=D(7000))
+        c = self.login(self.mk)
+        for url in ("/agent/oos/", "/agent/destocash/"):
+            r = c.get(url)
+            self.assertEqual(r.status_code, 200, url)
+            self.assertContains(r, self.p1.name)
+            self.assertNotContains(r, "Far POS")
+            self.assertContains(r, sub.name)
+            self.assertNotContains(r, 'data-destock="CASH"')  # he follows, he does not record
+            self.assertNotContains(r, "/agent/supply/?pos=")
+        self.assertNotContains(c.get("/customers/?kind=POS"), "Far POS")
+        ws = load_workbook(io.BytesIO(c.get("/customers/call-database/").content)).active
+        sims = {str(r[5]) for r in ws.iter_rows(min_row=2, values_only=True)}
+        self.assertIn(self.p1.business_sim, sims)
+        self.assertNotIn(far.business_sim, sims)
+        self.assertContains(c.get("/"), 'href="/agent/oos/"')
+        # the senior manager sees every POS in OOS; the super admin downloads agents and POS from the import page
+        m = self.login(User.objects.get(username="manager"))
+        self.assertContains(m.get("/agent/oos/"), "Far POS")
+        a = self.login(self.admin)
+        self.assertContains(a.get("/administration/import/"), "Download agents & POS")
+        self.assertContains(a.get("/administration/"), "Download agents & POS")
+        x = a.get("/customers/call-database/?kind=POS")
+        rows = list(load_workbook(io.BytesIO(x.content)).active.iter_rows(min_row=2, values_only=True))
+        self.assertTrue(rows and all(r[0] == "POS" for r in rows))
+        self.assertIn(far.business_sim, {str(r[5]) for r in rows})
+
+    def test_market_supervisor_needs_a_zone(self):
+        from django.core.exceptions import ValidationError
+
+        u = User(username="mk2", role=User.Role.MARKET)
+        with self.assertRaises(ValidationError):
+            u.clean()

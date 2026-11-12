@@ -111,6 +111,11 @@ class FilterForm(forms.Form):
         elif not (user.sees_all_zones or getattr(user, "is_market", False)):
             for f in ("master_zone", "subzone", "cashier"):
                 self.fields.pop(f)
+        if getattr(user, "market_zone", None) is not None:  # a market supervisor: his zone only
+            ids = user.market_zone_ids()
+            self.fields.pop("master_zone", None)
+            self.fields["subzone"].queryset = Zone.objects.filter(id__in=ids, parent__isnull=False)
+            self.fields["cashier"].queryset = User.objects.filter(role=User.Role.CASHIER, subzone_id__in=ids)
 
     def clean_customer_sim(self):
         v = self.cleaned_data.get("customer_sim")
@@ -171,6 +176,17 @@ class Filters:
             f.cashier, f.master_zone, f.subzone, f.cashier_forced = user, None, None, True
         if getattr(user, "is_market", False):
             f.market = True
+            z = user.market_zone
+            if z is not None:
+                ids = user.market_zone_ids()
+                if f.subzone is not None and f.subzone.id not in ids:
+                    f.subzone = None
+                if f.cashier is not None and f.cashier.subzone_id not in ids:
+                    f.cashier = None
+                if z.is_master:
+                    f.master_zone = z
+                else:
+                    f.master_zone, f.subzone = None, z
         if user.is_junior:  # a junior manager sees only the zone they supervise
             z = user.scope_zone
             ids = user.zone_ids_in_scope()

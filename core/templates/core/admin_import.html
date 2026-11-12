@@ -9,7 +9,10 @@
   <strong>{% trans "Templates" %}</strong>
   <div class="actions" style="margin-bottom:0">{% for k, label in kinds %}<a class="btn small" href="{% url 'import_template' k %}">{% icon "download" 16 %} {{ label }}</a>{% endfor %}</div>
 </div>
-<div class="stock-actions"><a class="btn primary" href="?kind=stock_update">⟳ {% trans "Update POS stock" %}</a><a class="btn" href="{% url 'stock_download' %}">⬇ {% trans "Download POS stock (Excel)" %}</a></div>
+<div class="stock-actions"><a class="btn primary" href="?kind=stock_update">⟳ {% trans "Update POS stock" %}</a><a class="btn" href="{% url 'stock_download' %}">⬇ {% trans "Download POS stock (Excel)" %}</a>
+<a class="btn" href="{% url 'call_database' %}">⬇ {% trans "Download agents & POS" %}</a>
+<a class="btn" href="{% url 'call_database' %}?kind=AGENT">⬇ {% trans "Agents only" %}</a>
+<a class="btn" href="{% url 'call_database' %}?kind=POS">⬇ {% trans "POS only" %}</a></div>
 {% if recent %}<div class="panel"><div class="panel-head"><strong>{% trans "My recent imports" %}</strong>
 <form method="post" action="{% url 'import_history_clear' %}" onsubmit="return confirm(this.dataset.q)" data-q="{% trans 'Remove every import record from this list? The data already imported is not changed.' %}">{% csrf_token %}<button class="btn small">{% trans "Clear the list" %}</button></form></div>
 <div class="tbl-wrap"><table class="t"><tbody>{% for r in recent %}<tr><td class="small">{{ r.created_at|date:"d/m/Y H:i" }}</td><td><a href="{% url 'import_batch' r.pk %}">{{ r.file_name }}</a><br><span class="small muted">{{ r.kind_label }}</span></td><td class="small">{{ r.total }} {% trans "rows" %}</td><td><span class="badge{% if r.stage == 'DONE' %} ok{% elif r.stage == 'FAILED' %} bad{% endif %}">{{ r.get_stage_display }}</span></td>

@@ -524,6 +524,9 @@ msgstr ""
 "Une ligne apparaît pour chaque unité : saisissez son IMEI et / ou son numéro"
 " de série."
 
+msgid "A market supervisor must be assigned the subzone he follows."
+msgstr "Un superviseur marché doit être affecté à la sous-zone qu'il suit."
+
 msgid "A microzone belongs to a subzone, not to a master zone."
 msgstr "Une microzone appartient à une sous-zone, pas à une zone master."
 
@@ -829,6 +832,9 @@ msgid ""
 msgstr ""
 "Agents et PDV : ce qu'ils doivent en UVE, espèces et ER. Le total se calcule"
 " tout seul (une part négative = approvisionnement dû à eux)."
+
+msgid "Agents only"
+msgstr "Agents seulement"
 
 msgid "Agents owe"
 msgstr "Dû par les agents"
@@ -2719,6 +2725,9 @@ msgstr "Télécharger le PDF"
 msgid "Download POS stock (Excel)"
 msgstr "Télécharger le stock des POS (Excel)"
 
+msgid "Download agents & POS"
+msgstr "Télécharger agents & POS"
+
 msgid "Download call database"
 msgstr "Télécharger la base d'appel"
 
@@ -4146,6 +4155,9 @@ msgstr "Aucun POS approvisionné pour le moment."
 msgid "No POS to move (they may already be in %(mz)s)."
 msgstr "Aucun POS à déplacer (ils sont peut-être déjà dans %(mz)s)."
 
+msgid "No POS."
+msgstr "Aucun POS."
+
 msgid "No UVE→ER conversion rate is configured. Ask the super administrator."
 msgstr ""
 "Aucun taux de conversion UVE→ER n'est configuré. Contactez le super "
@@ -4471,6 +4483,9 @@ msgstr "Stock OM"
 
 msgid "OM stock of my POS"
 msgstr "Stock OM de mes POS"
+
+msgid "OM stock of the POS"
+msgstr "Stock OM des POS"
 
 msgid "OOS"
 msgstr "OOS"
@@ -5040,6 +5055,9 @@ msgstr "Numéro du POS"
 msgid "POS on his roads"
 msgstr "POS sur ses routes"
 
+msgid "POS only"
+msgstr "POS seulement"
+
 msgid ""
 "POS only: delete every POS with its transactions, agents' records with it "
 "and stock (agents, microzones and the rest stay)"
@@ -5059,6 +5077,9 @@ msgstr "POS en rupture, par agent responsable"
 
 msgid "POS stock"
 msgstr "Stock des POS"
+
+msgid "POS stock (OOS)"
+msgstr "Stock des POS (OOS)"
 
 msgid "POS stock — replace all (the old stock is cleared first)"
 msgstr "Stock des POS — tout remplacer (l'ancien stock est d'abord effacé)"
@@ -7001,6 +7022,9 @@ msgstr "Le bonus doit être compris entre 0 et 100 %."
 
 msgid "The uploaded file has expired. Upload it again."
 msgstr "Le fichier chargé a expiré. Chargez-le à nouveau."
+
+msgid "The whole agent / POS base (Excel, import format)"
+msgstr "Toute la base agents / POS (Excel, format d'import)"
 
 #, python-format
 msgid ""

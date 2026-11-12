@@ -56,7 +56,7 @@ class Zone(models.Model):
         from .ledger import Account, Transaction
 
         out = []
-        n = User.objects.filter(subzone=self).exclude(role=User.Role.JUNIOR).count()
+        n = User.objects.filter(subzone=self).exclude(role__in=[User.Role.JUNIOR, User.Role.MARKET]).count()
         if n:
             out.append(_("%(n)s cashier(s)") % {"n": n})
         n = Account.objects.filter(zone=self, kind=Account.Kind.CASH_DRAWER).count()
@@ -149,8 +149,8 @@ class User(AbstractUser):
     subzone = models.ForeignKey(
         Zone, null=True, blank=True, on_delete=models.PROTECT, related_name="cashiers",
         verbose_name=_("zone"),
-        help_text="Cashiers: the subzone they work in. Junior managers: the zone they supervise (a master zone covers "
-                  "all its subzones).",
+        help_text="Cashiers: the subzone they work in. Junior managers and market supervisors: the zone they supervise "
+                  "(a master zone covers all its subzones).",
     )
     counterparty = models.OneToOneField(
         "Counterparty", null=True, blank=True, on_delete=models.PROTECT, related_name="login_user",
@@ -279,6 +279,27 @@ class User(AbstractUser):
         """Zone a junior manager supervises (None = everything)."""
         return self.subzone if self.is_junior else None
 
+    @property
+    def market_zone(self):
+        """The subzone (or master zone) a market supervisor is assigned to."""
+        return self.subzone if self.is_market and self.subzone_id else None
+
+    def market_zone_ids(self):
+        """Zone ids a market supervisor follows (his zone and, for a master zone, its subzones); None = all."""
+        z = self.market_zone
+        if z is None:
+            return None
+        return [z.id] + list(Zone.objects.filter(parent=z).values_list("id", flat=True))
+
+    def pos_scope_q(self, prefix=""):
+        """Agents / POS a supervisor follows: those of the market supervisor's zone (by microzone, else by master
+        zone); everything for the others."""
+        ids = self.market_zone_ids()
+        if ids is None:
+            return Q()
+        return Q(**{f"{prefix}microzone__subzone_id__in": ids}) | Q(**{f"{prefix}microzone__isnull": True,
+                                                                          f"{prefix}master_zone_id__in": ids})
+
     def zone_ids_in_scope(self):
         """Ids of the zones (master + subzones) a junior manager may see."""
         z = self.scope_zone
@@ -300,6 +321,8 @@ class User(AbstractUser):
             raise ValidationError(_("A shop manager must be assigned a shop."))
         if self.role == self.Role.JUNIOR and not self.subzone_id:
             raise ValidationError(_("A junior manager must be assigned the zone they supervise."))
+        if self.role == self.Role.MARKET and not self.subzone_id:
+            raise ValidationError(_("A market supervisor must be assigned the subzone he follows."))
         if self.role == self.Role.CASHIER:
             if not self.subzone_id:
                 raise ValidationError(_("A cashier must belong to a subzone."))

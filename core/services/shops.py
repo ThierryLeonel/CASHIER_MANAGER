@@ -124,7 +124,8 @@ def shop_for(user, shop=None, duty=None):
 
 def visible_shops(user):
     if user.sees_all_shops:
-        return Shop.objects.all()
+        ids = user.market_zone_ids()  # a market supervisor: the shops of his zone
+        return Shop.objects.all() if ids is None else Shop.objects.filter(zone_id__in=ids)
     if user.is_shop_manager and user.shop_id:
         return Shop.objects.filter(pk=user.shop_id)
     return Shop.objects.none()

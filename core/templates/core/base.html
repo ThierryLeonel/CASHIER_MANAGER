@@ -102,6 +102,8 @@
     <div class="side-group">{% trans "Commercial agents supervision" %}</div>
     <a href="{% url 'agents_supervision' %}" class="{% if u == 'agents_supervision' or u == 'dashboard' %}on{% endif %}">{% icon "home" %}<span>{% trans "Overview" %}</span></a>
     <a href="{% url 'customers' %}" class="{% if u == 'customers' or u == 'customer_new' or u == 'customer_edit' or u == 'agent_roads' %}on{% endif %}">{% icon "users" %}<span>{% trans "Agents & POS" %}</span></a>
+    <a href="{% url 'agent_oos' %}" class="{% if u == 'agent_oos' %}on{% endif %}">{% icon "alert" %}<span>{% trans "OOS" %}</span></a>
+    <a href="{% url 'agent_destock' %}" class="{% if u == 'agent_destock' %}on{% endif %}">{% icon "destock" %}<span>{% trans "Possible destocash" %}</span></a>
     <a href="{% url 'report' 'pos_stock' %}" class="{% if request.path == '/reports/pos_stock/' %}on{% endif %}">{% icon "alert" %}<span>{% trans "POS stock" %}</span></a>
     <a href="{% url 'report' 'pos_coverage' %}" class="{% if request.path == '/reports/pos_coverage/' %}on{% endif %}">{% icon "chart" %}<span>{% trans "POS supplied" %}</span></a>
     <a href="{% url 'report' 'supply_due' %}" class="{% if request.path == '/reports/supply_due/' %}on{% endif %}">{% icon "wallet" %}<span>{% trans "Supplies due" %}</span></a>

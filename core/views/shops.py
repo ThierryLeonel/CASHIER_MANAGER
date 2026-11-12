@@ -141,7 +141,7 @@ def shops(request):
     if user.is_shop_manager:
         return redirect("shop_detail", pk=user.shop_id) if user.shop_id else render(request, "core/shop/no_shop.html")
     d_from, d_to = _period(request)
-    qs = list(Shop.objects.filter(active=True).select_related("zone"))
+    qs = list(sh.visible_shops(user).filter(active=True).select_related("zone"))
     by, svc, ret = _activity(qs, d_from, d_to)
     rows, tot = [], {"cash": Decimal(0), "uve": Decimal(0), "er": Decimal(0), "owed": Decimal(0),
                      "owed_by": Decimal(0), "com": Decimal(0),

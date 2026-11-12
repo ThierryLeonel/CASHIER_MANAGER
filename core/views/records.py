@@ -39,6 +39,9 @@ def _customer_filter(user, params):
     microzones = MicroZone.objects.select_related("subzone", "agent").order_by("subzone__name", "name")
     if user.scope_zone is not None:  # junior manager: his zone only
         microzones = microzones.filter(subzone__parent=user.scope_zone)
+    if user.market_zone_ids() is not None:  # market supervisor: his zone only
+        qs = qs.filter(user.pos_scope_q())
+        microzones = microzones.filter(subzone_id__in=user.market_zone_ids())
     if mz == "none":
         qs = qs.filter(microzone__isnull=True)
     elif mz.isdigit():
@@ -88,6 +91,7 @@ def stock_download(request):
     elif request.user.scope_zone is not None:
         z = request.user.scope_zone
         qs = qs.filter(Q(microzone__subzone__parent=z) | Q(master_zone=z))
+    qs = qs.filter(request.user.pos_scope_q())  # market supervisor: his zone
     if request.GET.get("out") == "1":
         qs = qs.filter(kind=Counterparty.Kind.POS, er_stock__lt=limit)
     from django.db.models import F
@@ -113,6 +117,7 @@ def call_database(request):
     elif request.user.scope_zone is not None:
         z = request.user.scope_zone
         qs = qs.filter(Q(microzone__subzone__parent=z) | Q(microzone__subzone=z) | Q(master_zone=z))
+    qs = qs.filter(request.user.pos_scope_q())  # market supervisor: his zone
     if request.GET.get("kind") in ("AGENT", "POS"):
         qs = qs.filter(kind=request.GET["kind"])
     qs = qs.order_by("kind", "microzone__subzone__name", "microzone__name", "name")

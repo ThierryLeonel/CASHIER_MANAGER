@@ -95,7 +95,13 @@ def run_service(request, form, fn, *, success, on_success):
 def can_view_txn(user, t):
     if user.sees_all_zones:
         return True
-    if user.is_market:  # the shops' records and everything with an agent / POS
+    if user.is_market:  # the shops' records and everything with an agent / POS (of his zone)
+        ids = user.market_zone_ids()
+        if ids is not None:
+            from core.models import Counterparty
+
+            mine = Counterparty.objects.filter(user.pos_scope_q()).filter(pk__in=[t.counterparty_id, t.counterparty_2_id])
+            return bool((t.shop_id and t.shop.zone_id in ids) or mine.exists())
         return bool(t.shop_id or t.counterparty_id or t.counterparty_2_id) or Entry.objects.filter(
             transaction=t, account__kind="CUSTOMER").exists()
     if user.is_shop_user:  # shops see only their own shop's entries, and staff only their duties' operations
@@ -297,27 +303,40 @@ def dashboard(request):
     return render(request, "core/dashboard_staff.html", ctx)
 
 
+def _market_recent(user):
+    from core.models import Counterparty
+
+    qs = Transaction.objects.filter(Q(counterparty__isnull=False) | Q(shop__isnull=False))
+    ids = user.market_zone_ids()
+    if ids is not None:
+        mine = Counterparty.objects.filter(user.pos_scope_q()).values("id")
+        qs = qs.filter(Q(counterparty_id__in=mine) | Q(counterparty_2_id__in=mine) | Q(shop__zone_id__in=ids))
+    return qs.select_related("counterparty", "shop", "entered_by").order_by("-posted_at")[:15]
+
+
 def market_home(request):
     """Market supervisor: the shops and the commercial agents / POS at a glance."""
-    from core.models import Counterparty, Shop
+    from core.models import Counterparty
     from core.services import shops as sh
     from core.services.branding import company
 
     co = company()
-    pos = Counterparty.objects.filter(kind=Counterparty.Kind.POS, active=True)
-    cust = Entry.objects.filter(account__kind=Account.Kind.CUSTOMER).values("account_id").annotate(s=Sum("amount"))
+    user = request.user
+    scope = Counterparty.objects.filter(user.pos_scope_q())  # a market supervisor: his zone only
+    pos = scope.filter(kind=Counterparty.Kind.POS, active=True)
+    cust = Entry.objects.filter(account__kind=Account.Kind.CUSTOMER, account__counterparty__in=scope) \
+        .values("account_id").annotate(s=Sum("amount"))
     shops = []
-    for s in Shop.objects.filter(active=True).order_by("name"):
+    for s in sh.visible_shops(user).filter(active=True).order_by("name"):
         b = sh.shop_balances(s)
         shops.append((s, b.get(Account.Kind.CASH_DRAWER, 0), b.get(Account.Kind.UVE, 0), b.get(Account.Kind.ER, 0)))
     ctx = {
-        "today": douala_today(), "n_agents": Counterparty.objects.filter(kind="AGENT", active=True).count(),
+        "today": douala_today(), "n_agents": scope.filter(kind="AGENT", active=True).count(), "zone": user.market_zone,
         "n_pos": pos.count(), "n_out": pos.filter(er_stock__lt=co.out_of_stock_er).count(),
         "n_low": pos.filter(er_stock__gte=co.out_of_stock_er, er_stock__lt=co.low_stock_er).count(),
         "owed": sum((r["s"] for r in cust if r["s"] > 0), 0), "due": -sum((r["s"] for r in cust if r["s"] < 0), 0),
         "shops": shops,
-        "recent": Transaction.objects.filter(Q(counterparty__isnull=False) | Q(shop__isnull=False))
-        .select_related("counterparty", "shop", "entered_by").order_by("-posted_at")[:15],
+        "recent": _market_recent(user),
     }
     return render(request, "core/dashboard_market.html", ctx)
 

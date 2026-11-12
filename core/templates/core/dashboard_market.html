@@ -2,7 +2,7 @@
 {% block title %}{% if user.is_market %}{% trans "Market supervision" %}{% else %}{% trans "Commercial agents supervision" %}{% endif %}{% endblock %}
 {% block topbar %}{% if user.is_market %}{% trans "Market supervision" %}{% else %}{% trans "Commercial agents supervision" %}{% endif %}{% endblock %}
 {% block content %}
-<h1>{% if user.is_market %}{% trans "Market supervision" %}{% else %}{% trans "Commercial agents supervision" %}{% endif %}</h1>
+<h1>{% if user.is_market %}{% trans "Market supervision" %}{% else %}{% trans "Commercial agents supervision" %}{% endif %}{% if zone %} — {{ zone.name }}{% endif %}</h1>
 <p class="small muted meta">{% trans "Shops, commercial agents and POS: records, transactions, stock and reports." %}</p>
 <div class="bal-row">
   <a class="bal k-UVE bal-link" href="{% url 'customers' %}?kind=AGENT"><span class="bal-label">{% trans "Commercial agents" %}</span><span class="bal-value">{{ n_agents }}</span><span class="bal-unit">{% trans "active" %}</span></a>
@@ -13,6 +13,8 @@
 <div class="stock-actions">
   <a class="btn" href="{% url 'call_database' %}">⬇ {% trans "Download call database" %}</a>
   <a class="btn" href="{% url 'stock_download' %}">⬇ {% trans "Download POS stock (Excel)" %}</a>
+  <a class="btn" href="{% url 'agent_oos' %}">{% trans "OOS" %}</a>
+  <a class="btn" href="{% url 'agent_destock' %}">{% trans "Possible destocash" %}</a>
   <a class="btn" href="{% url 'report' 'pos_coverage' %}">{% trans "POS supplied by commercial agents" %}</a>
   <a class="btn" href="{% url 'reports' %}">{% trans "All reports" %}</a>
   <a class="btn" href="{% url 'shop_reports' %}">{% trans "Shop reports" %}</a>

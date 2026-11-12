@@ -2,10 +2,10 @@
 {% block title %}{% trans "Possible destocash" %}{% endblock %}
 {% block topbar %}{% trans "Possible destocash" %}{% endblock %}
 {% block content %}
-<h1>{% trans "Possible destocash" %}</h1>
+<h1>{% trans "Possible destocash" %}{% if zone %} — {{ zone.name }}{% endif %}</h1>
 <p class="small muted meta">{% trans "Your POS holding OM stock, from the most to the least. Destocash = give the POS cash for its OM." %}{% if last %} {% blocktrans with d=last|date:"d/m/Y H:i" %}Stock of {{ d }}.{% endblocktrans %}{% endif %}</p>
 <div class="bal-row">
-  <div class="bal k-UVE"><span class="bal-label">{% trans "OM stock of my POS" %}</span><span class="bal-value">{{ tot.om|default:0|fcfa }}</span><span class="bal-unit">FCFA</span></div>
+  <div class="bal k-UVE"><span class="bal-label">{% if supervise %}{% trans "OM stock of the POS" %}{% else %}{% trans "OM stock of my POS" %}{% endif %}</span><span class="bal-value">{{ tot.om|default:0|fcfa }}</span><span class="bal-unit">FCFA</span></div>
   <div class="bal k-CASH"><span class="bal-label">{% trans "POS with OM stock" %}</span><span class="bal-value">{{ tot.n }}</span><span class="bal-unit">POS</span></div>
 </div>
 <form class="oos-search" method="get">
@@ -19,7 +19,7 @@
 {% if page.paginator.num_pages > 1 %}<div class="pager">{% if page.has_previous %}<a class="btn small" href="?{{ keep }}&amp;page={{ page.previous_page_number }}">← {% trans "Previous" %}</a>{% endif %}
 <span class="small">{% blocktrans with n=page.number t=page.paginator.num_pages c=page.paginator.count %}Page {{ n }} of {{ t }} · {{ c }} POS{% endblocktrans %}</span>
 {% if page.has_next %}<a class="btn small" href="?{{ keep }}&amp;page={{ page.next_page_number }}">{% trans "Next" %} →</a>{% endif %}</div>{% endif %}
-<dialog class="pick-dlg" id="destock-dlg" aria-labelledby="destock-title">
+{% if not supervise %}<dialog class="pick-dlg" id="destock-dlg" aria-labelledby="destock-title">
   <form method="post" action="{% url 'agent_destock_record' %}">{% csrf_token %}
     <input type="hidden" name="pos" value=""><input type="hidden" name="how" value="">
     <input type="hidden" name="idem" value=""><input type="hidden" name="next" value="{{ request.get_full_path }}">
@@ -30,9 +30,9 @@
       <input type="text" name="amount" inputmode="numeric" class="money-input" required autocomplete="off"></label>
     <div class="row"><button class="btn" type="button" data-close>{% trans "Cancel" %}</button><button class="btn primary" type="submit">{% trans "Save" %}</button></div>
   </form>
-</dialog>
+</dialog>{% endif %}
 {% endblock %}
-{% block scripts %}<script>
+{% block scripts %}{% if not supervise %}<script>
 (function () {
   var d = document.getElementById('destock-dlg'), fm = d.querySelector('form');
   function uuid() { return (crypto.randomUUID ? crypto.randomUUID() : 'xxxxxxxx-xxxx-4xxx-8xxx-xxxxxxxxxxxx'.replace(/x/g, function () { return (Math.random() * 16 | 0).toString(16); })); }
@@ -52,4 +52,4 @@
   });
   fm.addEventListener('submit', function () { fm.querySelector('[type=submit]').disabled = true; });
 })();
-</script>{% endblock %}
+</script>{% endif %}{% endblock %}

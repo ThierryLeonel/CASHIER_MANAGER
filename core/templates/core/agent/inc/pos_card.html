@@ -1,8 +1,8 @@
 {% load i18n cashier %}<div id="pos-{{ p.pk }}" class="pos-card{% if lvl %} lvl-{{ lvl|lower }}{% endif %}{% if mode == 'destock' %} lvl-om{% endif %}{% if not p.active %} inactive{% endif %}">
   {% if rank %}<span class="pos-rank">{{ rank }}</span>{% endif %}
-  <a class="pos-name" href="{% url 'agent_pos_detail' p.pk %}">{{ p.name }}</a>
+  <a class="pos-name" href="{% if supervise %}{% url 'report' 'statement' %}?preset=all&amp;customer_sim={{ p.business_sim }}{% else %}{% url 'agent_pos_detail' p.pk %}{% endif %}">{{ p.name }}</a>
   {% if p.om_account_name and p.om_account_name != p.name %}<div class="pos-biz">{{ p.om_account_name }}</div>{% endif %}
-  <div class="pos-sim">{{ p.business_sim|sim }}{% if p.microzone %} · {{ p.microzone.name }}{% endif %}{% if mode == 'global' %}{% if p.microzone.agent %} · {{ p.microzone.agent.name }}{% endif %}{% if mine_mz %} <span class="badge acc">{% trans "mine" %}</span>{% endif %}{% endif %}</div>
+  <div class="pos-sim">{{ p.business_sim|sim }}{% if p.microzone %} · {{ p.microzone.name }}{% endif %}{% if supervise and p.microzone.agent %} · {{ p.microzone.agent.name }}{% endif %}{% if mode == 'global' %}{% if p.microzone.agent %} · {{ p.microzone.agent.name }}{% endif %}{% if mine_mz %} <span class="badge acc">{% trans "mine" %}</span>{% endif %}{% endif %}</div>
   {% if mode == 'global' %}<div class="pos-info small">
     {% if p.microzone %}<span>{{ p.microzone.subzone.name }} › {{ p.microzone.name }}</span>{% endif %}
     {% if p.whatsapp %}<a href="https://wa.me/237{{ p.whatsapp }}">WhatsApp {{ p.whatsapp|sim }}</a>{% endif %}
@@ -19,9 +19,9 @@
   {% if mode == 'global' and owed or mode == 'global' and last %}<div class="pos-extra small">{% if owed %}<span class="{% if owed|negative %}neg{% endif %}">{% if owed|negative %}{% trans "I owe" %}{% else %}{% trans "Owes me" %}{% endif %} {{ owed|absval|fcfa }}</span>{% endif %}{% if last %}<span>{% trans "Last supply" %} {{ last|date:"d/m" }}</span>{% endif %}</div>{% endif %}
   <div class="pos-foot">
     {% if mode == 'destock' %}<span class="pos-lvl">{% trans "POSSIBLE DESTOCASH" %}</span>
-    <span class="pos-btns">{% include "core/inc/contact_btns.html" with c=p %}<button type="button" class="btn small primary" data-destock="CASH" data-pos="{{ p.pk }}" data-name="{{ p.name }}" data-om="{{ p.uve_stock|default:0 }}">{% trans "Cash" %}</button><button type="button" class="btn small primary" data-destock="FLOAT" data-pos="{{ p.pk }}" data-name="{{ p.name }}" data-om="{{ p.uve_stock|default:0 }}">{% trans "Float" %}</button></span>
+    <span class="pos-btns">{% include "core/inc/contact_btns.html" with c=p %}{% if not supervise %}<button type="button" class="btn small primary" data-destock="CASH" data-pos="{{ p.pk }}" data-name="{{ p.name }}" data-om="{{ p.uve_stock|default:0 }}">{% trans "Cash" %}</button><button type="button" class="btn small primary" data-destock="FLOAT" data-pos="{{ p.pk }}" data-name="{{ p.name }}" data-om="{{ p.uve_stock|default:0 }}">{% trans "Float" %}</button>{% endif %}</span>
     {% else %}<span class="pos-lvl">{% if lvl == 'OUT' %}{% trans "OUT OF STOCK" %}{% elif lvl == 'LOW' %}{% trans "LOW STOCK" %}{% elif lvl == 'IN' %}{% trans "IN STOCK" %}{% else %}{% trans "no stock data" %}{% endif %}</span>
     <span class="pos-btns">{% include "core/inc/contact_btns.html" with c=p %}{% if mode == 'global' %}<a class="btn small" data-return href="{% url 'agent_pos_edit' p.pk %}">✎ {% trans "Edit" %}</a>{% endif %}
-    {% if p.active %}<a class="btn small{% if lvl == 'OUT' or lvl == 'LOW' %} primary{% endif %}" data-return href="{% url 'agent_supply' %}?pos={{ p.business_sim }}">{% trans "Supply" %}</a>{% else %}<span class="badge">{% trans "inactive" %}</span>{% endif %}</span>{% endif %}
+    {% if supervise %}{% elif p.active %}<a class="btn small{% if lvl == 'OUT' or lvl == 'LOW' %} primary{% endif %}" data-return href="{% url 'agent_supply' %}?pos={{ p.business_sim }}">{% trans "Supply" %}</a>{% else %}<span class="badge">{% trans "inactive" %}</span>{% endif %}</span>{% endif %}
   </div>
 </div>

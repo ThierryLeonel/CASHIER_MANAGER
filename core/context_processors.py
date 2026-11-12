@@ -27,7 +27,7 @@ def app_context(request):
 NEUTRAL_PREFIXES = ("/capital/", "/transactions/", "/account/", "/act-as/")
 # super administrator: the administration lives in its own "Admin" space
 # commercial agents supervision space (senior manager, finance, super admin, market supervisor)
-AGENT_PREFIXES = ("/supervision/agents/", "/customers/", "/stock/")
+AGENT_PREFIXES = ("/supervision/agents/", "/customers/", "/stock/", "/agent/oos/", "/agent/destocash/")
 ADMIN_PREFIXES = ("/administration/", "/setup/", "/capital/", "/shops/manage/", "/shops/setup/",
                   "/shops/opening-balances/")
 

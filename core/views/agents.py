@@ -105,7 +105,19 @@ def agent_pos(request):
                                                         "base": base.urlencode()})
 
 
-@roles_required(R.AGENT)
+SUPERVISORS = (R.MANAGER, R.FINANCE, R.SUPERADMIN, R.MARKET)
+
+
+def _followed_pos(request):
+    """The POS of the OOS / possible destocash lists: an agent's own POS (his microzones); for the supervisors
+    every POS, a market supervisor those of his zone."""
+    qs = Counterparty.objects.filter(kind=Counterparty.Kind.POS, active=True)
+    if request.user.is_agent:
+        return qs.filter(microzone__agent=request.user.counterparty)
+    return qs.filter(request.user.pos_scope_q())
+
+
+@roles_required(R.AGENT, *SUPERVISORS)
 def agent_oos(request):
     """OOS: only the logged-in agent's POS (those of the microzones he is in charge of), from out of stock to the
     highest ER stock; POS without an imported stock come last."""
@@ -114,10 +126,8 @@ def agent_oos(request):
 
     from core.services.branding import company
 
-    agent = request.user.counterparty
     limit, low = company().out_of_stock_er, company().low_stock_er
-    mine = Counterparty.objects.filter(kind=Counterparty.Kind.POS, active=True, microzone__agent=agent) \
-        .select_related("microzone")
+    mine = _followed_pos(request).select_related("microzone__agent")
     q = (request.GET.get("q") or "").strip()
     qs = mine
     if q:
@@ -144,17 +154,16 @@ def agent_oos(request):
         "level": level, "out": level == "OUT", "keep": keep.urlencode(), "last": last, "tot": tot,
         "n_pos": mine.count(), "n_out": mine.filter(er_stock__lt=limit).count(),
         "n_low": mine.filter(er_stock__gte=limit, er_stock__lt=low).count(),
-        "n_in": mine.filter(er_stock__gte=low).count(), "n_unknown": mine.filter(er_stock=None).count()})
+        "n_in": mine.filter(er_stock__gte=low).count(), "n_unknown": mine.filter(er_stock=None).count(),
+        "supervise": not request.user.is_agent, "zone": request.user.market_zone})
 
 
-@roles_required(R.AGENT)
+@roles_required(R.AGENT, *SUPERVISORS)
 def agent_destock(request):
     """Possible destocash: the logged-in agent's POS holding OM (UVE) stock, from the most to the least."""
     from django.core.paginator import Paginator
 
-    agent = request.user.counterparty
-    mine = Counterparty.objects.filter(kind=Counterparty.Kind.POS, active=True, microzone__agent=agent,
-                                       uve_stock__gt=0).select_related("microzone")
+    mine = _followed_pos(request).filter(uve_stock__gt=0).select_related("microzone__agent")
     q = (request.GET.get("q") or "").strip()
     qs = mine
     if q:
@@ -169,7 +178,8 @@ def agent_destock(request):
     keep.pop("page", None)
     tot = mine.aggregate(om=Sum("uve_stock"), n=Count("id"))
     return render(request, "core/agent/destock.html", {
-        "page": page, "q": q, "keep": keep.urlencode(), "tot": tot,
+        "page": page, "q": q, "keep": keep.urlencode(), "tot": tot, "supervise": not request.user.is_agent,
+        "zone": request.user.market_zone,
         "last": mine.exclude(stock_at=None).order_by("-stock_at").values_list("stock_at", flat=True).first()})
 
 

@@ -458,3 +458,24 @@ Every transaction stores its **recording cashier** (`Transaction.cashier`), and 
 - Its menu: Overview, Agents & POS, POS stock, POS supplied, Supplies due, Agent / POS statement, Agent paybacks
   (not for the market supervisor), Transactions, All reports, Download call database.
 - Cashiers and junior managers get 403 on `/supervision/agents/`.
+
+## Market supervisor's subzone, OOS and possible destocash for supervisors, admin download of agents & POS
+- **The market supervisor is assigned a zone** (`User.subzone`, required by `User.clean`). It is usually a subzone; a
+  master zone covers all its subzones. Migration 0053 changes only the help text.
+  - `User.market_zone`, `market_zone_ids()`, `pos_scope_q()`.
+  - Agents / POS in scope: microzone in the zone, else (no microzone) master zone in the zone.
+- **What the zone limits:** everything the market supervisor sees is limited to his zone.
+  - The overview: counts, owed, shops, latest records.
+  - Agents & POS, the call database and the stock download.
+  - Transactions he may open: a shop of his zone or an agent / POS of his zone.
+  - Reports: the zone is forced in `Filters.from_form`, and the subzone / cashier pickers are limited to it.
+  - Shops: `visible_shops` returns the shops whose zone is in his zone.
+- **OOS and Possible destocash** (`agent_oos`, `agent_destock`) are open to the supervisors as well as the agents:
+  - Market supervisor: the POS of his zone. Senior manager, finance and super admin: every POS.
+  - The cards show the agent in charge and keep Call / WhatsApp. There is no Supply / Edit / Cash / Float (the
+    supervisors follow, they do not record). The POS name opens its statement.
+  - Both pages are in the Agents space menu and on the overview.
+- **Super admin downloads agents & POS:**
+  - Import page: "Download agents & POS", "Agents only" and "POS only".
+  - Administration home: a "Download agents & POS" tile.
+  - Same file as the call database (import format + agent in charge, active, stock).
