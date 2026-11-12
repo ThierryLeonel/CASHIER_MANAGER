@@ -336,6 +336,14 @@ msgid "%(u)s is not a shop staff account."
 msgstr "%(u)s n'est pas un compte du personnel de boutique."
 
 #, python-format
+msgid "%(who)s paid %(amt)s FCFA. Still owed: %(left)s FCFA."
+msgstr "%(who)s a payé %(amt)s FCFA. Reste dû : %(left)s FCFA."
+
+#, python-format
+msgid "%(who)s paid %(amt)s FCFA: debt closed."
+msgstr "%(who)s a payé %(amt)s FCFA : dette soldée."
+
+#, python-format
 msgid ""
 "%(who)s sent you %(total)s FCFA on %(date)s. Already paid back: %(paid)s "
 "FCFA. Still owed: %(left)s FCFA. The payment goes back from your accounts to"
@@ -943,6 +951,9 @@ msgstr "Montant donné maintenant (FCFA)"
 
 msgid "Amount must be greater than zero."
 msgstr "Le montant doit être supérieur à zéro."
+
+msgid "Amount received"
+msgstr "Montant reçu"
 
 msgid "Amount received (FCFA)"
 msgstr "Montant reçu (FCFA)"
@@ -2876,6 +2887,9 @@ msgstr "Saisissez le montant reçu dans au moins un mode de paiement."
 msgid "Enter the amount received in cash and / or UVE."
 msgstr "Saisissez le montant reçu en espèces et / ou UVE."
 
+msgid "Enter the amount received."
+msgstr "Saisissez le montant reçu."
+
 msgid "Enter the amount supplied in cash, UVE and/or ER."
 msgstr "Saisissez le montant fourni en espèces, UVE et/ou ER."
 
@@ -4483,6 +4497,10 @@ msgstr ""
 "écritures du portail)"
 
 #, python-format
+msgid "Only %(amt)s FCFA is owed: use Paid instead."
+msgstr "Seulement %(amt)s FCFA est dû : utilisez Payé."
+
+#, python-format
 msgid "Only %(amt)s FCFA is still owed on %(ref)s."
 msgstr "Il ne reste que %(amt)s FCFA dû sur %(ref)s."
 
@@ -5059,6 +5077,9 @@ msgstr "Payé par les agents"
 msgid "Paid cash"
 msgstr "Payé espèces"
 
+msgid "Paid float"
+msgstr "Payé en float"
+
 msgid "Paid float (MTN)"
 msgstr "Payé en float (MTN)"
 
@@ -5093,6 +5114,9 @@ msgstr "Payé en espèces, UVE ou float MTN"
 
 msgid "Paid in float"
 msgstr "Payé en float"
+
+msgid "Paid in full"
+msgstr "Payé en totalité"
 
 msgid "Paid now"
 msgstr "Payé maintenant"
@@ -5147,6 +5171,9 @@ msgid ""
 msgstr ""
 "Une partie de cette obligation semble déjà réglée : le transfert sera refusé"
 " pour ne pas déplacer une dette réglée. Demandez à un responsable."
+
+msgid "Partial payment"
+msgstr "Paiement partiel"
 
 msgid "Passport"
 msgstr "Passeport"
@@ -5533,6 +5560,9 @@ msgstr "Enregistrer le solde d'ouverture"
 
 msgid "Record opening balances"
 msgstr "Enregistrer les soldes d'ouverture"
+
+msgid "Record payment"
+msgstr "Enregistrer un paiement"
 
 msgid "Record services done"
 msgstr "Enregistrer les services rendus"
@@ -5944,8 +5974,19 @@ msgstr "Gérant principal des boutiques"
 msgid "Senior shop manager(s):"
 msgstr "Responsable(s) principal(aux) des boutiques :"
 
+msgid "Sent"
+msgstr "Envoyé"
+
 msgid "Sent (sender's records)"
 msgstr "Envoyé (enregistrements de l'expéditeur)"
+
+msgid ""
+"Sent = what each one recorded leaving his own accounts; received = what each"
+" one recorded as entries. Each record stands alone."
+msgstr ""
+"Envoyé = ce que chacun a enregistré sortant de ses propres comptes ; reçu = "
+"ce que chacun a enregistré comme entrées. Chaque enregistrement est "
+"indépendant."
 
 msgid ""
 "Sent = what each one recorded leaving his own accounts; received = what he "
@@ -6953,6 +6994,9 @@ msgstr ""
 msgid "This client information is required."
 msgstr "Cette information du client est obligatoire."
 
+msgid "This client owes you nothing any more."
+msgstr "Ce client ne vous doit plus rien."
+
 msgid "This day is earlier than today: close it when you are ready."
 msgstr ""
 "Cette journée est antérieure à aujourd'hui : clôturez-la dès que possible."
@@ -7334,6 +7378,9 @@ msgstr ""
 
 msgid "Transfers between company accounts"
 msgstr "Transferts entre comptes de l'entreprise"
+
+msgid "Transfers between parties (sent − entered)"
+msgstr "Transferts entre parties (envoyé − entré)"
 
 msgid "Transfers in transit (sent, not yet entered by the receiver)"
 msgstr ""
@@ -8495,6 +8542,12 @@ msgstr "reçu en espèces"
 
 msgid "received in float"
 msgstr "reçu en float"
+
+msgid "recorded by the receiver"
+msgstr "enregistré par le destinataire"
+
+msgid "recorded by the sender"
+msgstr "enregistré par l'expéditeur"
 
 msgid "recorded entries"
 msgstr "des écritures enregistrées"

@@ -649,3 +649,15 @@ table.t tr.oos td { background: #fff1f0; }
 .sent-item.on { border-color: #2e90fa; background: #eff8ff; }
 .sent-item .sent-who { flex: 1 1 200px; display: flex; flex-direction: column; min-width: 0; }
 .sent-item .sent-amt { white-space: nowrap; }
+
+.btn.wa { background: #25d366; border-color: #25d366; color: #fff; }
+.btn.wa:hover { background: #1ebe5b; }
+.btn.wa svg { vertical-align: -2px; }
+
+/* debtors: one-tap payments */
+.debtor .d-pay { display: flex; flex-wrap: wrap; gap: 6px; }
+.debtor .d-partial summary { list-style: none; display: inline-block; cursor: pointer; }
+.debtor .d-partial summary::-webkit-details-marker { display: none; }
+.debtor .d-partial form { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.debtor .d-partial input[name=amount] { flex: 1 1 120px; min-width: 0; }
+.debtor .d-pay, .debtor .d-partial { grid-column: 1 / -1; }

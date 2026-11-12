@@ -628,3 +628,36 @@ class PosStock(OrgMixin, TestCase):
                                                  "other_phone": "", "address": "x", "notes": "",
                                                  "next": "/agent/pos/?page=2"})
         self.assertRedirects(r, "/agent/pos/?page=2", fetch_redirect_response=False)
+
+    def test_debtors_one_tap_payments_and_whatsapp(self):
+        from core.models import Counterparty
+        from core.services import agents as ag
+
+        p = self.p1
+        Counterparty.objects.filter(pk=p.pk).update(whatsapp="677112233")
+        ag.record_supply(self.agent_user, client_kind="POS", pos_sim=p.business_sim, uve=D(30000))
+        c = self.client_class()
+        c.login(username=self.agent_user.username, password=PW)
+        page = c.get("/agent/debtors/")
+        self.assertContains(page, "Paid cash")
+        self.assertContains(page, "Partial payment")
+        self.assertContains(page, "https://wa.me/237")
+        row = next(g for g in page.context["rows"] if g["pos"] == p)
+        # partial: 10 000 in UVE
+        r = c.post("/agent/debtors/pay/", {"client": row["key"], "idem": str(uuid.uuid4()), "partial": "1",
+                                           "amount": "10 000", "method": "UVE"})
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(ag.pos_owed(self.a1, p), D(20000))
+        # more than owed is refused
+        c.post("/agent/debtors/pay/", {"client": row["key"], "idem": str(uuid.uuid4()), "partial": "1",
+                                       "amount": "50 000", "method": "CASH"})
+        self.assertEqual(ag.pos_owed(self.a1, p), D(20000))
+        # Paid cash: the rest, debt closed; the same tap again records nothing more
+        idem = str(uuid.uuid4())
+        c.post("/agent/debtors/pay/", {"client": row["key"], "idem": idem, "method": "CASH"})
+        c.post("/agent/debtors/pay/", {"client": row["key"], "idem": idem, "method": "CASH"})
+        self.assertEqual(ag.pos_owed(self.a1, p), D(0))
+        self.assertNotIn(p, [g["pos"] for g in c.get("/agent/debtors/").context["rows"]])
+        # WhatsApp on the cards
+        self.assertContains(c.get("/agent/pos/"), "https://wa.me/237677112233")
+        self.assertContains(c.get("/agent/oos/"), "wa.me/237")

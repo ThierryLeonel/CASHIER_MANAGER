@@ -68,6 +68,7 @@ def absval(v):
 
 
 _ICONS = {
+    "whatsapp": '<path d="M3 21l1.6-4.7A8.5 8.5 0 1 1 8 19.6L3 21z"/><path d="M9 9.5c0 3 2.5 5.5 5.5 5.5l1.2-1.4-1.9-1-1 .7a4 4 0 0 1-2-2l.7-1-1-1.9z"/>',
     "home": '<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M10 21v-6h4v6"/>',
     "supply": '<path d="M12 19V5"/><path d="m5 12 7-7 7 7"/>',
     "payment": '<path d="M12 5v14"/><path d="m19 12-7 7-7-7"/>',
@@ -134,3 +135,13 @@ def no_accounts(bound_field):
     if not isinstance(getattr(bound_field, "form", None), BaseEntryForm):  # entry forms only
         return False
     return isinstance(f, ModelChoiceField) and f.queryset.model is Account and not f.queryset.exists()
+
+
+@register.filter
+def wa_link(cp):
+    """WhatsApp chat link of an agent / POS: his WhatsApp contact, else his business SIM (Cameroon +237)."""
+    raw = getattr(cp, "whatsapp", "") or getattr(cp, "business_sim", "") or ""
+    digits = "".join(ch for ch in str(raw) if ch.isdigit())
+    if len(digits) == 9:
+        digits = "237" + digits
+    return f"https://wa.me/{digits}" if len(digits) >= 11 else ""

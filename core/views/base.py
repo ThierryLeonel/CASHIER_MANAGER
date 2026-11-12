@@ -118,8 +118,6 @@ def can_view_txn(user, t):
         if t.counterparty_id or t.counterparty_2_id:
             return True  # customer accounts are shared across cashiers
         held = Account.objects.filter(perm.zone_accounts_q(user)).values("id")
-        if t.in_transit and Account.objects.filter(perm.zone_accounts_q(user), pk=t.dest_account_id).exists():
-            return True  # sent to his desk, waiting for his entry
         return Entry.objects.filter(transaction=t, account_id__in=held).exists()
     return False
 

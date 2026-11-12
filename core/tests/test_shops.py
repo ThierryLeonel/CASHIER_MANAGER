@@ -87,9 +87,8 @@ class ShopMoney(OrgMixin, TestCase):
         self.assertEqual((self.bal(self.uve_f1), self.bal(self.d_f1)), (ubefore, dbefore))
         from core.services import operations as ops
 
-        e1 = ops.record_entry(self.c_f1, source="SHOP", shop=self.shop, product="UVE", amount=D(100000))
+        ops.record_entry(self.c_f1, source="SHOP", shop=self.shop, product="UVE", amount=D(100000))
         ops.record_entry(self.c_f1, source="SHOP", shop=self.shop, product="CASH", amount=D(30000))
-        self.assertEqual(e1.transit_match.payment_group, t.payment_group)  # linked to the shop's record
         self.assertEqual(self.bal(self.uve_f1), ubefore + 100000)
         self.assertEqual(self.bal(self.d_f1), dbefore + 30000)
         self.assertEqual((self.b()[0], self.b()[1]), (sb[0] - 30000, sb[1] - 100000))
@@ -956,7 +955,7 @@ class DeskTransfers(OrgMixin, TestCase):
         self.assertContains(rec, "15 000")
         c2 = self.client_class()
         c2.login(username="cashier.fako2", password=PW)
-        self.assertEqual(c2.get(r["Location"]).status_code, 200)
+        self.assertEqual(c2.get(r["Location"]).status_code, 404)  # Fako 1's record is his own
 
 
 class TransfersForEveryStaffMember(OrgMixin, TestCase):
@@ -1070,7 +1069,6 @@ class TransferReconciliation(OrgMixin, TestCase):
         cap.transfer(self.finance, source=self.d_me, destination=self.bank, amount=D(5000), purpose="deposit")
         fin = self.client_for("finance")
         r = fin.get("/reports/transfers/?preset=all")
-        self.assertContains(r, "Some transfers are not entered yet")  # each receiver still has to enter his
         ops.record_entry(self.c_f2, source="DESK", desk=self.zones["fako1"], product="CASH", amount=D(50000))
         ops.record_entry(self.c_f2, source="DESK", desk=self.zones["fako1"], product="UVE", amount=D(80000))
         ops.record_entry(self.c_f2, source="SHOP", shop=self.shop, product="UVE", amount=D(30000))
@@ -1079,7 +1077,7 @@ class TransferReconciliation(OrgMixin, TestCase):
                  amount=D(10000))
         r = fin.get("/reports/transfers/?preset=all")
         self.assertContains(r, "Transfer reconciliation")
-        self.assertContains(r, "OK — everything sent was entered")
+        self.assertContains(r, "Total received")
         for txt in ("Who sent what to whom", "By desk and shop", "Shop [SAMPLE] Shop Molyko", "Shop Shop Limbe",
                     "Fako 2", "195 000"):  # 50 000 + 80 000 + 20 000 + 30 000 + 10 000 + 5 000
             self.assertContains(r, txt)
@@ -1132,10 +1130,12 @@ class ShiftClosingAndTransferPayments(OrgMixin, TestCase):
         from core.services import settlements as st
         from core.services import shop_shifts as ss
 
-        t = sh.desk_to_shop(self.c_f1, shop=self.shop, cash=D(20000), uve=D(50000))
+        sent = sh.desk_to_shop(self.c_f1, shop=self.shop, cash=D(70000))
+        self.assertFalse(sent.to_settle)  # the cashier's record is his own; the shop's entry is what it owes back
+        ss.open_shift(self.m, cash=D(300000), uve=D(800000), er=D(150000))
+        t = sh.entry(self.m, source="DESK", desk=self.zones["fako1"], product="CASH", amount=D(70000))
         self.assertTrue(t.to_settle)
         self.assertEqual(st.outstanding(t), D(70000))
-        ss.open_shift(self.m, cash=D(320000), uve=D(850000), er=D(150000))
         c = self.client_for("shop.molyko")
         detail = c.get(f"/transactions/{t.pk}/")
         self.assertContains(detail, "Pay the sender")
@@ -1173,7 +1173,8 @@ class ShiftClosingAndTransferPayments(OrgMixin, TestCase):
         from core.services import operations as ops
         from core.services import settlements as st
 
-        t = ops.record_desk_transfer(self.c_f1, desk=self.zones["fako2"], cash=D(30000))[0]
+        ops.record_desk_transfer(self.c_f1, desk=self.zones["fako2"], cash=D(30000))
+        t = ops.record_entry(self.c_f2, source="DESK", desk=self.zones["fako1"], product="CASH", amount=D(30000))
         self.assertTrue(st.can_pay(self.c_f2, t))
         self.assertEqual([h.pk for h, _o in st.unpaid_for_desk(self.zones["fako2"])], [t.pk])
         c = self.client_for("cashier.fako2")
@@ -1204,8 +1205,11 @@ class CashierTransferPayments(OrgMixin, TestCase):
         from core.services import settlements as st
         from core.services.ledger import balance
 
-        t1 = sh.to_cashier(self.o["shop_om"], desk=self.zones["fako2"], uve=D(40000))  # shop -> Fako 2
-        t2 = ops.record_desk_transfer(self.c_f1, desk=self.zones["fako2"], cash=D(25000))[0]  # Fako 1 -> Fako 2
+        sh.to_cashier(self.o["shop_om"], desk=self.zones["fako2"], uve=D(40000))  # shop -> Fako 2 (shop's record)
+        ops.record_desk_transfer(self.c_f1, desk=self.zones["fako2"], cash=D(25000))  # Fako 1's record
+        # Fako 2 records what she received: her entries are what she owes back
+        t1 = ops.record_entry(self.c_f2, source="SHOP", shop=self.shop, product="UVE", amount=D(40000))
+        t2 = ops.record_entry(self.c_f2, source="DESK", desk=self.zones["fako1"], product="CASH", amount=D(25000))
         c = self.client_for("cashier.fako2")
         home = c.get("/")
         self.assertContains(home, "Transfers received not paid back yet")

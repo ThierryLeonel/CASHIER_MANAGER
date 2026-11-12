@@ -239,8 +239,6 @@ def shop_op(request, op):
         return r
     form_class, fn, title, intro, icon = OPS[op]
     kwargs = {"op": op} if form_class in (SF.AgentDealForm, SF.PosUveForm) else {}
-    if op == "entry" and request.GET.get("match", "").isdigit():
-        kwargs["initial"] = {"match": Transaction.objects.filter(pk=request.GET["match"]).first()}
     form = form_class(request.user, request.POST or None, **kwargs)
     if request.method == "POST" and form.is_valid():
         params = form.params()

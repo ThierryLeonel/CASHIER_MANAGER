@@ -81,6 +81,7 @@ urlpatterns = [
     path("agent/pos/<int:pk>/", v.agent_pos_detail, name="agent_pos_detail"),
     path("agent/pos/search/", v.agent_pos_search, name="agent_pos_search"),
     path("agent/oos/", v.agent_oos, name="agent_oos"),
+    path("agent/debtors/pay/", v.agent_debtor_pay, name="agent_debtor_pay"),
     path("agent/destocash/", v.agent_destock, name="agent_destock"),
     path("agent/pos-supplied/", v.agent_coverage, name="agent_coverage"),
     path("agent/pos/<int:pk>/edit/", v.agent_pos_edit, name="agent_pos_edit"),

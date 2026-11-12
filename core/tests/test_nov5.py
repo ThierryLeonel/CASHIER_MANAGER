@@ -68,7 +68,8 @@ class Nov5(OrgMixin, TestCase):
         self.assertEqual(self.cbal(self.a1), owed + 85000 + 30000)
 
     def test_no_to_paying_a_transfer_back(self):
-        t = ops.record_desk_transfer(self.c_f1, desk=self.c_f2.subzone, cash=D(15000), idempotency_key=uuid.uuid4())[0]
+        ops.record_desk_transfer(self.c_f1, desk=self.c_f2.subzone, cash=D(15000), idempotency_key=uuid.uuid4())
+        t = ops.record_entry(self.c_f2, source="DESK", desk=self.c_f1.subzone, product="CASH", amount=D(15000))
         self.assertEqual(len(st.unpaid_for_desk(self.c_f2.subzone)), 1)
         c2 = self.client_for("cashier.fako2")
         self.assertContains(c2.get("/"), f"/transactions/{t.pk}/no-payback/")
@@ -107,9 +108,7 @@ class Nov5(OrgMixin, TestCase):
         cap.float_exchange(self.finance, source=flt, amount=D(50000), to="AGENT", agent=self.a2)
         self.assertEqual(self.bal(flt), D(150000))
         self.assertEqual(self.bal(self.uve_f2), uve_before)  # the cashier enters it himself
-        sent = Transaction.objects.get(type="FLOAT_EXCHANGE", dest_account=self.uve_f2)
-        e = ops.record_entry(self.c_f2, source="COMPANY", match=sent, amount=D(100000))
-        self.assertEqual(e.transit_match, sent)
+        ops.record_entry(self.c_f2, source="COMPANY", company_account=flt, product="UVE", amount=D(100000))
         self.assertEqual(self.bal(self.uve_f2), uve_before + 100000)
         self.assertEqual(self.cbal(self.a2), owed + 50000)
         with self.assertRaises(BusinessError):

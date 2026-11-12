@@ -43,7 +43,7 @@ class Account(models.Model):
         SHOP_INVENTORY = "SHOP_INVENTORY", _("Shop: stock at cost")
         COST_OF_SALES = "COST_OF_SALES", _("Cost of items sold")
         STOCK_LOSS = "STOCK_LOSS", _("Stock written off")
-        TRANSIT = "TRANSIT", _("Transfers in transit (sent, not yet entered by the receiver)")
+        TRANSIT = "TRANSIT", _("Transfers between parties (sent − entered)")
 
     ASSET_KINDS = (Kind.CASH_DRAWER, Kind.UVE, Kind.ER, Kind.MTN, Kind.BANK)
     CLOSING_KINDS = (Kind.CASH_DRAWER, Kind.UVE, Kind.ER, Kind.MTN)
@@ -273,8 +273,8 @@ class Transaction(models.Model):
     settles = models.ForeignKey("self", null=True, blank=True, on_delete=models.PROTECT, related_name="settlements",
                                 help_text="This transfer pays back that received transfer.")
     is_entry = models.BooleanField(default=False)  # recorded by the receiving cashier ("Entry")
-    # a transfer recorded by its sender only moves the sender's money (to "transfers in transit"); the receiver
-    # brings it into his own account with an Entry, linked here — so nobody records anybody else's money twice
+    # a transfer recorded by its sender only moves the sender's money; the receiver records his own Entry — the two
+    # records are independent (transit_match is kept for history only, no longer set)
     in_transit = models.BooleanField(default=False)
     transit_match = models.ForeignKey("self", null=True, blank=True, on_delete=models.SET_NULL,
                                       related_name="transit_entries")

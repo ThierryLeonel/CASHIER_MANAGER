@@ -442,7 +442,7 @@ def record_desk_transfer(user, *, desk, cash=None, uve=None, mtn=None, descripti
         spec.fields["in_transit"] = True
         spec.fields["payment_group"] = group
         spec.fields["settles"] = settles
-        spec.fields["to_settle"] = settles is None  # the other desk pays it back (unless this is that payment)
+        spec.fields["to_settle"] = False  # the receiver's own entry says what he owes back
         spec.receipt = i == 0
         specs.append(spec)
     with transaction.atomic():
@@ -793,36 +793,24 @@ def entry_into(ctx, kind, chosen=None):
 
 
 def record_entry(user, *, source, product=None, amount, shop=None, desk=None, company_account=None, from_whom="",
-                 into=None, reference="", description="", another=False, match=None, idempotency_key=None,
-                 acting_for=None):
+                 into=None, reference="", description="", another=False, idempotency_key=None, acting_for=None):
     """Entry: cash, UVE, ER or float the cashier RECEIVED and records himself — from a shop, another cashier, a
-    company account (finance, master SIM, bank) or from outside. Only HIS account moves: the money comes out of
-    "transfers in transit", where the sender's own record put it, and the entry is linked to that record (the one
-    chosen in "Sent to you", else the matching one: same sender, account and amount). Money from outside is recorded
-    as capital received."""
+    company account (finance, master SIM, bank) or from outside. Only HIS account moves; the sender records his own
+    side, and neither record touches the other's balance. Money from a shop or a cashier is owed back to them (his
+    entry carries that, for "Pay the sender"); money from outside is recorded as capital received."""
     ctx = cashier_ctx(user, acting_for)
-    if match is not None:  # entering a transfer listed in "Sent to you": everything comes from it
-        mine = perm.usable_accounts(ctx.cashier, [match.dest_account.kind], receiving=True)
-        if not match.in_transit or match.transit_entries.exists() or not mine.filter(pk=match.dest_account_id).exists():
-            raise BusinessError(_("This transfer is not waiting for your entry any more."), "match")
-        into = match.dest_account
-        src_acct = match.source_account
-        if match.type in (TxType.SHOP_TO_DESK,):
-            source, shop = "SHOP", src_acct.shop
-        elif match.type == TxType.INTERNAL_TRANSFER:
-            source, desk = "DESK", (src_acct.custodian.subzone if src_acct.custodian_id else src_acct.zone)
-        else:
-            source, company_account = "COMPANY", src_acct
-        product = {v: k for k, v in ENTRY_KINDS.items()}.get(into.kind, "CASH")
     if source not in ENTRY_SOURCES:
         raise BusinessError(_("Say where the money comes from."), "source")
     amount = _positive(amount)
-    if source == "COMPANY" and match is None:
+    if source == "COMPANY":
         if company_account is None:
             raise BusinessError(_("Choose the company account that sent it."), "company_account")
-        kind = company_account.kind
-        product = {v: k for k, v in ENTRY_KINDS.items()}.get(kind, "CASH" if kind == K.BANK else None)
-        kind = K.CASH_DRAWER if kind == K.BANK else kind
+        if product in ENTRY_KINDS:  # what he received (finance float exchanged for UVE arrives as UVE)
+            kind = ENTRY_KINDS[product]
+        else:
+            kind = company_account.kind
+            product = {v: k for k, v in ENTRY_KINDS.items()}.get(kind, "CASH" if kind == K.BANK else None)
+            kind = K.CASH_DRAWER if kind == K.BANK else kind
     else:
         kind = ENTRY_KINDS.get(product)
     if kind is None:
@@ -839,13 +827,13 @@ def record_entry(user, *, source, product=None, amount, shop=None, desk=None, co
         if product == "MTN":
             raise BusinessError(_("A shop sends cash, UVE or ER."), "product")
         src = shop.account(kind)
-        type_, extra = TxType.SHOP_TO_DESK, {"shop": shop}
+        type_, extra = TxType.SHOP_TO_DESK, {"shop": shop, "to_settle": True}
         legacy = Transaction.objects.filter(type=TxType.SHOP_TO_DESK, shop=shop)
     elif source == "DESK":
         if desk is None or desk.pk == ctx.cashier.subzone_id:
             raise BusinessError(_("Choose the other cashier's desk."), "desk")
         src = desk_account(desk, kind, "product")
-        type_, extra = TxType.INTERNAL_TRANSFER, {}
+        type_, extra = TxType.INTERNAL_TRANSFER, {"to_settle": True}
         legacy = Transaction.objects.filter(type=TxType.INTERNAL_TRANSFER, source_account=src)
     elif source == "COMPANY":
         src = company_account
@@ -863,11 +851,10 @@ def record_entry(user, *, source, product=None, amount, shop=None, desk=None, co
 
         spec = TxSpec(type=TxType.CAPITAL_IN, lines=[(dest, amount), (capital_account(), -amount)],
                       fields=dict(fields, fund_source=who, fund_purpose=note or str(_("Entry recorded by the "
-                                                                                      "cashier"))))
-        spec.receipt = True
+                                                                                      "cashier"))), receipt=True)
         with transaction.atomic():
             return post([spec], ctx, idempotency_key)[0]
-    if match is None and legacy is not None and not another:
+    if legacy is not None and not another:
         same = legacy.filter(dest_account=dest, amount=amount, business_date=ctx.business_date, in_transit=False,
                              is_entry=False, correction__isnull=True).first()
         if same is not None:
@@ -875,9 +862,7 @@ def record_entry(user, *, source, product=None, amount, shop=None, desk=None, co
                                   "really another one, tick “This is another transfer”.") % {
                 "ref": same.reference, "time": timezone.localtime(same.posted_at).strftime("%H:%M"),
                 "amt": same.amount, "who": same.entered_by}, "another")
+    spec = TxSpec(type=type_, lines=[(dest, amount), (transit.account(), -amount)],
+                  fields=dict(fields, source_account=src, **extra), receipt=True)
     with transaction.atomic():
-        sent = transit.find_match(dest, amount, source_account=src if source != "SHOP" else None,
-                                  shop=shop if source == "SHOP" else None, match=match)
-        spec = TxSpec(type=type_, lines=[(dest, amount), (transit.account(), -amount)],
-                      fields=dict(fields, source_account=src, transit_match=sent, **extra), receipt=True)
         return post([spec], ctx, idempotency_key)[0]

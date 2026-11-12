@@ -5,12 +5,29 @@
 <h1>{% trans "My debtors" %}</h1>
 <div class="bal-row"><div class="bal k-UVE"><span class="bal-label">{% trans "Outstanding" %}</span><span class="bal-value">{{ total|fcfa }}</span><span class="bal-unit">FCFA · {{ rows|length }}</span></div></div>
 <div class="debtors">
-{% for g in rows %}<div class="debtor">
+{% for g in rows %}<div class="debtor" id="d-{{ forloop.counter }}">
   <div class="d-who"><strong>{{ g.label }}</strong>
     <span class="small muted">{{ g.kind }}{% if g.number %} · {{ g.number|sim }}{% endif %}{% if g.pos and not g.in_zone %} · {% trans "other zone" %}{% endif %}{% if g.last_supply %} · {% blocktrans with d=g.last_supply|date:"d/m/Y" %}last supply {{ d }}{% endblocktrans %}{% endif %}</span></div>
   <div class="d-amt">{{ g.owed|fcfa }} <span class="small muted">FCFA</span></div>
+  <form method="post" action="{% url 'agent_debtor_pay' %}" class="d-pay">{% csrf_token %}
+    <input type="hidden" name="client" value="{{ g.key }}"><input type="hidden" name="idem" value="{{ g.idem }}">
+    <input type="hidden" name="anchor" value="{{ forloop.counter }}">
+    <button class="btn small primary" name="method" value="CASH">{% trans "Paid cash" %}</button>
+    <button class="btn small primary" name="method" value="UVE">{% trans "Paid UVE" %}</button>
+    <button class="btn small primary" name="method" value="MTN">{% trans "Paid float" %}</button>
+  </form>
+  <details class="d-partial"><summary class="btn small">{% trans "Partial payment" %}</summary>
+    <form method="post" action="{% url 'agent_debtor_pay' %}">{% csrf_token %}
+      <input type="hidden" name="client" value="{{ g.key }}"><input type="hidden" name="idem" value="{{ g.idem }}">
+      <input type="hidden" name="anchor" value="{{ forloop.counter }}"><input type="hidden" name="partial" value="1">
+      <input type="text" name="amount" inputmode="numeric" required placeholder="{% trans 'Amount received' %}" class="money-input">
+      <select name="method"><option value="CASH">{% trans "Cash" %}</option><option value="UVE">UVE</option><option value="MTN">{% trans "Float" %}</option></select>
+      <button class="btn small primary">{% trans "Save" %}</button>
+    </form>
+  </details>
   <div class="d-act">
-    <a class="btn small primary" data-return href="{% url 'agent_collect' %}?{{ g.collect_q }}">{% trans "Receive payment" %}</a>
+    <a class="btn small" data-return href="{% url 'agent_collect' %}?{{ g.collect_q }}">{% trans "Record payment" %}</a>
+    {% if g.wa %}<a class="btn small wa" href="{{ g.wa }}" target="_blank" rel="noopener">{% icon "whatsapp" 14 %} WhatsApp</a>{% endif %}
     {% if g.number %}<a class="btn small" href="sms:+237{{ g.number }}?body={{ g.sms|urlencode }}">{% trans "Remind" %}</a>{% endif %}
   </div>
 </div>

@@ -35,12 +35,7 @@ def _entry(request, form_class, op, title, intro="", template="core/entry_form.h
 
         messages.info(request, _("Choose the cashier you are recording for."))
         return redirect(f"/act-as/?next={request.path}")
-    initial = None
-    if form_class is F.EntryForm and request.GET.get("match", "").isdigit():
-        from core.models import Transaction
-
-        initial = {"match": Transaction.objects.filter(pk=request.GET["match"]).first()}
-    form = form_class(desk, request.POST or None, initial=initial)
+    form = form_class(desk, request.POST or None)
     if request.method == "POST" and form.is_valid():
         params = form.params()
         resp = run_service(

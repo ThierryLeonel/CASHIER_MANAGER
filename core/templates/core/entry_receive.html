@@ -1,15 +1,5 @@
 {% extends "core/entry_form.html" %}{% load i18n cashier %}
-{% block before_form %}
-{% if form.pending %}<div class="panel sent-to-you"><strong>{% trans "Sent to you, waiting for your entry" %}</strong>
-<p class="small muted meta">{% trans "The sender recorded these on his side (his balance went down). Yours goes up only when you record the entry." %}</p>
-<div class="sent-list">{% for t in form.pending %}<div class="sent-item{% if form.initial.match.pk == t.pk %} on{% endif %}">
-  <div class="sent-who"><strong>{% if t.shop and t.type == 'SHOP_TO_DESK' or t.shop and t.type == 'SHOP_TO_SHOP' %}{{ t.source_account.shop.name }}{% elif t.source_account.custodian %}{{ t.source_account.custodian.subzone.name|default:t.source_account.custodian }}{% elif t.source_account.zone %}{{ t.source_account.zone.name }} · {{ t.source_account.get_kind_display }}{% else %}{{ t.source_account }}{% endif %}</strong>
-  <span class="small muted">{{ t.posted_at|date:"d/m H:i" }} · {{ t.reference }} · {{ t.entered_by.get_full_name|default:t.entered_by.username }}</span></div>
-  <div class="sent-amt"><strong>{{ t.amount|fcfa }}</strong> <span class="small muted">{{ t.dest_account.get_kind_display }}</span></div>
-  {% if form.initial.match.pk != t.pk %}<a class="btn small primary" href="?match={{ t.pk }}">{% trans "Record the entry" %}</a>{% endif %}
-</div>{% endfor %}</div></div>{% endif %}
-{% if form.initial.match %}<p class="msg info">{% blocktrans with ref=form.initial.match.reference amt=form.initial.match.amount|fcfa %}Entry for {{ ref }}: {{ amt }} FCFA. Check the amount you really received and record.{% endblocktrans %}</p>{% endif %}
-{% endblock %}
+
 {% block scripts %}{{ block.super }}
 <script>
 (function () {
@@ -17,13 +7,6 @@
   var fld = function (n) { return document.getElementById('fld-' + n); };
   var shopEntry = {{ shop_entry|yesno:"true,false" }};
   var radios = form.querySelectorAll('input[name=source]');
-  if (form.querySelector('input[name=match]') && form.querySelector('input[name=match]').value) {
-    ['source', 'desk', 'from_shop', 'company_account', 'from_whom', 'product', 'into', 'another']
-      .concat(shopEntry ? [] : ['shop']).forEach(function (n) {
-      var f = fld(n); if (f) f.hidden = true;
-    });
-    return;
-  }
   if (radios.length) radios[0].closest('.field').classList.add('choice-pills');
   var show = shopEntry ? {DESK: ['desk'], SHOP: ['from_shop'], COMPANY: ['company_account']}
                        : {SHOP: ['shop'], DESK: ['desk'], COMPANY: ['company_account'], OTHER: ['from_whom']};
@@ -33,7 +16,6 @@
     toggled.forEach(function (n) {
       var f = fld(n); if (f) f.hidden = (show[s] || []).indexOf(n) < 0;
     });
-    var p = fld('product'); if (p && !shopEntry) p.hidden = s === 'COMPANY';  // a company account says what it is
     var sel = form.querySelector('[name=product]');
     if (sel) Array.prototype.forEach.call(sel.options, function (o) {
       var off = s === 'SHOP' && o.value === 'MTN'; o.hidden = off; o.disabled = off;

@@ -1,5 +1,6 @@
 """Commercial agent portal, and the cashier's / shop's confirmation of agents' paybacks."""
 import uuid
+from urllib.parse import quote
 from datetime import date, timedelta
 
 from django.contrib import messages
@@ -374,8 +375,60 @@ def agent_debtors(request):
                           f"shop={g['shop'].pk}" if g["shop"] else f"phone={g['phone']}")
         g["sms"] = _("Hello %(who)s, you still owe %(amt)s FCFA to %(agent)s (%(sim)s). Thank you for paying.") % {
             "who": g["label"], "amt": fmt(g["owed"]), "agent": agent.name, "sim": agent.business_sim}
+        g["key"] = (f"POS:{g['pos'].business_sim}" if g["pos"] else
+                    f"SHOP:{g['shop'].pk}" if g["shop"] else f"OTHER:{g['phone']}")
+        g["idem"] = uuid.uuid4()  # one per debtor: a double tap never records twice
+        g["wa"] = (f"https://wa.me/237{g['number']}?text=" + quote(g["sms"])) if g.get("number") else ""
     return render(request, "core/agent/debtors.html", {
         "rows": rows, "total": sum((g["owed"] for g in rows), 0)})
+
+
+@roles_required(R.AGENT)
+def agent_debtor_pay(request):
+    """One tap on the debtors list: "Paid cash / UVE / float" closes the whole debt in that way; "Partial" records
+    the amount typed (in the way chosen)."""
+    if request.method != "POST":
+        return redirect("agent_debtors")
+    agent = request.user.counterparty
+    kind, _sep, ref = (request.POST.get("client") or "").partition(":")
+    g = next((x for x in ag.clients_owing(agent)
+              if (kind == "POS" and x["pos"] and x["pos"].business_sim == ref)
+              or (kind == "SHOP" and x["shop"] and str(x["shop"].pk) == ref)
+              or (kind == "OTHER" and not x["pos"] and not x["shop"] and x["phone"] == ref)), None)
+    method = request.POST.get("method")
+    if g is None or g["owed"] <= 0 or method not in ("CASH", "UVE", "MTN"):
+        messages.error(request, _("This client owes you nothing any more."))
+        return redirect("agent_debtors")
+    try:
+        amount = g["owed"]
+        if request.POST.get("partial"):
+            from core.money import to_money
+
+            amount = to_money(request.POST.get("amount") or "0")
+            if amount <= 0:
+                raise BusinessError(_("Enter the amount received."), "amount")
+            if amount > g["owed"]:
+                raise BusinessError(_("Only %(amt)s FCFA is owed: use Paid instead.") % {"amt": fmt(g["owed"])},
+                                    "amount")
+        client = {"client_kind": g["kind_code"], "pos_sim": g["pos"].business_sim if g["pos"] else "",
+                  "shop": g["shop"], "client_phone": g["phone"] or "", "client_name": g["label"]}
+        ag.record_client_payment(request.user, **client, **{{"CASH": "cash", "UVE": "uve", "MTN": "mtn"}[method]:
+                                                             amount},
+                                 note=_("Partial payment") if request.POST.get("partial") else _("Paid in full"),
+                                 idempotency_key=uuid.UUID(request.POST.get("idem")) if request.POST.get("idem")
+                                 else None)
+        left = g["owed"] - amount
+        messages.success(request, (_("%(who)s paid %(amt)s FCFA. Still owed: %(left)s FCFA.") if left > 0 else
+                                   _("%(who)s paid %(amt)s FCFA: debt closed.")) % {
+            "who": g["label"], "amt": fmt(amount), "left": fmt(left)})
+    except (BusinessError, ValueError) as e:
+        messages.error(request, getattr(e, "message", str(e)))
+    except Exception as e:  # noqa: BLE001 - the same tap twice
+        from core.services.errors import DuplicateSubmission
+
+        if not isinstance(e, DuplicateSubmission):
+            raise
+    return redirect(reverse("agent_debtors") + f"#d-{request.POST.get('anchor', '')}")
 
 
 @roles_required(R.AGENT)

@@ -156,35 +156,21 @@ class ShopEntryForm(ShopForm):
     amount = MoneyField(label=_("Amount (FCFA)"))
     reference = forms.CharField(label=_("Reference (transaction ID)"), required=False, max_length=60)
     description = forms.CharField(label=_("Note"), required=False, max_length=255)
-    match = forms.ModelChoiceField(queryset=None, required=False, widget=forms.HiddenInput)
-
     def __init__(self, user, *args, **kwargs):
         super().__init__(user, *args, **kwargs)
         from core.models import Account
-        from core.services import shops as sh
-        from core.services import transit
         from core.services.operations import transfer_desks
 
         self.fields["desk"].queryset = transfer_desks()
         self.fields["from_shop"].queryset = Shop.objects.filter(active=True).exclude(pk=user.shop_id or 0)
         self.fields["company_account"].queryset = Account.objects.filter(
             kind__in=Account.ASSET_KINDS, active=True, shop__isnull=True).order_by("kind", "name")
-        shop = user.shop if user.is_shop_manager else None
-        self.pending = sh.pending_entries(shop) if shop else transit.pending(
-            Account.objects.filter(shop__isnull=False))
-        self.fields["match"].queryset = self.pending
-        m = self.initial.get("match") if not self.is_bound else None
-        if m is not None:
-            self.initial["amount"] = m.amount
-            if "shop" in self.fields:
-                self.initial["shop"] = m.dest_account.shop
 
     def clean(self):
         cd = super().clean()
-        if cd.get("match") is None:
-            f = {"DESK": "desk", "SHOP": "from_shop", "COMPANY": "company_account"}.get(cd.get("source"))
-            if f and not cd.get(f):
-                self.add_error(f, _("Required."))
+        f = {"DESK": "desk", "SHOP": "from_shop", "COMPANY": "company_account"}.get(cd.get("source"))
+        if f and not cd.get(f):
+            self.add_error(f, _("Required."))
         return cd
 
 

@@ -21,39 +21,29 @@ class Entries(OrgMixin, TestCase):
         self.fund(self.shop.account(Account.Kind.CASH_DRAWER), 200000)
 
     def test_each_side_records_its_own_money(self):
-        """The shop records its transfer (only the shop's cash goes down), the cashier records the entry (only his
-        goes up): linked, never counted twice."""
-        from core.services import shop_shifts as ss
-        from core.services import shops as sh
+        """Cashier A sends 200 000 to B: A records the transfer (only A's balance moves), B records her entry (only
+        B's moves). No record is attached to the other."""
+        d1, d2 = self.bal(self.d_f1), self.bal(self.d_f2)
+        sent = ops.record_desk_transfer(self.c_f1, desk=self.c_f2.subzone, cash=D(200000))[0]
+        self.assertEqual((self.bal(self.d_f1), self.bal(self.d_f2)), (d1 - 200000, d2))
+        self.assertFalse(sent.to_settle)
+        got = ops.record_entry(self.c_f2, source="DESK", desk=self.c_f1.subzone, product="CASH", amount=D(200000),
+                               reference="T1")
+        self.assertEqual((self.bal(self.d_f1), self.bal(self.d_f2)), (d1 - 200000, d2 + 200000))
+        self.assertEqual((got.transit_match, got.is_entry, str(got.display_type)), (None, True, "Entry from a cashier"))
+        self.assertTrue(got.to_settle)  # what B owes back, on her own record
+        # B may enter a different amount or before A records anything: each record stands alone
+        ops.record_entry(self.c_f2, source="DESK", desk=self.c_f1.subzone, product="CASH", amount=D(5000))
+        self.assertEqual(self.bal(self.d_f1), d1 - 200000)
 
-        ss.open_shift(self.o["shop_mgr"], cash=D(200000), uve=D(0), er=D(0))
+    def test_from_a_shop(self):
         shop_cash = self.shop.account(Account.Kind.CASH_DRAWER)
-        d1, s1 = self.bal(self.d_f1), self.bal(shop_cash)
-        sent = sh.to_cashier(self.o["shop_mgr"], desk=self.c_f1.subzone, cash=D(50000))
-        self.assertTrue(sent.in_transit)
-        self.assertEqual((self.bal(self.d_f1), self.bal(shop_cash)), (d1, s1 - 50000))
-        self.assertIn(sent, list(transit.pending([self.d_f1])))
-        e = ops.record_entry(self.c_f1, source="SHOP", shop=self.shop, product="CASH", amount=D(50000), reference="T1")
-        self.assertTrue(e.is_entry)
-        self.assertEqual((e.type, str(e.display_type), e.transit_match), (TxType.SHOP_TO_DESK, "Entry from a shop",
-                                                                          sent))
-        self.assertEqual((self.bal(self.d_f1), self.bal(shop_cash)), (d1 + 50000, s1 - 50000))
-        self.assertEqual(self.bal(transit.account()), D(0))
-        self.assertNotIn(sent, list(transit.pending([self.d_f1])))
-        # the same transfer cannot be entered twice by choosing it
+        s1 = self.bal(shop_cash)
+        e = ops.record_entry(self.c_f1, source="SHOP", shop=self.shop, product="CASH", amount=D(50000))
+        self.assertEqual((e.type, str(e.display_type)), (TxType.SHOP_TO_DESK, "Entry from a shop"))
+        self.assertEqual(self.bal(shop_cash), s1)  # the shop's balance is the shop's own records
         with self.assertRaises(BusinessError):
-            ops.record_entry(self.c_f1, source="SHOP", match=sent, amount=D(50000))
-        # an entry the sender has not recorded yet waits in transit (the other way round)
-        ops.record_entry(self.c_f1, source="SHOP", shop=self.shop, product="CASH", amount=D(7000))
-        self.assertEqual(self.bal(transit.account()), D(-7000))
-
-    def test_from_another_cashier_chosen_in_sent_to_you(self):
-        u1, u2 = self.bal(self.uve_f1), self.bal(self.uve_f2)
-        sent = ops.record_desk_transfer(self.c_f2, desk=self.c_f1.subzone, uve=D(30000))[0]
-        self.assertEqual((self.bal(self.uve_f1), self.bal(self.uve_f2)), (u1, u2 - 30000))
-        e = ops.record_entry(self.c_f1, source="DESK", match=sent, amount=D(30000))
-        self.assertEqual((e.transit_match, e.to_settle), (sent, False))  # the sender's record carries the payback
-        self.assertEqual((self.bal(self.uve_f1), self.bal(self.uve_f2)), (u1 + 30000, u2 - 30000))
+            ops.record_entry(self.c_f1, source="SHOP", shop=self.shop, product="MTN", amount=D(1))
         with self.assertRaises(BusinessError):  # not from his own desk
             ops.record_entry(self.c_f1, source="DESK", desk=self.c_f1.subzone, product="CASH", amount=D(1))
 
@@ -83,20 +73,12 @@ class Entries(OrgMixin, TestCase):
         self.assertEqual(t.amount, D(10000))
         self.assertContains(c.get(f"/transactions/{t.pk}/"), "Entry from a shop")
 
-    def test_sent_to_you_list_and_shop_entry_page(self):
+    def test_receiver_does_not_see_the_senders_record_and_shop_entry_page(self):
         sent = ops.record_desk_transfer(self.c_f2, desk=self.c_f1.subzone, cash=D(12000))[0]
         c = self.client_class()
         c.login(username="cashier.fako1", password=PW)
-        r = c.get("/entries/new/")
-        self.assertContains(r, "Sent to you, waiting for your entry")
-        self.assertContains(r, f"?match={sent.pk}")
-        r = c.get(f"/entries/new/?match={sent.pk}")
-        self.assertContains(r, "Check the amount you really received")
-        r = c.post(f"/entries/new/?match={sent.pk}", {"idem": str(uuid.uuid4()), "source": "SHOP", "match": sent.pk,
-                                                       "product": "CASH", "amount": "12 000"})
-        self.assertEqual(r.status_code, 302)
-        self.assertTrue(sent.transit_entries.exists())
-        self.assertNotContains(c.get("/entries/new/"), f"?match={sent.pk}")
+        self.assertNotContains(c.get("/entries/new/"), sent.reference)
+        self.assertEqual(c.get(f"/transactions/{sent.pk}/").status_code, 404)
         s = self.client_class()
         s.login(username="shop.senior", password=PW)
         self.assertContains(s.get("/shops/do/entry/"), "Entry: money received")
