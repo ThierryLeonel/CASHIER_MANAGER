@@ -362,6 +362,27 @@ def _clear_shop_operations():
     return counts
 
 
+CLEAR_ORDER = ("user", "agents", "shops", "transactions", "pos_list", "agent_list", "everything")
+
+
+def clear_many(user, *, scopes, password, confirm_text, agent=None, target_user=None):
+    """Several clear options ticked together, run one after the other (one confirmation). "Everything" already
+    covers the others, so it runs alone."""
+    scopes = [s for s in CLEAR_ORDER if s in set(scopes or [])]
+    if not scopes:
+        raise BusinessError(_("Choose what to clear."), "scope")
+    if "everything" in scopes:
+        scopes = ["everything"]
+    total = defaultdict(int)
+    with transaction.atomic():
+        for s in scopes:
+            for k, v in clear_data(user, scope=s, password=password, confirm_text=confirm_text, agent=agent,
+                                   target_user=target_user).items():
+                if isinstance(v, int):
+                    total[k] += v
+    return dict(total)
+
+
 def clear_data(user, *, scope, password, confirm_text, agent=None, target_user=None):
     perm.require_role(user, perm.CONFIG_ROLES, "clear")
     if scope not in CLEAR_SCOPES:

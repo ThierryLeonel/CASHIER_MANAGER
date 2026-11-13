@@ -1,0 +1,7 @@
+{% load i18n static %}<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% trans "No connection" %}</title><link rel="stylesheet" href="{% static 'core/app.css' %}"><meta name="theme-color" content="#1c1c1c"></head>
+<body class="no-side"><main class="main"><div class="login panel" style="text-align:center">
+<h1>{% trans "No connection" %}</h1>
+<p class="muted">{% trans "The app needs the internet to show and record your figures. Check your data or Wi-Fi, then try again." %}</p>
+<p><button class="btn primary" onclick="location.reload()">{% trans "Try again" %}</button></p>
+</div></main></body></html>

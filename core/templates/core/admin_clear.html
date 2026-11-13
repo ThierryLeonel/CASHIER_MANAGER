@@ -14,9 +14,9 @@
 (function () {
   var f = document.querySelector('form.entry');
   function sync() {
-    var v = (f.querySelector('input[name=scope]:checked') || {}).value;
-    document.getElementById('fld-agent').hidden = v !== 'agents';
-    document.getElementById('fld-target_user').hidden = v !== 'user';
+    var on = Array.prototype.map.call(f.querySelectorAll('input[name=scope]:checked'), function (c) { return c.value; });
+    document.getElementById('fld-agent').hidden = on.indexOf('agents') < 0;
+    document.getElementById('fld-target_user').hidden = on.indexOf('user') < 0;
   }
   f.querySelectorAll('input[name=scope]').forEach(function (r) { r.addEventListener('change', sync); }); sync();
 })();

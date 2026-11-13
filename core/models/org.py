@@ -154,7 +154,8 @@ class User(AbstractUser):
     )
     counterparty = models.OneToOneField(
         "Counterparty", null=True, blank=True, on_delete=models.PROTECT, related_name="login_user",
-        help_text="Required for commercial-agent logins: the agent account they may view.",
+        help_text="Required for commercial-agent logins: the agent account they may view. Market supervisors: their "
+                  "own agent account (their SIM) when they supply POS.",
     )
     staff_code = models.CharField(_("staff ID"), max_length=20, unique=True, null=True, blank=True,
                                   help_text="Shown on every transaction and receipt. Generated if left empty.")
@@ -280,6 +281,12 @@ class User(AbstractUser):
         return self.subzone if self.is_junior else None
 
     @property
+    def sells(self):
+        """Works with his own SIM in the agent portal (supplies, client payments, paybacks to the cashiers): a
+        commercial agent, or a market supervisor linked to his own agent account."""
+        return bool(self.counterparty_id) and self.role in (self.Role.AGENT, self.Role.MARKET)
+
+    @property
     def market_zone(self):
         """The subzone (or master zone) a market supervisor is assigned to."""
         return self.subzone if self.is_market and self.subzone_id else None
@@ -297,8 +304,11 @@ class User(AbstractUser):
         ids = self.market_zone_ids()
         if ids is None:
             return Q()
-        return Q(**{f"{prefix}microzone__subzone_id__in": ids}) | Q(**{f"{prefix}microzone__isnull": True,
-                                                                          f"{prefix}master_zone_id__in": ids})
+        q = Q(**{f"{prefix}microzone__subzone_id__in": ids}) | Q(**{f"{prefix}microzone__isnull": True,
+                                                                       f"{prefix}master_zone_id__in": ids})
+        if self.counterparty_id:  # his own agent account
+            q |= Q(**{f"{prefix}pk": self.counterparty_id})
+        return q
 
     def zone_ids_in_scope(self):
         """Ids of the zones (master + subzones) a junior manager may see."""
@@ -323,6 +333,9 @@ class User(AbstractUser):
             raise ValidationError(_("A junior manager must be assigned the zone they supervise."))
         if self.role == self.Role.MARKET and not self.subzone_id:
             raise ValidationError(_("A market supervisor must be assigned the subzone he follows."))
+        if self.role == self.Role.MARKET and self.counterparty_id and self.counterparty.kind != Counterparty.Kind.AGENT:
+            raise ValidationError(_("A market supervisor who supplies POS is linked to his own agent account (with "
+                                    "his business SIM), not to a POS."))
         if self.role == self.Role.CASHIER:
             if not self.subzone_id:
                 raise ValidationError(_("A cashier must belong to a subzone."))

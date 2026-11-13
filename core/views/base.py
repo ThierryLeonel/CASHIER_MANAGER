@@ -303,6 +303,9 @@ def dashboard(request):
     return render(request, "core/dashboard_staff.html", ctx)
 
 
+from core.services import agents as ag  # noqa: E402
+
+
 def _market_recent(user):
     from core.models import Counterparty
 
@@ -337,6 +340,7 @@ def market_home(request):
         "owed": sum((r["s"] for r in cust if r["s"] > 0), 0), "due": -sum((r["s"] for r in cust if r["s"] < 0), 0),
         "shops": shops,
         "recent": _market_recent(user),
+        "s": ag.summary(user.counterparty) if user.sells else None,
     }
     return render(request, "core/dashboard_market.html", ctx)
 

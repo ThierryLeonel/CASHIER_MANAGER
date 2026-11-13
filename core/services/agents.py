@@ -32,14 +32,34 @@ P = AgentPayback
 
 # ---------------------------------------------------------------- who and where
 def agent_of(user):
-    if not (user.is_authenticated and user.is_agent and user.counterparty_id):
+    if not (user.is_authenticated and user.sells):
         raise PermissionDenied(_("Only commercial agents use the agent portal."))
     return user.counterparty
 
 
+def market_login(agent):
+    """The market supervisor working with this agent account (his own SIM), if any."""
+    from core.models import User
+
+    return User.objects.filter(role=User.Role.MARKET, counterparty=agent).select_related("subzone__parent").first()
+
+
+def own_pos(agent):
+    """The POS in the agent's charge: those of his roads; for a market supervisor's account, the POS of his zone."""
+    qs = Counterparty.objects.filter(kind=Counterparty.Kind.POS, active=True)
+    mk = market_login(agent)
+    if mk is not None:
+        return qs.filter(mk.pos_scope_q())
+    return qs.filter(microzone__agent=agent)
+
+
 def zone_of(agent):
     """The agent's master zone, read from the roads (microzones) he is in charge of now — so moving an agent to other
-    roads moves his zone with him; his registered zone only when he has no road."""
+    roads moves his zone with him; his registered zone only when he has no road. A market supervisor's account: the
+    master zone of the zone he follows."""
+    mk = market_login(agent)
+    if mk is not None and mk.subzone_id:
+        return mk.subzone.master
     mz = agent.controlled_microzones.select_related("subzone__parent").order_by("name").first()
     if mz is not None:
         return mz.subzone.parent
@@ -670,7 +690,7 @@ def pos_coverage(agent, today):
 
     week, month = _period_starts(today)
     sup = E.objects.filter(agent=agent, kind=E.Kind.SUPPLY, pos__isnull=False, cancelled_at__isnull=True)
-    in_charge = Counterparty.objects.filter(kind=Counterparty.Kind.POS, active=True, microzone__agent=agent).count()
+    in_charge = own_pos(agent).count()
 
     def uniq(d_from, d_to):
         return sup.filter(business_date__gte=d_from, business_date__lte=d_to).values("pos").distinct().count()

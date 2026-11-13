@@ -6,7 +6,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{% block title %}{{ title|default:"" }}{% endblock %} · {{ company.display_name }}</title>
 <link rel="icon" href="{% url 'favicon' %}?v={{ company.logo_updated|date:'U'|default:company.initial }}">
-<link rel="apple-touch-icon" href="{% url 'favicon' %}?v={{ company.logo_updated|date:'U'|default:company.initial }}">
+<link rel="apple-touch-icon" href="/app-icon/180.png?v={{ company.logo_updated|date:'U'|default:company.initial }}">
+<link rel="manifest" href="{% url 'manifest' %}">
+<meta name="theme-color" content="#1c1c1c">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="{{ company.display_name }}">
 <link rel="stylesheet" href="{% static 'core/app.css' %}">
 </head>
 <body class="{% if user.is_authenticated %}has-side{% else %}no-side{% endif %}">
@@ -27,7 +32,7 @@
     </div>{% endif %}
     {% if show_cash %}<a href="{% url 'dashboard' %}" class="{% if u == 'dashboard' %}on{% endif %}">{% icon "home" %}<span>{% trans "Home" %}</span></a>{% endif %}
 
-    {% if user.is_agent %}
+    {% if user.sells %}
     <div class="side-group">{% trans "My work" %}</div>
     <a href="{% url 'agent_supply' %}" class="{% if u == 'agent_supply' %}on{% endif %}">{% icon "supply" %}<span>{% trans "Supply a client" %}</span></a>
     <a href="{% url 'agent_collect' %}" class="{% if u == 'agent_collect' %}on{% endif %}">{% icon "payment" %}<span>{% trans "A client pays me" %}</span></a>
@@ -38,11 +43,12 @@
     <a href="{% url 'agent_debtors' %}" class="{% if u == 'agent_debtors' %}on{% endif %}">{% icon "users" %}<span>{% trans "My debtors" %}</span></a>
     <a href="{% url 'agent_daily' %}" class="{% if u == 'agent_daily' %}on{% endif %}">{% icon "calendar" %}<span>{% trans "Daily reconciliation" %}</span></a>
     <a href="{% url 'agent_office' %}" class="{% if u == 'agent_office' %}on{% endif %}">{% icon "download" %}<span>{% trans "Office supply vs payments" %}</span></a>
-    <a href="{% url 'agent_oos' %}" class="{% if u == 'agent_oos' %}on{% endif %}">{% icon "alert" %}<span>{% trans "OOS" %}</span></a>
-    <a href="{% url 'agent_destock' %}" class="{% if u == 'agent_destock' %}on{% endif %}">{% icon "destock" %}<span>{% trans "Possible destocash" %}</span></a>
+    {% if user.is_agent %}<a href="{% url 'agent_oos' %}" class="{% if u == 'agent_oos' %}on{% endif %}">{% icon "alert" %}<span>{% trans "OOS" %}</span></a>
+    <a href="{% url 'agent_destock' %}" class="{% if u == 'agent_destock' %}on{% endif %}">{% icon "destock" %}<span>{% trans "Possible destocash" %}</span></a>{% endif %}
     <a href="{% url 'agent_pos' %}" class="{% if u == 'agent_pos' or u == 'agent_pos_detail' or u == 'agent_pos_edit' %}on{% endif %}">{% icon "store" %}<span>{% trans "Global POS" %}</span></a>
     <a href="{% url 'agent_coverage' %}" class="{% if u == 'agent_coverage' %}on{% endif %}">{% icon "chart" %}<span>{% trans "POS supplied" %}</span></a>
     <a href="{% url 'agent_activity' %}" class="{% if u == 'agent_activity' %}on{% endif %}">{% icon "list" %}<span>{% trans "My transactions" %}</span></a>
+    {% if user.is_market %}<a href="{% url 'report' 'statement' %}?preset=all&amp;customer_sim={{ user.counterparty.business_sim }}">{% icon "statement" %}<span>{% trans "My statement" %}</span></a>{% endif %}
     {% endif %}
 
     {% if show_cash and user.is_cashier or show_cash and user.is_superadmin %}
@@ -185,6 +191,7 @@
         <button name="language" value="en" class="{% if LANG == 'en' %}on{% endif %}">EN</button>
         <button name="language" value="fr" class="{% if LANG == 'fr' %}on{% endif %}">FR</button>
       </form>
+      <button type="button" class="logout" data-install hidden>{% icon "download" 18 %}<span>{% trans "Install app" %}</span></button>
       <form action="{% url 'logout' %}" method="post">{% csrf_token %}<button type="submit" class="logout">{% icon "logout" 18 %}<span>{% trans "Log out" %}</span></button></form>
     </div>
   </div>
@@ -305,6 +312,33 @@ document.querySelectorAll('[data-back]').forEach(function (a) {
   nocustomer: "{% trans 'No agent or POS found' %}", pos: "{% trans 'POS' %}", agent: "{% trans 'AG' %}",
   cash: "{% trans 'Cash' %}", bank: "{% trans 'Bank' %}"};</script>
 <script src="{% static 'core/ui.js' %}"></script>
+<div class="install-bar" id="install-bar" hidden>
+  <span>{% icon "download" 18 %} {% trans "Install the app on this phone" %}</span>
+  <button class="btn small primary" type="button" id="install-yes">{% trans "Install" %}</button>
+  <button class="btn small" type="button" id="install-no" aria-label="{% trans 'Not now' %}">✕</button>
+</div>
+<script>
+(function () {
+  /* Installable app: register the service worker; offer "Install" on Android (Chrome shows its prompt). */
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () { navigator.serviceWorker.register('/sw.js', {scope: '/'}).catch(function () {}); });
+  }
+  var ev = null, bar = document.getElementById('install-bar');
+  function dismissed() { try { return localStorage.getItem('install-no') === '1'; } catch (e) { return false; } }
+  window.addEventListener('beforeinstallprompt', function (e) {
+    e.preventDefault(); ev = e;
+    if (!dismissed()) bar.hidden = false;
+    document.querySelectorAll('[data-install]').forEach(function (b) { b.hidden = false; });
+  });
+  function go() { if (!ev) return; ev.prompt(); ev.userChoice.finally(function () { ev = null; bar.hidden = true; }); }
+  document.getElementById('install-yes').addEventListener('click', go);
+  document.addEventListener('click', function (e) { if (e.target.closest('[data-install]')) { e.preventDefault(); go(); } });
+  document.getElementById('install-no').addEventListener('click', function () {
+    bar.hidden = true; try { localStorage.setItem('install-no', '1'); } catch (e) {}
+  });
+  window.addEventListener('appinstalled', function () { bar.hidden = true; });
+})();
+</script>
 {% if user.is_authenticated %}
 <dialog class="pick-dlg" id="call-dlg" aria-labelledby="call-title">
   <form method="dialog">

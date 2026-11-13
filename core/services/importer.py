@@ -39,6 +39,9 @@ TEMPLATES = {
                     "677000000", "697000000", "bota island"],
                    ["POS", "fako", "fako-1", "molyko", "BMTC DW (TPResIndGr)", "692345678", "POS Molyko", "677000000",
                     "677000000", "lumsom"]]),
+    "customers_update": (["TYPE", "ZONE", "SUB_ZONE", "micro_zone", "OM ACCOUNT NAME", "BUSINESS_SIM", "PERSONAL NAME",
+                          "WHATSAPP CONTACT", "OTHER CONTACT", "ADDRESS"],
+                         [["POS", "", "", "", "", "692345678", "POS Molyko Market", "677999888", "", "new address"]]),
     "stock": (["type", "business_sim", "microzone", "er stock", "uve_stock", "commision balance"],
               [["AGENT", "691234567", "Molyko", 10000, 5000, 5000],
                ["POS", "692345678", "Molyko", 6000, 2000, 10000]]),
@@ -414,6 +417,54 @@ def _row_customer(user, r):
     return _("created %(cp)s") % {"cp": cp}
 
 
+def _row_customer_update(user, r):
+    """Update the information of an agent / POS already registered (found by BUSINESS_SIM). Only the filled cells
+    change; an empty cell keeps what is there. Nobody is created: an unknown SIM is an error. The file can be the
+    call database download, edited."""
+    sim = _sim(r.get("business_sim"), _("business SIM"))
+    cp = Counterparty.objects.filter(business_sim=sim).select_related("microzone__subzone").first()
+    if not cp:
+        raise BusinessError(_("No agent or POS is registered with business SIM %(sim)s. Register it first.")
+                            % {"sim": sim})
+    kind = KIND_ALIASES.get(_s(r.get("type")).upper())
+    if kind and kind != cp.kind:
+        raise BusinessError(_("%(cp)s is not a %(kind)s.") % {"cp": cp, "kind": Counterparty.Kind(kind).label})
+    new = {}
+    for field, value in (("name", _pick(r, "personal_name", "name")[:150]),
+                         ("om_account_name", _pick(r, "om_account_name", "account_name")[:150]),
+                         ("whatsapp", _contact(r.get("whatsapp_contact") or r.get("whatsapp"))),
+                         ("other_phone", _contact(_pick(r, "other_contact", "other_phone"))),
+                         ("address", _pick(r, "address")[:255])):
+        if value and value != (getattr(cp, field) or ""):
+            new[field] = value
+    zone_t, sub_t, mz_t = _pick(r, "zone", "master_zone"), _pick(r, "sub_zone", "subzone"), \
+        _pick(r, "micro_zone", "microzone")
+    if zone_t or sub_t or mz_t:
+        zone = _master_zone(zone_t) if zone_t else None
+        sub = _subzone(sub_t, zone) if sub_t else (cp.microzone.subzone if cp.microzone_id and not zone else None)
+        mz = (_micro_in(sub, mz_t) if sub else _microzone("", mz_t)) if mz_t else None
+        zone = zone or (sub.parent if sub else None) or (mz.subzone.parent if mz else None)
+        if mz and cp.kind == K_AGENT and mz.agent_id and mz.agent_id != cp.pk:
+            raise BusinessError(_("%(mz)s is already controlled by %(agent)s.") % {"mz": mz.name,
+                                                                                  "agent": mz.agent.name})
+        if mz and mz.pk != cp.microzone_id:
+            new["microzone"] = mz
+        if zone and zone.pk != cp.master_zone_id:
+            new["master_zone"] = zone
+    if not new:
+        _STATS["same"] = _STATS.get("same", 0) + 1
+        return _("%(cp)s · unchanged") % {"cp": cp}
+    _STATS["changed"] = _STATS.get("changed", 0) + 1
+    labels = {"name": _("name"), "om_account_name": _("OM account name"), "whatsapp": "WhatsApp",
+              "other_phone": _("other contact"), "address": _("address"), "microzone": _("microzone"),
+              "master_zone": _("zone")}
+    for k, v in new.items():
+        setattr(cp, k, v)
+    cp.save(update_fields=list(new))
+    _take_charge(cp)
+    return _("%(cp)s · updated: %(fields)s") % {"cp": cp, "fields": ", ".join(str(labels[k]) for k in new)}
+
+
 def _take_charge(cp):
     if cp.kind == K_AGENT and cp.microzone_id and cp.microzone.agent_id is None:
         MicroZone.objects.filter(pk=cp.microzone_id).update(agent=cp)
@@ -710,7 +761,7 @@ def _row_stock(user, r, only_changes=False):
     return f"{cp} · ER {er if er is not None else '—'} · UVE {uve if uve is not None else '—'}{flag}"
 
 
-HANDLERS = {"stock": _row_stock, "stock_update": _row_stock_update, "customers": _row_customer, "cash_managers": _row_cash_manager, "opening": _row_opening,
+HANDLERS = {"customers_update": _row_customer_update, "stock": _row_stock, "stock_update": _row_stock_update, "customers": _row_customer, "cash_managers": _row_cash_manager, "opening": _row_opening,
             "transactions": _row_transaction, "shops": _row_shop, "shop_staff": _row_shop_staff,
             "shop_items": _row_shop_item, "shop_stock": _row_shop_stock,
             "shop_transactions": _row_shop_transaction}

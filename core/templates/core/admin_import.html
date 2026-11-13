@@ -9,7 +9,7 @@
   <strong>{% trans "Templates" %}</strong>
   <div class="actions" style="margin-bottom:0">{% for k, label in kinds %}<a class="btn small" href="{% url 'import_template' k %}">{% icon "download" 16 %} {{ label }}</a>{% endfor %}</div>
 </div>
-<div class="stock-actions"><a class="btn primary" href="?kind=stock_update">⟳ {% trans "Update POS stock" %}</a><a class="btn" href="{% url 'stock_download' %}">⬇ {% trans "Download POS stock (Excel)" %}</a>
+<div class="stock-actions"><a class="btn primary" href="?kind=customers_update">⟳ {% trans "Update agent / POS info" %}</a><a class="btn primary" href="?kind=stock_update">⟳ {% trans "Update POS stock" %}</a><a class="btn" href="{% url 'stock_download' %}">⬇ {% trans "Download POS stock (Excel)" %}</a>
 <a class="btn" href="{% url 'call_database' %}">⬇ {% trans "Download agents & POS" %}</a>
 <a class="btn" href="{% url 'call_database' %}?kind=AGENT">⬇ {% trans "Agents only" %}</a>
 <a class="btn" href="{% url 'call_database' %}?kind=POS">⬇ {% trans "POS only" %}</a></div>
@@ -19,7 +19,7 @@
 <td><form method="post" action="{% url 'import_history_clear' %}">{% csrf_token %}<input type="hidden" name="pk" value="{{ r.pk }}"><button class="btn small" title="{% trans 'Remove from the list' %}">×</button></form></td></tr>{% endfor %}</tbody></table></div></div>{% endif %}
 <div class="panel"><form method="post" enctype="multipart/form-data" class="entry" novalidate>{% csrf_token %}
 {% include "core/inc/fields.html" %}
-<div class="form-foot"><button class="btn primary" type="submit" id="imp-btn" data-plain="{% trans 'Upload and check' %}" data-update="{% trans 'Update stock' %}" data-replace="{% trans 'Replace all stock' %}">{% trans "Upload and check" %}</button></div>
+<div class="form-foot"><button class="btn primary" type="submit" id="imp-btn" data-plain="{% trans 'Upload and check' %}" data-update="{% trans 'Update stock' %}" data-info="{% trans 'Update agent / POS info' %}" data-replace="{% trans 'Replace all stock' %}">{% trans "Upload and check" %}</button></div>
 </form></div>
 <div class="panel small">
   <strong>{% trans "Column guide" %}</strong>
@@ -31,7 +31,7 @@
 (function () {
   var k = document.querySelector('select[name=kind]'), b = document.getElementById('imp-btn');
   if (!k || !b) return;
-  function sync() { b.textContent = k.value === 'stock_update' ? b.dataset.update : (k.value === 'stock' ? b.dataset.replace : b.dataset.plain); }
+  function sync() { b.textContent = k.value === 'customers_update' ? b.dataset.info : k.value === 'stock_update' ? b.dataset.update : (k.value === 'stock' ? b.dataset.replace : b.dataset.plain); }
   k.addEventListener('change', sync); sync();
 })();
 </script>{% endblock %}

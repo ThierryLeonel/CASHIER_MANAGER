@@ -82,7 +82,7 @@ def clear_data(request):
     if request.method == "POST" and form.is_valid():
         cd = form.cleaned_data
         try:
-            counts = adm.clear_data(request.user, scope=cd["scope"], password=cd["password"],
+            counts = adm.clear_many(request.user, scopes=cd["scope"], password=cd["password"],
                                     confirm_text=cd["confirm_text"], agent=cd.get("agent"),
                                     target_user=cd.get("target_user"))
             messages.success(request, _("Data cleared (%(n)s transactions and %(a)s agent records removed). This "

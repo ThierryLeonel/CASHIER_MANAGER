@@ -479,3 +479,32 @@ Every transaction stores its **recording cashier** (`Transaction.cashier`), and 
   - Import page: "Download agents & POS", "Agents only" and "POS only".
   - Administration home: a "Download agents & POS" tile.
   - Same file as the call database (import format + agent in charge, active, stock).
+
+## Update agent / POS info by sheet, market supervisor supplies with his SIM, multi-select clear, installable app
+- **Update agent / POS info** (import kind `customers_update`, `_row_customer_update`, button "⟳ Update agent / POS
+  info" on the import page):
+  - Same columns as the agent / POS template, so the call database download can be edited and uploaded back.
+  - Rows are found by BUSINESS_SIM. Only the filled cells change (name, OM account name, WhatsApp, other contact,
+    address, zone / subzone / microzone). Empty cells keep what is there.
+  - Nobody is created: an unknown SIM is an error. A TYPE that does not match is an error.
+  - The check step shows "X will be updated, Y unchanged". Each row says which fields changed.
+- **Market supervisor who supplies:** link his login to his own agent account (Counterparty AGENT with his business
+  SIM) in Configuration › Users › counterparty. `User.sells` (agent, or market + counterparty).
+  - He gets the whole agent portal (`seller_required`): supply, client payments, paybacks to the cashiers (desks of
+    his master zone), transfers, float exchange, debtors, daily reconciliation, office supply vs payments, his
+    transactions, and destocash in cash / float.
+  - His POS (`ag.own_pos`) are those of his zone. `ag.zone_of` reads his assigned zone (`ag.market_login`).
+  - The cashiers record supplies and payments with him like with any agent.
+  - His home page shows "My agent account" (what he owes, what clients owe him, the actions). "My work" menu, plus
+    "My statement".
+  - Without a linked account he only follows (403 on the portal pages, no Cash / Float / Supply buttons).
+- **Clear data:** the options are checkboxes (`ClearDataForm.scope` multiple). `adm.clear_many` runs them in a safe
+  order in one transaction; "Everything" runs alone.
+- **Installable app (PWA)** (`core/views/pwa.py`):
+  - `/manifest.webmanifest`: standalone, theme #1c1c1c, shortcuts OOS / Supply.
+  - `/app-icon/<size>.png` and `/app-icon/<size>/maskable.png`: the company logo, or the orange letter.
+  - `/sw.js`, scope `/`: pages are always fetched from the server (no stale money figures); only static files are
+    cached; an `/offline/` page is shown with no connection.
+  - `base.html`: manifest / theme-color / apple meta, service worker registration, an "Install the app on this
+    phone" bar (Android Chrome `beforeinstallprompt`, can be dismissed), and "Install app" in the side menu.
+  - The same address keeps working as a normal link in any browser. Chrome reports no installability errors.

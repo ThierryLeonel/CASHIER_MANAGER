@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.urls import include, path
 
 from core import views as v
+from core.views import pwa
 
 urlpatterns = [
     path("", v.dashboard, name="dashboard"),
@@ -63,6 +64,11 @@ urlpatterns = [
     path("account/password/", v.my_password, name="my_password"),
     path("branding/logo.png", v.company_logo, name="company_logo"),
     path("favicon.ico", v.favicon, name="favicon"),
+    path("manifest.webmanifest", pwa.manifest, name="manifest"),
+    path("sw.js", pwa.service_worker, name="service_worker"),
+    path("offline/", pwa.offline, name="offline"),
+    path("app-icon/<int:size>.png", pwa.app_icon, name="app_icon"),
+    path("app-icon/<int:size>/<str:purpose>.png", pwa.app_icon, name="app_icon_purpose"),
     path("transactions/<int:pk>/edit/", v.txn_edit, name="txn_edit"),
     path("transactions/<int:pk>/delete/", v.txn_delete, name="txn_delete"),
     path("shops/", v.shops, name="shops"),

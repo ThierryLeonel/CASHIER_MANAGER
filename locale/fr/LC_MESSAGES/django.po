@@ -64,6 +64,14 @@ msgstr ""
 "leur stock."
 
 #, python-format
+msgid ""
+"%(c)s agents / POS have new information and will be updated; %(s)s are "
+"unchanged."
+msgstr ""
+"%(c)s agents / POS ont de nouvelles informations et seront mis à jour ; "
+"%(s)s sont inchangés."
+
+#, python-format
 msgid "%(c)s updated, %(s)s unchanged."
 msgstr "%(c)s mis à jour, %(s)s inchangés."
 
@@ -129,6 +137,10 @@ msgstr "%(cp)s enregistré."
 #, python-format
 msgid "%(cp)s · unchanged"
 msgstr "%(cp)s · inchangé"
+
+#, python-format
+msgid "%(cp)s · updated: %(fields)s"
+msgstr "%(cp)s · mis à jour : %(fields)s"
 
 #, python-format
 msgid "%(i)s is no longer sold."
@@ -527,6 +539,13 @@ msgstr ""
 msgid "A market supervisor must be assigned the subzone he follows."
 msgstr "Un superviseur marché doit être affecté à la sous-zone qu'il suit."
 
+msgid ""
+"A market supervisor who supplies POS is linked to his own agent account "
+"(with his business SIM), not to a POS."
+msgstr ""
+"Un superviseur marché qui approvisionne des POS est lié à son propre compte "
+"agent (avec sa SIM business), pas à un POS."
+
 msgid "A microzone belongs to a subzone, not to a master zone."
 msgstr "Une microzone appartient à une sous-zone, pas à une zone master."
 
@@ -816,6 +835,12 @@ msgstr "Agents et POS qui ont payé d'avance"
 msgid "Agents and POS with supply due (as of end of period)"
 msgstr "Agents et POS avec approvisionnement dû (fin de période)"
 
+msgid ""
+"Agents and POS — update their information (only the filled cells change)"
+msgstr ""
+"Agents et POS — mettre à jour leurs informations (seules les cellules "
+"remplies changent)"
+
 msgid "Agents and POS, cash managers and bank accounts: one at a time."
 msgstr "Agents et POS, cash managers et comptes bancaires : un à la fois."
 
@@ -1053,6 +1078,13 @@ msgstr "Arrive dans"
 
 msgid "As of"
 msgstr "Au"
+
+msgid ""
+"Ask the administrator to link your login to your own agent account (your "
+"business SIM) to supply POS."
+msgstr ""
+"Demandez à l'administrateur de lier votre connexion à votre propre compte "
+"agent (votre SIM business) pour approvisionner des POS."
 
 msgid "Ask the user to choose their own password at next sign-in"
 msgstr ""
@@ -3598,6 +3630,15 @@ msgstr "Apporter du capital"
 msgid "Injected"
 msgstr "Apporté"
 
+msgid "Install"
+msgstr "Installer"
+
+msgid "Install app"
+msgstr "Installer l'application"
+
+msgid "Install the app on this phone"
+msgstr "Installer l'application sur ce téléphone"
+
 #, python-format
 msgid ""
 "Insufficient balance in %(acct)s: available %(avail)s FCFA, required %(req)s"
@@ -3977,6 +4018,9 @@ msgstr "Mon compte"
 msgid "My account with the company"
 msgstr "Mon compte avec l'entreprise"
 
+msgid "My agent account"
+msgstr "Mon compte agent"
+
 msgid "My clients"
 msgstr "Mes clients"
 
@@ -4212,6 +4256,9 @@ msgstr "Pas de comptage de clôture"
 msgid "No closings yet."
 msgstr "Aucune clôture pour l'instant."
 
+msgid "No connection"
+msgstr "Pas de connexion"
+
 #, python-format
 msgid "No correction found for %(ref)s."
 msgstr "Aucune correction trouvée pour %(ref)s."
@@ -4370,6 +4417,9 @@ msgid ""
 msgstr ""
 "Pas un POS de votre zone : il est vérifié à l'enregistrement. Seul son nom "
 "sera affiché."
+
+msgid "Not now"
+msgstr "Pas maintenant"
 
 msgid "Not paid back"
 msgstr "Non remboursé"
@@ -6806,6 +6856,13 @@ msgid "The amount served cannot exceed the agreed amount."
 msgstr "Le montant servi ne peut pas dépasser le montant convenu."
 
 msgid ""
+"The app needs the internet to show and record your figures. Check your data "
+"or Wi-Fi, then try again."
+msgstr ""
+"L'application a besoin d'internet pour afficher et enregistrer vos chiffres."
+" Vérifiez vos données ou le Wi-Fi, puis réessayez."
+
+msgid ""
 "The book (expected) balance carries forward to the next day. Unresolved "
 "differences remain open until a manager or finance manager resolves them."
 msgstr ""
@@ -7491,6 +7548,9 @@ msgstr "Transferts reçus pas encore remboursés :"
 msgid "Transfers with shops"
 msgstr "Transferts avec les boutiques"
 
+msgid "Try again"
+msgstr "Réessayer"
+
 msgid "Type"
 msgstr "Type"
 
@@ -7808,6 +7868,9 @@ msgstr ""
 msgid "Update POS stock"
 msgstr "Mettre à jour le stock des POS"
 
+msgid "Update agent / POS info"
+msgstr "Mettre à jour les infos agents / POS"
+
 msgid "Update stock"
 msgstr "Mettre à jour le stock"
 
@@ -7921,6 +7984,9 @@ msgstr "Ce que le client vous a payé sur place. Le reste vous est dû."
 
 msgid "What to clear"
 msgstr "Ce qu'il faut effacer"
+
+msgid "What to clear (tick one or several)"
+msgstr "Que vider (cochez une ou plusieurs options)"
 
 msgid "What was paid, e.g. electricity bill October, transport of stock."
 msgstr ""
@@ -8567,6 +8633,9 @@ msgstr "ouverture"
 
 msgid "order in lists"
 msgstr "ordre dans les listes"
+
+msgid "other contact"
+msgstr "autre contact"
 
 msgid "other party's number"
 msgstr "numéro de l'autre partie"

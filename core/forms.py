@@ -790,7 +790,8 @@ class ClearDataForm(forms.Form):
                              "(agents, microzones and the rest stay)")),
               ("agent_list", _("Commercial agents only: delete every agent with his transactions, portal records "
                                "and login (microzones and POS stay, without an agent in charge)"))]
-    scope = forms.ChoiceField(label=_("What to clear"), choices=SCOPES, widget=forms.RadioSelect)
+    scope = forms.MultipleChoiceField(label=_("What to clear (tick one or several)"), choices=SCOPES,
+                                      widget=forms.CheckboxSelectMultiple)
     agent = forms.ModelChoiceField(label=_("Commercial agent"), required=False, queryset=None,
                                    empty_label=_("All commercial agents"),
                                    help_text=_("For the commercial agents' records: one agent, or all of them."))
@@ -814,7 +815,8 @@ ClearDataForm.__init__ = _init_clear_form
 
 
 class ImportForm(forms.Form):
-    KINDS = [("customers", _("Agents and POS")), ("cash_managers", _("Cash managers")),
+    KINDS = [("customers", _("Agents and POS")),
+             ("customers_update", _("Agents and POS — update their information (only the filled cells change)")), ("cash_managers", _("Cash managers")),
              ("opening", _("Opening balances (cashiers, agents, cash managers, banks and shops)")),
              ("transactions", _("Transactions (supplies, payments, expenses)")),
              ("shops", _("Shops")), ("shop_staff", _("Shop staff and their duties")),

@@ -1,9 +1,11 @@
 """Commercial agent portal, and the cashier's / shop's confirmation of agents' paybacks."""
 import uuid
+from functools import wraps
 from urllib.parse import quote
 from datetime import date, timedelta
 
 from django.contrib import messages
+from django.core.exceptions import PermissionDenied as Forbidden
 from django.db import transaction
 from django.core.paginator import Paginator
 from django.db.models import Count, Max, Q, Sum
@@ -29,6 +31,19 @@ from .base import R, STAFF, roles_required
 E, P = AgentClientEntry, AgentPayback
 
 
+def seller_required(view):
+    """Agent portal pages: commercial agents, and market supervisors linked to their own agent account (SIM)."""
+    @roles_required(R.AGENT, R.MARKET)
+    @wraps(view)
+    def inner(request, *args, **kwargs):
+        if not request.user.sells:
+            raise Forbidden(_("Ask the administrator to link your login to your own agent account (your business "
+                              "SIM) to supply POS."))
+        return view(request, *args, **kwargs)
+
+    return inner
+
+
 def _period(request, days=30):
     today = douala_today()
     try:
@@ -49,13 +64,13 @@ def agent_home(request):
     from core.services.branding import company
 
     limit = company().out_of_stock_er
-    out = ag.zone_pos(agent).filter(microzone__agent=agent, er_stock__lt=limit).count()
+    out = ag.own_pos(agent).filter(er_stock__lt=limit).count()
     return render(request, "core/agent/home.html", {
         "cp": agent, "s": ag.summary(agent), "rec": ag.daily_reconciliation(agent, today), "out_of_stock": out,
         "limit": limit})
 
 
-@roles_required(R.AGENT)
+@seller_required
 def agent_pos(request):
     agent = request.user.counterparty
     qs = ag.zone_pos(agent)
@@ -71,7 +86,7 @@ def agent_pos(request):
     limit, low = company().out_of_stock_er, company().low_stock_er
     mine = request.GET.get("mine") == "1"
     if mine:
-        qs = qs.filter(microzone__agent=agent)
+        qs = qs.filter(pk__in=ag.own_pos(agent).values("pk"))
     level = request.GET.get("level") or ("OUT" if request.GET.get("out") == "1" else "")
     if level == "OUT":
         qs = qs.filter(er_stock__lt=limit)
@@ -112,8 +127,8 @@ def _followed_pos(request):
     """The POS of the OOS / possible destocash lists: an agent's own POS (his microzones); for the supervisors
     every POS, a market supervisor those of his zone."""
     qs = Counterparty.objects.filter(kind=Counterparty.Kind.POS, active=True)
-    if request.user.is_agent:
-        return qs.filter(microzone__agent=request.user.counterparty)
+    if request.user.sells:
+        return ag.own_pos(request.user.counterparty)
     return qs.filter(request.user.pos_scope_q())
 
 
@@ -155,7 +170,7 @@ def agent_oos(request):
         "n_pos": mine.count(), "n_out": mine.filter(er_stock__lt=limit).count(),
         "n_low": mine.filter(er_stock__gte=limit, er_stock__lt=low).count(),
         "n_in": mine.filter(er_stock__gte=low).count(), "n_unknown": mine.filter(er_stock=None).count(),
-        "supervise": not request.user.is_agent, "zone": request.user.market_zone})
+        "supervise": not request.user.sells, "zone": request.user.market_zone})
 
 
 @roles_required(R.AGENT, *SUPERVISORS)
@@ -178,12 +193,12 @@ def agent_destock(request):
     keep.pop("page", None)
     tot = mine.aggregate(om=Sum("uve_stock"), n=Count("id"))
     return render(request, "core/agent/destock.html", {
-        "page": page, "q": q, "keep": keep.urlencode(), "tot": tot, "supervise": not request.user.is_agent,
+        "page": page, "q": q, "keep": keep.urlencode(), "tot": tot, "supervise": not request.user.sells,
         "zone": request.user.market_zone,
         "last": mine.exclude(stock_at=None).order_by("-stock_at").values_list("stock_at", flat=True).first()})
 
 
-@roles_required(R.AGENT)
+@seller_required
 def agent_destock_record(request):
     """Possible destocash, one tap: "Cash" = the agent gives the POS cash for its OM (a cash supply paid back in UVE
     at once, nothing owed); "Float" = the agent sends the POS float for its OM (a float exchange). The POS's OM stock
@@ -192,10 +207,8 @@ def agent_destock_record(request):
         return redirect("agent_destock")
     from core.money import to_money
 
-    agent = request.user.counterparty
     nxt = _safe_next(request) or reverse("agent_destock")
-    pos = Counterparty.objects.filter(kind=Counterparty.Kind.POS, pk=request.POST.get("pos") or 0,
-                                      microzone__agent=agent).first()
+    pos = _followed_pos(request).filter(pk=request.POST.get("pos") or 0).first()
     how = request.POST.get("how")
     if pos is None or how not in ("CASH", "FLOAT"):
         messages.error(request, _("This POS is not one of yours."))
@@ -232,7 +245,7 @@ def agent_destock_record(request):
     return redirect(nxt)
 
 
-@roles_required(R.AGENT)
+@seller_required
 def agent_coverage(request):
     """How many different POS the agent supplied per day, week and month (a POS supplied twice counts once)."""
     agent = request.user.counterparty
@@ -240,7 +253,7 @@ def agent_coverage(request):
     return render(request, "core/agent/coverage.html", rep)
 
 
-@roles_required(R.AGENT)
+@seller_required
 def agent_pos_edit(request, pk):
     """The agent corrects a POS's details (name, business name, contacts, address). The SIM, microzone and stock
     stay with the office."""
@@ -262,7 +275,7 @@ def agent_pos_edit(request, pk):
     return render(request, "core/agent/pos_edit.html", {"form": form, "pos": pos, "next": _safe_next(request)})
 
 
-@roles_required(R.AGENT)
+@seller_required
 def agent_pos_search(request):
     """POS of the agent's zone matching a name, microzone or SIM digits (a few, for the number picker)."""
     agent = request.user.counterparty
@@ -279,7 +292,7 @@ def agent_pos_search(request):
     return JsonResponse({"results": out})
 
 
-@roles_required(R.AGENT)
+@seller_required
 def agent_pos_detail(request, pk):
     agent = request.user.counterparty
     pos = get_object_or_404(Counterparty, pk=pk, kind=Counterparty.Kind.POS)
@@ -371,7 +384,7 @@ def _verb(en, fr):
     return fr if (get_language() or "").startswith("fr") else en
 
 
-@roles_required(R.AGENT)
+@seller_required
 def agent_supply(request):
     return _entry_form(
         request, AF.AgentSupplyForm, ag.record_supply, title=_("Supply a client"), icon="supply",
@@ -381,7 +394,7 @@ def agent_supply(request):
         labels={"dial": _verb("Supply", "Approvisionner"), "plain": _("Record")})
 
 
-@roles_required(R.AGENT)
+@seller_required
 def agent_transfer(request):
     agent = request.user.counterparty
     return _entry_form(
@@ -394,7 +407,7 @@ def agent_transfer(request):
                .exclude(pk=agent.pk).order_by("name")})
 
 
-@roles_required(R.AGENT)
+@seller_required
 def agent_collect(request):
     return _entry_form(
         request, AF.ClientPaymentForm, ag.record_client_payment, title=_("A client pays me"), icon="payment",
@@ -402,7 +415,7 @@ def agent_collect(request):
             "ref": e.reference, "amt": fmt(e.paid), "who": e.client_label})
 
 
-@roles_required(R.AGENT)
+@seller_required
 def agent_exchange(request):
     return _entry_form(
         request, AF.ExchangeForm, ag.record_exchange, title=_("Float exchange"), icon="convert",
@@ -413,7 +426,7 @@ def agent_exchange(request):
                "today": douala_today()})
 
 
-@roles_required(R.AGENT)
+@seller_required
 @require_POST
 def agent_exchange_cancel(request, pk):
     x = get_object_or_404(AgentExchange, pk=pk, agent=request.user.counterparty)
@@ -425,7 +438,7 @@ def agent_exchange_cancel(request, pk):
     return redirect("agent_exchange")
 
 
-@roles_required(R.AGENT)
+@seller_required
 def agent_debtors(request):
     """Everyone who owes the agent, with what is outstanding and a button to receive or ask for the payment."""
     agent = request.user.counterparty
@@ -443,7 +456,7 @@ def agent_debtors(request):
         "rows": rows, "total": sum((g["owed"] for g in rows), 0)})
 
 
-@roles_required(R.AGENT)
+@seller_required
 def agent_debtor_pay(request):
     """One tap on the debtors list: "Paid cash / UVE / float" closes the whole debt in that way; "Partial" records
     the amount typed (in the way chosen)."""
@@ -491,7 +504,7 @@ def agent_debtor_pay(request):
     return redirect(reverse("agent_debtors") + f"#d-{request.POST.get('anchor', '')}")
 
 
-@roles_required(R.AGENT)
+@seller_required
 def agent_payback(request):
     return _entry_form(
         request, AF.PaybackForm, ag.request_payback, title=_("Pay back the company"), icon="transfer",
@@ -503,7 +516,7 @@ def agent_payback(request):
         extra={"s": ag.summary(request.user.counterparty)})
 
 
-@roles_required(R.AGENT)
+@seller_required
 def agent_daily(request):
     agent = request.user.counterparty
     today = douala_today()
@@ -524,7 +537,7 @@ def agent_daily(request):
         "days": ag.daily_summary(agent, d_from, day)})
 
 
-@roles_required(R.AGENT)
+@seller_required
 def agent_office(request):
     """Every supply and destockage the office recorded on the agent, with daily totals per product."""
     agent = request.user.counterparty
@@ -558,7 +571,7 @@ TABS = (("clients", _l("My clients")), ("agents", _l("Agents")), ("paybacks", _l
         ("office", _l("All office records")))
 
 
-@roles_required(R.AGENT)
+@seller_required
 def agent_activity(request):
     agent = request.user.counterparty
     tab = request.GET.get("tab") if request.GET.get("tab") in dict(TABS) else "clients"
@@ -585,7 +598,7 @@ def agent_activity(request):
     return render(request, "core/agent/activity.html", ctx)
 
 
-@roles_required(R.AGENT)
+@seller_required
 @require_POST
 def agent_entry_cancel(request, pk):
     e = get_object_or_404(E, pk=pk, agent=request.user.counterparty)
@@ -597,7 +610,7 @@ def agent_entry_cancel(request, pk):
     return redirect("agent_activity")
 
 
-@roles_required(R.AGENT)
+@seller_required
 @require_POST
 def agent_payback_cancel(request, pk):
     p = get_object_or_404(P, pk=pk, agent=request.user.counterparty)

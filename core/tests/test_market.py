@@ -140,3 +140,100 @@ class Market(OrgMixin, TestCase):
         u = User(username="mk2", role=User.Role.MARKET)
         with self.assertRaises(ValidationError):
             u.clean()
+
+
+class Requests4(OrgMixin, TestCase):
+    """Update agent / POS info by sheet; market supervisor supplies with his own SIM; multi-select clear; app."""
+
+    def setUp(self):
+        self.make_org()
+        self.fund_all()
+
+    def login(self, u):
+        c = self.client_class()
+        self.assertTrue(c.login(username=u.username, password=PW))
+        return c
+
+    def test_update_info_by_sheet_changes_only_filled_cells(self):
+        from core.services import importer
+
+        from .test_admin import xlsx_bytes
+
+        p = self.p1
+        old_name, old_om = p.name, p.om_account_name
+        Counterparty.objects.filter(pk=p.pk).update(address="old street")
+        head = importer.TEMPLATES["customers_update"][0]
+        rows = [head, ["POS", "", "", "", "", p.business_sim, "", "677 99 98 88", "", "new street"],
+                ["", "", "", "", "", self.a1.business_sim, "", "", "", ""],
+                ["", "", "", "", "", "699999999", "Nobody", "", "", ""]]
+        res, ok = importer.run_import(self.admin, "customers_update", importer.read_rows("u.xlsx", xlsx_bytes(rows)),
+                                      commit=True)
+        self.assertFalse(ok)  # an unknown SIM is an error: nobody is created
+        self.assertFalse(Counterparty.objects.filter(business_sim="699999999").exists())
+        res, ok = importer.run_import(self.admin, "customers_update",
+                                      importer.read_rows("u.xlsx", xlsx_bytes(rows[:3])), commit=True)
+        self.assertTrue(ok, res)
+        p.refresh_from_db()
+        self.assertEqual((p.name, p.om_account_name, p.whatsapp, p.address), (old_name, old_om, "677999888",
+                                                                              "new street"))
+        self.assertIn("unchanged", res[1][2])
+        self.assertIn("customers_update", dict(__import__("core.forms", fromlist=["x"]).ImportForm.KINDS))
+
+    def test_market_supervisor_with_his_sim_supplies_and_pays_back(self):
+        from core.models import AgentPayback
+
+        sub = self.p1.microzone.subzone
+        own = Counterparty.objects.create(kind="AGENT", business_sim="655443322", name="Market Sup SIM",
+                                          master_zone=sub.parent)
+        mk = User.objects.create_user("mk", password=PW, role=User.Role.MARKET, subzone=sub, counterparty=own)
+        mk.full_clean(exclude=["password"])
+        c = self.login(mk)
+        home = c.get("/")
+        self.assertContains(home, "My agent account")
+        self.assertContains(home, "/agent/supply/")
+        r = c.post("/agent/supply/", {"client_kind": "POS", "pos_sim": self.p1.business_sim, "product": "UVE",
+                                      "amount": "15000", "idem": str(uuid.uuid4())}, HTTP_X_REQUESTED_WITH="fetch")
+        self.assertIn(r.status_code, (200, 302))
+        e = AgentClientEntry.objects.filter(agent=own).first()
+        self.assertIsNotNone(e, r.content[:3000] if r.status_code == 200 else r)
+        self.assertEqual(e.pos, self.p1)
+        Counterparty.objects.filter(pk=self.p1.pk).update(uve_stock=D(5000))
+        page = c.get("/agent/destocash/")
+        self.assertContains(page, 'data-destock="CASH"')  # he records destocash too
+        self.assertEqual(c.get("/agent/payback/").status_code, 200)
+        self.assertEqual(c.get("/agent/debtors/").status_code, 200)
+        # without his own agent account he only follows
+        mk2 = User.objects.create_user("mk2", password=PW, role=User.Role.MARKET, subzone=sub)
+        c2 = self.login(mk2)
+        self.assertEqual(c2.get("/agent/supply/").status_code, 403)
+        self.assertNotContains(c2.get("/agent/destocash/"), 'data-destock="CASH"')
+        self.assertTrue(AgentPayback.objects.model)
+
+    def test_clear_several_options_at_once(self):
+        from core.services import admin as adm
+
+        self.assertTrue(Counterparty.objects.filter(kind="POS").exists())
+        c = self.login(self.admin)
+        r = c.get("/administration/clear/")
+        self.assertContains(r, 'type="checkbox" name="scope"')
+        adm.clear_many(self.admin, scopes=["pos_list", "agent_list"], password=PW, confirm_text="DELETE")
+        self.assertFalse(Counterparty.objects.filter(kind__in=["POS", "AGENT"]).exists())
+
+    def test_installable_app(self):
+        c = self.client_class()
+        m = c.get("/manifest.webmanifest")
+        self.assertEqual(m.status_code, 200)
+        import json
+
+        data = json.loads(m.content)
+        self.assertEqual(data["display"], "standalone")
+        self.assertTrue(any(i["sizes"] == "512x512" for i in data["icons"]))
+        icon = c.get("/app-icon/512.png")
+        self.assertEqual(icon["Content-Type"], "image/png")
+        self.assertTrue(icon.content.startswith(b"\x89PNG"))
+        self.assertTrue(c.get("/app-icon/192/maskable.png").content.startswith(b"\x89PNG"))
+        sw = c.get("/sw.js")
+        self.assertEqual(sw["Service-Worker-Allowed"], "/")
+        self.assertIn(b"fetch", sw.content)
+        self.assertEqual(c.get("/offline/").status_code, 200)
+        self.assertContains(c.get("/login/"), 'rel="manifest"')
