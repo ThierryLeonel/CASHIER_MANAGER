@@ -1,0 +1,8 @@
+{% load i18n %}{% if user.is_market and not user.sells %}
+<form method="post" action="{% url 'market_sim' %}" class="panel sim-setup">{% csrf_token %}
+  <input type="hidden" name="next" value="{{ request.get_full_path }}">
+  <strong>{% trans "Supply and destocash the POS with your own SIM" %}</strong>
+  <p class="small muted">{% trans "Enter your business SIM (STKB) once. It becomes your agent account: your supplies, destocash and paybacks to the cashiers are recorded on it." %}</p>
+  <div class="row"><input type="text" name="sim" inputmode="tel" placeholder="6XX XX XX XX" required autocomplete="off" aria-label="{% trans 'Your business SIM' %}">
+  <button class="btn primary" type="submit">{% trans "Start supplying" %}</button></div>
+</form>{% endif %}

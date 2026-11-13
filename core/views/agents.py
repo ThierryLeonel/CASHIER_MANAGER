@@ -23,6 +23,7 @@ from core import forms_agent as AF
 from core.models import AgentClientEntry, AgentExchange, AgentPayback, Counterparty
 from core.money import fmt
 from core.services import agents as ag
+from core.services import operations as ops
 from core.services.days import douala_today
 from core.services.errors import BusinessError
 
@@ -130,6 +131,42 @@ def _followed_pos(request):
     if request.user.sells:
         return ag.own_pos(request.user.counterparty)
     return qs.filter(request.user.pos_scope_q())
+
+
+@roles_required(R.MARKET)
+def market_sim(request):
+    """A market supervisor starts supplying: his business SIM becomes his own agent account (created, or an agent
+    account with that SIM that no other login uses), linked to his login."""
+    nxt = _safe_next(request) or reverse("agent_oos")
+    if request.method != "POST":
+        return redirect(nxt)
+    from core.models import User
+    from core.simnumbers import SimNumberError, normalize_sim
+
+    user = request.user
+    try:
+        sim = normalize_sim(request.POST.get("sim") or "")
+    except SimNumberError as e:
+        messages.error(request, _(str(e)))
+        return redirect(nxt)
+    cp = Counterparty.objects.filter(business_sim=sim).first()
+    if cp is not None and cp.kind != Counterparty.Kind.AGENT:
+        messages.error(request, _("%(sim)s is registered as a POS, not as your agent SIM.") % {"sim": sim})
+        return redirect(nxt)
+    if cp is not None and User.objects.filter(counterparty=cp).exclude(pk=user.pk).exists():
+        messages.error(request, _("%(sim)s is already the account of another login.") % {"sim": sim})
+        return redirect(nxt)
+    with transaction.atomic():
+        if cp is None:
+            cp = Counterparty.objects.create(kind=Counterparty.Kind.AGENT, business_sim=sim, name=str(user)[:150],
+                                             master_zone=user.subzone.master if user.subzone_id else None,
+                                             created_by=user)
+            ops.log_event(user, "counterparty_created", id=cp.id, sim=sim, kind=cp.kind, via="market_sim")
+        user.counterparty = cp
+        user.save(update_fields=["counterparty"])
+        ops.log_event(user, "market_sim_linked", counterparty=cp.id)
+    messages.success(request, _("Your SIM %(sim)s is ready: you can now supply and destocash the POS.") % {"sim": sim})
+    return redirect(nxt)
 
 
 @roles_required(R.AGENT, *SUPERVISORS)

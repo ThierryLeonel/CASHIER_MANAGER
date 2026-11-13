@@ -3,6 +3,7 @@
 {% block topbar %}{% trans "Possible destocash" %}{% endblock %}
 {% block content %}
 <h1>{% trans "Possible destocash" %}{% if zone %} — {{ zone.name }}{% endif %}</h1>
+{% include "core/agent/inc/market_sim.html" %}
 <p class="small muted meta">{% trans "Your POS holding OM stock, from the most to the least. Destocash = give the POS cash for its OM." %}{% if last %} {% blocktrans with d=last|date:"d/m/Y H:i" %}Stock of {{ d }}.{% endblocktrans %}{% endif %}</p>
 <div class="bal-row">
   <div class="bal k-UVE"><span class="bal-label">{% if supervise %}{% trans "OM stock of the POS" %}{% else %}{% trans "OM stock of my POS" %}{% endif %}</span><span class="bal-value">{{ tot.om|default:0|fcfa }}</span><span class="bal-unit">FCFA</span></div>

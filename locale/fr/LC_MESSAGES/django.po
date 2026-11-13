@@ -324,6 +324,14 @@ msgstr ""
 "autre boutique, ou désactivez la boutique."
 
 #, python-format
+msgid "%(sim)s is already the account of another login."
+msgstr "%(sim)s est déjà le compte d'une autre connexion."
+
+#, python-format
+msgid "%(sim)s is registered as a POS, not as your agent SIM."
+msgstr "%(sim)s est enregistré comme POS, pas comme votre SIM agent."
+
+#, python-format
 msgid "%(type)s %(ref)s recorded: %(amt)s FCFA."
 msgstr "%(type)s %(ref)s enregistré(e) : %(amt)s FCFA."
 
@@ -3008,6 +3016,14 @@ msgstr "Saisissez ce que vous remboursez en espèces, UVE et / ou float MTN."
 
 msgid "Enter what you supplied in UVE, ER and / or cash."
 msgstr "Saisissez ce que vous avez approvisionné en UVE, ER et / ou espèces."
+
+msgid ""
+"Enter your business SIM (STKB) once. It becomes your agent account: your "
+"supplies, destocash and paybacks to the cashiers are recorded on it."
+msgstr ""
+"Saisissez une fois votre SIM business (STKB). Elle devient votre compte "
+"agent : vos approvisionnements, destocash et reversements aux caissiers y "
+"sont enregistrés."
 
 msgid "Entered by"
 msgstr "Saisi par"
@@ -6508,6 +6524,9 @@ msgstr "Personnel et tâches"
 msgid "Staff hours"
 msgstr "Heures du personnel"
 
+msgid "Start supplying"
+msgstr "Commencer à approvisionner"
+
 msgid "Statement"
 msgstr "Relevé"
 
@@ -6697,6 +6716,9 @@ msgstr "Approvisionnement"
 
 msgid "Supply a client"
 msgstr "Approvisionner un client"
+
+msgid "Supply and destocash the POS with your own SIM"
+msgstr "Approvisionnez et destocashez les POS avec votre propre SIM"
 
 msgid "Supply another client"
 msgstr "Approvisionner un autre client"
@@ -8170,6 +8192,12 @@ msgstr ""
 "Vos POS qui ont du stock OM, du plus élevé au plus faible. Déstocker = "
 "donner au POS du cash contre son OM."
 
+#, python-format
+msgid "Your SIM %(sim)s is ready: you can now supply and destocash the POS."
+msgstr ""
+"Votre SIM %(sim)s est prête : vous pouvez maintenant approvisionner et "
+"destocasher les POS."
+
 msgid ""
 "Your account is not linked to a shop yet. Ask the super administrator to "
 "assign your shop."
@@ -8182,6 +8210,9 @@ msgstr "Votre compte n'est pas lié à une boutique."
 
 msgid "Your account is not linked to an open shop."
 msgstr "Votre compte n'est lié à aucune boutique ouverte."
+
+msgid "Your business SIM"
+msgstr "Votre SIM business"
 
 #, python-format
 msgid ""

@@ -1856,6 +1856,13 @@ FR = {
     'matches': 'correspond',
     'There is a difference: the note is required. Explain it before closing.': 'Il y a un écart : la note est obligatoire. Expliquez-le avant de clôturer.',
     # commercial agent portal
+    "%(sim)s is already the account of another login.": "%(sim)s est déjà le compte d'une autre connexion.",
+    "%(sim)s is registered as a POS, not as your agent SIM.": "%(sim)s est enregistré comme POS, pas comme votre SIM agent.",
+    "Enter your business SIM (STKB) once. It becomes your agent account: your supplies, destocash and paybacks to the cashiers are recorded on it.": "Saisissez une fois votre SIM business (STKB). Elle devient votre compte agent : vos approvisionnements, destocash et reversements aux caissiers y sont enregistrés.",
+    "Start supplying": "Commencer à approvisionner",
+    "Supply and destocash the POS with your own SIM": "Approvisionnez et destocashez les POS avec votre propre SIM",
+    "Your SIM %(sim)s is ready: you can now supply and destocash the POS.": "Votre SIM %(sim)s est prête : vous pouvez maintenant approvisionner et destocasher les POS.",
+    "Your business SIM": "Votre SIM business",
     "%(c)s agents / POS have new information and will be updated; %(s)s are unchanged.": "%(c)s agents / POS ont de nouvelles informations et seront mis à jour ; %(s)s sont inchangés.",
     "%(cp)s · updated: %(fields)s": "%(cp)s · mis à jour : %(fields)s",
     "A market supervisor who supplies POS is linked to his own agent account (with his business SIM), not to a POS.": "Un superviseur marché qui approvisionne des POS est lié à son propre compte agent (avec sa SIM business), pas à un POS.",

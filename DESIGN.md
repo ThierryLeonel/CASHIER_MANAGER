@@ -508,3 +508,13 @@ Every transaction stores its **recording cashier** (`Transaction.cashier`), and 
   - `base.html`: manifest / theme-color / apple meta, service worker registration, an "Install the app on this
     phone" bar (Android Chrome `beforeinstallprompt`, can be dismissed), and "Install app" in the side menu.
   - The same address keeps working as a normal link in any browser. Chrome reports no installability errors.
+
+## Market supervisor: supply out-of-stock POS and destocash without admin setup
+- A market supervisor with no linked agent account sees "Supply and destocash the POS with your own SIM" on OOS,
+  Possible destocash and his home page. He enters his business SIM (STKB) once (`market_sim`,
+  `/agent/my-sim/`):
+  - The SIM becomes his own agent account: it is created (kind AGENT, name = his name, master zone of his zone), or
+    an existing agent account with that SIM is used if no other login has it. A POS SIM is refused.
+  - His login is linked to it, so he immediately gets the Supply button on every POS of his zone in OOS, and Cash /
+    Float destocash, like a commercial agent (all recorded on his account).
+- The admin can still link the account in Configuration › Users.

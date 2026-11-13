@@ -237,3 +237,29 @@ class Requests4(OrgMixin, TestCase):
         self.assertIn(b"fetch", sw.content)
         self.assertEqual(c.get("/offline/").status_code, 200)
         self.assertContains(c.get("/login/"), 'rel="manifest"')
+
+    def test_market_supervisor_starts_supplying_with_his_sim_in_the_app(self):
+        sub = self.p1.microzone.subzone
+        mk = User.objects.create_user("mk3", password=PW, role=User.Role.MARKET, subzone=sub)
+        Counterparty.objects.filter(pk=self.p1.pk).update(er_stock=D(100), uve_stock=D(8000))
+        c = self.login(mk)
+        oos = c.get("/agent/oos/")
+        self.assertContains(oos, "Start supplying")
+        self.assertNotContains(oos, "/agent/supply/?pos=")
+        # a POS SIM is refused
+        c.post("/agent/my-sim/", {"sim": self.p1.business_sim, "next": "/agent/oos/"})
+        mk.refresh_from_db()
+        self.assertIsNone(mk.counterparty_id)
+        r = c.post("/agent/my-sim/", {"sim": "655 12 34 56", "next": "/agent/oos/"})
+        self.assertRedirects(r, "/agent/oos/", fetch_redirect_response=False)
+        mk.refresh_from_db()
+        self.assertEqual((mk.counterparty.kind, mk.counterparty.business_sim), ("AGENT", "655123456"))
+        oos = c.get("/agent/oos/")
+        self.assertNotContains(oos, "Start supplying")
+        self.assertContains(oos, "/agent/supply/?pos=")  # supply the out-of-stock POS
+        dest = c.get("/agent/destocash/")
+        self.assertContains(dest, 'data-destock="CASH"')
+        self.assertContains(dest, 'data-destock="FLOAT"')
+        r = c.post("/agent/destocash/record/", {"pos": self.p1.pk, "how": "CASH", "amount": "5000",
+                                                "idem": str(uuid.uuid4())})
+        self.assertTrue(AgentClientEntry.objects.filter(agent=mk.counterparty, pos=self.p1).exists())

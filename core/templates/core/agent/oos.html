@@ -3,6 +3,7 @@
 {% block topbar %}{% trans "OOS" %}{% endblock %}
 {% block content %}
 <h1>{% if supervise %}{% trans "POS stock (OOS)" %}{% if zone %} — {{ zone.name }}{% endif %}{% else %}{% trans "My POS stock (OOS)" %}{% endif %}</h1>
+{% include "core/agent/inc/market_sim.html" %}
 <p class="small muted meta">{% blocktrans with n=limit|fcfa l=low|fcfa %}ER stock: out of stock below {{ n }}, low stock below {{ l }} FCFA.{% endblocktrans %}{% if last %} {% blocktrans with d=last|date:"d/m/Y H:i" %}Stock of {{ d }}.{% endblocktrans %}{% endif %}</p>
 <div class="lvl-tabs">
   <a href="?" class="{% if not level %}on{% endif %}">{% trans "All" %} <b>{{ n_pos }}</b></a>

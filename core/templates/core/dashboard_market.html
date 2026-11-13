@@ -10,6 +10,7 @@
   <a class="bal k-ER oos bal-link" href="{% url 'report' 'pos_stock' %}"><span class="bal-label">{% trans "POS out of stock" %}</span><span class="bal-value">{{ n_out }}</span><span class="bal-unit">{% blocktrans with n=n_low %}{{ n }} low stock{% endblocktrans %}</span></a>
   <a class="bal k-TOTAL bal-link" href="{% url 'report' 'customers' %}"><span class="bal-label">{% trans "Owed to the company by agents / POS" %}</span><span class="bal-value">{{ owed|fcfa }}</span><span class="bal-unit">{% blocktrans with d=due|fcfa %}due to them: {{ d }}{% endblocktrans %}</span></a>
 </div>
+{% include "core/agent/inc/market_sim.html" %}
 {% if s %}<h2>{% trans "My agent account" %} · {{ user.counterparty.business_sim }}</h2>
 <div class="bal-row">
   <div class="bal k-CASH_DRAWER"><span class="bal-label">{% if s.owed_company|negative %}{% trans "The company owes you" %}{% else %}{% trans "I owe the company" %}{% endif %}</span><span class="bal-value">{{ s.owed_company|absval|fcfa }}</span><span class="bal-unit">FCFA{% if s.pending %} · {% blocktrans with n=s.pending %}{{ n }} waiting{% endblocktrans %}{% endif %}</span></div>
