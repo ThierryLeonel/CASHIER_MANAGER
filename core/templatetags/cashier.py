@@ -139,6 +139,14 @@ def no_accounts(bound_field):
 
 
 @register.filter
+def forwarded(t):
+    """An agent payment through a shop already passed on to the cashier ("PAY NOW" done)."""
+    from core.models import PaybackForward
+
+    return PaybackForward.objects.filter(payback_id=t.pk).exists()
+
+
+@register.filter
 def wa_link(cp):
     """WhatsApp chat link of an agent / POS: his WhatsApp contact, else his business SIM (Cameroon +237)."""
     raw = getattr(cp, "whatsapp", "") or getattr(cp, "business_sim", "") or ""

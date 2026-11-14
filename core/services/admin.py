@@ -125,10 +125,28 @@ def delete_transaction(user, t, *, reason):
     return snaps
 
 
+def delete_many(user, txns, *, reason):
+    """Delete several transactions chosen by the administrator, one after the other (each with its linked rows,
+    each checked). Returns (deleted references, [(reference, why not)])."""
+    perm.require_role(user, perm.CONFIG_ROLES, "delete")
+    if not (reason or "").strip():
+        raise BusinessError(_("Give the reason for deleting."), "reason")
+    done, failed = [], []
+    for t in txns:
+        if not Transaction.objects.filter(pk=t.pk).exists():
+            continue  # already deleted with another one of its group
+        try:
+            done += [s["reference"] for s in delete_transaction(user, t, reason=reason)]
+        except BusinessError as e:
+            failed.append((t.reference, e.message))
+    return done, failed
+
+
 def _release_shop_rows(txn_ids):
     """Shop rows hanging on transactions about to be deleted: a deleted sale puts its units back in stock."""
-    from core.models import AgentPayback
+    from core.models import AgentPayback, PaybackForward
 
+    PaybackForward.objects.filter(Q(payback_id__in=txn_ids) | Q(transfer_id__in=txn_ids)).delete()
     # an agent payback whose payment is deleted is no longer confirmed (the agent declares it again if needed)
     AgentPayback.objects.filter(transaction_id__in=txn_ids).update(
         status=AgentPayback.Status.REJECTED, transaction=None, reject_reason="Payment deleted by the administrator")

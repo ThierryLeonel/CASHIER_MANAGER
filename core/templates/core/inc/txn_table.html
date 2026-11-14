@@ -1,8 +1,9 @@
 {% load i18n cashier %}<div class="tbl-wrap"><table class="t">
-<thead><tr><th>{% trans "Recorded at" %}</th><th>{% trans "Business date" %}</th><th>{% trans "Reference" %}</th><th>{% trans "Type" %}</th><th>{% trans "Agent / POS" %}</th><th>{% trans "Account" %}</th><th>{% trans "Cashier (ID)" %}</th><th class="money">{% trans "Amount" %}</th></tr></thead>
+<thead><tr>{% if selectable %}<th class="sel"><input type="checkbox" data-sel-all aria-label="{% trans 'Select all' %}"></th>{% endif %}<th>{% trans "Recorded at" %}</th><th>{% trans "Business date" %}</th><th>{% trans "Reference" %}</th><th>{% trans "Type" %}</th><th>{% trans "Agent / POS" %}</th><th>{% trans "Account" %}</th><th>{% trans "Cashier (ID)" %}</th><th class="money">{% trans "Amount" %}</th></tr></thead>
 <tbody>
 {% for t in txns %}
 <tr{% if t.is_corrected %} class="corrected"{% endif %}>
+  {% if selectable %}<td class="sel"><input type="checkbox" name="ids" value="{{ t.pk }}" form="bulk-del" aria-label="{{ t.reference }}"></td>{% endif %}
   <td>{{ t.posted_at|date:"d/m/Y H:i" }}</td>
   <td class="sm-hide">{{ t.business_date|date:"d/m/Y" }}</td>
   <td class="keep"><a href="{% url 'txn_detail' t.pk %}">{{ t.reference }}</a>{% if t.is_corrected %} <span class="badge bad">{% trans "CORRECTED" %}</span>{% endif %}{% if t.type == 'REVERSAL' %} <span class="badge">↺ {{ t.reverses.reference }}</span>{% endif %}</td>

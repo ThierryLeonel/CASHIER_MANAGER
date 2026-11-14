@@ -71,6 +71,7 @@ urlpatterns = [
     path("app-icon/<int:size>/<str:purpose>.png", pwa.app_icon, name="app_icon_purpose"),
     path("transactions/<int:pk>/edit/", v.txn_edit, name="txn_edit"),
     path("transactions/<int:pk>/delete/", v.txn_delete, name="txn_delete"),
+    path("transactions/delete-selected/", v.txn_delete_many, name="txn_delete_many"),
     path("shops/", v.shops, name="shops"),
     path("shops/<int:pk>/", v.shop_detail, name="shop_detail"),
     path("shops/do/<slug:op>/", v.shop_op, name="shop_op"),
@@ -126,5 +127,7 @@ urlpatterns = [
     path("shops/opening-balances/", v.shop_opening_balances, name="shop_opening_balances"),
     path("transfer/to-shop/", v.desk_to_shop, name="desk_to_shop"),
     path("stock-exchange/", v.desk_exchange, name="desk_exchange"),
+    path("shops/pay-now/<int:pk>/", v.shop_pay_now, name="shop_pay_now"),
+    path("shops/debts/", v.shop_debts, name="shop_debts"),
     path("admin/", admin.site.urls),
 ]

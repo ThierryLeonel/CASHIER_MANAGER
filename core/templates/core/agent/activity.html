@@ -4,10 +4,13 @@
 {% block content %}
 <h1>{% trans "My transactions" %}</h1>
 <div class="chips">{% for k, label in tabs %}<a class="chip{% if tab == k %} on{% endif %}" href="?tab={{ k }}&from={{ d_from|date:'Y-m-d' }}&to={{ d_to|date:'Y-m-d' }}">{{ label }}</a>{% endfor %}</div>
+{% if tab == 'clients' %}<nav class="lvl-tabs rec-chips" aria-label="{% trans 'Show' %}">
+  {% for k, label in kinds %}<a href="?tab=clients&amp;from={{ d_from|date:'Y-m-d' }}&amp;to={{ d_to|date:'Y-m-d' }}&amp;kind={{ k }}" class="{% if kind == k %}on{% endif %}">{{ label }}</a>{% endfor %}
+</nav>{% endif %}
 <form class="filters panel" method="get"><input type="hidden" name="tab" value="{{ tab }}">
   <div class="field"><label>{% trans "From" %}</label><input type="date" name="from" value="{{ d_from|date:'Y-m-d' }}"></div>
   <div class="field"><label>{% trans "To" %}</label><input type="date" name="to" value="{{ d_to|date:'Y-m-d' }}"></div>
-  {% if tab == 'clients' %}<div class="field"><label>{% trans "Operation" %}</label><select name="kind"><option value="">{% trans "All" %}</option><option value="SUPPLY"{% if kind == 'SUPPLY' %} selected{% endif %}>{% trans "Supplies" %}</option><option value="PAYMENT"{% if kind == 'PAYMENT' %} selected{% endif %}>{% trans "Payments" %}</option></select></div>{% endif %}
+  {% if tab == 'clients' %}<input type="hidden" name="kind" value="{{ kind }}">{% endif %}
   <div class="field"><button class="btn" type="submit">{% trans "Apply" %}</button></div>
 </form>
 {% if tab == 'office' %}

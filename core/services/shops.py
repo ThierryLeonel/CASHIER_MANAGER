@@ -27,7 +27,7 @@ from django.utils.translation import gettext_lazy as _l
 
 from core.models import (
     SHOP_DUTIES, Account, Counterparty, ItemSale, ServiceCount, Shop, ShopConversionRate, ShopItem, SimRetrieval, StockMove,
-    StockUnit, TxType, User,
+    StockUnit, Transaction, TxType, User,
 )
 from core.money import MoneyError, conversion_er_amount, fmt, to_money
 from core.simnumbers import SimNumberError, normalize_sim
@@ -238,8 +238,12 @@ def shop_ussd(op, t, params):
         from .operations import desk_account
 
         tpl, amount = SHOP_USSD["uve"], params["uve"]
-        if op == "to_shop":
-            number = norm(params["dest_shop"].sim_number)
+        if op == "to_shop":  # the shop's company SIM, else the SIM of its UVE wallet
+            dest = params["dest_shop"]
+            number = norm(dest.sim_number)
+            if not number:
+                acct = dest.account(K.UVE)
+                number = norm(acct.sim.msisdn) if acct.sim_id else ""
         else:
             try:
                 acct = desk_account(params["desk"], K.UVE)
@@ -364,6 +368,39 @@ def uve_from_pos(user, *, shop=None, pos, amount, pay="CASH", description="", id
     return _record(user, [_spec(TxType.SHOP_POS_UVE_IN, shop, [(shop.account(K.UVE), a), (other, -a)], a,
                                 counterparty=pos, on_credit=pay == "CREDIT", product="UVE",
                                 description=description)], idempotency_key)[0]
+
+
+def payback_desk(t):
+    """The cashier desk (subzone) of the zone an agent payment belongs to: the agent's roads, else his registered
+    microzone, else the shop's own zone when it is a desk."""
+    agent = t.counterparty
+    mz = agent.controlled_microzones.select_related("subzone").first() if agent else None
+    mz = mz or (agent.microzone if agent and agent.microzone_id else None)
+    if mz is not None:
+        return mz.subzone
+    z = t.shop.zone if t.shop_id else None
+    return z if z is not None and z.parent_id else None
+
+
+def forward_payback(user, t, idempotency_key=None):
+    """"Pay now": the shop sends the zone's cashier, in UVE, what an agent paid the company through the shop.
+    It is the shop's own transfer (only the shop's UVE goes down); the cashier records his entry. Once per payment."""
+    from core.models import PaybackForward
+
+    if t.type != TxType.SHOP_AGENT_PAYBACK or t.is_corrected:
+        raise BusinessError(_("Only an agent's payment to the company through the shop can be paid on."))
+    if PaybackForward.objects.filter(payback=t).exists():
+        raise BusinessError(_("%(ref)s is already paid to the cashier.") % {"ref": t.reference})
+    desk = payback_desk(t)
+    if desk is None:
+        raise BusinessError(_("No cashier zone is known for %(agent)s: use Transfer to cashier.")
+                            % {"agent": t.counterparty})
+    with transaction.atomic():
+        tr = to_cashier(user, shop=t.shop, desk=desk, uve=t.amount, idempotency_key=idempotency_key,
+                        description=_("Payment of %(agent)s (%(ref)s)") % {"agent": t.counterparty,
+                                                                          "ref": t.reference})
+        PaybackForward.objects.create(payback=t, transfer=tr, created_by=user)
+    return tr, desk
 
 
 def receive_agent_payback(user, *, shop=None, agent, cash=None, uve=None, description="", idempotency_key=None):
@@ -867,6 +904,44 @@ def shop_balances(shop):
     out["owed_agents"] = sum((-p for p in pos if p < 0), Decimal(0))
     out["owed_by_agents"] = sum((p for p in pos if p > 0), Decimal(0))
     return out
+
+
+def shop_debts(shops):
+    """Who owes the shops and whom the shops owe, and how much.
+
+    debtors: agents who owe the shop (destockage / UVE on the shop's credit…), creditors: agents the shop owes
+    (supplies taken on credit); both from the shop's own position with each agent. on_credit: agents / POS who took
+    UVE on credit at the shop (owed to the company), with what they owe the company now."""
+    from django.db.models import Sum as Sum_
+
+    from .ledger import balance
+    from .operations import customer_balance
+
+    debtors, creditors = [], []
+    for a in Account.objects.filter(kind=K.SHOP_PAYABLE, shop__in=shops).select_related("shop", "shop_agent"):
+        b = balance(a)
+        if b > 0:
+            debtors.append({"shop": a.shop, "who": a.shop_agent, "amount": b})
+        elif b < 0:
+            creditors.append({"shop": a.shop, "who": a.shop_agent, "amount": -b})
+    given = {}
+    for r in (Transaction.objects.filter(shop__in=shops, type=TxType.SHOP_POS_UVE_OUT, on_credit=True,
+                                         correction__isnull=True)
+              .values("counterparty", "shop").annotate(s=Sum_("amount"))):
+        given[(r["counterparty"], r["shop"])] = r["s"]
+    on_credit = []
+    if given:
+        cps = {c.pk: c for c in Counterparty.objects.filter(pk__in={k[0] for k in given})}
+        shops_by = {s.pk: s for s in Shop.objects.filter(pk__in={k[1] for k in given})}
+        for (cp_id, shop_id), s in given.items():
+            owes = customer_balance(cps[cp_id])
+            on_credit.append({"shop": shops_by[shop_id], "who": cps[cp_id], "given": s, "owes": owes})
+    key = lambda r: -r["amount"]  # noqa: E731
+    return {"debtors": sorted(debtors, key=key), "creditors": sorted(creditors, key=key),
+            "on_credit": sorted(on_credit, key=lambda r: -r["owes"]),
+            "total_debtors": sum((r["amount"] for r in debtors), Decimal(0)),
+            "total_creditors": sum((r["amount"] for r in creditors), Decimal(0)),
+            "total_on_credit": sum((max(r["owes"], Decimal(0)) for r in on_credit), Decimal(0))}
 
 
 def set_shop_rate(user, *, percent, note=""):

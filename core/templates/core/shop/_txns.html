@@ -5,5 +5,28 @@
   <td class="keep"><a href="{% url 'txn_detail' t.pk %}">{{ t.reference }}</a>{% if t.is_corrected %} <span class="badge bad">{% trans "CORRECTED" %}</span>{% endif %}</td>
   <td>{{ t.get_type_display }}{% if t.subtype == 'GOOD_DEAL' %} <span class="badge ok">{% trans "Good deal" %}</span>{% elif t.subtype == 'NORMAL' %} <span class="badge">{% trans "Normal airtime" %}</span>{% endif %}{% if t.on_credit %} <span class="badge acc">{% trans "credit" %}</span>{% endif %}{% if t.description %}<br><span class="muted small">{{ t.description }}</span>{% endif %}</td>
   <td>{% if t.counterparty %}{{ t.counterparty.name }}{% elif t.type == 'SHOP_SALE' and t.item_sale %}{{ t.item_sale.client_name }}{% elif t.type == 'SHOP_TO_DESK' %}→ {{ t.dest_account }}{% elif t.type == 'DESK_TO_SHOP' %}← {{ t.source_account }}{% elif t.account_name %}{{ t.account_name }}{% if t.client_phone %}<br><span class="muted small">{{ t.client_phone|sim }}</span>{% endif %}{% elif t.client_phone %}{{ t.client_phone|sim }}{% endif %}</td>
-  <td class="money">{{ t.amount|fcfa }}</td><td class="money">{% if t.commission %}{{ t.commission|fcfa }}{% endif %}</td><td>{{ t.entered_by }}</td>
+  <td class="money">{{ t.amount|fcfa }}{% if t.type == 'SHOP_AG_PAYBACK' and not t.is_corrected %}<br>{% if t|forwarded %}<span class="badge ok">{% trans "Paid to the cashier" %}</span>{% elif not user.is_market %}<button type="button" class="btn small primary pay-now" data-pay-now="{% url 'shop_pay_now' t.pk %}">{% trans "PAY NOW" %}</button>{% endif %}{% endif %}</td><td class="money">{% if t.commission %}{{ t.commission|fcfa }}{% endif %}</td><td>{{ t.entered_by }}</td>
 </tr>{% empty %}<tr><td colspan="8" class="muted">{% trans "Nothing yet." %}</td></tr>{% endfor %}</tbody></table></div>
+<script>
+(function () {
+  if (window.__payNow) return; window.__payNow = true;
+  /* PAY NOW: send the agent's payment to the zone's cashier in UVE, then dial the Orange code */
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-pay-now]'); if (!b || b.disabled) return;
+    if (!confirm('{{ _("Send this amount in UVE to the cashier of the zone now?")|escapejs }}')) return;
+    b.disabled = true; var label = b.textContent; b.textContent = '…';
+    var fd = new FormData(); fd.append('csrfmiddlewaretoken', (document.querySelector('[name=csrfmiddlewaretoken]') || {}).value || '{{ csrf_token }}');
+    fd.append('idem', (crypto.randomUUID ? crypto.randomUUID() : String(Date.now())));
+    fetch(b.dataset.payNow, {method: 'POST', body: fd, credentials: 'same-origin', headers: {'X-Requested-With': 'fetch'}})
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        var m = document.createElement('div'); m.className = 'msg ' + (d.ok ? 'success' : 'error'); m.textContent = d.message;
+        b.closest('.tbl-wrap').before(m); if (window.dismissLater) dismissLater(m, 10000);
+        if (!d.ok) { b.disabled = false; b.textContent = label; return; }
+        b.outerHTML = '<span class="badge ok">{{ _("Paid to the cashier")|escapejs }}</span>';
+        if (d.code) location.href = 'tel:' + d.code.replace(/#/g, '%23');
+      })
+      .catch(function () { b.disabled = false; b.textContent = label; });
+  });
+})();
+</script>

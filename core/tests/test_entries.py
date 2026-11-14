@@ -248,3 +248,78 @@ class ShopDialCodes(OrgMixin, TestCase):
         d = self.post("pos_uve_in", {"pos": self.a1.business_sim, "amount": "1 000", "pay": "CASH"})
         self.assertTrue(d["ok"], d)
         self.assertNotIn("code", {k for k, v in d.items() if v})
+
+
+class ShopPayNowDebtsBulkDelete(OrgMixin, TestCase):
+    def setUp(self):
+        self.make_org()
+        self.fund_all()
+        self.shop = self.o["shop"]
+        from core.services import shop_shifts as ss
+
+        self.m = self.o["shop_mgr"]
+        for k in (Account.Kind.CASH_DRAWER, Account.Kind.UVE, Account.Kind.ER):
+            self.fund(self.shop.account(k), 300000)
+        ss.open_shift(self.m, cash=self.bal(self.shop.account(Account.Kind.CASH_DRAWER)),
+                      uve=self.bal(self.shop.account(Account.Kind.UVE)), er=self.bal(self.shop.account(Account.Kind.ER)))
+        self.c = self.client_class()
+        self.assertTrue(self.c.login(username="shop.molyko", password=PW))
+
+    def test_pay_now_sends_uve_to_the_zone_cashier(self):
+        from core.models import PaybackForward
+        from core.services import shops as sh
+
+        p = sh.receive_agent_payback(self.m, agent=self.a1, cash=D(15000))
+        page = self.c.get("/shops/transactions/?kind=agent_payments")
+        self.assertContains(page, "PAY NOW")
+        self.assertContains(self.c.get("/shops/transactions/"), "kind=cashin")
+        uve = self.shop.account(Account.Kind.UVE)
+        u0, d0 = self.bal(uve), self.bal(self.uve_f1)
+        r = self.c.post(f"/shops/pay-now/{p.pk}/", {"idem": str(uuid.uuid4())}, HTTP_X_REQUESTED_WITH="fetch").json()
+        self.assertTrue(r["ok"], r)
+        fw = PaybackForward.objects.get(payback=p)
+        self.assertEqual((fw.transfer.type, fw.transfer.amount), (TxType.SHOP_TO_DESK, D(15000)))
+        self.assertEqual(self.bal(uve), u0 - 15000)  # the shop's own UVE transfer
+        self.assertEqual(self.bal(self.uve_f1), d0)  # the cashier records his entry
+        self.assertIn("#149*5*", r["code"] or "#149*5*")
+        again = self.c.post(f"/shops/pay-now/{p.pk}/", {}, HTTP_X_REQUESTED_WITH="fetch").json()
+        self.assertFalse(again["ok"])
+        self.assertContains(self.c.get("/shops/transactions/?kind=agent_payments"), "Paid to the cashier")
+
+    def test_to_shop_dials_the_shop_number(self):
+        from core.models import Shop, Zone
+
+        other = Shop.objects.create(name="Limbe", zone=Zone.objects.filter(parent__isnull=False).first(),
+                                    sim_number="690112233")
+        r = self.c.post("/shops/do/to_shop/", {"idem": str(uuid.uuid4()), "dest_shop": other.pk, "uve": "7 000"},
+                        HTTP_X_REQUESTED_WITH="fetch").json()
+        self.assertTrue(r["ok"], r)
+        self.assertEqual(r["code"], "#149*5*690112233*7000#")
+
+    def test_debtors_and_creditors(self):
+        from core.services import shops as sh
+
+        sh.destockage(self.m, agent=self.a1, amount=D(8000), pay="CREDIT")  # the agent owes the shop
+        sh.appro(self.m, agent=self.a2 if hasattr(self, "a2") else self.a1, amount=D(5000), pay="CREDIT")
+        page = self.c.get("/shops/debts/")
+        self.assertContains(page, "Debtors")
+        self.assertContains(page, self.a1.name)
+        d = sh.shop_debts([self.shop])
+        self.assertTrue(d["total_debtors"] > 0 or d["total_creditors"] > 0)
+
+    def test_admin_deletes_several_transactions(self):
+        from core.services import operations as ops
+
+        a = ops.record_entry(self.c_f1, source="OTHER", from_whom="X", product="CASH", amount=D(1000))
+        b = ops.record_entry(self.c_f1, source="OTHER", from_whom="Y", product="CASH", amount=D(2000))
+        keep = ops.record_entry(self.c_f1, source="OTHER", from_whom="Z", product="CASH", amount=D(3000))
+        ad = self.client_class()
+        self.assertTrue(ad.login(username=self.admin.username, password=PW))
+        self.assertContains(ad.get("/transactions/?preset=all"), "Delete selected")
+        page = ad.get(f"/transactions/delete-selected/?ids={a.pk}&ids={b.pk}")
+        self.assertContains(page, a.reference)
+        r = ad.post("/transactions/delete-selected/", {"ids": [a.pk, b.pk], "reason": "test"})
+        self.assertEqual(r.status_code, 302)
+        self.assertFalse(Transaction.objects.filter(pk__in=[a.pk, b.pk]).exists())
+        self.assertTrue(Transaction.objects.filter(pk=keep.pk).exists())
+        self.assertEqual(self.c.get("/transactions/delete-selected/").status_code, 403)

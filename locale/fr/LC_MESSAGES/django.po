@@ -267,6 +267,10 @@ msgid "%(ref)s has already been corrected."
 msgstr "%(ref)s a déjà été corrigée."
 
 #, python-format
+msgid "%(ref)s is already paid to the cashier."
+msgstr "%(ref)s est déjà payé au caissier."
+
+#, python-format
 msgid "%(ref)s marked CORRECTED."
 msgstr "%(ref)s marquée CORRIGÉE."
 
@@ -285,6 +289,12 @@ msgid "%(ref)s updated. The previous values are kept in the audit log."
 msgstr ""
 "%(ref)s modifiée. Les anciennes valeurs sont conservées dans le journal "
 "d'audit."
+
+#, python-format
+msgid ""
+"%(ref)s: %(amt)s FCFA UVE sent to the cashier of %(desk)s for %(agent)s."
+msgstr ""
+"%(ref)s : %(amt)s FCFA d'UVE envoyés au caissier de %(desk)s pour %(agent)s."
 
 #, python-format
 msgid "%(ref)s: %(amt)s FCFA received from %(who)s."
@@ -844,6 +854,9 @@ msgstr "Remboursements des agents"
 msgid "Agent paybacks to confirm"
 msgstr "Remboursements d'agents à confirmer"
 
+msgid "Agent payments"
+msgstr "Paiements d'agents"
+
 msgid "Agent pays the shop"
 msgstr "L'agent paie la boutique"
 
@@ -858,6 +871,14 @@ msgstr "Agents & PDV"
 
 msgid "Agents / POS"
 msgstr "Agents / POS"
+
+msgid ""
+"Agents / POS who took UVE on credit at the shop: what the shop gave them on "
+"credit, and what they owe the company now."
+msgstr ""
+"Agents / POS qui ont pris de l'UVE à crédit à la boutique : ce que la "
+"boutique leur a donné à crédit et ce qu'ils doivent à l'entreprise "
+"maintenant."
 
 msgid "Agents and POS"
 msgstr "Agents et PDV"
@@ -2506,6 +2527,9 @@ msgstr "Créé par ce fichier"
 msgid "Credit (−)"
 msgstr "Crédit (−)"
 
+msgid "Creditors — the shop owes them"
+msgstr "Créanciers — la boutique leur doit"
+
 msgid "Current"
 msgstr "Actuel"
 
@@ -2689,6 +2713,12 @@ msgstr "Débit (+)"
 msgid "Debt by product (UVE, Cash, ER)"
 msgstr "Dette par produit (UVE, espèces, ER)"
 
+msgid "Debtors & creditors"
+msgstr "Débiteurs & créanciers"
+
+msgid "Debtors — they owe the shop"
+msgstr "Débiteurs — ils doivent à la boutique"
+
 msgid "December"
 msgstr "Décembre"
 
@@ -2711,6 +2741,9 @@ msgstr ""
 msgid "Delete permanently"
 msgstr "Supprimer définitivement"
 
+msgid "Delete selected"
+msgstr "Supprimer la sélection"
+
 msgid "Delete the responsibility transfer of this entry before editing it."
 msgstr ""
 "Supprimez d'abord le transfert de responsabilité de cette écriture avant de "
@@ -2719,6 +2752,9 @@ msgstr ""
 #, python-format
 msgid "Delete the responsibility transfer(s) %(refs)s first."
 msgstr "Supprimez d'abord le(s) transfert(s) de responsabilité %(refs)s."
+
+msgid "Delete them"
+msgstr "Les supprimer"
 
 msgid ""
 "Delete this account? Only an account that never recorded anything can be "
@@ -2738,6 +2774,9 @@ msgid "Delete this shop? Only a shop that was never used can be deleted."
 msgstr ""
 "Supprimer cette boutique ? Seule une boutique jamais utilisée peut être "
 "supprimée."
+
+msgid "Delete transactions"
+msgstr "Supprimer des transactions"
 
 #, python-format
 msgid "Deleted: %(refs)s. A full copy is kept in the audit log."
@@ -4410,6 +4449,12 @@ msgstr "Aucun mouvement de capital sur cette période."
 msgid "No cash manager yet."
 msgstr "Aucun gestionnaire de cash pour l'instant."
 
+#, python-format
+msgid "No cashier zone is known for %(agent)s: use Transfer to cashier."
+msgstr ""
+"Aucune zone de caissier n'est connue pour %(agent)s : utilisez Transfert au "
+"caissier."
+
 msgid "No client owes you anything."
 msgstr "Aucun client ne vous doit rien."
 
@@ -4571,6 +4616,9 @@ msgstr ""
 "Aucune valeur n'a été modifiée. Utilisez « Annuler » pour contre-passer sans"
 " remplacement."
 
+msgid "Nobody owes the shop."
+msgstr "Personne ne doit à la boutique."
+
 msgid "None of your POS has OM stock in the last stock file."
 msgstr "Aucun de vos POS n'a de stock OM dans le dernier fichier de stock."
 
@@ -4589,6 +4637,9 @@ msgstr ""
 
 msgid "Not declared"
 msgstr "Non déclaré"
+
+msgid "Not deleted"
+msgstr "Non supprimées"
 
 msgid "Not now"
 msgstr "Pas maintenant"
@@ -4847,6 +4898,12 @@ msgid "Only agents and POS openings are split by product. Use the total."
 msgstr ""
 "Seules les ouvertures des agents et PDV sont réparties par produit. Utilisez"
 " le total."
+
+msgid ""
+"Only an agent's payment to the company through the shop can be paid on."
+msgstr ""
+"Seul le paiement d'un agent à l'entreprise via la boutique peut être "
+"reversé."
 
 msgid "Only an opening amount owed by the agent / POS can be transferred."
 msgstr "Seul un montant d'ouverture dû par l'agent / POS peut être transféré."
@@ -5219,6 +5276,9 @@ msgstr "Dû à l'entreprise"
 msgid "Owed to the company by agents / POS"
 msgstr "Dû à l'entreprise par les agents / POS"
 
+msgid "Owed to the shop"
+msgstr "Dû à la boutique"
+
 msgid "Owes company"
 msgstr "Doit à l'entreprise"
 
@@ -5239,6 +5299,9 @@ msgstr "Propriétaires"
 
 msgid "Owners take money out"
 msgstr "Les propriétaires retirent de l'argent"
+
+msgid "PAY NOW"
+msgstr "PAYER MAINTENANT"
 
 msgid "PERSONAL NAME (or OM ACCOUNT NAME) is required"
 msgstr "PERSONAL NAME (ou OM ACCOUNT NAME) est obligatoire"
@@ -5461,6 +5524,9 @@ msgstr "Payé aux agents"
 msgid "Paid to cashiers"
 msgstr "Payé aux caissiers"
 
+msgid "Paid to the cashier"
+msgstr "Payé au caissier"
+
 msgid "Paid to the office"
 msgstr "Payé au bureau"
 
@@ -5572,6 +5638,10 @@ msgstr "Paiement d'un client"
 
 msgid "Payment method"
 msgstr "Mode de paiement"
+
+#, python-format
+msgid "Payment of %(agent)s (%(ref)s)"
+msgstr "Paiement de %(agent)s (%(ref)s)"
 
 #, python-format
 msgid "Payment of transfer %(ref)s"
@@ -6265,6 +6335,9 @@ msgstr "Choisissez la SIM business d'un client pour voir le relevé."
 msgid "Select a master zone."
 msgstr "Choisissez une zone principale."
 
+msgid "Select all"
+msgstr "Tout sélectionner"
+
 msgid "Select all on this page"
 msgstr "Tout sélectionner sur cette page"
 
@@ -6297,6 +6370,9 @@ msgid ""
 msgstr ""
 "Envoyez-le depuis votre téléphone avec ce code. Votre clavier s'ouvre avec :"
 " vérifiez-le et appuyez sur appeler."
+
+msgid "Send this amount in UVE to the cashier of the zone now?"
+msgstr "Envoyer maintenant ce montant en UVE au caissier de la zone ?"
 
 msgid "Senior manager"
 msgstr "Manager senior"
@@ -6449,6 +6525,9 @@ msgstr "Majoration UVE→ER boutique (%)"
 
 msgid "Shop conversion rate saved."
 msgstr "Taux de conversion boutique enregistré."
+
+msgid "Shop debtors and creditors"
+msgstr "Débiteurs et créanciers de la boutique"
 
 msgid "Shop expense"
 msgstr "Dépense de boutique"
@@ -7236,9 +7315,15 @@ msgstr ""
 "Le taux de conversion boutique n'est pas encore fixé (page Taux de "
 "conversion › Taux des boutiques)."
 
+msgid "The shop owes"
+msgstr "La boutique doit"
+
 #, python-format
 msgid "The shop owes %(agent)s only %(owed)s FCFA."
 msgstr "La boutique ne doit que %(owed)s FCFA à %(agent)s."
+
+msgid "The shop owes nobody."
+msgstr "La boutique ne doit rien à personne."
 
 msgid "The shop owes the agent"
 msgstr "La boutique doit à l'agent"
@@ -7547,6 +7632,12 @@ msgstr "Cochez d'abord les POS à déplacer."
 
 msgid "Tick the confirmation box to close the day."
 msgstr "Cochez la case de confirmation pour clôturer la journée."
+
+msgid "Tick the transactions to delete first."
+msgstr "Cochez d'abord les transactions à supprimer."
+
+msgid "Tick transactions to delete several at once."
+msgstr "Cochez des transactions pour en supprimer plusieurs à la fois."
 
 msgid ""
 "Tick what this person handles, e.g. only Orange Money for the cash-in / "
@@ -7871,6 +7962,12 @@ msgstr "Écart UVE"
 
 msgid "UVE from cashiers"
 msgstr "UVE des caissiers"
+
+msgid "UVE given on credit (owed to the company)"
+msgstr "UVE donné à crédit (dû à l'entreprise)"
+
+msgid "UVE given on credit by the shop"
+msgstr "UVE donné à crédit par la boutique"
 
 msgid "UVE goes to"
 msgstr "L'UVE va à"
@@ -8713,6 +8810,9 @@ msgstr ""
 msgid "credit"
 msgstr "crédit"
 
+msgid "creditors"
+msgstr "créanciers"
+
 msgid "custodian cashier"
 msgstr "caissier détenteur"
 
@@ -8724,6 +8824,9 @@ msgstr "date"
 
 msgid "date served"
 msgstr "date de service"
+
+msgid "debtors"
+msgstr "débiteurs"
 
 msgid "default for payments"
 msgstr "par défaut pour les paiements"
@@ -8779,6 +8882,9 @@ msgstr "depuis %(acct)s"
 
 msgid "full name"
 msgstr "nom complet"
+
+msgid "given on credit"
+msgstr "donné à crédit"
 
 msgid "has login"
 msgstr "a un accès"
@@ -8944,6 +9050,9 @@ msgstr "dû à l'entreprise"
 msgid "owes"
 msgstr "doit"
 
+msgid "owes now"
+msgstr "doit maintenant"
+
 msgid "paid"
 msgstr "payé"
 
@@ -9048,6 +9157,9 @@ msgstr "lignes"
 
 msgid "see my debtors"
 msgstr "voir mes débiteurs"
+
+msgid "selected"
+msgstr "sélectionnées"
 
 msgid "selling price (FCFA)"
 msgstr "prix de vente (FCFA)"
@@ -9210,6 +9322,33 @@ msgid ""
 msgstr ""
 "ⓒ = transaction corrigée ultérieurement (voir le rapport des corrections). "
 "Montants en FCFA."
+
+msgid "%(n)s creditor"
+msgid_plural "%(n)s creditors"
+msgstr[0] "%(n)s créancier"
+msgstr[1] "%(n)s créanciers"
+
+msgid "%(n)s debtor"
+msgid_plural "%(n)s debtors"
+msgstr[0] "%(n)s débiteur"
+msgstr[1] "%(n)s débiteurs"
+
+msgid ""
+"%(n)s transaction selected. Each is deleted with its linked rows "
+"(corrections, receipts of the same group); a full copy is kept in the audit "
+"log."
+msgid_plural ""
+"%(n)s transactions selected. Each is deleted with its linked rows "
+"(corrections, receipts of the same group); a full copy is kept in the audit "
+"log."
+msgstr[0] ""
+"%(n)s transaction sélectionnée. Elle est supprimée avec ses lignes liées "
+"(corrections, reçus du même groupe) ; une copie complète est gardée dans le "
+"journal d'audit."
+msgstr[1] ""
+"%(n)s transactions sélectionnées. Chacune est supprimée avec ses lignes "
+"liées (corrections, reçus du même groupe) ; une copie complète est gardée "
+"dans le journal d'audit."
 
 msgid "%(n)s payment is still waiting for confirmation."
 msgid_plural "%(n)s payments are still waiting for confirmation."

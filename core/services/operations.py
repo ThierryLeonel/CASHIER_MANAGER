@@ -896,4 +896,8 @@ def record_kind_q(kind):
         return Q(type__in=(TxType.STOCK_EXCHANGE, TxType.SHOP_EXCHANGE, TxType.CM_GIVE, TxType.CM_RECEIVE))
     if kind == "conversions":
         return Q(type__in=(TxType.CONVERSION, TxType.SHOP_CONVERT))
+    shop_kinds = {"cashin": TxType.SHOP_CASHIN, "cashout": TxType.SHOP_CASHOUT, "airtime": TxType.SHOP_AIRTIME,
+                  "agent_payments": TxType.SHOP_AGENT_PAYBACK, "sales": TxType.SHOP_SALE}
+    if kind in shop_kinds:
+        return Q(type=shop_kinds[kind])
     return None

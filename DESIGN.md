@@ -622,3 +622,26 @@ Every transaction stores its **recording cashier** (`Transaction.cashier`), and 
   for a cash-in, not enough cash for a cash-out), the top message gives that reason, not only "Check the form".
   End-to-end check on a phone page: cash-in 5 000 → cash 50 000 → 55 000, UVE 100 000 → 95 000; cash-out 2 000 →
   cash 53 000, UVE 97 000.
+
+## Shop filters, PAY NOW, shop debtors / creditors, agent filters, admin bulk delete
+- **Shop transactions chips:** All · Cash-in · Cash-out · Airtime · Sales · Agent payments · Entries · Transfers
+  sent · Stock exchanges · Conversions (`record_kind_q` shop kinds; `record_chips.html` with `shop_chips`).
+- **Agent "My transactions" (clients tab):** chips All · Supplies · Payments · Destocash (note "Destocash…") · On
+  credit (paid < supplied).
+- **UVE transfer to another shop** dials `#149*5*shop number*amount#`. The number is the shop's company SIM, else
+  the SIM of its UVE wallet.
+- **PAY NOW** (`shop_pay_now`, `sh.forward_payback`, model `PaybackForward`, migration 0058): beside each "agent pays
+  the company" in the shop's list.
+  - The shop sends that amount in UVE to the cashier of the zone (`sh.payback_desk`: the agent's roads, else his
+    microzone, else the shop's zone), as the shop's own transfer. The cashier records his entry.
+  - Then `#149*5*cashier UVE SIM*amount#` is dialled.
+  - Once per payment ("Paid to the cashier" badge). Deleting either row frees it.
+- **Debtors & creditors** (`/shops/debts/`, `sh.shop_debts`; shop menu; the shop's "Owed to agents" / "Agents owe
+  the shop" tiles link there):
+  - Debtors (agents who owe the shop) and creditors (agents the shop owes), from each shop position, with amounts,
+    totals and Call / WhatsApp.
+  - Agents / POS who took UVE on credit at the shop, with what they owe the company now.
+- **Admin bulk delete** (`txn_delete_many`, `adm.delete_many`):
+  - Check boxes in the transactions list for the super admin, "Select all", then "Delete selected".
+  - A confirmation page lists them and asks for a reason. Each is deleted with its linked rows and checked; any
+    that cannot be deleted are listed with why.

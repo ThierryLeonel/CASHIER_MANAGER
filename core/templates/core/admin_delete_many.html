@@ -1,0 +1,14 @@
+{% extends "core/base.html" %}{% load i18n cashier %}
+{% block title %}{% trans "Delete transactions" %}{% endblock %}
+{% block content %}
+<h1>{% trans "Delete transactions" %}</h1>
+<p class="muted meta">{% blocktrans count n=txns|length %}{{ n }} transaction selected. Each is deleted with its linked rows (corrections, receipts of the same group); a full copy is kept in the audit log.{% plural %}{{ n }} transactions selected. Each is deleted with its linked rows (corrections, receipts of the same group); a full copy is kept in the audit log.{% endblocktrans %}</p>
+{% if failed %}<div class="msg error">{% trans "Not deleted" %}:<ul>{% for ref, why in failed %}<li><strong>{{ ref }}</strong> — {{ why }}</li>{% endfor %}</ul></div>{% endif %}
+{% include "core/inc/txn_table.html" with txns=txns %}
+<form method="post" class="panel">{% csrf_token %}
+  {% for t in txns %}<input type="hidden" name="ids" value="{{ t.pk }}">{% endfor %}
+  {% include "core/inc/fields.html" %}
+  <div class="actions"><button class="btn danger" type="submit">{% icon "trash" 16 %} {% trans "Delete them" %}</button>
+  <a class="btn" href="{% url 'txn_list' %}">{% trans "Cancel" %}</a></div>
+</form>
+{% endblock %}

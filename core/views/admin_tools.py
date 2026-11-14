@@ -43,6 +43,28 @@ def txn_delete(request, pk):
 
 
 @roles_required(*ADMIN)
+def txn_delete_many(request):
+    """The administrator deletes several transactions of his choice at once (ticked in the transactions list)."""
+    raw = request.POST.getlist("ids") if request.method == "POST" else request.GET.getlist("ids")
+    ids = [int(x) for x in raw if str(x).isdigit()][:500]
+    txns = list(Transaction.objects.filter(pk__in=ids).select_related(*TX_RELATED).order_by("-posted_at"))
+    if not txns:
+        messages.info(request, _("Tick the transactions to delete first."))
+        return redirect("txn_list")
+    form = F.AdminDeleteForm(request.POST or None)
+    failed = []
+    if request.method == "POST" and form.is_valid():
+        done, failed = adm.delete_many(request.user, txns, reason=form.cleaned_data["reason"])
+        if done:
+            messages.success(request, _("Deleted: %(refs)s. A full copy is kept in the audit log.")
+                             % {"refs": ", ".join(done)})
+        if not failed:
+            return redirect("txn_list")
+        txns = list(Transaction.objects.filter(pk__in=ids).select_related(*TX_RELATED).order_by("-posted_at"))
+    return render(request, "core/admin_delete_many.html", {"txns": txns, "form": form, "failed": failed})
+
+
+@roles_required(*ADMIN)
 def txn_edit(request, pk):
     t = get_object_or_404(Transaction.objects.select_related(*TX_RELATED), pk=pk)
     if t.type == "REVERSAL":

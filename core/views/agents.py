@@ -8,7 +8,7 @@ from django.contrib import messages
 from django.core.exceptions import PermissionDenied as Forbidden
 from django.db import transaction
 from django.core.paginator import Paginator
-from django.db.models import Count, Max, Q, Sum
+from django.db.models import Count, F, Max, Q, Sum
 from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -675,10 +675,18 @@ def agent_activity(request):
     else:
         qs = E.objects.filter(agent=agent, business_date__gte=d_from, business_date__lte=d_to) \
             .exclude(client_kind="AGENT").select_related("pos", "shop")
-        kind = request.GET.get("kind")
+        kind = request.GET.get("kind") or ""
         if kind in E.Kind.values:
             qs = qs.filter(kind=kind)
-        ctx["kind"] = kind or ""
+        elif kind == "DESTOCASH":
+            qs = qs.filter(note__istartswith="Destocash")
+        elif kind == "CREDIT":
+            qs = qs.filter(kind=E.Kind.SUPPLY, paid__lt=F("uve") + F("er") + F("cash"))
+        else:
+            kind = ""
+        ctx["kind"] = kind
+        ctx["kinds"] = [("", _("All")), ("SUPPLY", _("Supplies")), ("PAYMENT", _("Payments")),
+                        ("DESTOCASH", _("Destocash")), ("CREDIT", _("On credit"))]
         live = qs.filter(cancelled_at__isnull=True)
         ctx["sums"] = {"supplied": sum((e.total for e in live), 0), "received": sum((e.paid for e in live), 0)}
     ctx["page"] = Paginator(qs, 50).get_page(request.GET.get("page"))

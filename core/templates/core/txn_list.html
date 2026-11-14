@@ -1,9 +1,28 @@
-{% extends "core/base.html" %}{% load i18n %}
+{% extends "core/base.html" %}{% load i18n cashier %}
 {% block title %}{% trans "Transactions" %}{% endblock %}
 {% block content %}
 <h1>{% if user.is_cashier %}{% trans "My records" %}{% else %}{% trans "Transactions" %}{% endif %}</h1>
 {% include "core/inc/record_chips.html" %}
 {% include "core/inc/filters.html" with filters_text=filters.text %}
-{% include "core/inc/txn_table.html" with txns=page %}
+{% if user.is_superadmin %}<form id="bulk-del" method="get" action="{% url 'txn_delete_many' %}" class="bulk-bar">
+  <span class="small muted" data-sel-count>{% trans "Tick transactions to delete several at once." %}</span>
+  <button class="btn small danger" type="submit" data-sel-btn disabled>{% icon "trash" 14 %} {% trans "Delete selected" %}</button>
+</form>{% endif %}
+{% include "core/inc/txn_table.html" with txns=page selectable=user.is_superadmin %}
+{% if user.is_superadmin %}<script>
+(function () {
+  var f = document.getElementById('bulk-del'), all = document.querySelector('[data-sel-all]');
+  function boxes() { return document.querySelectorAll('input[name=ids][form=bulk-del]'); }
+  function sync() {
+    var n = Array.prototype.filter.call(boxes(), function (b) { return b.checked; }).length;
+    f.querySelector('[data-sel-btn]').disabled = !n;
+    f.querySelector('[data-sel-count]').textContent = n ? n + ' {{ _("selected")|escapejs }}' : '{{ _("Tick transactions to delete several at once.")|escapejs }}';
+  }
+  document.addEventListener('change', function (e) {
+    if (e.target === all) boxes().forEach(function (b) { b.checked = all.checked; });
+    if (e.target === all || e.target.matches('input[name=ids]')) sync();
+  });
+})();
+</script>{% endif %}
 <div class="pager">{% if page.has_previous %}<a class="btn small" href="?{{ qs_params }}&page={{ page.previous_page_number }}">←</a>{% endif %}<span class="muted small">{{ page.number }} / {{ page.paginator.num_pages }} · {{ page.paginator.count }}</span>{% if page.has_next %}<a class="btn small" href="?{{ qs_params }}&page={{ page.next_page_number }}">→</a>{% endif %}</div>
 {% endblock %}

@@ -7,6 +7,6 @@ from .ledger import (  # noqa: F401
 from .control import AuditEvent, Closing, ClosingLine, Correction, Discrepancy, DiscrepancyNote, ImportBatch, TransferNoPayback  # noqa: F401
 from .shops import (  # noqa: F401,E402
     ItemCategory, ItemSale, ServiceCount, Shop, ShopDayReview, ShopShift, ShopConversionRate, ShopItem, ShopService, SimRetrieval, StockMove,
-    StockUnit,
+    StockUnit, PaybackForward,
 )
 from .agents import AgentClientEntry, AgentDeclaration, AgentExchange, AgentPayback, ClientKind  # noqa: F401,E402

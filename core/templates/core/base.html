@@ -129,6 +129,7 @@
     <div class="side-group">{% if user.is_shop_user %}{% trans "Follow-up" %}{% else %}{% trans "Shops" %}{% endif %}</div>
     <a href="{% url 'shops' %}" class="{% if u == 'shops' or u == 'shop_detail' %}on{% endif %}">{% icon "store" %}<span>{% if user.is_shop_manager %}{% trans "My shop" %}{% else %}{% trans "Shops overview" %}{% endif %}</span></a>
     <a href="{% url 'shop_transactions' %}" class="{% if u == 'shop_transactions' %}on{% endif %}">{% icon "list" %}<span>{% trans "Shop transactions" %}</span></a>
+    <a href="{% url 'shop_debts' %}" class="{% if u == 'shop_debts' %}on{% endif %}">{% icon "wallet" %}<span>{% trans "Debtors & creditors" %}</span></a>
     {% if "SERVICES" in user.shop_duty_set %}<a href="{% url 'shop_retrievals' %}" class="{% if u == 'shop_retrievals' %}on{% endif %}">{% icon "users" %}<span>{% trans "SIM retrievals" %}</span></a>{% endif %}
     {% if "SERVICES" in user.shop_duty_set %}<a href="{% url 'shop_services_report' %}" class="{% if u == 'shop_services_report' %}on{% endif %}">{% icon "chart" %}<span>{% trans "Services count" %}</span></a>{% endif %}
     <a href="{% url 'shop_reconciliations' %}" class="{% if u == 'shop_reconciliations' or u == 'shop_reconciliation' %}on{% endif %}">{% icon "lock" %}<span>{% trans "Daily reconciliation" %}</span></a>

@@ -350,3 +350,13 @@ class ShopDayReview(models.Model):
     class Meta:
         ordering = ["-business_date"]
         constraints = [models.UniqueConstraint(fields=["shop", "business_date"], name="one_review_per_shop_day")]
+
+
+class PaybackForward(models.Model):
+    """"Pay now": the UVE transfer by which a shop passes on to the zone's cashier what an agent paid the company
+    through the shop (one transfer per agent payment)."""
+
+    payback = models.OneToOneField("core.Transaction", on_delete=models.PROTECT, related_name="forward")
+    transfer = models.ForeignKey("core.Transaction", on_delete=models.PROTECT, related_name="+")
+    created_at = models.DateTimeField(default=timezone.now)
+    created_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name="+")

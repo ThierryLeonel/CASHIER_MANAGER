@@ -308,6 +308,46 @@ def _shop_op_json(request, op, form, fn):
                              "type": t.get_type_display(), "ref": t.reference, "amt": fmt(t.amount)})})
 
 
+@roles_required(*SHOP_ROLES)
+def shop_debts(request):
+    """Shop debtors and creditors, and how much."""
+    shops_qs = sh.visible_shops(request.user).filter(active=True).order_by("name")
+    shop_id = request.GET.get("shop") or ""
+    chosen = shops_qs.filter(pk=shop_id) if shop_id.isdigit() else shops_qs
+    return render(request, "core/shop/debts.html", {"d": sh.shop_debts(chosen), "shops": shops_qs,
+                                                     "shop_id": shop_id})
+
+
+@roles_required(*SHOP_DESK)
+def shop_pay_now(request, pk):
+    """"PAY NOW" beside an agent's payment through the shop: the shop sends that amount in UVE to the zone's cashier,
+    then the Orange code goes to the dial pad."""
+    import uuid as uuid_
+
+    from django.http import JsonResponse
+
+    if request.method != "POST":
+        return redirect("shop_transactions")
+    t = get_object_or_404(Transaction.objects.select_related("shop", "counterparty"), pk=pk,
+                          shop__in=sh.visible_shops(request.user))
+    fetch = request.headers.get("X-Requested-With") == "fetch"
+    try:
+        idem = uuid_.UUID(request.POST.get("idem")) if request.POST.get("idem") else None
+        tr, desk = sh.forward_payback(request.user, t, idempotency_key=idem)
+    except BusinessError as exc:
+        if fetch:
+            return JsonResponse({"ok": False, "message": str(exc.message)})
+        messages.error(request, exc.message)
+        return redirect(request.POST.get("next") or "shop_transactions")
+    code = sh.shop_ussd("to_cashier", tr, {"uve": tr.amount, "desk": desk})
+    msg = _("%(ref)s: %(amt)s FCFA UVE sent to the cashier of %(desk)s for %(agent)s.") % {
+        "ref": tr.reference, "amt": fmt(tr.amount), "desk": desk.name, "agent": t.counterparty}
+    if fetch:
+        return JsonResponse({"ok": True, "message": str(msg), "code": code})
+    messages.success(request, msg)
+    return redirect(request.POST.get("next") or "shop_transactions")
+
+
 @roles_required(R.CASHIER, R.SUPERADMIN)
 def desk_to_shop(request):
     """Cashier side: send UVE from the subzone's UVE wallet to a shop."""

@@ -2,7 +2,7 @@
 {% block title %}{% trans "Shop transactions" %}{% endblock %}
 {% block content %}
 <h1>{% trans "Shop transactions" %}</h1>
-{% include "core/inc/record_chips.html" %}
+{% include "core/inc/record_chips.html" with shop_chips=True %}
 <form class="filters panel" method="get">
   <div class="field"><label>{% trans "From" %}</label><input type="date" name="from" value="{{ d_from|date:'Y-m-d' }}"></div>
   <div class="field"><label>{% trans "To" %}</label><input type="date" name="to" value="{{ d_to|date:'Y-m-d' }}"></div>

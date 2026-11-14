@@ -756,3 +756,8 @@ table.t tr.oos td { background: #fff1f0; }
   .quick { gap: 10px; }
 }
 .btn.op-btn { min-width: 140px; letter-spacing: .06em; font-weight: 800; }
+.bulk-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 0 0 8px; }
+th.sel, td.sel { width: 34px; text-align: center; }
+@media (max-width: 640px) { table.t.stack td.sel { justify-content: flex-end; } table.t.stack td.sel::before { content: ""; } }
+.debt-row { position: relative; } .debt-amt { font-weight: 800; font-size: 1.05rem; } .debt-amt.bad { color: #b42318; }
+.debt-row .btn.small { padding: 2px 6px; margin-left: 4px; vertical-align: middle; }

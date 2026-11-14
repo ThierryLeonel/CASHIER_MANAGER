@@ -1,0 +1,22 @@
+{% extends "core/base.html" %}{% load i18n cashier %}
+{% block title %}{% trans "Shop debtors and creditors" %}{% endblock %}
+{% block topbar %}{% trans "Debtors & creditors" %}{% endblock %}
+{% block content %}
+<h1>{% trans "Shop debtors and creditors" %}</h1>
+{% if shops|length > 1 %}<form method="get" class="oos-search"><select name="shop" onchange="this.form.submit()"><option value="">{% trans "All shops" %}</option>{% for s in shops %}<option value="{{ s.pk }}"{% if s.pk|stringformat:"s" == shop_id %} selected{% endif %}>{{ s.name }}</option>{% endfor %}</select></form>{% endif %}
+<div class="bal-row">
+  <div class="bal k-UVE"><span class="bal-label">{% trans "Owed to the shop" %}</span><span class="bal-value">{{ d.total_debtors|fcfa }}</span><span class="bal-unit">{% blocktrans count n=d.debtors|length %}{{ n }} debtor{% plural %}{{ n }} debtors{% endblocktrans %}</span></div>
+  <div class="bal k-CASH_DRAWER"><span class="bal-label">{% trans "The shop owes" %}</span><span class="bal-value">{{ d.total_creditors|fcfa }}</span><span class="bal-unit">{% blocktrans count n=d.creditors|length %}{{ n }} creditor{% plural %}{{ n }} creditors{% endblocktrans %}</span></div>
+  <div class="bal k-ER"><span class="bal-label">{% trans "UVE given on credit (owed to the company)" %}</span><span class="bal-value">{{ d.total_on_credit|fcfa }}</span><span class="bal-unit">FCFA</span></div>
+</div>
+
+<h2>{% trans "Debtors — they owe the shop" %}</h2>
+<div class="decl-list">{% for r in d.debtors %}<div class="decl-item debt-row"><span><strong>{{ r.who.name }}</strong> {% include "core/inc/contact_btns.html" with c=r.who %}</span><span class="small muted">{{ r.who.business_sim|sim }}{% if shops|length > 1 %} · {{ r.shop.name }}{% endif %}</span><span class="debt-amt">{{ r.amount|fcfa }} FCFA</span></div>{% empty %}<p class="muted">{% trans "Nobody owes the shop." %}</p>{% endfor %}</div>
+
+<h2>{% trans "Creditors — the shop owes them" %}</h2>
+<div class="decl-list">{% for r in d.creditors %}<div class="decl-item debt-row"><span><strong>{{ r.who.name }}</strong> {% include "core/inc/contact_btns.html" with c=r.who %}</span><span class="small muted">{{ r.who.business_sim|sim }}{% if shops|length > 1 %} · {{ r.shop.name }}{% endif %}</span><span class="debt-amt bad">{{ r.amount|fcfa }} FCFA</span></div>{% empty %}<p class="muted">{% trans "The shop owes nobody." %}</p>{% endfor %}</div>
+
+{% if d.on_credit %}<h2>{% trans "UVE given on credit by the shop" %}</h2>
+<p class="small muted">{% trans "Agents / POS who took UVE on credit at the shop: what the shop gave them on credit, and what they owe the company now." %}</p>
+<div class="decl-list">{% for r in d.on_credit %}<div class="decl-item debt-row"><span><strong>{{ r.who.name }}</strong> {% include "core/inc/contact_btns.html" with c=r.who %}</span><span class="small muted">{{ r.who.business_sim|sim }}{% if shops|length > 1 %} · {{ r.shop.name }}{% endif %} · {% trans "given on credit" %} {{ r.given|fcfa }}</span><span class="debt-amt">{% trans "owes now" %} {{ r.owes|fcfa }} FCFA</span></div>{% endfor %}</div>{% endif %}
+{% endblock %}
