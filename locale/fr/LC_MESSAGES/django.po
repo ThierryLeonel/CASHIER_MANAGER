@@ -4163,6 +4163,9 @@ msgstr "Mes clients"
 msgid "My clients owe me"
 msgstr "Mes clients me doivent"
 
+msgid "My daily declaration"
+msgstr "Ma déclaration journalière"
+
 msgid "My dealings with this POS"
 msgstr "Mes opérations avec ce POS"
 
@@ -8458,6 +8461,9 @@ msgstr "Votre capital initial est déjà déclaré."
 
 msgid "Your latest entries"
 msgstr "Vos dernières saisies"
+
+msgid "Your login is not linked to an agent account."
+msgstr "Votre connexion n'est pas liée à un compte agent."
 
 msgid "Your open shift is in another shop. Close it first."
 msgstr "Votre service ouvert est dans une autre boutique. Fermez-le d'abord."

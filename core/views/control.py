@@ -358,8 +358,9 @@ def conversion_rate(request):
 # ---------------------------------------------------------------- reports
 AGENT_REPORTS = ("statement",)
 # market supervisor: the commercial agents' and POS reports (the shops have their own)
-MARKET_REPORTS = ("customers", "pos", "supply_due", "statement", "supplies", "collections", "destockage",
-                  "pos_stock", "pos_coverage", "supply_payment", "transfers")
+# the market supervisor follows transactions and stock, never the agents' / POS statements or what they owe
+# (the statement only for his own agent account)
+MARKET_REPORTS = ("statement", "supplies", "collections", "destockage", "pos_stock", "pos_coverage", "transfers")
 
 
 @roles_required(*STAFF, R.AGENT, R.MARKET)
@@ -369,23 +370,26 @@ def reports_index(request):
     from core.reports.defs import REPORT_CARDS
 
     cards = [(key, title, *REPORT_CARDS.get(key, ("chart", ""))) for key, (title, _fn) in REPORTS.items()
-             if not request.user.is_market or key in MARKET_REPORTS]
+             if not request.user.is_market or (key in MARKET_REPORTS
+                                               and (key != "statement" or request.user.sells))]
     return render(request, "core/reports_index.html", {"cards": cards})
 
 
 @roles_required(*STAFF, R.AGENT, R.MARKET)
 def report(request, key):
     if key not in REPORTS or (request.user.is_agent and key not in AGENT_REPORTS) or (
-            request.user.is_market and key not in MARKET_REPORTS):
+            request.user.is_market and key not in MARKET_REPORTS) or (
+            request.user.is_market and key == "statement" and not request.user.sells):
         raise Http404
     title, fn = REPORTS[key]
     data = request.GET.copy()
     data.pop("format", None)
-    if request.user.is_agent:
+    own = request.user.is_agent or (request.user.is_market and key == "statement")
+    if own:  # an agent's reports, the market supervisor's statement: his own account only
         data["customer_sim"] = request.user.counterparty.business_sim
         data.setdefault("preset", "all")
     form = FilterForm(request.user, data or None)
-    force = request.user.counterparty if request.user.is_agent else None
+    force = request.user.counterparty if own else None
     f = Filters.from_form(form, request.user, force_customer=force)
     rep = fn(f)
     fmt_ = request.GET.get("format")

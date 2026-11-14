@@ -8,7 +8,7 @@
   <a class="bal k-UVE bal-link" href="{% url 'customers' %}?kind=AGENT"><span class="bal-label">{% trans "Commercial agents" %}</span><span class="bal-value">{{ n_agents }}</span><span class="bal-unit">{% trans "active" %}</span></a>
   <a class="bal k-ER bal-link" href="{% url 'customers' %}?kind=POS"><span class="bal-label">POS</span><span class="bal-value">{{ n_pos }}</span><span class="bal-unit">{% trans "active" %}</span></a>
   <a class="bal k-ER oos bal-link" href="{% url 'report' 'pos_stock' %}"><span class="bal-label">{% trans "POS out of stock" %}</span><span class="bal-value">{{ n_out }}</span><span class="bal-unit">{% blocktrans with n=n_low %}{{ n }} low stock{% endblocktrans %}</span></a>
-  <a class="bal k-TOTAL bal-link" href="{% url 'report' 'customers' %}"><span class="bal-label">{% trans "Owed to the company by agents / POS" %}</span><span class="bal-value">{{ owed|fcfa }}</span><span class="bal-unit">{% blocktrans with d=due|fcfa %}due to them: {{ d }}{% endblocktrans %}</span></a>
+  {% if not user.is_market %}<a class="bal k-TOTAL bal-link" href="{% url 'report' 'customers' %}"><span class="bal-label">{% trans "Owed to the company by agents / POS" %}</span><span class="bal-value">{{ owed|fcfa }}</span><span class="bal-unit">{% blocktrans with d=due|fcfa %}due to them: {{ d }}{% endblocktrans %}</span></a>{% endif %}
 </div>
 {% include "core/agent/inc/market_sim.html" %}
 {% if s %}<h2>{% trans "My agent account" %} · {{ user.counterparty.business_sim }}</h2>

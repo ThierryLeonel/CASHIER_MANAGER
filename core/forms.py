@@ -385,7 +385,6 @@ class EntryForm(BaseEntryForm):
     into = AccountChoiceField(label=_("Arrives in"), queryset=Account.objects.none(), required=False)
     reference = forms.CharField(label=_("Reference (transaction ID)"), required=False, max_length=60)
     description = forms.CharField(label=_("Note"), required=False, max_length=255)
-    another = forms.BooleanField(label=_("This is another transfer (not one already recorded)"), required=False)
 
     def __init__(self, user, *args, **kwargs):
         super().__init__(user, *args, **kwargs)

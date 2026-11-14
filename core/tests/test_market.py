@@ -30,8 +30,17 @@ class Market(OrgMixin, TestCase):
         self.assertContains(r, "Download call database")
         self.assertNotContains(r, "Cash managers")
         for url in ("/customers/", "/transactions/", "/reports/", "/shops/", "/reports/pos_stock/",
-                    "/reports/customers/", f"/reports/statement/?preset=all&customer_sim={self.p1.business_sim}"):
+                    "/reports/supplies/", "/agents/declarations/"):
             self.assertEqual(c.get(url).status_code, 200, url)
+        # never the agents' / POS statements or what they owe
+        for url in ("/reports/customers/", "/reports/supply_due/", "/reports/supply_payment/", "/reports/pos/",
+                    f"/reports/statement/?preset=all&customer_sim={self.a1.business_sim}", f"/customers/{self.a1.pk}/"):
+            self.assertEqual(c.get(url).status_code, 404, url)
+        lst = c.get("/customers/")
+        self.assertNotContains(lst, "owed to the company")
+        self.assertNotContains(lst, ">Statement<")
+        self.assertNotContains(r, "Owed to the company by agents")
+        self.assertNotContains(c.get("/reports/"), "/reports/customers/")
         self.assertNotContains(c.get("/customers/"), "/customers/new/")
         for url in ("/customers/new/", f"/customers/{self.p1.pk}/edit/", "/exchanges/", "/closings/"):
             self.assertIn(c.get(url).status_code, (403, 302, 404), url)
@@ -322,3 +331,24 @@ class Requests5(OrgMixin, TestCase):
         self.assertContains(r, "Entry from outside")
         self.assertNotContains(c.get("/transactions/?kind=exchanges&preset=all"), "Entry from outside")
         self.assertContains(r, "data-collapse-phone")
+
+
+    def test_market_supervisor_declares_his_own_account(self):
+        from core.models import AgentDeclaration
+
+        mk = User.objects.create_user("mkdecl", password=PW, role=User.Role.MARKET,
+                                      subzone=self.p1.microzone.subzone)
+        c = self.login(mk)
+        self.assertContains(c.get("/"), "My daily declaration")
+        page = c.get("/agent/declaration/")
+        self.assertContains(page, "Start supplying")  # gives his SIM first
+        c.post("/agent/my-sim/", {"sim": "655 99 88 77", "next": "/agent/declaration/"})
+        mk.refresh_from_db()
+        r = c.post("/agent/declaration/", {"idem": str(uuid.uuid4()), "kind": "DAILY",
+                                           "business_date": str(__import__("core.services.days", fromlist=["x"]).douala_today()),
+                                           "recv_cash": "20 000", "paid_float": "5 000"})
+        self.assertEqual(r.status_code, 302)
+        self.assertTrue(AgentDeclaration.objects.filter(agent=mk.counterparty, recv_cash=D(20000)).exists())
+        # his own statement only
+        self.assertEqual(c.get("/reports/statement/").status_code, 200)
+        self.assertContains(c.get(f"/reports/statement/?customer_sim={self.a1.business_sim}"), mk.counterparty.name)

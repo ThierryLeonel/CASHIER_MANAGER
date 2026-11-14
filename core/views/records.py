@@ -239,6 +239,8 @@ def customer_edit(request, pk):
 @roles_required(*MARKET_VIEW)
 def customer_detail(request, pk):
     cp = get_object_or_404(Counterparty, pk=pk)
+    if request.user.is_market and cp.pk != request.user.counterparty_id:
+        raise Http404  # the market supervisor does not see the agents' / POS statements
     return redirect(f"/reports/statement/?preset=all&customer_sim={cp.business_sim}")
 
 

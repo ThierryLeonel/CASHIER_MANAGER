@@ -116,8 +116,8 @@
     <a href="{% url 'agent_destock' %}" class="{% if u == 'agent_destock' %}on{% endif %}">{% icon "destock" %}<span>{% trans "Possible destocash" %}</span></a>
     <a href="{% url 'report' 'pos_stock' %}" class="{% if request.path == '/reports/pos_stock/' %}on{% endif %}">{% icon "alert" %}<span>{% trans "POS stock" %}</span></a>
     <a href="{% url 'report' 'pos_coverage' %}" class="{% if request.path == '/reports/pos_coverage/' %}on{% endif %}">{% icon "chart" %}<span>{% trans "POS supplied" %}</span></a>
-    <a href="{% url 'report' 'supply_due' %}" class="{% if request.path == '/reports/supply_due/' %}on{% endif %}">{% icon "wallet" %}<span>{% trans "Supplies due" %}</span></a>
-    <a href="{% url 'report' 'statement' %}" class="{% if request.path == '/reports/statement/' %}on{% endif %}">{% icon "statement" %}<span>{% trans "Agent / POS statement" %}</span></a>
+    {% if not user.is_market %}<a href="{% url 'report' 'supply_due' %}" class="{% if request.path == '/reports/supply_due/' %}on{% endif %}">{% icon "wallet" %}<span>{% trans "Supplies due" %}</span></a>
+    <a href="{% url 'report' 'statement' %}" class="{% if request.path == '/reports/statement/' %}on{% endif %}">{% icon "statement" %}<span>{% trans "Agent / POS statement" %}</span></a>{% else %}{% if not user.sells %}<a href="{% url 'agent_declaration' %}" class="{% if u == 'agent_declaration' %}on{% endif %}">{% icon "list" %}<span>{% trans "My daily declaration" %}</span></a>{% endif %}{% endif %}
     {% if not user.is_market %}<a href="{% url 'paybacks' %}" class="{% if u == 'paybacks' %}on{% endif %}">{% icon "payment" %}<span>{% trans "Agent paybacks" %}</span></a>{% endif %}
     <a href="{% url 'declarations' %}" class="{% if u == 'declarations' %}on{% endif %}">{% icon "list" %}<span>{% trans "Daily declarations" %}</span></a>
     <a href="{% url 'txn_list' %}" class="{% if u == 'txn_list' or u == 'txn_detail' or u == 'receipt' %}on{% endif %}">{% icon "list" %}<span>{% if user.is_cashier %}{% trans "My records" %}{% else %}{% trans "Transactions" %}{% endif %}</span></a>

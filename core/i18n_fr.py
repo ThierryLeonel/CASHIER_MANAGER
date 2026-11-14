@@ -1856,6 +1856,8 @@ FR = {
     'matches': 'correspond',
     'There is a difference: the note is required. Explain it before closing.': 'Il y a un écart : la note est obligatoire. Expliquez-le avant de clôturer.',
     # commercial agent portal
+    "My daily declaration": "Ma déclaration journalière",
+    "Your login is not linked to an agent account.": "Votre connexion n'est pas liée à un compte agent.",
     "Filters": "Filtres",
     "Swipe to see more": "Glissez pour voir plus",
     '%(code)s: %(amt)s FCFA paid to %(who)s, kept in your records (the shop records the payment on its side).': '%(code)s : %(amt)s FCFA payés à %(who)s, gardés dans vos enregistrements (la boutique enregistre le paiement de son côté).',

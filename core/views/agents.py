@@ -554,7 +554,7 @@ def agent_payback(request):
         extra={"s": ag.summary(request.user.counterparty)})
 
 
-@seller_required
+@roles_required(R.AGENT, R.MARKET)
 def agent_declaration(request):
     """Daily declaration: the agent records what he received from the office (UVE, ER, cash, float) and what he
     paid (UVE, cash, float) — and once, his initial capital. Shown next to what the office recorded."""
@@ -563,6 +563,10 @@ def agent_declaration(request):
     from core.models import AgentDeclaration as DD
 
     Z = Decimal(0)
+    if not request.user.sells:  # a market supervisor first gives his own SIM (his account), then declares
+        if not request.user.is_market:
+            raise Forbidden(_("Your login is not linked to an agent account."))
+        return render(request, "core/agent/declaration.html", {"need_sim": True})
     agent = request.user.counterparty
     opening = DD.objects.filter(agent=agent, kind=DD.Kind.OPENING).first()
     form = AF.DeclarationForm(request.user, request.POST or None, opening_done=opening is not None)

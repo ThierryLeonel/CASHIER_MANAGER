@@ -22,7 +22,6 @@ import uuid
 from decimal import Decimal
 
 from django.db import transaction
-from django.utils import timezone
 from django.db.models import Q, Sum
 from django.utils.translation import gettext as _
 
@@ -845,7 +844,6 @@ def record_entry(user, *, source, product=None, amount, shop=None, desk=None, co
     if reference:
         note = f"{note} · {_('Ref.')} {reference.strip()}".strip(" ·")
     fields = dict(amount=amount, dest_account=dest, product=product, description=note, is_entry=True)
-    legacy = None  # transfers recorded before entries existed moved both accounts: never enter those again
     if source == "SHOP":
         if shop is None:
             raise BusinessError(_("Choose the shop."), "shop")
@@ -853,13 +851,11 @@ def record_entry(user, *, source, product=None, amount, shop=None, desk=None, co
             raise BusinessError(_("A shop sends cash, UVE or ER."), "product")
         src = shop.account(kind)
         type_, extra = TxType.SHOP_TO_DESK, {"shop": shop}
-        legacy = Transaction.objects.filter(type=TxType.SHOP_TO_DESK, shop=shop)
     elif source == "DESK":
         if desk is None or desk.pk == ctx.cashier.subzone_id:
             raise BusinessError(_("Choose the other cashier's desk."), "desk")
         src = desk_account(desk, kind, "product")
         type_, extra = TxType.INTERNAL_TRANSFER, {}
-        legacy = Transaction.objects.filter(type=TxType.INTERNAL_TRANSFER, source_account=src)
     elif source == "COMPANY":
         src = company_account
         if not src.is_asset or not src.active or src.shop_id or perm.usable_accounts(
@@ -867,7 +863,6 @@ def record_entry(user, *, source, product=None, amount, shop=None, desk=None, co
             raise BusinessError(_("Choose a company account that is not yours."), "company_account")
         type_ = TxType.CAPITAL_MOVE
         extra = {"fund_purpose": note or str(_("Entry recorded by the cashier"))}
-        legacy = Transaction.objects.filter(type__in=(TxType.CAPITAL_MOVE, TxType.FLOAT_EXCHANGE), source_account=src)
     else:
         who = (from_whom or "").strip()
         if not who:
@@ -879,14 +874,6 @@ def record_entry(user, *, source, product=None, amount, shop=None, desk=None, co
                                                                                       "cashier"))), receipt=True)
         with transaction.atomic():
             return post([spec], ctx, idempotency_key)[0]
-    if legacy is not None and not another:
-        same = legacy.filter(dest_account=dest, amount=amount, business_date=ctx.business_date, in_transit=False,
-                             is_entry=False, correction__isnull=True).first()
-        if same is not None:
-            raise BusinessError(_("This looks already recorded: %(ref)s at %(time)s, %(amt)s FCFA by %(who)s. If it is "
-                                  "really another one, tick “This is another transfer”.") % {
-                "ref": same.reference, "time": timezone.localtime(same.posted_at).strftime("%H:%M"),
-                "amt": same.amount, "who": same.entered_by}, "another")
     spec = TxSpec(type=type_, lines=[(dest, amount), (transit.account(), -amount)],
                   fields=dict(fields, source_account=src, **extra), receipt=True)
     with transaction.atomic():

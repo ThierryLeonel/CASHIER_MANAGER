@@ -572,3 +572,19 @@ Every transaction stores its **recording cashier** (`Transaction.cashier`), and 
   - Links: first tile on the agent and market home pages, top of "My work".
   - Supervisors: `/agents/declarations/` (Agents space menu "Daily declarations"; market supervisor limited to his
     zone, junior manager to his zone), search by agent and 7 / 14 / 30 / 90 days.
+
+## Market supervisor: no agent statements / debts; declares his own account; entry form without the check box
+- The market supervisor never sees the commercial agents' or POS statements, or what they owe the company:
+  - Reports: `MARKET_REPORTS` = supplies, collections, destockage, POS stock, POS supplied, transfers, and the
+    statement of his OWN agent account only (forced to his SIM; 404 without an account). Agent and POS balances,
+    POS outstanding, supplies due, and supplies vs payments are 404.
+  - `customer_detail` → 404 for anyone but himself. On the Agents & POS cards, OOS and destocash cards: no balance,
+    no Statement button, the name is not a link.
+  - His overview has no "Owed to the company" tile. The Agents space menu has no Supplies due / statement links.
+    The declarations list has no statement link.
+  - He still sees the transactions, stock and the agents' daily declarations of his zone.
+- He declares his own account: "My daily declaration" (menu). Without a linked SIM, the declaration page asks for
+  his SIM first (`market_sim`), then he declares received / paid like an agent (`agent_declaration` is open to
+  market supervisors).
+- Entry form: the "This is another transfer (not one already recorded)" check box and its duplicate guard against
+  older two-sided transfers are removed. Each side records its own entry; stock exchanges are separate.

@@ -4,6 +4,7 @@
 {% block content %}
 <h1>{% trans "Daily declaration" %}</h1>
 <p class="small muted meta">{% trans "Write what you received from the office and what you paid it today. It is your own record, shown next to what the office recorded." %}</p>
+{% if need_sim %}{% include "core/agent/inc/market_sim.html" %}{% else %}
 {% if opening %}<p class="small"><span class="badge ok">{% trans "Initial capital" %}</span> {{ opening.business_date|date:"d/m/Y" }} · {% trans "received" %} {{ opening.received|fcfa }} FCFA</p>{% endif %}
 <form method="post" class="panel decl-form" id="decl-form" novalidate>{% csrf_token %}{{ form.idem }}
   {% if form.non_field_errors %}<ul class="err">{% for e in form.non_field_errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
@@ -31,11 +32,11 @@
 
 {% if recent %}<h2>{% trans "My declarations" %}</h2>
 <div class="decl-list">{% for r in recent %}<div class="decl-item"><span><strong>{{ r.reference }}</strong> · {{ r.business_date|date:"d/m/Y" }}{% if r.kind == "OPENING" %} · {% trans "Initial capital" %}{% endif %}</span><span class="small muted">{% trans "received" %} {{ r.received|fcfa }} · {% trans "paid" %} {{ r.paid|fcfa }}{% if r.note %} · {{ r.note }}{% endif %}</span></div>{% endfor %}</div>{% endif %}
-{% endblock %}
-{% block scripts %}<script>
+{% endif %}{% endblock %}
+{% block scripts %}{% if not need_sim %}<script>
 (function () {
   var f = document.getElementById('decl-form'), paid = document.getElementById('decl-paid');
   function sync() { var k = (f.querySelector('input[name=kind]:checked') || {}).value; paid.hidden = k === 'OPENING'; }
   f.querySelectorAll('input[name=kind]').forEach(function (r) { r.addEventListener('change', sync); }); sync();
 })();
-</script>{% endblock %}
+</script>{% endif %}{% endblock %}

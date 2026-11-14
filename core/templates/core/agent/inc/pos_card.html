@@ -1,6 +1,6 @@
 {% load i18n cashier %}<div id="pos-{{ p.pk }}" class="pos-card{% if lvl %} lvl-{{ lvl|lower }}{% endif %}{% if mode == 'destock' %} lvl-om{% endif %}{% if not p.active %} inactive{% endif %}">
   {% if rank %}<span class="pos-rank">{{ rank }}</span>{% endif %}
-  <a class="pos-name" href="{% if supervise %}{% url 'report' 'statement' %}?preset=all&amp;customer_sim={{ p.business_sim }}{% else %}{% url 'agent_pos_detail' p.pk %}{% endif %}">{{ p.name }}</a>
+  {% if user.is_market and supervise %}<span class="pos-name">{{ p.name }}</span>{% else %}<a class="pos-name" href="{% if supervise %}{% url 'report' 'statement' %}?preset=all&amp;customer_sim={{ p.business_sim }}{% else %}{% url 'agent_pos_detail' p.pk %}{% endif %}">{{ p.name }}</a>{% endif %}
   {% if p.om_account_name and p.om_account_name != p.name %}<div class="pos-biz">{{ p.om_account_name }}</div>{% endif %}
   <div class="pos-sim">{{ p.business_sim|sim }}{% if p.microzone %} · {{ p.microzone.name }}{% endif %}{% if supervise and p.microzone.agent %} · {{ p.microzone.agent.name }}{% endif %}{% if mode == 'global' %}{% if p.microzone.agent %} · {{ p.microzone.agent.name }}{% endif %}{% if mine_mz %} <span class="badge acc">{% trans "mine" %}</span>{% endif %}{% endif %}</div>
   {% if mode == 'global' %}<div class="pos-info small">
