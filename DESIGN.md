@@ -594,7 +594,9 @@ Every transaction stores its **recording cashier** (`Transaction.cashier`), and 
   clears and the Orange code goes to the phone's dial pad (`tel:`), like the agent's supply
   (`sh.shop_ussd`, `SHOP_USSD`):
   - Cash-in — button **CASHIN** — `#149*1*amount*number#`. The client number is now required on cash-in.
-  - ER recharge (airtime) — button **RECHARGE** — `#189*1*number*amount#`. The client number is required.
+  - ER recharge (airtime) — button **RECHARGE**. Normal airtime `#189*1*number*amount#`; good deal
+    `#205*1*number#`. The client number is required.
+  - UVE → ER conversion — button **CONVERT** — `#149*91*amount#` (the UVE amount).
   - UVE out — Send UVE to an agent / POS (**TRANSFER**), destocash to a commercial agent (**DESTOCASH**), UVE part
     of a transfer to another shop (shop SIM) or a cashier (the desk's UVE SIM) — `#149*5*number*amount#`.
 - Cash-out — button **CASHOUT** — is recorded normally, nothing to dial. Receiving UVE from an agent / POS is

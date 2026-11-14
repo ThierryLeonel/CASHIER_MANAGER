@@ -279,9 +279,10 @@ def shop_op(request, op):
 
 
 # the button says what the shop does; these ops put the Orange code on the dial pad once recorded
-OP_BUTTONS = {"cashin": "CASHIN", "cashout": "CASHOUT", "airtime": "RECHARGE", "pos_uve_out": "TRANSFER",
+OP_BUTTONS = {"cashin": "CASHIN", "cashout": "CASHOUT", "airtime": "RECHARGE", "convert": "CONVERT",
+              "pos_uve_out": "TRANSFER",
               "destockage": "DESTOCASH", "to_shop": "TRANSFER", "to_cashier": "TRANSFER"}
-DIAL_OPS = ("cashin", "airtime", "pos_uve_out", "destockage", "to_shop", "to_cashier")
+DIAL_OPS = ("cashin", "airtime", "convert", "pos_uve_out", "destockage", "to_shop", "to_cashier")
 
 
 def _shop_op_json(request, op, form, fn):

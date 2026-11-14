@@ -230,6 +230,16 @@ class ShopDialCodes(OrgMixin, TestCase):
         self.assertEqual(d["code"], "")  # recorded normally, nothing to dial
         d = self.post("airtime", {"kind": "NORMAL", "amount": "1 000", "client_phone": "699887766"})
         self.assertEqual(d["code"], "#189*1*699887766*1000#")
+        d = self.post("airtime", {"kind": "GOOD_DEAL", "amount": "500", "client_phone": "699887766"})
+        self.assertEqual(d["code"], "#205*1*699887766#")
+        from core.models import ShopConversionRate
+
+        if ShopConversionRate.current() is None:
+            ShopConversionRate.objects.create(rate=D("0.035"), set_by=self.m)
+        self.assertContains(self.c.get("/shops/do/convert/"), ">CONVERT<")
+        d = self.post("convert", {"amount": "10 000"})
+        self.assertTrue(d["ok"], d)
+        self.assertEqual(d["code"], "#149*91*10000#")
         d = self.post("pos_uve_out", {"pos": self.p1.business_sim, "amount": "2 000", "pay": "CASH"})
         self.assertEqual(d["code"], f"#149*5*{self.p1.business_sim}*2000#")
         d = self.post("destockage", {"agent": self.a1.business_sim, "amount": "4 000", "pay": "CASH"})

@@ -206,7 +206,9 @@ def cash_out(user, *, shop=None, amount, commission=None, client_phone="", accou
 # ---------------------------------------------------------------- Orange dial codes (shop side)
 SHOP_USSD = {
     "cashin": "#149*1*{amount}*{number}#",  # cash-in: amount first, then the client's number
-    "airtime": "#189*1*{number}*{amount}#",  # ER recharge
+    "airtime": "#189*1*{number}*{amount}#",  # normal airtime (ER recharge)
+    "good_deal": "#205*1*{number}#",  # good deal airtime: the number only
+    "convert": "#149*91*{amount}#",  # UVE → ER conversion: the amount only
     "uve": "#149*5*{number}*{amount}#",  # UVE transfer (to a POS / agent, destocash to an agent, to a shop / desk)
 }
 
@@ -225,7 +227,10 @@ def shop_ussd(op, t, params):
     if op == "cashin":
         tpl, number = SHOP_USSD["cashin"], norm(params.get("client_phone"))
     elif op == "airtime":
-        tpl, number = SHOP_USSD["airtime"], norm(params.get("client_phone"))
+        key = "good_deal" if params.get("kind") == "GOOD_DEAL" else "airtime"
+        tpl, number = SHOP_USSD[key], norm(params.get("client_phone"))
+    elif op == "convert":
+        return SHOP_USSD["convert"].format(amount=int(amount)) if amount else ""
     elif op in ("pos_uve_out", "destockage"):
         cp = params.get("pos") or params.get("agent")
         tpl, number = SHOP_USSD["uve"], norm(getattr(cp, "business_sim", ""))
