@@ -182,6 +182,7 @@ def cash_in(user, *, shop=None, amount, commission=None, client_phone="", accoun
             idempotency_key=None):
     shop = shop_for(user, shop, "OM")
     a = _amt(amount)
+    # the shop page no longer asks for a commission (none is captured when recording); kept for imports / API
     com = _amt(commission, "commission", allow_zero=True) if commission not in (None, "") else None
     return _record(user, [_spec(TxType.SHOP_CASHIN, shop, [(shop.account(K.CASH_DRAWER), a), (shop.account(K.UVE), -a)],
                                 a, commission=com, client_phone=_phone(client_phone),
@@ -193,11 +194,55 @@ def cash_out(user, *, shop=None, amount, commission=None, client_phone="", accou
              idempotency_key=None):
     shop = shop_for(user, shop, "OM")
     a = _amt(amount)
+    # the shop page no longer asks for a commission (none is captured when recording); kept for imports / API
     com = _amt(commission, "commission", allow_zero=True) if commission not in (None, "") else None
     return _record(user, [_spec(TxType.SHOP_CASHOUT, shop, [(shop.account(K.UVE), a), (shop.account(K.CASH_DRAWER), -a)],
                                 a, commission=com, client_phone=_phone(client_phone),
                                 account_name=(account_name or "").strip()[:120], description=description)],
                    idempotency_key)[0]
+
+
+# ---------------------------------------------------------------- Orange dial codes (shop side)
+SHOP_USSD = {
+    "cashin": "#149*1*{amount}*{number}#",  # cash-in: amount first, then the client's number
+    "airtime": "#189*1*{number}*{amount}#",  # ER recharge
+    "uve": "#149*5*{number}*{amount}#",  # UVE transfer (to a POS / agent, destocash to an agent, to a shop / desk)
+}
+
+
+def shop_ussd(op, t, params):
+    """The code the shop dials after recording (put on the phone's dial pad), or "" when the op dials nothing
+    (cash-out, receiving UVE, …) or there is no number."""
+    from core.simnumbers import SimNumberError, normalize_sim
+
+    def norm(v):
+        try:
+            return normalize_sim(v) if v else ""
+        except SimNumberError:
+            return ""
+    number, amount, tpl = "", t.amount, None
+    if op == "cashin":
+        tpl, number = SHOP_USSD["cashin"], norm(params.get("client_phone"))
+    elif op == "airtime":
+        tpl, number = SHOP_USSD["airtime"], norm(params.get("client_phone"))
+    elif op in ("pos_uve_out", "destockage"):
+        cp = params.get("pos") or params.get("agent")
+        tpl, number = SHOP_USSD["uve"], norm(getattr(cp, "business_sim", ""))
+    elif op in ("to_shop", "to_cashier") and params.get("uve"):
+        from .operations import desk_account
+
+        tpl, amount = SHOP_USSD["uve"], params["uve"]
+        if op == "to_shop":
+            number = norm(params["dest_shop"].sim_number)
+        else:
+            try:
+                acct = desk_account(params["desk"], K.UVE)
+                number = norm(acct.sim.msisdn) if acct.sim_id else ""
+            except BusinessError:
+                number = ""
+    if not tpl or not number or not amount:
+        return ""
+    return tpl.format(number=number, amount=int(amount))
 
 
 AIRTIME_KINDS = {"NORMAL": _("Normal airtime"), "GOOD_DEAL": _("Good deal")}

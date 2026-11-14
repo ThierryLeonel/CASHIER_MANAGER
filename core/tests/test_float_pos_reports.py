@@ -65,7 +65,7 @@ class FloatPosReports(OrgMixin, TestCase):
 
         cap.inject(self.finance, account=self.shop.account(K.UVE), amount=D(10000), source="x", purpose="y")
         r = self.client_for("shop.molyko").post("/shops/do/cashin/", {"idem": str(uuid.uuid4()), "amount": "1 000",
-                                                                      "account_name": "", "client_phone": ""})
+                                                                      "account_name": "", "client_phone": "677123456"})
         self.assertEqual(r.status_code, 302, r.content[:2000])  # no account name needed
         self.assertFalse(Transaction.objects.get(type=TxType.SHOP_CASHIN).account_name)
 

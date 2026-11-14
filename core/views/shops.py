@@ -249,8 +249,10 @@ def shop_op(request, op):
     if (r := _shift_redirect(request)):
         return r
     form_class, fn, title, intro, icon = OPS[op]
-    kwargs = {"op": op} if form_class in (SF.AgentDealForm, SF.PosUveForm) else {}
+    kwargs = {"op": op} if form_class in (SF.AgentDealForm, SF.PosUveForm, SF.CashInOutForm) else {}
     form = form_class(request.user, request.POST or None, **kwargs)
+    if request.method == "POST" and request.headers.get("X-Requested-With") == "fetch":
+        return _shop_op_json(request, op, form, fn)
     if request.method == "POST" and form.is_valid():
         params = form.params()
         resp = run_service(
@@ -272,7 +274,37 @@ def shop_op(request, op):
     if op == "entry":
         return render(request, "core/entry_receive.html", {"form": form, "title": title, "intro": intro,
                                                            "icon": icon, "shop_entry": True})
-    return render(request, "core/entry_form.html", {"form": form, "title": title, "intro": intro, "icon": icon})
+    return render(request, "core/entry_form.html", {"form": form, "title": title, "intro": intro, "icon": icon,
+                                                    "button": OP_BUTTONS.get(op), "dial": op in DIAL_OPS})
+
+
+# the button says what the shop does; these ops put the Orange code on the dial pad once recorded
+OP_BUTTONS = {"cashin": "CASHIN", "cashout": "CASHOUT", "airtime": "RECHARGE", "pos_uve_out": "TRANSFER",
+              "destockage": "DESTOCASH", "to_shop": "TRANSFER", "to_cashier": "TRANSFER"}
+DIAL_OPS = ("cashin", "airtime", "pos_uve_out", "destockage", "to_shop", "to_cashier")
+
+
+def _shop_op_json(request, op, form, fn):
+    """Record from the page without leaving it, then hand back the code to dial (cash-in, recharge, UVE out)."""
+    import uuid as uuid_
+
+    from django.http import JsonResponse
+
+    from core.services.errors import DuplicateSubmission
+
+    if not form.is_valid():
+        return JsonResponse({"ok": False, "errors": {k: [str(m) for m in v] for k, v in form.errors.items()}})
+    params = form.params()
+    try:
+        t = fn(request.user, idempotency_key=form.cleaned_data["idem"], **params)
+    except DuplicateSubmission as exc:
+        t = exc.existing
+    except BusinessError as exc:
+        key = exc.field if exc.field in form.fields else "__all__"
+        return JsonResponse({"ok": False, "errors": {key: [str(exc.message)]}})
+    return JsonResponse({"ok": True, "idem": str(uuid_.uuid4()), "code": sh.shop_ussd(op, t, params),
+                         "message": str(_("%(type)s %(ref)s recorded: %(amt)s FCFA.") % {
+                             "type": t.get_type_display(), "ref": t.reference, "amt": fmt(t.amount)})})
 
 
 @roles_required(R.CASHIER, R.SUPERADMIN)

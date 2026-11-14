@@ -7,11 +7,12 @@
 </div>
 {% block before_form %}{% endblock %}
 <div class="panel">
-<form method="post" class="entry" novalidate id="entry-form" data-rate="{{ rate|default:'' }}">{% csrf_token %}
+<div id="op-msg"></div>
+<form method="post" class="entry" novalidate id="entry-form" data-rate="{{ rate|default:'' }}"{% if dial %} data-dial="1"{% endif %}>{% csrf_token %}
   {% include "core/inc/fields.html" %}
   <div id="conv-preview" class="preview" hidden></div>
   <div class="form-foot">
-    <button type="submit" class="btn primary" id="submit-btn">{% trans "Record" %}</button>
+    <button type="submit" class="btn primary{% if button %} op-btn{% endif %}" id="submit-btn">{% if button %}{{ button }}{% else %}{% trans "Record" %}{% endif %}</button>
     <a class="btn" href="{% if user.is_shop_user %}{% url 'shops' %}{% else %}{% url 'dashboard' %}{% endif %}">{% trans "Cancel" %}</a>
     <span class="small muted">{% trans "Only record transactions that are completed and confirmed." %}</span>
   </div>
@@ -23,9 +24,47 @@
 (function () {
   var form = document.getElementById('entry-form');
   // prevent double clicks (the server also rejects duplicate submissions)
-  form.addEventListener('submit', function () {
-    var b = document.getElementById('submit-btn'); b.disabled = true; b.textContent = '…';
+  form.addEventListener('submit', function (ev) {
+    var b = document.getElementById('submit-btn');
+    if (form.dataset.dial && window.fetch && window.FormData) { ev.preventDefault(); dialSubmit(b); return; }
+    b.disabled = true; b.textContent = '…';
   });
+  // shop cash-in / recharge / UVE out: record, clear the form, then put the Orange code on the phone's dial pad
+  function esc(t) { var d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
+  function dialSubmit(b) {
+    if (b.disabled) return;
+    var label = b.textContent, box = document.getElementById('op-msg');
+    b.disabled = true; b.textContent = '…';
+    form.querySelectorAll('.err, .nonfield').forEach(function (e) { e.remove(); });
+    fetch(location.pathname, {method: 'POST', body: new FormData(form), credentials: 'same-origin',
+                              headers: {'X-Requested-With': 'fetch'}})
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        b.disabled = false; b.textContent = label;
+        if (!d.ok) {
+          Object.keys(d.errors || {}).forEach(function (k) {
+            var f = document.getElementById('fld-' + k), ul = '<ul class="err">' + d.errors[k].map(function (m) { return '<li>' + esc(m) + '</li>'; }).join('') + '</ul>';
+            if (f && !f.hidden) f.insertAdjacentHTML('beforeend', ul);
+            else form.insertAdjacentHTML('afterbegin', '<div class="nonfield">' + d.errors[k].map(esc).join('<br>') + '</div>');
+          });
+          box.innerHTML = '<div class="msg error">{{ _("Nothing was recorded. Check the form.")|escapejs }}</div>';
+          return;
+        }
+        ['amount', 'client_phone', 'account_name', 'description', 'cash', 'uve'].forEach(function (n) {
+          var el = form.querySelector('[name=' + n + ']'); if (el) { el.value = ''; el.dispatchEvent(new Event('input')); }
+        });
+        form.querySelector('[name=idem]').value = d.idem;
+        var tel = d.code ? 'tel:' + d.code.replace(/#/g, '%23') : '';
+        box.innerHTML = '<div class="msg success">' + esc(d.message) + (d.code ? '<br><a class="dial-again" href="' + tel + '">' + esc(d.code) + '</a>' : '') + '</div>';
+        if (window.dismissLater) dismissLater(box.firstChild, 10000);
+        box.scrollIntoView({block: 'nearest', behavior: 'smooth'});
+        if (tel) location.href = tel;
+      })
+      .catch(function () {
+        b.disabled = false; b.textContent = label;
+        box.innerHTML = '<div class="msg error">{{ _("No connection: nothing was recorded. Try again.")|escapejs }}</div>';
+      });
+  }
   // an account list with a single possible account fills itself and shows as a line of text
   function autoPick(sel) {
     if (!sel) return;

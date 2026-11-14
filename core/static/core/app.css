@@ -755,3 +755,4 @@ table.t tr.oos td { background: #fff1f0; }
   table.t.recon td:first-child, table.t.recon th:first-child { width: auto; min-width: 120px; white-space: normal; }
   .quick { gap: 10px; }
 }
+.btn.op-btn { min-width: 140px; letter-spacing: .06em; font-weight: 800; }

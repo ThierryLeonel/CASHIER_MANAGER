@@ -1856,6 +1856,8 @@ FR = {
     'matches': 'correspond',
     'There is a difference: the note is required. Explain it before closing.': 'Il y a un écart : la note est obligatoire. Expliquez-le avant de clôturer.',
     # commercial agent portal
+    "Client number (optional)": "Numéro du client (facultatif)",
+    "Enter the client's number.": "Saisissez le numéro du client.",
     "My daily declaration": "Ma déclaration journalière",
     "Your login is not linked to an agent account.": "Votre connexion n'est pas liée à un compte agent.",
     "Filters": "Filtres",

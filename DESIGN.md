@@ -588,3 +588,17 @@ Every transaction stores its **recording cashier** (`Transaction.cashier`), and 
   market supervisors).
 - Entry form: the "This is another transfer (not one already recorded)" check box and its duplicate guard against
   older two-sided transfers are removed. Each side records its own entry; stock exchanges are separate.
+
+## Shop dial codes: CASHIN / CASHOUT / RECHARGE, UVE transfers and destocash
+- Shop pages record without leaving the page (`X-Requested-With: fetch` → `_shop_op_json`). Once recorded, the form
+  clears and the Orange code goes to the phone's dial pad (`tel:`), like the agent's supply
+  (`sh.shop_ussd`, `SHOP_USSD`):
+  - Cash-in — button **CASHIN** — `#149*1*amount*number#`. The client number is now required on cash-in.
+  - ER recharge (airtime) — button **RECHARGE** — `#189*1*number*amount#`. The client number is required.
+  - UVE out — Send UVE to an agent / POS (**TRANSFER**), destocash to a commercial agent (**DESTOCASH**), UVE part
+    of a transfer to another shop (shop SIM) or a cashier (the desk's UVE SIM) — `#149*5*number*amount#`.
+- Cash-out — button **CASHOUT** — is recorded normally, nothing to dial. Receiving UVE from an agent / POS is
+  recorded normally too.
+- No commission is asked on cash-in / cash-out (field removed from the form; the service still accepts one for
+  imports).
+- Without a number, nothing is dialled; the message shows the code to dial again.

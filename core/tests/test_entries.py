@@ -191,3 +191,50 @@ class IndividualRecords(OrgMixin, TestCase):
         p = ag.request_payback(agent_user, shop=self.shop, cash=D(1000))
         self.assertEqual(p.status, AgentPayback.Status.RECORDED)
         self.assertFalse(ag.pending_for_shop(self.shop).exists())
+
+
+class ShopDialCodes(OrgMixin, TestCase):
+    """Shop cash-in / recharge / UVE transfers: record, then the Orange code goes to the dial pad."""
+
+    def setUp(self):
+        self.make_org()
+        self.fund_all()
+        self.shop = self.o["shop"]
+        from core.services import shop_shifts as ss
+
+        self.m = self.o["shop_mgr"]
+        for k in (Account.Kind.CASH_DRAWER, Account.Kind.UVE, Account.Kind.ER):
+            self.fund(self.shop.account(k), 300000)
+        ss.open_shift(self.m, cash=self.bal(self.shop.account(Account.Kind.CASH_DRAWER)),
+                      uve=self.bal(self.shop.account(Account.Kind.UVE)), er=self.bal(self.shop.account(Account.Kind.ER)))
+        self.c = self.client_class()
+        self.assertTrue(self.c.login(username="shop.molyko", password=PW))
+
+    def post(self, op, data):
+        return self.c.post(f"/shops/do/{op}/", dict(data, idem=str(uuid.uuid4())), HTTP_X_REQUESTED_WITH="fetch").json()
+
+    def test_codes_and_buttons(self):
+        page = self.c.get("/shops/do/cashin/")
+        self.assertContains(page, ">CASHIN<")
+        self.assertNotContains(page, 'name="commission"')
+        self.assertContains(self.c.get("/shops/do/cashout/"), ">CASHOUT<")
+        self.assertContains(self.c.get("/shops/do/airtime/"), ">RECHARGE<")
+        d = self.post("cashin", {"amount": "5 000", "client_phone": "677 12 34 56"})
+        self.assertTrue(d["ok"], d)
+        self.assertEqual(d["code"], "#149*1*5000*677123456#")
+        t = Transaction.objects.get(type=TxType.SHOP_CASHIN)
+        self.assertIsNone(t.commission)
+        self.assertFalse(self.post("cashin", {"amount": "5 000"})["ok"])  # the number is needed
+        d = self.post("cashout", {"amount": "3 000"})
+        self.assertTrue(d["ok"], d)
+        self.assertEqual(d["code"], "")  # recorded normally, nothing to dial
+        d = self.post("airtime", {"kind": "NORMAL", "amount": "1 000", "client_phone": "699887766"})
+        self.assertEqual(d["code"], "#189*1*699887766*1000#")
+        d = self.post("pos_uve_out", {"pos": self.p1.business_sim, "amount": "2 000", "pay": "CASH"})
+        self.assertEqual(d["code"], f"#149*5*{self.p1.business_sim}*2000#")
+        d = self.post("destockage", {"agent": self.a1.business_sim, "amount": "4 000", "pay": "CASH"})
+        self.assertEqual(d["code"], f"#149*5*{self.a1.business_sim}*4000#")
+        # receiving UVE from an agent is recorded normally
+        d = self.post("pos_uve_in", {"pos": self.a1.business_sim, "amount": "1 000", "pay": "CASH"})
+        self.assertTrue(d["ok"], d)
+        self.assertNotIn("code", {k for k, v in d.items() if v})

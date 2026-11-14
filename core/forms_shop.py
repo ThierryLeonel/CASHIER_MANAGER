@@ -33,20 +33,53 @@ class ShopForm(forms.Form):
 
 
 class CashInOutForm(ShopForm):
+    """Cash-in (the client's number is needed: the Orange code is put on the dial pad) or cash-out. No commission
+    is captured."""
+
+    client_phone = forms.CharField(label=_("Client number"), required=False, max_length=30,
+                                   widget=forms.TextInput(attrs={"inputmode": "tel", "autocomplete": "off"}))
     amount = MoneyField(label=_("Amount (FCFA)"))
-    commission = MoneyField(label=_("Commission earned (FCFA)"), required=False)
     account_name = forms.CharField(label=_("Account name (optional)"), max_length=120, required=False,
                                    help_text=_("The name on the client's Orange Money account."))
-    client_phone = forms.CharField(label=_("Client phone (optional)"), required=False, max_length=30)
     description = forms.CharField(label=_("Note"), required=False, max_length=255)
+
+    def __init__(self, user, *args, op="cashin", **kwargs):
+        super().__init__(user, *args, **kwargs)
+        if op == "cashin":
+            self.fields["client_phone"].required = True
+        else:
+            self.fields["client_phone"].label = _("Client number (optional)")
+
+    def clean_client_phone(self):
+        return _client_number(self.cleaned_data.get("client_phone"), self.fields["client_phone"].required)
+
+
+def _client_number(v, required):
+    from core.simnumbers import SimNumberError, normalize_sim
+
+    v = (v or "").strip()
+    if not v:
+        if required:
+            raise forms.ValidationError(_("Enter the client's number."))
+        return ""
+    try:
+        return normalize_sim(v)
+    except SimNumberError as e:
+        raise forms.ValidationError(_(str(e)))
 
 
 class AirtimeForm(ShopForm):
+    """ER recharge: the client's number is needed, the Orange code is put on the dial pad."""
+
     kind = forms.ChoiceField(label=_("Airtime"), choices=[("NORMAL", _("Normal airtime")),
                                                          ("GOOD_DEAL", _("Good deal"))])
+    client_phone = forms.CharField(label=_("Client number"), max_length=30,
+                                   widget=forms.TextInput(attrs={"inputmode": "tel", "autocomplete": "off"}))
     amount = MoneyField(label=_("Airtime sold (FCFA)"))
-    client_phone = forms.CharField(label=_("Client phone (optional)"), required=False, max_length=30)
     description = forms.CharField(label=_("Note"), required=False, max_length=255)
+
+    def clean_client_phone(self):
+        return _client_number(self.cleaned_data.get("client_phone"), True)
 
 
 class ConvertForm(ShopForm):

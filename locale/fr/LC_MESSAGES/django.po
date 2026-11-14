@@ -2000,6 +2000,9 @@ msgstr "Nom du client"
 msgid "Client number"
 msgstr "Numéro du client"
 
+msgid "Client number (optional)"
+msgstr "Numéro du client (facultatif)"
+
 msgid "Client phone"
 msgstr "Téléphone du client"
 
@@ -3068,6 +3071,9 @@ msgstr "Saisissez la référence du versement bancaire."
 
 msgid "Enter the client's name."
 msgstr "Saisissez le nom du client."
+
+msgid "Enter the client's number."
+msgstr "Saisissez le numéro du client."
 
 msgid "Enter the client's phone number."
 msgstr "Saisissez le numéro de téléphone du client."
