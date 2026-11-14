@@ -1734,6 +1734,9 @@ msgstr "Contrôle"
 msgid "Check passed: ready to import"
 msgstr "Contrôle réussi : prêt à importer"
 
+msgid "Check the form."
+msgstr "Vérifiez le formulaire."
+
 #, python-format
 msgid "Check the price of %(i)s."
 msgstr "Vérifiez le prix de %(i)s."
@@ -4419,6 +4422,9 @@ msgstr "Aucune clôture pour l'instant."
 msgid "No connection"
 msgstr "Pas de connexion"
 
+msgid "No connection: nothing was recorded. Try again."
+msgstr "Pas de connexion : rien n'a été enregistré. Réessayez."
+
 #, python-format
 msgid "No correction found for %(ref)s."
 msgstr "Aucune correction trouvée pour %(ref)s."
@@ -4654,6 +4660,12 @@ msgid "Nothing was imported. Fix the rows below and upload the file again."
 msgstr ""
 "Rien n'a été importé. Corrigez les lignes ci-dessous et chargez le fichier à"
 " nouveau."
+
+msgid "Nothing was recorded."
+msgstr "Rien n'a été enregistré."
+
+msgid "Nothing was recorded. Check the form."
+msgstr "Rien n'a été enregistré. Vérifiez le formulaire."
 
 msgid "Nothing with the office in the last 14 days."
 msgstr "Rien avec le bureau ces 14 derniers jours."

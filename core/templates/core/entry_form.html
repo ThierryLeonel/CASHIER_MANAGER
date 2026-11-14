@@ -47,7 +47,9 @@
             if (f && !f.hidden) f.insertAdjacentHTML('beforeend', ul);
             else form.insertAdjacentHTML('afterbegin', '<div class="nonfield">' + d.errors[k].map(esc).join('<br>') + '</div>');
           });
-          box.innerHTML = '<div class="msg error">{{ _("Nothing was recorded. Check the form.")|escapejs }}</div>';
+          var gen = (d.errors || {}).__all__;  // e.g. not enough UVE: say it plainly at the top
+          box.innerHTML = '<div class="msg error">{{ _("Nothing was recorded.")|escapejs }} ' +
+            (gen ? gen.map(esc).join(' ') : '{{ _("Check the form.")|escapejs }}') + '</div>';
           return;
         }
         ['amount', 'client_phone', 'account_name', 'description', 'cash', 'uve'].forEach(function (n) {

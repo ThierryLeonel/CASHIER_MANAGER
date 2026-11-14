@@ -1856,6 +1856,10 @@ FR = {
     'matches': 'correspond',
     'There is a difference: the note is required. Explain it before closing.': 'Il y a un écart : la note est obligatoire. Expliquez-le avant de clôturer.',
     # commercial agent portal
+    "Nothing was recorded.": "Rien n'a été enregistré.",
+    "Check the form.": "Vérifiez le formulaire.",
+    "Nothing was recorded. Check the form.": "Rien n'a été enregistré. Vérifiez le formulaire.",
+    "No connection: nothing was recorded. Try again.": "Pas de connexion : rien n'a été enregistré. Réessayez.",
     "By cashing out to the shop (UVE goes up)": "Par retrait (cash-out) vers la boutique (l'UVE augmente)",
     "By transferring UVE to the shop (UVE goes up)": "Par transfert d'UVE à la boutique (l'UVE augmente)",
     "Cash (the cash drawer goes up)": "En espèces (la caisse augmente)",
