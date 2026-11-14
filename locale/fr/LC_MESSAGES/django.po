@@ -1331,6 +1331,9 @@ msgstr "Nom commercial (nom du compte OM)"
 msgid "By"
 msgstr "Par"
 
+msgid "By cashing out to the shop (UVE goes up)"
+msgstr "Par retrait (cash-out) vers la boutique (l'UVE augmente)"
+
 msgid "By day"
 msgstr "Par jour"
 
@@ -1339,6 +1342,9 @@ msgstr "Par guichet et boutique"
 
 msgid "By shop"
 msgstr "Par boutique"
+
+msgid "By transferring UVE to the shop (UVE goes up)"
+msgstr "Par transfert d'UVE à la boutique (l'UVE augmente)"
 
 msgid "By week"
 msgstr "Par semaine"
@@ -1425,6 +1431,9 @@ msgstr "Reporté non résolu"
 
 msgid "Cash"
 msgstr "Espèces"
+
+msgid "Cash (the cash drawer goes up)"
+msgstr "En espèces (la caisse augmente)"
 
 msgid "Cash and / or UVE"
 msgstr "Espèces et / ou UVE"
@@ -6181,6 +6190,9 @@ msgstr "Enregistrer les routes"
 msgid "Saved."
 msgstr "Enregistré."
 
+msgid "Say how the client pays."
+msgstr "Dites comment le client paie."
+
 msgid "Say what the money is for."
 msgstr "Indiquez à quoi sert l'argent."
 
@@ -7105,6 +7117,9 @@ msgid ""
 msgstr ""
 "Le client donne des espèces et reçoit de l'Orange Money : l'UVE baisse, la "
 "caisse augmente."
+
+msgid "The client pays"
+msgstr "Le client paie"
 
 msgid "The client withdraws cash: UVE goes up, the cash drawer goes down."
 msgstr "Le client retire des espèces : l'UVE augmente, la caisse baisse."
@@ -8922,6 +8937,15 @@ msgstr "payé"
 
 msgid "paid back"
 msgstr "remboursé"
+
+msgid "paid by UVE transfer to the shop"
+msgstr "payé par transfert d'UVE à la boutique"
+
+msgid "paid by cash-out to the shop"
+msgstr "payé par cash-out à la boutique"
+
+msgid "paid in cash"
+msgstr "payé en espèces"
 
 msgid "part of a payment made with several methods"
 msgstr "partie d'un paiement fait avec plusieurs modes"

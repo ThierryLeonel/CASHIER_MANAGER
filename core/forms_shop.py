@@ -259,6 +259,11 @@ class SaleForm(ShopForm):
     id_number = forms.CharField(label=_("Identification number"), max_length=60)
     phone = forms.CharField(label=_("Telephone contact"), max_length=30)
     whatsapp = forms.CharField(label=_("WhatsApp contact"), required=False, max_length=30)
+    paid_by = forms.ChoiceField(label=_("The client pays"), widget=forms.RadioSelect, initial="CASH", required=False,
+                                choices=[
+        ("CASH", _("Cash (the cash drawer goes up)")),
+        ("CASHOUT", _("By cashing out to the shop (UVE goes up)")),
+        ("UVE_TRANSFER", _("By transferring UVE to the shop (UVE goes up)"))])
     description = forms.CharField(label=_("Note"), required=False, max_length=255)
 
     def __init__(self, user, *args, **kwargs):

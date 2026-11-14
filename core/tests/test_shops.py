@@ -72,6 +72,38 @@ class ShopMoney(OrgMixin, TestCase):
     CLIENT = dict(client_name="Ngwa Peter", client_address="Molyko, Buea", client_country="Cameroon",
                   id_type="CNI", id_number="998877", phone="677445566", whatsapp="677445566")
 
+    def test_every_shop_operation_moves_the_right_balances(self):
+        """The rules of the shop's balances, one by one."""
+        from core.models import ShopConversionRate
+
+        cash, uve, er = (self.shop.account(k) for k in (K.CASH_DRAWER, K.UVE, K.ER))
+
+        def snap():
+            return self.bal(cash), self.bal(uve), self.bal(er)
+
+        def moved(fn, dc=0, du=0, de=0):
+            c0, u0, e0 = snap()
+            fn()
+            c1, u1, e1 = snap()
+            self.assertEqual((c1 - c0, u1 - u0, e1 - e0), (D(dc), D(du), D(de)))
+
+        moved(lambda: sh.cash_out(self.m, amount=D(1000)), dc=-1000, du=1000)  # cash out: cash −, UVE +
+        moved(lambda: sh.cash_in(self.m, amount=D(2000)), dc=2000, du=-2000)  # cash in: UVE −, cash +
+        moved(lambda: sh.destockage(self.m, agent=self.a1, amount=D(3000)), dc=3000, du=-3000)  # destocash
+        moved(lambda: sh.uve_from_pos(self.m, pos=self.a1, amount=D(4000)), dc=-4000, du=4000)  # UVE from agent
+        moved(lambda: sh.appro(self.m, agent=self.a1, amount=D(4500)), dc=-4500, du=4500)  # appro paid cash
+        moved(lambda: sh.airtime(self.m, amount=D(500)), dc=500, de=-500)  # ER recharge: ER −, cash +
+        if ShopConversionRate.current() is None:
+            ShopConversionRate.objects.create(rate=D("0"), set_by=self.o["shop_senior"])
+        rate = ShopConversionRate.current().rate
+        er_got = sh.conversion_er_amount(D(10000), rate)
+        moved(lambda: sh.convert(self.m, amount=D(10000)), du=-10000, de=er_got)  # conversion: UVE −, ER +
+        phone = self.o["items"]["phone"]
+        units = sh.receive_stock(self.o["shop_senior"], shop=self.shop, item=phone, serials="P1\nP2\nP3")
+        moved(lambda: sh.sell(self.m, item=phone, units=units[:1], **self.CLIENT), dc=65000)  # sale paid cash
+        moved(lambda: sh.sell(self.m, item=phone, units=units[1:2], paid_by="CASHOUT", **self.CLIENT), du=65000)
+        moved(lambda: sh.sell(self.m, item=phone, units=units[2:3], paid_by="UVE_TRANSFER", **self.CLIENT), du=65000)
+
     def test_airtime_kinds(self):
         n = sh.airtime(self.m, amount=D(5000))
         g = sh.airtime(self.m, amount=D(3000), kind="GOOD_DEAL")

@@ -602,3 +602,17 @@ Every transaction stores its **recording cashier** (`Transaction.cashier`), and 
 - No commission is asked on cash-in / cash-out (field removed from the form; the service still accepts one for
   imports).
 - Without a number, nothing is dialled; the message shows the code to dial again.
+
+## Shop balance rules (checked by `test_every_shop_operation_moves_the_right_balances`)
+| Operation | Cash drawer | UVE | ER |
+|---|---|---|---|
+| Cash-out | − amount | + amount | |
+| Cash-in | + amount | − amount | |
+| Destocash with a commercial agent (cash received) | + amount | − amount | |
+| UVE received from a commercial agent / POS, paid cash (also appro paid cash) | − amount | + amount | |
+| ER (airtime) recharge | + amount | | − amount |
+| Conversion UVE → ER | | − amount | + amount × (1 + shop rate) |
+| Sale paid in cash | + price | | |
+| Sale paid by the client cashing out to the shop, or by UVE transfer to the shop | | + price | |
+- Sale: new "The client pays" choice (`SaleForm.paid_by`, `sh.sell(paid_by=CASH|CASHOUT|UVE_TRANSFER)`). The sale is
+  posted to the drawer or the UVE wallet; payment method CASH / UVE; the way paid is written in the description.

@@ -23,6 +23,7 @@ from decimal import Decimal
 from django.db import transaction
 from django.db.models import Q
 from django.utils.translation import gettext as _
+from django.utils.translation import gettext_lazy as _l
 
 from core.models import (
     SHOP_DUTIES, Account, Counterparty, ItemSale, ServiceCount, Shop, ShopConversionRate, ShopItem, SimRetrieval, StockMove,
@@ -730,8 +731,13 @@ def remove_unit(user, *, serial, note):
 CLIENT_FIELDS = ("client_name", "client_address", "client_country", "id_type", "id_number", "phone")
 
 
+SALE_PAID_BY = {"CASH": _l("paid in cash"), "CASHOUT": _l("paid by cash-out to the shop"),
+                "UVE_TRANSFER": _l("paid by UVE transfer to the shop")}
+
+
 def sell(user, *, shop=None, units, item=None, unit_price=None, prices=None, client_name, client_address,
-         client_country, id_type, id_number, phone, whatsapp="", description="", idempotency_key=None):
+         client_country, id_type, id_number, phone, whatsapp="", description="", paid_by="CASH",
+         idempotency_key=None):
     """Sell one or more units (chosen by IMEI / serial), of one or several items, to one identified client.
 
     Each item is posted as its own sale line (cash +, shop sales −), all together (all or nothing), sharing one
@@ -740,6 +746,10 @@ def sell(user, *, shop=None, units, item=None, unit_price=None, prices=None, cli
     import uuid
 
     shop = shop_for(user, shop, "SALES")
+    paid_by = paid_by or "CASH"
+    if paid_by not in SALE_PAID_BY:
+        raise BusinessError(_("Say how the client pays."), "paid_by")
+    into = shop.account(K.CASH_DRAWER if paid_by == "CASH" else K.UVE)  # cash, or UVE (cash-out / UVE transfer)
     units = list(units or [])
     if not units:
         raise BusinessError(_("Choose the unit(s) sold by IMEI / serial number."), "units")
@@ -777,13 +787,15 @@ def sell(user, *, shop=None, units, item=None, unit_price=None, prices=None, cli
                 raise BusinessError(_("Set the price of %(i)s.") % {"i": it.name}, "units")
             total = price * len(its)
             serials = ", ".join(u.ident for u in its)
-            lines = [(shop.account(K.CASH_DRAWER), total), (Account.system(K.SHOP_SALES), -total)]
+            lines = [(into, total), (Account.system(K.SHOP_SALES), -total)]
             cogs = sum((Decimal(u.cost) for u in its if u.cost), Decimal(0))
             if cogs:  # units bought at a cost: that cost leaves the stock and becomes the cost of the sale
                 lines += [(Account.system(K.COST_OF_SALES), cogs), (shop.account(K.SHOP_INVENTORY), -cogs)]
             spec = _spec(TxType.SHOP_SALE, shop, lines, total,
                          client_phone=_phone(phone), payment_group=group,
+                         payment_method="CASH" if paid_by == "CASH" else "UVE",
                          description=(f"{len(its)} × {it.name} ({serials})"
+                                      + (f" · {SALE_PAID_BY[paid_by]}" if paid_by != "CASH" else "")
                                       + (f" — {description}" if description else "")))
             spec.receipt = i == 0
             specs.append(spec)
