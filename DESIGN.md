@@ -618,3 +618,7 @@ Every transaction stores its **recording cashier** (`Transaction.cashier`), and 
 | Sale paid by the client cashing out to the shop, or by UVE transfer to the shop | | + price | |
 - Sale: new "The client pays" choice (`SaleForm.paid_by`, `sh.sell(paid_by=CASH|CASHOUT|UVE_TRANSFER)`). The sale is
   posted to the drawer or the UVE wallet; payment method CASH / UVE; the way paid is written in the description.
+- Shop dial pages: when nothing is recorded because of a general error (e.g. not enough UVE in the shop's wallet
+  for a cash-in, not enough cash for a cash-out), the top message gives that reason, not only "Check the form".
+  End-to-end check on a phone page: cash-in 5 000 → cash 50 000 → 55 000, UVE 100 000 → 95 000; cash-out 2 000 →
+  cash 53 000, UVE 97 000.
