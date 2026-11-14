@@ -546,3 +546,29 @@ Every transaction stores its **recording cashier** (`Transaction.cashier`), and 
     (source / dest) for the record only. The partner records his own exchange; nothing to confirm, nothing owed.
   - Shown as "Stock exchange: gave UVE, received cash" (or the reverse). Links are in the cashier menu and home
     page and the shop menu and page.
+
+## Where to find records, phone-friendly views, daily declaration
+- **My records chips:** cashier "My records" (`/transactions/`, menu renamed for cashiers) and shop "Shop
+  transactions" have quick chips: All · Entries · Transfers sent · Stock exchanges · Conversions
+  (`ops.record_kind_q`, `inc/record_chips.html`; `?kind=`).
+  - Exchanges include the cash-manager exchanges. Conversions are UVE→ER at a desk or a shop.
+- **Phones (≤ 640 px):**
+  - List tables become cards: one row = one card, each cell labelled with its column. A script in `base.html` adds
+    `data-label` and class `stack` to every `table.t` of up to 9 columns, except `.recon`, `.report-t`, `.matrix`,
+    `.og-t`, `.basket` and `.no-stack`.
+  - Less useful cells (`sm-hide`: business date, cashier) are hidden on the transaction cards.
+  - Wide tables size to their content and scroll inside their frame, with an edge shadow and a "⇆ Swipe to see
+    more" hint. Reconciliation tables use auto layout on phones, so figures no longer overlap.
+  - Filter boxes (`inc/filters.html`) fold under a "Filters" summary on phones (open when there are errors) and use
+    2 columns. Balance tile values wrap.
+  - An automated audit at 390 px over every page of every role finds no horizontal overflow.
+- **Daily declaration** (`AgentDeclaration`, migration 0057; `ag.declare`, `ag.office_by_day`; `/agent/declaration/`
+  for agents and market supervisors with their own SIM):
+  - Received from the office (UVE, ER, cash, float) and paid to the office (UVE, cash, float), per day. Also, once,
+    the initial capital (opening balance / opening debt: received amounts only).
+  - The agent's own record, never posted.
+  - The page shows the last 14 days, "You" vs "Office" per product (office = supplies by product, float exchanges,
+    payments by method), with Same / Different / Not declared badges, and his recent declarations.
+  - Links: first tile on the agent and market home pages, top of "My work".
+  - Supervisors: `/agents/declarations/` (Agents space menu "Daily declarations"; market supervisor limited to his
+    zone, junior manager to his zone), search by agent and 7 / 14 / 30 / 90 days.

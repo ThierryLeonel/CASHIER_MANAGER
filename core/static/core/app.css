@@ -343,7 +343,7 @@ details summary { cursor: pointer; color: var(--accent-strong); }
 .qa, .tile, .bal, .pick-row { overflow-wrap: break-word; }
 .qa strong, .qa span.d, .tile .label, .bal-label { hyphens: auto; -webkit-hyphens: auto; word-break: normal; overflow-wrap: break-word; }
 @media (max-width: 760px) {
-  table.t { min-width: 940px; }
+  table.t { width: max-content; min-width: 100%; }  /* as wide as its content, scrolls inside its frame */
   table.t td { max-width: 220px; }
   .qa strong { font-size: .92rem; }
 }
@@ -685,3 +685,73 @@ table.t tr.oos td { background: #fff1f0; }
 @media (min-width: 900px) { .install-bar { left: auto; width: 380px; } }
 .sim-setup { display: flex; flex-direction: column; gap: 8px; border-left: 4px solid #ef7d12; margin: 10px 0 14px; }
 .sim-setup .row { display: flex; gap: 8px; flex-wrap: wrap; } .sim-setup input { flex: 1; min-width: 150px; font-size: 1.1rem; }
+
+/* daily declaration */
+.decl-box { border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px 4px; margin: 0 0 12px; }
+.decl-box legend { font-weight: 700; padding: 0 6px; display: flex; align-items: center; gap: 6px; }
+.decl-box[hidden] { display: none; }
+.decl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 0 12px; }
+.decl-day { background: var(--panel); border: 1px solid var(--line); border-left: 4px solid var(--line); border-radius: 12px; padding: 10px 12px; margin: 0 0 10px; }
+.decl-day.ok { border-left-color: #2e9d5b; } .decl-day.diff { border-left-color: #d64545; }
+.decl-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 6px; }
+.decl-line { display: grid; grid-template-columns: 1fr auto auto; gap: 14px; padding: 4px 0; border-top: 1px dashed var(--line); font-size: .92rem; }
+.decl-line.hd { border-top: 0; color: var(--muted); font-size: .78rem; font-weight: 600; }
+.decl-line > span:nth-child(n+2) { min-width: 78px; text-align: right; }
+.decl-line.off { color: #b42318; font-weight: 600; }
+.decl-list { display: flex; flex-direction: column; gap: 8px; }
+.decl-item { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; display: flex; flex-direction: column; gap: 2px; }
+
+/* ---------------------------------------------------------------- phones: easy reading, nothing overlaps */
+.tbl-wrap { -webkit-overflow-scrolling: touch; position: relative; }
+.tbl-wrap.scrolls { background:
+  linear-gradient(to right, var(--panel) 30%, transparent) left / 24px 100% no-repeat local,
+  linear-gradient(to left, var(--panel) 30%, transparent) right / 24px 100% no-repeat local,
+  radial-gradient(farthest-side at 0 50%, rgba(0,0,0,.14), transparent) left / 10px 100% no-repeat scroll,
+  radial-gradient(farthest-side at 100% 50%, rgba(0,0,0,.14), transparent) right / 10px 100% no-repeat scroll,
+  var(--panel); }
+.scroll-hint { display: none; font-size: .75rem; color: var(--muted); margin: -4px 0 6px; text-align: right; }
+.tbl-wrap.scrolls + .scroll-hint, .scroll-hint.show { display: block; }
+.bal-value, .tile .value { white-space: normal; overflow-wrap: anywhere; }
+.bal .small-val { font-size: 1rem; line-height: 1.25; }
+.filter-box > summary { white-space: nowrap; list-style: none; display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  font-weight: 700; color: var(--ink, inherit); padding: 2px 0; }
+.filter-box > summary::-webkit-details-marker { display: none; }
+.filter-box > summary .sum-text { font-weight: 400; color: var(--muted); font-size: .82rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.filter-box > summary::after { content: "▾"; color: var(--accent-strong); }
+.filter-box[open] > summary::after { content: "▴"; }
+.filter-box[open] > summary { margin-bottom: 10px; }
+.rec-chips { margin: 0 0 12px; }
+@media (max-width: 640px) {
+  .main { padding-left: 12px; padding-right: 12px; }
+  h1 { font-size: 1.35rem; }
+  .filters { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important; gap: 8px 10px; }
+  .filters .field, .filters input, .filters select { min-width: 0; max-width: 100%; width: 100%; }
+  .filters .field:last-child { grid-column: 1 / -1; }
+  /* list tables become cards: one row = one card, label on the left, value on the right */
+  .tbl-wrap.stacked { overflow: visible; border: 0; box-shadow: none; background: transparent; }
+  table.t.stack { min-width: 0; width: 100%; border-collapse: separate; border-spacing: 0; }
+  table.t.stack thead { display: none; }
+  table.t.stack tr { display: block; background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    margin: 0 0 10px; padding: 6px 12px; box-shadow: var(--shadow); }
+  table.t.stack tr.total, table.t.stack tr.subtotal { background: var(--soft); }
+  table.t.stack tr.group-head { background: transparent; border: 0; box-shadow: none; padding: 8px 2px 0; margin: 0; }
+  table.t.stack td { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; max-width: none;
+    padding: 6px 0; border-bottom: 1px dashed var(--line); text-align: right; white-space: normal; }
+  table.t.stack td:last-child { border-bottom: 0; }
+  table.t.stack, table.t.stack tbody, table.t.stack tr { max-width: 100%; }
+  table.t.stack td { min-width: 0; overflow-wrap: anywhere; flex-wrap: wrap; }
+  table.t.stack td > * { min-width: 0; max-width: 100%; }
+  table.t.stack td::before { content: attr(data-label); color: var(--muted); font-size: .78rem; font-weight: 600;
+    text-align: left; flex: 0 0 auto; max-width: 48%; }
+  table.t.stack td[data-label=""]::before, table.t.stack td[colspan]::before { display: none; }
+  table.t.stack td[colspan] { justify-content: flex-start; text-align: left; }
+  table.t.stack td.empty-cell { display: none; }
+  table.t.stack td:first-child { font-weight: 700; }
+  table.t.stack td.sm-hide { display: none; }
+  table.t.stack td.amt-strong { font-weight: 800; font-size: 1rem; }
+  table.t.stack tbody tr:hover td { background: transparent; }
+  /* the narrow reconciliation tables: wide enough to read, scroll if needed */
+  table.t.recon { table-layout: auto; width: max-content; min-width: 100%; }
+  table.t.recon td:first-child, table.t.recon th:first-child { width: auto; min-width: 120px; white-space: normal; }
+  .quick { gap: 10px; }
+}

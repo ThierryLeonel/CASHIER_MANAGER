@@ -1,0 +1,41 @@
+{% extends "core/base.html" %}{% load i18n cashier %}
+{% block title %}{% trans "Daily declaration" %}{% endblock %}
+{% block topbar %}{% trans "Daily declaration" %}{% endblock %}
+{% block content %}
+<h1>{% trans "Daily declaration" %}</h1>
+<p class="small muted meta">{% trans "Write what you received from the office and what you paid it today. It is your own record, shown next to what the office recorded." %}</p>
+{% if opening %}<p class="small"><span class="badge ok">{% trans "Initial capital" %}</span> {{ opening.business_date|date:"d/m/Y" }} · {% trans "received" %} {{ opening.received|fcfa }} FCFA</p>{% endif %}
+<form method="post" class="panel decl-form" id="decl-form" novalidate>{% csrf_token %}{{ form.idem }}
+  {% if form.non_field_errors %}<ul class="err">{% for e in form.non_field_errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+  {% with f=form.kind %}<div class="field choice-pills"><label>{{ f.label }}</label>{{ f }}</div>{% endwith %}
+  {% with f=form.business_date %}<div class="field"><label for="{{ f.id_for_label }}">{{ f.label }}</label>{{ f }}{{ f.errors }}</div>{% endwith %}
+  <fieldset class="decl-box"><legend>{% icon "download" 16 %} {% trans "Received from the office" %}</legend>
+    <div class="decl-grid">{% for f in form %}{% if f.name|slice:":5" == "recv_" %}<div class="field"><label for="{{ f.id_for_label }}">{{ f.label }}</label>{{ f }}{% for e in f.errors %}<span class="err">{{ e }}</span>{% endfor %}</div>{% endif %}{% endfor %}</div>
+  </fieldset>
+  <fieldset class="decl-box" id="decl-paid"><legend>{% icon "payment" 16 %} {% trans "Paid to the office" %}</legend>
+    <div class="decl-grid">{% for f in form %}{% if f.name|slice:":5" == "paid_" %}<div class="field"><label for="{{ f.id_for_label }}">{{ f.label }}</label>{{ f }}{% for e in f.errors %}<span class="err">{{ e }}</span>{% endfor %}</div>{% endif %}{% endfor %}</div>
+  </fieldset>
+  {% with f=form.note %}<div class="field"><label for="{{ f.id_for_label }}">{{ f.label }}</label>{{ f }}</div>{% endwith %}
+  <button class="btn primary block" type="submit">{% trans "Save my declaration" %}</button>
+</form>
+
+<h2>{% trans "Last 14 days: you and the office" %}</h2>
+{% for d in days %}
+<div class="decl-day{% if d.ok %} ok{% elif d.declared %} diff{% endif %}">
+  <div class="decl-head"><strong>{{ d.day|date:"D d/m" }}</strong>
+    {% if not d.declared %}<span class="badge">{% trans "Not declared" %}</span>{% elif d.ok %}<span class="badge ok">{% trans "Same as the office" %}</span>{% else %}<span class="badge bad">{% trans "Different from the office" %}</span>{% endif %}</div>
+  <div class="decl-lines"><div class="decl-line hd"><span></span><span>{% trans "You" %}</span><span>{% trans "Office" %}</span></div>
+  {% for x in d.lines %}<div class="decl-line{% if d.declared and x.mine != x.office %} off{% endif %}"><span>{% if x.paid %}{% trans "Paid" %}{% else %}{% trans "Received" %}{% endif %} {{ x.label }}</span><span class="money">{{ x.mine|fcfa }}</span><span class="money">{{ x.office|fcfa }}</span></div>{% endfor %}</div>
+</div>
+{% empty %}<p class="muted">{% trans "Nothing with the office in the last 14 days." %}</p>{% endfor %}
+
+{% if recent %}<h2>{% trans "My declarations" %}</h2>
+<div class="decl-list">{% for r in recent %}<div class="decl-item"><span><strong>{{ r.reference }}</strong> · {{ r.business_date|date:"d/m/Y" }}{% if r.kind == "OPENING" %} · {% trans "Initial capital" %}{% endif %}</span><span class="small muted">{% trans "received" %} {{ r.received|fcfa }} · {% trans "paid" %} {{ r.paid|fcfa }}{% if r.note %} · {{ r.note }}{% endif %}</span></div>{% endfor %}</div>{% endif %}
+{% endblock %}
+{% block scripts %}<script>
+(function () {
+  var f = document.getElementById('decl-form'), paid = document.getElementById('decl-paid');
+  function sync() { var k = (f.querySelector('input[name=kind]:checked') || {}).value; paid.hidden = k === 'OPENING'; }
+  f.querySelectorAll('input[name=kind]').forEach(function (r) { r.addEventListener('change', sync); }); sync();
+})();
+</script>{% endblock %}

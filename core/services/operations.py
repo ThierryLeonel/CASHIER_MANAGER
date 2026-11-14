@@ -891,3 +891,22 @@ def record_entry(user, *, source, product=None, amount, shop=None, desk=None, co
                   fields=dict(fields, source_account=src, **extra), receipt=True)
     with transaction.atomic():
         return post([spec], ctx, idempotency_key)[0]
+
+
+# ---------------------------------------------------------------- "my records" quick filters
+RECORD_KINDS = (("entries", "Entries"), ("transfers", "Transfers sent"), ("exchanges", "Stock exchanges"),
+                ("conversions", "Conversions"))
+_TRANSFER_TYPES = (TxType.INTERNAL_TRANSFER, TxType.DESK_TO_SHOP, TxType.SHOP_TO_DESK, TxType.SHOP_TO_SHOP)
+
+
+def record_kind_q(kind):
+    """Quick filter of a records list: entries, transfers sent, stock exchanges or conversions (None = all)."""
+    if kind == "entries":
+        return Q(is_entry=True)
+    if kind == "transfers":
+        return Q(type__in=_TRANSFER_TYPES, is_entry=False)
+    if kind == "exchanges":
+        return Q(type__in=(TxType.STOCK_EXCHANGE, TxType.SHOP_EXCHANGE, TxType.CM_GIVE, TxType.CM_RECEIVE))
+    if kind == "conversions":
+        return Q(type__in=(TxType.CONVERSION, TxType.SHOP_CONVERT))
+    return None

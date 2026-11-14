@@ -381,11 +381,18 @@ def shop_transactions(request):
         qs = qs.filter(sh.shop_txn_q([shop_id]))
     if typ in types:
         qs = qs.filter(type=typ)
+    kind = request.GET.get("kind") if ops.record_kind_q(request.GET.get("kind")) is not None else ""
+    if kind:
+        qs = qs.filter(ops.record_kind_q(kind))
     totals = qs.exclude(type=TxType.REVERSAL).aggregate(amt=Sum("amount"), com=Sum("commission"))
     page = Paginator(qs, 50).get_page(request.GET.get("page"))
+    keep = request.GET.copy()
+    for k in ("kind", "page"):
+        keep.pop(k, None)
     return render(request, "core/shop/transactions.html", {
         "page": page, "shops": shops_qs, "types": [(t, TxType(t).label) for t in types], "shop_id": shop_id,
-        "typ": typ, "d_from": d_from, "d_to": d_to, "totals": totals})
+        "typ": typ, "d_from": d_from, "d_to": d_to, "totals": totals, "kind": kind,
+        "keep": keep.urlencode() or f"from={d_from.isoformat()}&to={d_to.isoformat()}"})
 
 
 @roles_required(*SHOP_ROLES)

@@ -743,3 +743,43 @@ def assign_roads(user, agent, microzones):
             agent.save(update_fields=["microzone", "master_zone"])
         log_event(user, "agent_roads", agent=agent.pk, before=before, after=[m.name for m in new], taken_from=taken)
     return taken
+
+
+# ---------------------------------------------------------------- daily declaration (the agent's own record)
+def declare(user, *, business_date=None, kind="DAILY", note="", idempotency_key=None, **amounts):
+    """The agent (or a market supervisor with his own SIM) declares what he received from the office and what he
+    paid it, for one day — or, once, the initial capital he was given. Never posted: compared with the office."""
+    from core.models import AgentDeclaration as DD
+
+    agent = agent_of(user)
+    if kind not in DD.Kind.values:
+        raise BusinessError(_("Choose the kind of declaration."), "kind")
+    day = business_date or douala_today()
+    if day > douala_today():
+        raise BusinessError(_("A declaration cannot be for a future day."), "business_date")
+    fields = DD.RECEIVED + (DD.PAID if kind == DD.Kind.DAILY else ())
+    vals = {f: _amt(amounts.get(f), f) for f in fields}
+    if sum(vals.values(), Z) <= 0:
+        raise BusinessError(_("Enter at least one amount."), fields[0])
+    if kind == DD.Kind.OPENING and DD.objects.filter(agent=agent, kind=DD.Kind.OPENING).exists():
+        raise BusinessError(_("Your initial capital is already declared."), "kind")
+    return _create(DD, idempotency_key, agent=agent, kind=kind, business_date=day, note=(note or "").strip(),
+                   recorded_by=user, **vals)
+
+
+def office_by_day(agent, d_from, d_to):
+    """What the office recorded with the agent per day: received (UVE, ER, cash, float) and paid (UVE, cash, float)."""
+    out = {}
+
+    def row(d):
+        return out.setdefault(d, {k: Z for k in ("recv_uve", "recv_er", "recv_cash", "recv_float", "paid_uve",
+                                                 "paid_cash", "paid_float")})
+    for t in office_supplies(agent).filter(business_date__gte=d_from, business_date__lte=d_to):
+        if t.type == TxType.SUPPLY and t.product in ("UVE", "ER", "CASH"):
+            row(t.business_date)[f"recv_{t.product.lower()}"] += t.amount
+        elif t.type == TxType.FLOAT_EXCHANGE:
+            row(t.business_date)["recv_float"] += t.amount
+    for t in office_payments(agent).filter(business_date__gte=d_from, business_date__lte=d_to):
+        m = {"UVE": "paid_uve", "MTN": "paid_float"}.get(t.payment_method, "paid_cash")
+        row(t.business_date)[m] += t.amount
+    return out

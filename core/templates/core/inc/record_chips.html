@@ -1,0 +1,7 @@
+{% load i18n %}<nav class="lvl-tabs rec-chips" aria-label="{% trans 'Show' %}">
+  <a href="?{{ keep }}" class="{% if not kind %}on{% endif %}">{% trans "All" %}</a>
+  <a href="?{{ keep }}&amp;kind=entries" class="{% if kind == 'entries' %}on{% endif %}">{% trans "Entries" %}</a>
+  <a href="?{{ keep }}&amp;kind=transfers" class="{% if kind == 'transfers' %}on{% endif %}">{% trans "Transfers sent" %}</a>
+  <a href="?{{ keep }}&amp;kind=exchanges" class="{% if kind == 'exchanges' %}on{% endif %}">{% trans "Stock exchanges" %}</a>
+  <a href="?{{ keep }}&amp;kind=conversions" class="{% if kind == 'conversions' %}on{% endif %}">{% trans "Conversions" %}</a>
+</nav>

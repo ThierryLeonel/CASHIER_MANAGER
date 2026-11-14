@@ -104,6 +104,31 @@ def stock_download(request):
     return resp
 
 
+@roles_required(*MARKET_VIEW)
+def declarations(request):
+    """The agents' daily declarations (their own records of what they received from and paid to the office)."""
+    from datetime import timedelta
+
+    from core.models import AgentDeclaration
+    from core.services.days import douala_today
+
+    qs = AgentDeclaration.objects.select_related("agent", "recorded_by")
+    scope = Counterparty.objects.filter(request.user.pos_scope_q())
+    if request.user.scope_zone is not None:
+        z = request.user.scope_zone
+        scope = scope.filter(Q(microzone__subzone__parent=z) | Q(microzone__subzone=z) | Q(master_zone=z))
+    qs = qs.filter(agent__in=scope)
+    q = (request.GET.get("q") or "").strip()
+    if q:
+        qs = qs.filter(Q(agent__name__icontains=q) | Q(agent__business_sim__icontains=q.replace(" ", "")))
+    since = douala_today() - timedelta(days=int(request.GET.get("days") or 7) if (request.GET.get("days") or "7")
+                                       .isdigit() else 7)
+    qs = qs.filter(business_date__gte=since)
+    page = Paginator(qs, 40).get_page(request.GET.get("page"))
+    return render(request, "core/declarations.html", {"page": page, "q": q, "days": request.GET.get("days") or "7",
+                                                      "day_choices": ["7", "14", "30", "90"]})
+
+
 @roles_required(*MARKET_VIEW, R.AGENT)
 def call_database(request):
     """Call database: the agent / POS base as it is now, in the import format (staff and the market supervisor get
@@ -223,11 +248,17 @@ def txn_list(request):
     form = FilterForm(request.user, request.GET or None)
     f = Filters.from_form(form, request.user)
     qs = Transaction.objects.filter(f.txn_q()).select_related(*TX_RELATED).order_by("-posted_at", "-id")
+    kind = request.GET.get("kind") if ops.record_kind_q(request.GET.get("kind")) is not None else ""
+    if kind:
+        qs = qs.filter(ops.record_kind_q(kind))
     page = Paginator(qs, 50).get_page(request.GET.get("page"))
     params = request.GET.copy()
     params.pop("page", None)
+    keep = params.copy()
+    keep.pop("kind", None)
     return render(request, "core/txn_list.html", {"form": form, "page": page, "filters": f,
-                                                  "qs_params": params.urlencode(),
+                                                  "qs_params": params.urlencode(), "kind": kind,
+                                                  "keep": keep.urlencode() or "preset=month",
                                                   "customers": True})
 
 

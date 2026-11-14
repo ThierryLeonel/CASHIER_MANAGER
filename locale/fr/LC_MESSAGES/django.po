@@ -109,6 +109,14 @@ msgstr ""
 
 #, python-format
 msgid ""
+"%(code)s: %(amt)s FCFA paid to %(who)s, kept in your records (the shop "
+"records the payment on its side)."
+msgstr ""
+"%(code)s : %(amt)s FCFA payés à %(who)s, gardés dans vos enregistrements (la"
+" boutique enregistre le paiement de son côté)."
+
+#, python-format
+msgid ""
 "%(code)s: %(amt)s FCFA sent to %(desk)s, waiting for the cashier to confirm."
 msgstr ""
 "%(code)s : %(amt)s FCFA envoyés à %(desk)s, en attente de confirmation par "
@@ -141,6 +149,10 @@ msgstr "%(cp)s · inchangé"
 #, python-format
 msgid "%(cp)s · updated: %(fields)s"
 msgstr "%(cp)s · mis à jour : %(fields)s"
+
+#, python-format
+msgid "%(d)s days"
+msgstr "%(d)s jours"
 
 #, python-format
 msgid "%(i)s is no longer sold."
@@ -263,6 +275,10 @@ msgid ""
 "%(ref)s resolves a closing difference. Reopen or keep it; it cannot be "
 "deleted."
 msgstr "%(ref)s résout un écart de clôture ; elle ne peut pas être supprimée."
+
+#, python-format
+msgid "%(ref)s saved: received %(r)s FCFA, paid %(p)s FCFA."
+msgstr "%(ref)s enregistrée : reçu %(r)s FCFA, payé %(p)s FCFA."
 
 #, python-format
 msgid "%(ref)s updated. The previous values are kept in the audit log."
@@ -537,6 +553,9 @@ msgstr ""
 msgid "A correction reason is required."
 msgstr "Le motif de la correction est obligatoire."
 
+msgid "A declaration cannot be for a future day."
+msgstr "Une déclaration ne peut pas porter sur un jour futur."
+
 msgid ""
 "A different responsible party is only allowed when a POS receives the supply"
 " and it is explicitly assigned to a commercial agent."
@@ -805,6 +824,9 @@ msgstr "Dette des agents et PDV par produit (UVE, espèces, ER)"
 
 msgid "Agent in charge"
 msgstr "Agent responsable"
+
+msgid "Agent name or SIM"
+msgstr "Nom ou SIM de l'agent"
 
 msgid "Agent number"
 msgstr "Numéro de l'agent"
@@ -1897,6 +1919,9 @@ msgstr "Choisissez l'échange."
 msgid "Choose the float account the payment arrived on."
 msgstr "Choisissez le compte float sur lequel le paiement est arrivé."
 
+msgid "Choose the kind of declaration."
+msgstr "Choisissez le type de déclaration."
+
 msgid "Choose the microzone to move the POS to."
 msgstr "Choisissez la microzone où déplacer les POS."
 
@@ -2568,6 +2593,12 @@ msgstr "Clôtures journalières et écarts"
 msgid "Daily closings and unresolved differences"
 msgstr "Clôtures journalières et écarts non résolus"
 
+msgid "Daily declaration"
+msgstr "Déclaration journalière"
+
+msgid "Daily declarations"
+msgstr "Déclarations journalières"
+
 msgid "Daily reconciliation"
 msgstr "Rapprochement journalier"
 
@@ -2648,6 +2679,9 @@ msgstr "Décembre"
 
 msgid "Decided"
 msgstr "Traités"
+
+msgid "Declaration"
+msgstr "Déclaration"
 
 msgid "Delete"
 msgstr "Supprimer"
@@ -2779,6 +2813,9 @@ msgstr "POS différents approvisionnés le %(d)s"
 
 msgid "Different POS supplied, by subzone"
 msgstr "POS différents approvisionnés, par sous-zone"
+
+msgid "Different from the office"
+msgstr "Différent du bureau"
 
 msgid "Direct POS supplies and their outstanding amounts"
 msgstr "Approvisionnements directs des PDV et montants dus"
@@ -2982,6 +3019,9 @@ msgstr "Saisissez un pourcentage."
 msgid "Enter a quantity."
 msgstr "Saisissez une quantité."
 
+msgid "Enter at least one amount."
+msgstr "Saisissez au moins un montant."
+
 msgid "Enter supplies, payments and more for any cashier"
 msgstr ""
 "Saisir approvisionnements, paiements et plus pour n'importe quel caissier"
@@ -3066,6 +3106,9 @@ msgstr "Saisi par"
 
 msgid "Entered by the receiver"
 msgstr "Entré par le destinataire"
+
+msgid "Entries"
+msgstr "Entrées"
 
 msgid ""
 "Entries you record go to the chosen cashier's desk, accounts and business "
@@ -3364,6 +3407,9 @@ msgstr ""
 
 msgid "Filled automatically from the parts above."
 msgstr "Rempli automatiquement à partir des parts ci-dessus."
+
+msgid "Filters"
+msgstr "Filtres"
 
 msgid "Finance manager"
 msgstr "Responsable financier"
@@ -3705,6 +3751,12 @@ msgid "Incompatible asset types: %(a)s cannot be transferred to %(b)s."
 msgstr ""
 "Types d'actifs incompatibles : %(a)s ne peut pas être transféré vers %(b)s."
 
+msgid "Initial capital"
+msgstr "Capital initial"
+
+msgid "Initial capital (opening balance)"
+msgstr "Capital initial (solde d'ouverture)"
+
 msgid "Inject capital"
 msgstr "Apporter du capital"
 
@@ -3823,6 +3875,9 @@ msgstr "Dernier"
 
 msgid "Last 14 days"
 msgstr "14 derniers jours"
+
+msgid "Last 14 days: you and the office"
+msgstr "14 derniers jours : vous et le bureau"
 
 msgid "Last name"
 msgstr "Nom"
@@ -4114,6 +4169,9 @@ msgstr "Mes opérations avec ce POS"
 msgid "My debtors"
 msgstr "Mes débiteurs"
 
+msgid "My declarations"
+msgstr "Mes déclarations"
+
 msgid "My operations of the day"
 msgstr "Mes opérations du jour"
 
@@ -4134,6 +4192,9 @@ msgstr "Mes services récents"
 
 msgid "My record"
 msgstr "Mon enregistrement"
+
+msgid "My records"
+msgstr "Mes enregistrements"
 
 msgid "My shift"
 msgstr "Mon service"
@@ -4353,6 +4414,9 @@ msgstr "Aucun détenteur"
 msgid "No data for these filters."
 msgstr "Aucune donnée pour ces filtres."
 
+msgid "No declaration."
+msgstr "Aucune déclaration."
+
 msgid "No default account is set for payments: choose where it arrived."
 msgstr ""
 "Aucun compte par défaut n'est défini pour les paiements : choisissez où il "
@@ -4499,6 +4563,9 @@ msgstr ""
 "Pas un POS de votre zone : il est vérifié à l'enregistrement. Seul son nom "
 "sera affiché."
 
+msgid "Not declared"
+msgstr "Non déclaré"
+
 msgid "Not now"
 msgstr "Pas maintenant"
 
@@ -4570,6 +4637,9 @@ msgstr ""
 "Rien n'a été importé. Corrigez les lignes ci-dessous et chargez le fichier à"
 " nouveau."
 
+msgid "Nothing with the office in the last 14 days."
+msgstr "Rien avec le bureau ces 14 derniers jours."
+
 msgid "Nothing yet."
 msgstr "Rien pour le moment."
 
@@ -4629,6 +4699,9 @@ msgstr "EN RUPTURE"
 
 msgid "October"
 msgstr "Octobre"
+
+msgid "Office"
+msgstr "Bureau"
 
 msgid "Office supplies"
 msgstr "Approvisionnements du bureau"
@@ -5689,6 +5762,9 @@ msgstr "Reçu par le PDV"
 msgid "Received from"
 msgstr "Reçu de"
 
+msgid "Received from the office"
+msgstr "Reçu du bureau"
+
 msgid ""
 "Received from the office minus what you recorded as supplied to your "
 "clients."
@@ -6063,6 +6139,9 @@ msgstr "Vente d'un article"
 msgid "Sales"
 msgstr "Ventes"
 
+msgid "Same as the office"
+msgstr "Identique au bureau"
+
 msgid ""
 "Same kind as the source: MTN float to MTN float, UVE to UVE, bank to bank."
 msgstr ""
@@ -6080,6 +6159,9 @@ msgstr "Enregistrer en PDF"
 
 msgid "Save changes"
 msgstr "Enregistrer les modifications"
+
+msgid "Save my declaration"
+msgstr "Enregistrer ma déclaration"
 
 msgid "Save the rate"
 msgstr "Enregistrer le taux"
@@ -6662,6 +6744,9 @@ msgstr "Échange de stock : UVE donné, espèces reçues"
 msgid "Stock exchange: gave cash, received UVE"
 msgstr "Échange de stock : espèces données, UVE reçu"
 
+msgid "Stock exchanges"
+msgstr "Échanges de stock"
+
 msgid "Stock history"
 msgstr "Historique du stock"
 
@@ -6863,6 +6948,9 @@ msgstr "Approvisionnement agent"
 
 msgid "Surplus"
 msgstr "Excédent"
+
+msgid "Swipe to see more"
+msgstr "Glissez pour voir plus"
 
 msgid ""
 "System opening (end of the previous day) + money in − money out = system "
@@ -7653,6 +7741,9 @@ msgstr "Transferts reçus pas encore remboursés"
 msgid "Transfers received not paid back yet:"
 msgstr "Transferts reçus pas encore remboursés :"
 
+msgid "Transfers sent"
+msgstr "Transferts envoyés"
+
 msgid "Transfers with shops"
 msgstr "Transferts avec les boutiques"
 
@@ -7761,6 +7852,12 @@ msgstr "UVE des boutiques à la clôture"
 
 msgid "UVE leaves from"
 msgstr "L'UVE part de"
+
+msgid "UVE paid"
+msgstr "UVE payé"
+
+msgid "UVE received"
+msgstr "UVE reçu"
 
 msgid "UVE received by agent (owes)"
 msgstr "UVE reçue par l'agent (redevable)"
@@ -8061,6 +8158,13 @@ msgstr "Ce que chaque agent et PDV doit, ou ce qui lui est dû"
 msgid "What each agent owes in UVE, cash and ER, by microzone"
 msgstr "Ce que chaque agent doit en UVE, espèces et ER, par microzone"
 
+msgid ""
+"What each commercial agent declares he received from the office and paid it "
+"(his own record, not posted)."
+msgstr ""
+"Ce que chaque agent commercial déclare avoir reçu du bureau et lui avoir "
+"payé (son propre enregistrement, non comptabilisé)."
+
 msgid "What happened"
 msgstr "Ce qui a eu lieu"
 
@@ -8185,8 +8289,19 @@ msgstr "Espace de travail"
 msgid "Write the investigation note."
 msgstr "Rédigez la note d'enquête."
 
+msgid ""
+"Write what you received from the office and what you paid it today. It is "
+"your own record, shown next to what the office recorded."
+msgstr ""
+"Écrivez ce que vous avez reçu du bureau et ce que vous lui avez payé "
+"aujourd'hui. C'est votre propre enregistrement, affiché à côté de ce que le "
+"bureau a enregistré."
+
 msgid "Yes"
 msgstr "Oui"
+
+msgid "You"
+msgstr "Vous"
 
 msgid "You are not allowed to change the roads of agents."
 msgstr "Vous n'êtes pas autorisé à changer les routes des agents."
@@ -8338,6 +8453,9 @@ msgstr "Vos tâches uniquement : %(d)s"
 msgid "Your entries are recorded on business day %(d)s."
 msgstr "Vos saisies sont enregistrées sur la journée du %(d)s."
 
+msgid "Your initial capital is already declared."
+msgstr "Votre capital initial est déjà déclaré."
+
 msgid "Your latest entries"
 msgstr "Vos dernières saisies"
 
@@ -8458,6 +8576,12 @@ msgstr "espèces"
 
 msgid "cash managers"
 msgstr "cash managers"
+
+msgid "cash paid"
+msgstr "espèces payées"
+
+msgid "cash received"
+msgstr "espèces reçues"
 
 #, python-format
 msgid "cash to POS %(pos)s"
@@ -8595,6 +8719,12 @@ msgstr "échange"
 
 msgid "float"
 msgstr "float"
+
+msgid "float paid"
+msgstr "float payé"
+
+msgid "float received"
+msgstr "float reçu"
 
 #, python-format
 msgid "for %(ref)s"
@@ -8774,6 +8904,9 @@ msgstr "dû à l'entreprise"
 
 msgid "owes"
 msgstr "doit"
+
+msgid "paid"
+msgstr "payé"
 
 msgid "paid back"
 msgstr "remboursé"

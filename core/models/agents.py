@@ -218,3 +218,50 @@ class AgentPayback(models.Model):
     @property
     def total(self):
         return self.cash + self.uve + self.mtn
+
+
+class AgentDeclaration(models.Model):
+    """The agent's own daily declaration of his dealings with the office: what he received (UVE, ER, cash, float)
+    and what he paid (UVE, cash, float). His record only — never posted; it is compared with what the office
+    recorded. The "opening" declaration is the initial capital he was given (his opening debt)."""
+
+    class Kind(models.TextChoices):
+        DAILY = "DAILY", _("Daily declaration")
+        OPENING = "OPENING", _("Initial capital (opening balance)")
+
+    RECEIVED = ("recv_uve", "recv_er", "recv_cash", "recv_float")
+    PAID = ("paid_uve", "paid_cash", "paid_float")
+
+    agent = models.ForeignKey(Counterparty, on_delete=models.PROTECT, related_name="declarations",
+                              limit_choices_to={"kind": "AGENT"})
+    kind = models.CharField(max_length=8, choices=Kind.choices, default=Kind.DAILY)
+    business_date = models.DateField(db_index=True)
+    recv_uve = models.DecimalField(_("UVE received"), default=0, **MONEY)
+    recv_er = models.DecimalField(_("ER received"), default=0, **MONEY)
+    recv_cash = models.DecimalField(_("cash received"), default=0, **MONEY)
+    recv_float = models.DecimalField(_("float received"), default=0, **MONEY)
+    paid_uve = models.DecimalField(_("UVE paid"), default=0, **MONEY)
+    paid_cash = models.DecimalField(_("cash paid"), default=0, **MONEY)
+    paid_float = models.DecimalField(_("float paid"), default=0, **MONEY)
+    note = models.CharField(_("note"), max_length=255, blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    recorded_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name="+")
+    idem = models.UUIDField(null=True, blank=True, unique=True, editable=False)
+
+    class Meta:
+        ordering = ["-business_date", "-created_at"]
+
+    def __str__(self):
+        return self.reference
+
+    @property
+    def reference(self):
+        return f"DD-{self.pk:06d}"
+
+    @property
+    def received(self):
+        return sum((getattr(self, f) for f in self.RECEIVED), Z)
+
+    @property
+    def paid(self):
+        return sum((getattr(self, f) for f in self.PAID), Z)

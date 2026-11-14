@@ -545,12 +545,58 @@ def agent_debtor_pay(request):
 def agent_payback(request):
     return _entry_form(
         request, AF.PaybackForm, ag.request_payback, title=_("Pay back the company"), icon="transfer",
-        ok_msg=lambda p: (_("%(code)s: %(amt)s FCFA to %(who)s, waiting for confirmation.") if p.shop_id else
+        ok_msg=lambda p: (_("%(code)s: %(amt)s FCFA paid to %(who)s, kept in your records (the shop records the "
+                            "payment on its side).") if p.shop_id else
                           _("%(code)s: %(amt)s FCFA paid to %(who)s, kept in your records (the cashier records the "
                             "payment on his side).")) % {"code": p.code, "amt": fmt(p.total), "who": p.receiver},
         code_of=ag.payback_code,
         labels={"dial": _verb("Pay back", "Rembourser"), "plain": _("Record")},
         extra={"s": ag.summary(request.user.counterparty)})
+
+
+@seller_required
+def agent_declaration(request):
+    """Daily declaration: the agent records what he received from the office (UVE, ER, cash, float) and what he
+    paid (UVE, cash, float) — and once, his initial capital. Shown next to what the office recorded."""
+    from decimal import Decimal
+
+    from core.models import AgentDeclaration as DD
+
+    Z = Decimal(0)
+    agent = request.user.counterparty
+    opening = DD.objects.filter(agent=agent, kind=DD.Kind.OPENING).first()
+    form = AF.DeclarationForm(request.user, request.POST or None, opening_done=opening is not None)
+    if request.method == "POST" and form.is_valid():
+        cd = form.params()
+        try:
+            d = ag.declare(request.user, idempotency_key=form.cleaned_data["idem"], **cd)
+        except BusinessError as e:
+            form.add_error(e.field if e.field in form.fields else None, e.message)
+        else:
+            messages.success(request, _("%(ref)s saved: received %(r)s FCFA, paid %(p)s FCFA.") % {
+                "ref": d.reference, "r": fmt(d.received), "p": fmt(d.paid)})
+            return redirect("agent_declaration")
+    today = douala_today()
+    d_from = today - timedelta(days=13)
+    office = ag.office_by_day(agent, d_from, today)
+    mine = {}
+    for d in DD.objects.filter(agent=agent, kind=DD.Kind.DAILY, business_date__gte=d_from):
+        row = mine.setdefault(d.business_date, {f: Z for f in DD.RECEIVED + DD.PAID})
+        for f in DD.RECEIVED + DD.PAID:
+            row[f] += getattr(d, f)
+    labels = [("recv_uve", "UVE"), ("recv_er", "ER"), ("recv_cash", _("Cash")), ("recv_float", _("Float")),
+              ("paid_uve", "UVE"), ("paid_cash", _("Cash")), ("paid_float", _("Float"))]
+    days = []
+    for day in sorted(set(office) | set(mine), reverse=True):
+        o, m = office.get(day, {}), mine.get(day)
+        lines = [{"key": k, "label": lab, "paid": k.startswith("paid"), "office": o.get(k, Z),
+                  "mine": (m or {}).get(k, Z)} for k, lab in labels]
+        lines = [x for x in lines if x["office"] or x["mine"]]
+        days.append({"day": day, "declared": m is not None, "lines": lines,
+                     "ok": m is not None and all(x["office"] == x["mine"] for x in lines)})
+    return render(request, "core/agent/declaration.html", {
+        "form": form, "days": days, "opening": opening,
+        "recent": DD.objects.filter(agent=agent).order_by("-business_date", "-created_at")[:20]})
 
 
 @seller_required

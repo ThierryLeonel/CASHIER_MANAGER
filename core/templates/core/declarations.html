@@ -1,0 +1,17 @@
+{% extends "core/base.html" %}{% load i18n cashier %}
+{% block title %}{% trans "Daily declarations" %}{% endblock %}
+{% block topbar %}{% trans "Daily declarations" %}{% endblock %}
+{% block content %}
+<h1>{% trans "Daily declarations" %}</h1>
+<p class="small muted meta">{% trans "What each commercial agent declares he received from the office and paid it (his own record, not posted)." %}</p>
+<form method="get" class="oos-search"><input type="search" name="q" value="{{ q }}" placeholder="{% trans 'Agent name or SIM' %}">
+<select name="days">{% for d in day_choices %}<option value="{{ d }}"{% if d == days %} selected{% endif %}>{% blocktrans %}{{ d }} days{% endblocktrans %}</option>{% endfor %}</select>
+<button class="btn" type="submit">{% trans "Search" %}</button></form>
+<div class="decl-list">{% for r in page %}<div class="decl-item">
+  <span><strong>{{ r.agent.name }}</strong> · {{ r.business_date|date:"D d/m/Y" }}{% if r.kind == "OPENING" %} · <span class="badge">{% trans "Initial capital" %}</span>{% endif %}</span>
+  <span class="small">{% trans "Received" %}: UVE {{ r.recv_uve|fcfa }} · ER {{ r.recv_er|fcfa }} · {% trans "Cash" %} {{ r.recv_cash|fcfa }} · {% trans "Float" %} {{ r.recv_float|fcfa }}</span>
+  {% if r.kind != "OPENING" %}<span class="small">{% trans "Paid" %}: UVE {{ r.paid_uve|fcfa }} · {% trans "Cash" %} {{ r.paid_cash|fcfa }} · {% trans "Float" %} {{ r.paid_float|fcfa }}</span>{% endif %}
+  <span class="small muted">{{ r.reference }}{% if r.note %} · {{ r.note }}{% endif %} · <a href="{% url 'report' 'statement' %}?preset=all&amp;customer_sim={{ r.agent.business_sim }}">{% trans "Statement" %}</a></span>
+</div>{% empty %}<p class="muted">{% trans "No declaration." %}</p>{% endfor %}</div>
+<div class="pager">{% if page.has_previous %}<a class="btn small" href="?q={{ q|urlencode }}&days={{ days }}&page={{ page.previous_page_number }}">←</a>{% endif %}<span class="muted small">{{ page.number }} / {{ page.paginator.num_pages }}</span>{% if page.has_next %}<a class="btn small" href="?q={{ q|urlencode }}&days={{ days }}&page={{ page.next_page_number }}">→</a>{% endif %}</div>
+{% endblock %}

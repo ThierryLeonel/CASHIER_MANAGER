@@ -17,6 +17,7 @@
   <a class="bal k-UVE bal-link" href="{% url 'agent_debtors' %}"><span class="bal-label">{% trans "My clients owe me" %}</span><span class="bal-value">{{ s.clients_owe|fcfa }}</span><span class="bal-unit">FCFA · {% trans "see my debtors" %} →</span></a>
 </div>
 <div class="quick">
+  <a class="qa decl" href="{% url 'agent_declaration' %}"><span class="qa-ic">{% icon "list" 22 %}</span><strong>{% trans "Daily declaration" %}</strong></a>
   <a class="qa main" href="{% url 'agent_supply' %}"><span class="qa-ic">{% icon "supply" 22 %}</span><strong>{% trans "Supply a client" %}</strong></a>
   <a class="qa" href="{% url 'agent_collect' %}"><span class="qa-ic">{% icon "payment" 22 %}</span><strong>{% trans "A client pays me" %}</strong></a>
   <a class="qa" href="{% url 'agent_payback' %}"><span class="qa-ic">{% icon "transfer" 22 %}</span><strong>{% trans "Pay back the company" %}</strong></a>

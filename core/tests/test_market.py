@@ -263,3 +263,62 @@ class Requests4(OrgMixin, TestCase):
         r = c.post("/agent/destocash/record/", {"pos": self.p1.pk, "how": "CASH", "amount": "5000",
                                                 "idem": str(uuid.uuid4())})
         self.assertTrue(AgentClientEntry.objects.filter(agent=mk.counterparty, pos=self.p1).exists())
+
+
+class Requests5(OrgMixin, TestCase):
+    """Daily declaration (agents and market supervisors), records chips, phone-friendly lists."""
+
+    def setUp(self):
+        self.make_org()
+        self.fund_all()
+
+    def login(self, u):
+        c = self.client_class()
+        self.assertTrue(c.login(username=u.username if hasattr(u, "username") else u, password=PW))
+        return c
+
+    def test_daily_declaration_and_opening_capital(self):
+        from core.models import AgentDeclaration
+        from core.services import agents as ag
+        from core.services import operations as ops
+
+        agent_user = User.objects.get(counterparty=self.a1)
+        ops.record_supplies(self.c_f1, customer=self.a1, parts={"UVE": D(50000)}, idempotency_key=uuid.uuid4())
+        c = self.login(agent_user)
+        self.assertContains(c.get("/"), "/agent/declaration/")
+        page = c.get("/agent/declaration/")
+        self.assertContains(page, "Received from the office")
+        self.assertContains(page, "Initial capital")
+        r = c.post("/agent/declaration/", {"idem": str(uuid.uuid4()), "kind": "DAILY",
+                                           "business_date": str(__import__("core.services.days", fromlist=["x"]).douala_today()),
+                                           "recv_uve": "50 000", "paid_cash": "10 000"})
+        self.assertEqual(r.status_code, 302, r.content[:2000])
+        d = AgentDeclaration.objects.get(kind="DAILY")
+        self.assertEqual((d.recv_uve, d.paid_cash, d.agent), (D(50000), D(10000), self.a1))
+        page = c.get("/agent/declaration/")
+        self.assertContains(page, "Different from the office")  # 10 000 cash paid is not recorded by the office
+        ag.declare(agent_user, kind="OPENING", recv_cash=D(500000))
+        with self.assertRaises(Exception):
+            ag.declare(agent_user, kind="OPENING", recv_cash=D(1))
+        self.assertNotContains(c.get("/agent/declaration/"), 'value="OPENING"')
+        # supervisors see the declarations
+        m = self.login("manager")
+        self.assertContains(m.get("/agents/declarations/"), self.a1.name)
+        # a market supervisor with his own SIM declares too
+        own = Counterparty.objects.create(kind="AGENT", business_sim="655778899", name="Sup SIM")
+        mk = User.objects.create_user("mkd", password=PW, role=User.Role.MARKET, subzone=self.p1.microzone.subzone,
+                                      counterparty=own)
+        mc = self.login(mk)
+        self.assertContains(mc.get("/"), "/agent/declaration/")
+        self.assertEqual(mc.get("/agent/declaration/").status_code, 200)
+
+    def test_records_chips(self):
+        from core.services import operations as ops
+
+        ops.record_entry(self.c_f1, source="OTHER", from_whom="Owner", product="CASH", amount=D(1000))
+        c = self.login("cashier.fako1")
+        r = c.get("/transactions/?kind=entries&preset=all")
+        self.assertContains(r, "My records")
+        self.assertContains(r, "Entry from outside")
+        self.assertNotContains(c.get("/transactions/?kind=exchanges&preset=all"), "Entry from outside")
+        self.assertContains(r, "data-collapse-phone")

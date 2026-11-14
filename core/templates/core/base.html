@@ -34,6 +34,7 @@
 
     {% if user.sells %}
     <div class="side-group">{% trans "My work" %}</div>
+    <a href="{% url 'agent_declaration' %}" class="{% if u == 'agent_declaration' %}on{% endif %}">{% icon "list" %}<span>{% trans "Daily declaration" %}</span></a>
     <a href="{% url 'agent_supply' %}" class="{% if u == 'agent_supply' %}on{% endif %}">{% icon "supply" %}<span>{% trans "Supply a client" %}</span></a>
     <a href="{% url 'agent_collect' %}" class="{% if u == 'agent_collect' %}on{% endif %}">{% icon "payment" %}<span>{% trans "A client pays me" %}</span></a>
     <a href="{% url 'agent_payback' %}" class="{% if u == 'agent_payback' %}on{% endif %}">{% icon "transfer" %}<span>{% trans "Pay back the company" %}</span></a>
@@ -118,7 +119,8 @@
     <a href="{% url 'report' 'supply_due' %}" class="{% if request.path == '/reports/supply_due/' %}on{% endif %}">{% icon "wallet" %}<span>{% trans "Supplies due" %}</span></a>
     <a href="{% url 'report' 'statement' %}" class="{% if request.path == '/reports/statement/' %}on{% endif %}">{% icon "statement" %}<span>{% trans "Agent / POS statement" %}</span></a>
     {% if not user.is_market %}<a href="{% url 'paybacks' %}" class="{% if u == 'paybacks' %}on{% endif %}">{% icon "payment" %}<span>{% trans "Agent paybacks" %}</span></a>{% endif %}
-    <a href="{% url 'txn_list' %}" class="{% if u == 'txn_list' or u == 'txn_detail' or u == 'receipt' %}on{% endif %}">{% icon "list" %}<span>{% trans "Transactions" %}</span></a>
+    <a href="{% url 'declarations' %}" class="{% if u == 'declarations' %}on{% endif %}">{% icon "list" %}<span>{% trans "Daily declarations" %}</span></a>
+    <a href="{% url 'txn_list' %}" class="{% if u == 'txn_list' or u == 'txn_detail' or u == 'receipt' %}on{% endif %}">{% icon "list" %}<span>{% if user.is_cashier %}{% trans "My records" %}{% else %}{% trans "Transactions" %}{% endif %}</span></a>
     <a href="{% url 'reports' %}" class="{% if u == 'reports' %}on{% endif %}">{% icon "chart" %}<span>{% trans "All reports" %}</span></a>
     <a href="{% url 'call_database' %}">{% icon "download" %}<span>{% trans "Download call database" %}</span></a>
     {% endif %}
@@ -140,7 +142,7 @@
     {% if show_cash and not user.is_agent %}
     <div class="side-group">{% trans "Follow-up" %}</div>
     <a href="{% url 'customers' %}" class="{% if u == 'customers' or u == 'customer_new' or u == 'customer_edit' %}on{% endif %}">{% icon "users" %}<span>{% trans "Agents & POS" %}</span></a>
-    <a href="{% url 'txn_list' %}" class="{% if u == 'txn_list' or u == 'txn_detail' or u == 'receipt' or u == 'txn_correct' or u == 'txn_transfer' %}on{% endif %}">{% icon "list" %}<span>{% trans "Transactions" %}</span></a>
+    <a href="{% url 'txn_list' %}" class="{% if u == 'txn_list' or u == 'txn_detail' or u == 'receipt' or u == 'txn_correct' or u == 'txn_transfer' %}on{% endif %}">{% icon "list" %}<span>{% if user.is_cashier %}{% trans "My records" %}{% else %}{% trans "Transactions" %}{% endif %}</span></a>
     {% if not user.is_market %}
     <a href="{% url 'exchanges' %}" class="{% if u == 'exchanges' or u == 'exchange_detail' or u == 'exchange_new' %}on{% endif %}">{% icon "bank" %}<span>{% trans "Cash managers" %}</span></a>
     <a href="{% url 'paybacks' %}" class="{% if u == 'paybacks' %}on{% endif %}">{% icon "payment" %}<span>{% trans "Agent paybacks" %}</span></a>
@@ -422,5 +424,40 @@ document.querySelectorAll('[data-back]').forEach(function (a) {
 })();
 </script>
 {% endif %}
+<script>
+(function () {
+  /* Phones: list tables become cards (each cell labelled with its column), wide tables show they scroll, filter
+     boxes fold so the content comes first. */
+  var phone = window.matchMedia('(max-width: 640px)');
+  function prep() {
+    document.querySelectorAll('table.t').forEach(function (t) {
+      if (t.dataset.prepped) return; t.dataset.prepped = '1';
+      var wide = t.matches('.recon, .report-t, .matrix, .og-t, .basket, .no-stack');
+      var heads = Array.prototype.map.call(t.querySelectorAll('thead tr:last-child th'), function (th) { return th.textContent.trim(); });
+      if (!wide && heads.length && heads.length <= 9) {
+        t.classList.add('stack');
+        if (t.parentElement.classList.contains('tbl-wrap')) t.parentElement.classList.add('stacked');
+        t.querySelectorAll('tbody tr, tfoot tr').forEach(function (tr) {
+          var i = 0;
+          Array.prototype.forEach.call(tr.children, function (td) {
+            var span = parseInt(td.getAttribute('colspan') || '1', 10);
+            if (span === 1) { td.setAttribute('data-label', heads[i] || ''); if (!td.textContent.trim() && !td.querySelector('*')) td.classList.add('empty-cell'); }
+            i += span;
+          });
+        });
+      }
+    });
+    document.querySelectorAll('.tbl-wrap').forEach(function (w) {
+      var s = w.scrollWidth > w.clientWidth + 4 && !w.classList.contains('stacked');
+      w.classList.toggle('scrolls', s);
+      var hint = w.nextElementSibling && w.nextElementSibling.classList.contains('scroll-hint') ? w.nextElementSibling : null;
+      if (s && !hint) { hint = document.createElement('div'); hint.className = 'scroll-hint'; hint.textContent = '⇆ {{ _("Swipe to see more")|escapejs }}'; w.after(hint); }
+    });
+    if (phone.matches) document.querySelectorAll('details[data-collapse-phone]:not([data-keep-open])').forEach(function (d) { d.open = false; });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', prep); else prep();
+  window.addEventListener('resize', function () { document.querySelectorAll('.tbl-wrap').forEach(function (w) { w.classList.toggle('scrolls', w.scrollWidth > w.clientWidth + 4 && !w.classList.contains('stacked')); }); });
+})();
+</script>
 </body>
 </html>

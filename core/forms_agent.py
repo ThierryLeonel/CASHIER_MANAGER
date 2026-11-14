@@ -185,3 +185,28 @@ class PosInfoForm(forms.ModelForm):
         if not v:
             raise forms.ValidationError(_("The name is required."))
         return v
+
+
+class DeclarationForm(_AgentForm):
+    """Daily declaration: what the agent received from the office and what he paid it (his own record)."""
+
+    kind = forms.ChoiceField(label=_("Declaration"), widget=forms.RadioSelect, initial="DAILY",
+                             choices=[("DAILY", _("Daily declaration")),
+                                      ("OPENING", _("Initial capital (opening balance)"))])
+    business_date = forms.DateField(label=_("Day"), widget=forms.DateInput(attrs={"type": "date"}))
+    recv_uve = MoneyField(label="UVE", required=False)
+    recv_er = MoneyField(label="ER", required=False)
+    recv_cash = MoneyField(label=_("Cash"), required=False)
+    recv_float = MoneyField(label=_("Float"), required=False)
+    paid_uve = MoneyField(label="UVE", required=False)
+    paid_cash = MoneyField(label=_("Cash"), required=False)
+    paid_float = MoneyField(label=_("Float"), required=False)
+    note = forms.CharField(label=_("Note"), required=False, max_length=255)
+
+    def __init__(self, user, *args, opening_done=False, **kwargs):
+        from core.services.days import douala_today
+
+        super().__init__(user, *args, **kwargs)
+        self.initial.setdefault("business_date", douala_today())
+        if opening_done:
+            self.fields["kind"].choices = [("DAILY", _("Daily declaration"))]
