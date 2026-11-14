@@ -192,30 +192,30 @@ class AgentPortal(OrgMixin, TestCase):
         self.assertContains(self.client_for("agent.ndive").get("/agent/transfer/"), self.a2.name)
 
     def test_payback_at_a_shop(self):
+        """The agent's payback at a shop is his own record; the shop records the payment itself — no confirmation."""
         from core.services import shop_shifts as ss
+        from core.services import shops as sh
 
         owed = self.cbal(self.a1)
         with self.assertRaises(BusinessError):
             ag.request_payback(self.ua, shop=self.shop, mtn=D(1000))
         p = ag.request_payback(self.ua, shop=self.shop, uve=D(30000), reference="MP1")
-        with self.assertRaises(PermissionDenied):
-            ag.confirm_payback(self.c_f1, p)  # the shop confirms, not a cashier
+        self.assertEqual(p.status, AgentPayback.Status.RECORDED)
+        self.assertEqual(self.cbal(self.a1), owed)  # never posted: the shop's own record counts
         mgr = self.o["shop_mgr"]
-        with self.assertRaises(PermissionDenied):
-            ag.confirm_payback(mgr, p)  # shift not open
         ss.open_shift(mgr, cash=D(0), uve=D(0), er=D(0))
         uve_before = self.bal(self.shop.account("UVE"))
-        p = ag.confirm_payback(mgr, p)
+        t = sh.receive_agent_payback(mgr, agent=self.a1, uve=D(30000), description="MP1")
         self.assertEqual(self.cbal(self.a1), owed - 30000)
         self.assertEqual(self.bal(self.shop.account("UVE")), uve_before + 30000)
-        self.assertEqual(p.transaction.type, TxType.SHOP_AGENT_PAYBACK)
+        self.assertEqual(t.type, TxType.SHOP_AGENT_PAYBACK)
         ca = self.client_for("agent.ndive")
-        self.assertEqual(ca.get(f"/transactions/{p.transaction.pk}/").status_code, 200)
+        self.assertEqual(ca.get(f"/transactions/{t.pk}/").status_code, 200)
         cs = self.client_for("shop.molyko")
-        self.assertEqual(cs.get(f"/transactions/{p.transaction.pk}/").status_code, 200)
-        self.assertEqual(cs.get("/paybacks/").status_code, 200)
+        self.assertEqual(cs.get(f"/transactions/{t.pk}/").status_code, 200)
+        self.assertContains(cs.get("/shops/do/agent_payback/"), "An agent pays the company")
         q = ag.request_payback(self.ua, shop=self.shop, cash=D(2000))
-        self.assertContains(cs.get(f"/shops/{self.shop.pk}/"), q.code)
+        self.assertNotContains(cs.get(f"/shops/{self.shop.pk}/"), q.code)  # nothing waits for the shop
 
     def test_daily_reconciliation_and_office(self):
         from core.services.days import douala_today
@@ -240,19 +240,27 @@ class AgentPortal(OrgMixin, TestCase):
         self.assertContains(office, "300 000")
         self.assertContains(office, "400 000")
 
+    @staticmethod
+    def _legacy_pending(p):
+        """A shop payback recorded before paybacks became the agent's own record (still waiting for the shop)."""
+        AgentPayback.objects.filter(pk=p.pk).update(status=AgentPayback.Status.PENDING)
+        p.refresh_from_db()
+        return p
+
     def test_admin_delete_and_clear(self):
         from core.services import admin as adm
 
         from core.services import shop_shifts as ss
 
         ss.open_shift(self.o["shop_mgr"], cash=D(0), uve=D(0), er=D(0))
-        p = ag.request_payback(self.ua, shop=self.shop, cash=D(10000))
+        p = self._legacy_pending(ag.request_payback(self.ua, shop=self.shop, cash=D(10000)))
         p = ag.confirm_payback(self.o["shop_mgr"], p)
         adm.delete_transaction(self.admin, p.transaction, reason="wrong")
         p.refresh_from_db()
         self.assertEqual((p.status, p.transaction), (AgentPayback.Status.REJECTED, None))
         ag.record_supply(self.ua, client_kind="OTHER", client_phone="655000002", cash=D(1000))
-        q = ag.confirm_payback(self.o["shop_mgr"], ag.request_payback(self.ua, shop=self.shop, cash=D(5000)))
+        q = ag.confirm_payback(self.o["shop_mgr"],
+                               self._legacy_pending(ag.request_payback(self.ua, shop=self.shop, cash=D(5000))))
         self.assertIsNotNone(q.transaction)
         adm.clear_data(self.admin, scope="transactions", password=PW, confirm_text="DELETE")
         self.assertFalse(AgentPayback.objects.exists() or AgentClientEntry.objects.exists())
@@ -335,7 +343,8 @@ class AgentPortal(OrgMixin, TestCase):
         from core.services import shop_shifts as ss
 
         ss.open_shift(self.o["shop_mgr"], cash=D(0), uve=D(0), er=D(0))
-        p = ag.confirm_payback(self.o["shop_mgr"], ag.request_payback(self.ua, shop=self.shop, cash=D(5000)))
+        p = ag.confirm_payback(self.o["shop_mgr"],
+                               self._legacy_pending(ag.request_payback(self.ua, shop=self.shop, cash=D(5000))))
         owed = self.cbal(self.a1)
         adm.clear_data(self.admin, scope="agents", password=PW, confirm_text="DELETE", agent=self.a1)
         self.assertFalse(AgentClientEntry.objects.filter(agent=self.a1).exists())

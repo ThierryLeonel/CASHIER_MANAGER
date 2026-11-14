@@ -95,8 +95,7 @@ class ShopMoney(OrgMixin, TestCase):
         parts = t.payment_parts
         self.assertEqual(len(parts), 2)  # one record: cash part + UVE part, one receipt
         self.assertEqual(sum(1 for p in parts if p.receipt_no), 1)
-        self.assertIsNotNone(t.cashier_day_id)  # recorded in the cashier subzone's day
-        self.assertEqual(t.cashier_day.zone, f1)
+        self.assertIsNone(t.cashier_day_id)  # the shop's own record: never in the cashier's day or closing
         one = sh.to_cashier(self.m, desk=f1, uve=D(1000))  # a single product: no group
         self.assertIsNone(one.payment_group)
         with self.assertRaises(BusinessError):  # nothing typed
@@ -209,11 +208,11 @@ class ShopPages(OrgMixin, TestCase):
         self.assertEqual(c.get(f"/transactions/{cashier_txn.pk}/").status_code, 404)
         shop_txn = Transaction.objects.filter(shop=self.shop).first()
         self.assertEqual(c.get(f"/transactions/{shop_txn.pk}/").status_code, 200)
-        # a UVE transfer to a cashier shows on both sides
+        # a UVE transfer to a cashier is the shop's own record: the cashier does not see it (he records an entry)
         r = c.post("/shops/do/to_cashier/", {"idem": str(uuid.uuid4()), "desk": self.zones["fako1"].pk, "uve": "5000"})
         self.assertEqual(r.status_code, 302, r.content[:1500])
         tr = Transaction.objects.get(type=TxType.SHOP_TO_DESK)
-        self.assertEqual(self.client_for("cashier.fako1").get(f"/transactions/{tr.pk}/").status_code, 200)
+        self.assertEqual(self.client_for("cashier.fako1").get(f"/transactions/{tr.pk}/").status_code, 404)
         self.assertEqual(c.get(f"/transactions/{tr.pk}/").status_code, 200)
         # the cashier's transfer to the shop page
         cf = self.client_for("cashier.fako1")
@@ -1009,14 +1008,21 @@ class TransfersForEveryStaffMember(OrgMixin, TestCase):
         self.assertEqual(r.status_code, 302, r.content[:1500])
         self.assertEqual(c.get(f"/transactions/{s.pk}/").status_code, 200)
         self.assertContains(c.get("/shops/transactions/"), s.reference)
-        # the receiving shop sees it too: its staff, its page and its list
+        # the receiving shop does not see the sender's record: it records its own entry
         lim = User.objects.create(username="limbe.mgr", role=User.Role.SHOP_MANAGER, shop=self.other)
         lim.set_password(PW)
         lim.save()
         lc = self.client_for("limbe.mgr")
-        self.assertEqual(lc.get(f"/transactions/{s.pk}/").status_code, 200)
-        self.assertContains(lc.get("/shops/transactions/"), s.reference)
-        self.assertContains(lc.get(f"/shops/{self.other.pk}/"), "transfer received from another shop")
+        self.assertEqual(lc.get(f"/transactions/{s.pk}/").status_code, 404)
+        self.assertNotContains(lc.get("/shops/transactions/"), s.reference)
+        from core.services import shop_shifts as ss
+
+        ss.open_shift(lim, cash=self.bal(self.other.account(K.CASH_DRAWER)), uve=self.bal(self.other.account(K.UVE)),
+                      er=self.bal(self.other.account(K.ER)))
+        got = sh.entry(lim, source="SHOP", from_shop=self.shop, product="UVE", amount=D(5000))
+        self.assertEqual(lc.get(f"/transactions/{got.pk}/").status_code, 200)
+        self.assertContains(lc.get("/shops/transactions/"), got.reference)
+        self.assertEqual(c.get(f"/transactions/{got.pk}/").status_code, 404)  # the sender never sees it
         # cashiers never see shop-to-shop transfers
         self.assertEqual(self.client_for("cashier.fako1").get(f"/transactions/{s.pk}/").status_code, 404)
         # the report: transfers appear for the Orange Money desk too
@@ -1097,6 +1103,16 @@ class TransferReconciliation(OrgMixin, TestCase):
         self.assertEqual(om.status_code, 200)
 
 
+def _legacy_owed(t):
+    """An entry recorded under the old rule, when the receiver owed the money back (entries now owe nothing)."""
+    from core.services.admin import admin_override
+
+    with admin_override():
+        Transaction.objects.filter(pk=t.pk).update(to_settle=True)
+    t.refresh_from_db()
+    return t
+
+
 class ShiftClosingAndTransferPayments(OrgMixin, TestCase):
     def setUp(self):
         self.make_org()
@@ -1135,7 +1151,8 @@ class ShiftClosingAndTransferPayments(OrgMixin, TestCase):
         self.assertFalse(sent.to_settle)  # the cashier's record is his own; the shop's entry is what it owes back
         ss.open_shift(self.m, cash=D(300000), uve=D(800000), er=D(150000))
         t = sh.entry(self.m, source="DESK", desk=self.zones["fako1"], product="CASH", amount=D(70000))
-        self.assertTrue(t.to_settle)
+        self.assertFalse(t.to_settle)  # an entry owes nothing back now
+        t = _legacy_owed(t)  # the "pay back" tools still work on entries recorded under the old rule
         self.assertEqual(st.outstanding(t), D(70000))
         c = self.client_for("shop.molyko")
         detail = c.get(f"/transactions/{t.pk}/")
@@ -1176,6 +1193,8 @@ class ShiftClosingAndTransferPayments(OrgMixin, TestCase):
 
         ops.record_desk_transfer(self.c_f1, desk=self.zones["fako2"], cash=D(30000))
         t = ops.record_entry(self.c_f2, source="DESK", desk=self.zones["fako1"], product="CASH", amount=D(30000))
+        self.assertFalse(st.can_pay(self.c_f2, t))  # an entry owes nothing back now
+        t = _legacy_owed(t)
         self.assertTrue(st.can_pay(self.c_f2, t))
         self.assertEqual([h.pk for h, _o in st.unpaid_for_desk(self.zones["fako2"])], [t.pk])
         c = self.client_for("cashier.fako2")
@@ -1201,37 +1220,31 @@ class CashierTransferPayments(OrgMixin, TestCase):
         return c
 
     def test_home_closing_and_payment(self):
+        """Each side records its own money: the receiver's entries raise her balances and owe nothing back — no
+        reminder on her home page, nothing written into her closing note."""
         from core.services import closing as cl
         from core.services import operations as ops
         from core.services import settlements as st
         from core.services.ledger import balance
 
+        uve2 = self.uve_f2
+        u0, d0 = balance(uve2), balance(self.d_f2)
         sh.to_cashier(self.o["shop_om"], desk=self.zones["fako2"], uve=D(40000))  # shop -> Fako 2 (shop's record)
         ops.record_desk_transfer(self.c_f1, desk=self.zones["fako2"], cash=D(25000))  # Fako 1's record
-        # Fako 2 records what she received: her entries are what she owes back
+        self.assertEqual((balance(uve2), balance(self.d_f2)), (u0, d0))  # nothing moves for Fako 2 yet
         t1 = ops.record_entry(self.c_f2, source="SHOP", shop=self.shop, product="UVE", amount=D(40000))
         t2 = ops.record_entry(self.c_f2, source="DESK", desk=self.zones["fako1"], product="CASH", amount=D(25000))
+        self.assertEqual((balance(uve2), balance(self.d_f2)), (u0 + 40000, d0 + 25000))
+        self.assertEqual(st.unpaid_for_desk(self.zones["fako2"]), [])
         c = self.client_for("cashier.fako2")
         home = c.get("/")
-        self.assertContains(home, "Transfers received not paid back yet")
-        self.assertContains(home, t1.reference)
-        self.assertContains(home, "Fako 1")  # the sending desk is named
-        page = c.get("/closing/")
-        self.assertContains(page, t2.reference)
-        self.assertContains(page, "65 000")  # total still owed
-        # pay the shop back from the closing page
-        r = c.post(f"/transactions/{t1.pk}/pay/?next=/closing/", {"idem": str(uuid.uuid4()), "cash": "40 000"})
-        self.assertRedirects(r, "/closing/", fetch_redirect_response=False)
-        self.assertEqual(st.outstanding(t1), D(0))
-        p = Transaction.objects.get(settles=t1)
-        self.assertEqual((p.type, p.shop), (TxType.DESK_TO_SHOP, self.shop))
-        # close the day: the transfer still owed to Fako 1 is written automatically into the notes
+        self.assertNotContains(home, "Transfers received not paid back yet")
+        self.assertContains(c.get("/closing/"), "Close")
+        self.assertNotContains(c.get(f"/transactions/{t1.pk}/"), "Pay the sender")
         actuals = {a.id: balance(a) for a in cl.closing_accounts(self.c_f2)}
         closing = cl.close_day(self.c_f2, actuals=actuals, notes="all good")
-        self.assertIn("all good", closing.notes)
-        self.assertIn(t2.reference, closing.notes)
-        self.assertIn("25 000", closing.notes)
-        self.assertNotIn(t1.reference, closing.notes)
-        # the shop page shows its staff what the shop owes (nothing here) and cashiers what they owe
+        self.assertEqual(closing.notes, "all good")
+        self.assertNotIn(t2.reference, closing.notes)
         self.assertNotContains(self.client_for("shop.molyko").get(f"/shops/{self.shop.pk}/"),
                                "Transfers received not paid back yet")
+

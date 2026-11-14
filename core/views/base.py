@@ -107,8 +107,10 @@ def can_view_txn(user, t):
     if user.is_shop_user:  # shops see only their own shop's entries, and staff only their duties' operations
         from core.services.shops import can_see_type
 
-        mine = t.shop_id == user.shop_id or (t.type == "SHOP_TO_SHOP" and t.dest_account_id
-                                             and t.dest_account.shop_id == user.shop_id)  # sent to this shop
+        if t.cashier_id and (t.in_transit or t.is_entry):
+            return False  # a cashier's own record naming the shop belongs to the cashier
+        mine = t.shop_id == user.shop_id or (t.type == "SHOP_TO_SHOP" and t.dest_account_id and not t.in_transit
+                                             and not t.is_entry and t.dest_account.shop_id == user.shop_id)
         return bool(t.shop_id) and (user.is_shop_senior or (mine and can_see_type(user, t.type)))
     if user.is_agent:  # entries on the agent's own account; of the shops' records only his payments to the company
         if t.shop_id and t.type != "SHOP_AG_PAYBACK":

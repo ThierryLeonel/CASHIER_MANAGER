@@ -58,7 +58,7 @@ TYPE_DUTY = {
     TxType.SHOP_SALE: "SALES",
     TxType.SHOP_APPRO: "AGENTS", TxType.SHOP_ER_SUPPLY: "AGENTS", TxType.SHOP_DESTOCK: "AGENTS",
     TxType.SHOP_AGENT_PAY: "AGENTS", TxType.SHOP_AGENT_REPAY: "AGENTS",
-    TxType.SHOP_TO_DESK: "ANY", TxType.DESK_TO_SHOP: "ANY", TxType.SHOP_TO_SHOP: "ANY",
+    TxType.SHOP_TO_DESK: "ANY", TxType.DESK_TO_SHOP: "ANY", TxType.SHOP_TO_SHOP: "ANY", TxType.SHOP_EXCHANGE: "ANY",
     TxType.SHOP_AGENT_PAYBACK: "ANY",
     TxType.SHOP_POS_UVE_OUT: "ANY", TxType.SHOP_POS_UVE_IN: "ANY",
     TxType.SHOP_EXPENSE: "EXPENSES", TxType.SHOP_PURCHASE: "EXPENSES", TxType.SHOP_STOCK_OUT: "SALES",
@@ -315,7 +315,7 @@ def uve_from_pos(user, *, shop=None, pos, amount, pay="CASH", description="", id
                                 description=description)], idempotency_key)[0]
 
 
-def receive_agent_payback(user, *, shop, agent, cash=None, uve=None, description="", idempotency_key=None):
+def receive_agent_payback(user, *, shop=None, agent, cash=None, uve=None, description="", idempotency_key=None):
     """A commercial agent pays what he owes the company into the shop (cash drawer and / or UVE): it reduces his
     balance with the company, exactly like a payment at a cashier."""
     shop = shop_for(user, shop, None)
@@ -372,18 +372,16 @@ def _group(idempotency_key, n, salt):
 
 
 def to_cashier(user, *, shop=None, desk, cash=None, uve=None, description="", idempotency_key=None, settles=None):
-    """The shop sends cash and / or UVE to a cashier desk (subzone). Each product leaves the shop's account and
-    arrives in the desk's account of the same kind; the entries belong to that desk's business day, so they show
-    on the cashier side too (lists, closing). One group, one receipt."""
-    from .days import zone_day
+    """The shop sends cash and / or UVE to a cashier desk (subzone). The shop records it and only the shop's account
+    goes down; the cashier is not notified and nothing waits for him: he records the money he received as an Entry
+    on his side. One group, one receipt."""
     from .operations import desk_account, transfer_parts
 
     shop = shop_for(user, shop)  # every staff member may transfer, whatever their duties
     if desk is None:
         raise BusinessError(_("Choose the cashier desk receiving the transfer."), "desk")
     todo = transfer_parts({"CASH": cash, "UVE": uve}, allowed=("CASH", "UVE"))
-    day = zone_day(desk)
-    ctx = Ctx(entered_by=user, cashier=None, day=day, business_date=day.business_date)
+    ctx = _ctx(user)  # the shop's own record: never in the cashier's day, lists or closing
     group = _group(idempotency_key, len(todo), "to-cashier")
     specs = []
     for i, (prod, kind, a) in enumerate(todo):
@@ -447,11 +445,47 @@ def to_shop(user, *, shop=None, dest_shop, cash=None, uve=None, description="", 
         return post(specs, _ctx(user), idempotency_key)[0]
 
 
+EXCHANGE_KINDS = {"CASH": K.CASH_DRAWER, "UVE": K.UVE}
+
+
+def partner_account(partner, kind, partner_shop=None, desk=None, own_shop=None, own_desk=None):
+    """The other side of a stock exchange (for the record only — its balance never moves)."""
+    from .operations import desk_account
+
+    if partner == "SHOP":
+        if partner_shop is None or not partner_shop.active or (own_shop is not None and partner_shop.pk == own_shop.pk):
+            raise BusinessError(_("Choose the other shop."), "partner_shop")
+        return partner_shop.account(kind)
+    if partner == "DESK":
+        if desk is None or (own_desk is not None and desk.pk == own_desk):
+            raise BusinessError(_("Choose the other cashier's desk."), "desk")
+        return desk_account(desk, kind, "desk")
+    raise BusinessError(_("Say who you exchange with."), "partner")
+
+
+def exchange(user, *, shop=None, partner, partner_shop=None, desk=None, give, amount, description="",
+             idempotency_key=None):
+    """Stock exchange of the shop with another shop or a cashier: the shop gives cash and receives the same amount
+    in UVE, or gives UVE and receives cash. The shop records its own side: its drawer and its UVE wallet move,
+    nothing else. The other side records its own exchange (nothing to confirm, nothing owed)."""
+    shop = shop_for(user, shop)
+    if give not in EXCHANGE_KINDS:
+        raise BusinessError(_("Say what you give: cash or UVE."), "give")
+    got = "UVE" if give == "CASH" else "CASH"
+    a = _amt(amount)
+    out_acct, in_acct = shop.account(EXCHANGE_KINDS[give]), shop.account(EXCHANGE_KINDS[got])
+    to_acct = partner_account(partner, EXCHANGE_KINDS[give], partner_shop, desk, own_shop=shop)
+    from_acct = partner_account(partner, EXCHANGE_KINDS[got], partner_shop, desk, own_shop=shop)
+    spec = _spec(TxType.SHOP_EXCHANGE, shop, [(in_acct, a), (out_acct, -a)], a, product=give,
+                 dest_account=to_acct, source_account=from_acct, description=(description or "").strip())
+    return _record(user, [spec], idempotency_key)[0]
+
+
 def entry(user, *, shop=None, source, product, amount, desk=None, from_shop=None, company_account=None,
           reference="", description="", idempotency_key=None):
     """Entry: cash, UVE or ER the shop RECEIVED and records itself — from a cashier desk, another shop or a company
-    account. Only the shop's account moves; the sender records his own side. Money from a cashier or a shop is owed
-    back to them (this entry carries it, for "Pay the sender")."""
+    account. Only the shop's account goes up (cash → its drawer); it says where the money came from. No approval,
+    no link to the sender's record, nothing owed back: the sender records his own side."""
     from .operations import desk_account
 
     shop = shop_for(user, shop)
@@ -478,19 +512,37 @@ def entry(user, *, shop=None, source, product, amount, desk=None, from_shop=None
     note = (description or "").strip()
     if reference:
         note = f"{note} · {_('Ref.')} {reference.strip()}".strip(" ·")
-    extra = {"fund_purpose": note or str(_("Entry recorded by the shop"))} if source == "COMPANY" else {
-        "to_settle": True}
+    extra = {"fund_purpose": note or str(_("Entry recorded by the shop"))} if source == "COMPANY" else {}
     spec = _spec(type_, shop, [(dest, a), (transit.account(), -a)], a, source_account=src, dest_account=dest,
                  product=product, description=note, is_entry=True, **extra)
     with transaction.atomic():
         return post([spec], _ctx(user), idempotency_key)[0]
 
 
-def shop_txn_q(shops):
-    """Entries of these shops: their own, plus transfers other shops sent them."""
+def cashier_record_q():
+    """A cashier's own record that names a shop (his transfer to the shop, his entry of money from the shop): it
+    belongs to the cashier only — the shop never sees it, it never touches the shop."""
     from django.db.models import Q as Q_
 
-    return Q_(shop__in=shops) | Q_(type=TxType.SHOP_TO_SHOP, dest_account__shop__in=shops)
+    return Q_(cashier__isnull=False) & (Q_(in_transit=True) | Q_(is_entry=True))
+
+
+def shop_received_q(shops, prefix=""):
+    """Money a shop received from another shop: its own entries (it records them), and transfers recorded before
+    entries existed (they moved both shops)."""
+    from django.db.models import Q as Q_
+
+    return Q_(type=TxType.SHOP_TO_SHOP, dest_account__shop__in=shops) & (
+        Q_(is_entry=True) | Q_(in_transit=False, is_entry=False))
+
+
+def shop_txn_q(shops):
+    """The records of these shops: each record belongs to whoever recorded it. A shop sees what it recorded itself
+    (its transfers out, its entries), never the cashier's or the other shop's record of the same money."""
+    from django.db.models import Q as Q_
+
+    return (Q_(shop__in=shops) & ~cashier_record_q()) | Q_(type=TxType.SHOP_TO_SHOP, dest_account__shop__in=shops,
+                                                         in_transit=False, is_entry=False)
 
 
 # ---------------------------------------------------------------- sales and stock (units by IMEI / serial)

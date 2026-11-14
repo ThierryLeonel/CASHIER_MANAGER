@@ -1,0 +1,16 @@
+{% extends "core/entry_form.html" %}{% load i18n %}
+{% block scripts %}{{ block.super }}
+<script>
+(function () {
+  var form = document.getElementById('entry-form'); if (!form) return;
+  var radios = form.querySelectorAll('input[name=partner]');
+  form.querySelectorAll('input[name=partner], input[name=give]').forEach(function (r) { r.closest('.field').classList.add('choice-pills'); });
+  function sync() {
+    var p = (form.querySelector('input[name=partner]:checked') || radios[0]).value;
+    var d = document.getElementById('fld-desk'), s = document.getElementById('fld-partner_shop');
+    if (d) d.hidden = p !== 'DESK'; if (s) s.hidden = p !== 'SHOP';
+  }
+  radios.forEach(function (r) { r.addEventListener('change', sync); }); sync();
+})();
+</script>
+{% endblock %}

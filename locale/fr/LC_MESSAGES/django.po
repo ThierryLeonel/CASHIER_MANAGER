@@ -486,6 +486,15 @@ msgstr "Un client me paie"
 msgid "A commercial agent"
 msgstr "Un agent commercial"
 
+msgid ""
+"A commercial agent pays what he owes the company into the shop (cash and / "
+"or UVE). The shop records it: its drawer / UVE go up and the agent's debt "
+"goes down. Nothing to confirm."
+msgstr ""
+"Un agent commercial paie ce qu'il doit à l'entreprise à la boutique (espèces"
+" et / ou UVE). La boutique l'enregistre : sa caisse / son UVE augmentent et "
+"la dette de l'agent baisse. Rien à confirmer."
+
 msgid "A company account"
 msgstr "Un compte de la société"
 
@@ -1040,6 +1049,9 @@ msgstr ""
 msgid "An agent login must be linked to an agent account."
 msgstr "Un accès agent doit être lié à un compte agent."
 
+msgid "An agent pays the company"
+msgstr "Un agent paie l'entreprise"
+
 msgid "An agent pays the shop"
 msgstr "Un agent paie la boutique"
 
@@ -1430,6 +1442,14 @@ msgstr ""
 "Espèces et / ou UVE envoyées de votre guichet vers une boutique, en un seul "
 "enregistrement. La boutique le voit dans ses opérations."
 
+msgid ""
+"Cash and / or UVE sent from your desk to a shop. Only your account goes "
+"down; the shop is not notified and records what it received as an entry."
+msgstr ""
+"Espèces et / ou UVE envoyés de votre guichet à une boutique. Seul votre "
+"compte baisse ; la boutique n'est pas notifiée et enregistre ce qu'elle a "
+"reçu comme une entrée."
+
 msgid "Cash at closing"
 msgstr "Espèces à la clôture"
 
@@ -1527,6 +1547,12 @@ msgstr "Espèces au PDV, UVE à l'agent"
 msgid "Cash → served in UVE"
 msgstr "Espèces → servi en UVE"
 
+msgid "Cash ↔ UVE with a cashier or a shop"
+msgstr "Espèces ↔ UVE avec un caissier ou une boutique"
+
+msgid "Cash ↔ UVE with a shop or a cashier"
+msgstr "Espèces ↔ UVE avec une boutique ou un caissier"
+
 msgid ""
 "Cash, UVE and / or MTN float sent from your desk to another cashier desk, in"
 " one record. Each amount leaves your account of that kind and arrives in "
@@ -1542,6 +1568,16 @@ msgid ""
 msgstr ""
 "Espèces, UVE et ER remis à un agent commercial, en un seul enregistrement. "
 "Le solde de l'agent augmente du total."
+
+msgid ""
+"Cash, UVE or ER the shop received from a cashier, another shop or a company "
+"account. Only the shop's account goes up (cash → the drawer). No approval "
+"and nothing to confirm: the sender records his own side."
+msgstr ""
+"Espèces, UVE ou ER reçus par la boutique d'un caissier, d'une autre boutique"
+" ou d'un compte de l'entreprise. Seul le compte de la boutique augmente "
+"(espèces → la caisse). Aucune approbation, rien à confirmer : l'expéditeur "
+"enregistre son propre côté."
 
 msgid ""
 "Cash, UVE or ER the shop received from a cashier, another shop or a company "
@@ -3172,6 +3208,29 @@ msgstr "Échanger espèces et UVE"
 msgid "Exchange float for UVE"
 msgstr "Échanger du float contre de l'UVE"
 
+msgid "Exchange with"
+msgstr "Échange avec"
+
+msgid ""
+"Exchange with a cashier or another shop: give UVE and receive the same "
+"amount in cash, or give cash and receive UVE. Only the shop's drawer and UVE"
+" wallet move; the other side records its own exchange. Nothing to confirm."
+msgstr ""
+"Échange avec un caissier ou une autre boutique : donnez de l'UVE et recevez "
+"le même montant en espèces, ou donnez des espèces et recevez de l'UVE. Seuls"
+" la caisse et le portefeuille UVE de la boutique bougent ; l'autre côté "
+"enregistre son propre échange. Rien à confirmer."
+
+msgid ""
+"Exchange with a shop or another cashier: give UVE and receive the same "
+"amount in cash, or give cash and receive UVE. Only your drawer and UVE "
+"wallet move; the other side records its own exchange. Nothing to confirm."
+msgstr ""
+"Échange avec une boutique ou un autre caissier : donnez de l'UVE et recevez "
+"le même montant en espèces, ou donnez des espèces et recevez de l'UVE. Seuls"
+" votre caisse et votre portefeuille UVE bougent ; l'autre côté enregistre "
+"son propre échange. Rien à confirmer."
+
 msgid "Exchanges"
 msgstr "Échanges"
 
@@ -3515,6 +3574,12 @@ msgstr "Combien"
 
 msgid "I confirm these are the actual counted/read balances."
 msgstr "Je confirme qu'il s'agit des soldes réellement comptés/relevés."
+
+msgid "I give UVE and receive cash"
+msgstr "Je donne de l'UVE et reçois des espèces"
+
+msgid "I give cash and receive UVE"
+msgstr "Je donne des espèces et reçois de l'UVE"
 
 msgid "I owe"
 msgstr "Je dois"
@@ -6028,6 +6093,9 @@ msgstr "Enregistré."
 msgid "Say what the money is for."
 msgstr "Indiquez à quoi sert l'argent."
 
+msgid "Say what you give: cash or UVE."
+msgstr "Dites ce que vous donnez : espèces ou UVE."
+
 msgid "Say where the money comes from."
 msgstr "Indiquez d'où vient l'argent."
 
@@ -6036,6 +6104,9 @@ msgstr "Indiquez qui reçoit l'argent ou où il va."
 
 msgid "Say who sent the money."
 msgstr "Indiquez qui a envoyé l'argent."
+
+msgid "Say who you exchange with."
+msgstr "Dites avec qui vous échangez."
 
 msgid "Say why the capital is moved."
 msgstr "Indiquez pourquoi le capital est déplacé."
@@ -6384,6 +6455,9 @@ msgstr "Boutique : achat d'articles"
 msgid "Shop: stock at cost"
 msgstr "Boutique : stock au coût"
 
+msgid "Shop: stock exchange (cash ↔ UVE)"
+msgstr "Boutique : échange de stock (espèces ↔ UVE)"
+
 msgid "Shop: stock written off"
 msgstr "Boutique : stock sorti en perte"
 
@@ -6575,6 +6649,18 @@ msgstr "Stock par sous-zone"
 
 msgid "Stock cannot go below zero."
 msgstr "Le stock ne peut pas être négatif."
+
+msgid "Stock exchange"
+msgstr "Échange de stock"
+
+msgid "Stock exchange (cash ↔ UVE)"
+msgstr "Échange de stock (espèces ↔ UVE)"
+
+msgid "Stock exchange: gave UVE, received cash"
+msgstr "Échange de stock : UVE donné, espèces reçues"
+
+msgid "Stock exchange: gave cash, received UVE"
+msgstr "Échange de stock : espèces données, UVE reçu"
 
 msgid "Stock history"
 msgstr "Historique du stock"
@@ -8014,6 +8100,9 @@ msgid "What was paid, e.g. electricity bill October, transport of stock."
 msgstr ""
 "Ce qui a été payé, par ex. facture d'électricité d'octobre, transport du "
 "stock."
+
+msgid "What you give"
+msgstr "Ce que vous donnez"
 
 msgid "What you received"
 msgstr "Ce que vous avez reçu"

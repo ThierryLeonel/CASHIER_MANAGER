@@ -518,3 +518,31 @@ Every transaction stores its **recording cashier** (`Transaction.cashier`), and 
   - His login is linked to it, so he immediately gets the Supply button on every POS of his zone in OOS, and Cash /
     Float destocash, like a commercial agent (all recorded on his account).
 - The admin can still link the account in Configuration › Users.
+
+## Each individual is in charge of his own record (no approvals, no links) + stock exchange
+- **Entries owe nothing and need no approval.** A cashier's or shop's Entry only says where the money came from and
+  raises the receiver's own account (cash → the drawer). `to_settle` is False on entries, so there is no "Pay the
+  sender", no "not paid back" reminder on the home page and nothing written into the closing / shift note.
+  - Migration 0056 clears the old obligation on existing entries (using the admin override, like 0004).
+  - The pay-back tools still work on any older record that was still owed back.
+- **The sender's record stays with the sender:**
+  - `sh.to_cashier` posts in the shop's own context: it is no longer in the desk's business day, lists or closing.
+    The cashier is not notified.
+  - `shop_txn_q` / `can_view_txn` / shop overview and shop reports exclude a cashier's own records naming the shop
+    (`cashier_record_q`: cashier set and in transit or entry). They also exclude another shop's transfer to this
+    shop.
+  - Money received from another shop counts from the receiving shop's own entry (`shop_received_q`), or from older
+    two-sided transfers.
+- **Agent paybacks at a shop** are the agent's own record (RECORDED), like at a cashier; nothing waits for the shop.
+  - The shop records the payment itself with the new op "An agent pays the company" (`agent_payback` →
+    `sh.receive_agent_payback`).
+  - Migration 0056 turns waiting shop paybacks into RECORDED. The shop records any it really received with the new
+    op.
+- **Stock exchange (cash ↔ UVE)** between shops, cashiers, and shop / cashier:
+  - Shop: `sh.exchange`, op `exchange` (`SHOP_EXCHANGE`). Cashier: `ops.stock_exchange`, `/stock-exchange/`
+    (`STOCK_EXCHANGE`). Template `exchange_form.html`.
+  - Partner: a cashier desk or a shop. "I give UVE and receive cash" or "I give cash and receive UVE", one amount.
+  - Only the recorder's own drawer and UVE wallet move (+received / −given). The partner's accounts are stored
+    (source / dest) for the record only. The partner records his own exchange; nothing to confirm, nothing owed.
+  - Shown as "Stock exchange: gave UVE, received cash" (or the reverse). Links are in the cashier menu and home
+    page and the shop menu and page.

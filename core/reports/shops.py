@@ -122,8 +122,11 @@ def _daily(shops, d_from, d_to, hours_of=None):
     """{(shop_id, date): {metric: value}} for the whole range in a handful of queries."""
     data = defaultdict(lambda: defaultdict(lambda: Z))
     shop_ids = [s.pk for s in shops]
+    from core.services.shops import cashier_record_q, shop_received_q
+
     txq = Transaction.objects.filter(shop_id__in=shop_ids, business_date__gte=d_from, business_date__lte=d_to,
-                                     correction__isnull=True).exclude(type=T.REVERSAL)
+                                     correction__isnull=True).exclude(type=T.REVERSAL).exclude(cashier_record_q()) \
+        .exclude(type=T.SHOP_TO_SHOP, is_entry=True)
     for r in txq.values("shop_id", "business_date", "type", "subtype").annotate(
             n=Count("id"), amt=Sum("amount"), com=Sum("commission")):
         d = data[(r["shop_id"], r["business_date"])]
@@ -138,8 +141,7 @@ def _daily(shops, d_from, d_to, hours_of=None):
                 d[TYPE_METRIC[t] + "_n"] += r["n"]
                 d["commission"] += r["com"] or Z
     # transfers received from other shops, on the receiving shop
-    for r in Transaction.objects.filter(type=T.SHOP_TO_SHOP, dest_account__shop_id__in=shop_ids,
-                                        business_date__gte=d_from, business_date__lte=d_to,
+    for r in Transaction.objects.filter(shop_received_q(shop_ids), business_date__gte=d_from, business_date__lte=d_to,
                                         correction__isnull=True).values("dest_account__shop_id", "business_date") \
             .annotate(s=Sum("amount")):
         data[(r["dest_account__shop_id"], r["business_date"])]["from_shops"] += r["s"] or Z

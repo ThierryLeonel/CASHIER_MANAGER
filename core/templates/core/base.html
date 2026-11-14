@@ -63,6 +63,7 @@
     <a href="{% url 'transfer_new' %}" class="{% if u == 'transfer_new' %}on{% endif %}">{% icon "transfer" %}<span>{% trans "Transfer" %}</span></a>
     <a href="{% url 'conversion_new' %}" class="{% if u == 'conversion_new' %}on{% endif %}">{% icon "convert" %}<span>{% trans "UVE→ER" %}</span></a>
     <a href="{% url 'desk_to_shop' %}" class="{% if u == 'desk_to_shop' %}on{% endif %}">{% icon "store" %}<span>{% trans "Transfer to shop" %}</span></a>
+    <a href="{% url 'desk_exchange' %}" class="{% if u == 'desk_exchange' %}on{% endif %}">{% icon "convert" %}<span>{% trans "Stock exchange" %}</span></a>
     {% endif %}
 
     {% if user.is_shop_user %}{% with duties=user.shop_duty_set %}
@@ -99,6 +100,8 @@
     <a href="{% url 'shop_op' 'entry' %}" class="{% if request.path == '/shops/do/entry/' %}on{% endif %}">{% icon "download" %}<span>{% trans "Entry" %}</span></a>
     <a href="{% url 'shop_op' 'to_cashier' %}" class="{% if request.path == '/shops/do/to_cashier/' %}on{% endif %}">{% icon "transfer" %}<span>{% trans "Transfer to a cashier" %}</span></a>
     <a href="{% url 'shop_op' 'to_shop' %}" class="{% if request.path == '/shops/do/to_shop/' %}on{% endif %}">{% icon "store" %}<span>{% trans "Transfer to another shop" %}</span></a>
+    <a href="{% url 'shop_op' 'agent_payback' %}" class="{% if request.path == '/shops/do/agent_payback/' %}on{% endif %}">{% icon "payment" %}<span>{% trans "An agent pays the company" %}</span></a>
+    <a href="{% url 'shop_op' 'exchange' %}" class="{% if request.path == '/shops/do/exchange/' %}on{% endif %}">{% icon "convert" %}<span>{% trans "Stock exchange" %}</span></a>
     <a href="{% url 'shop_op' 'pos_uve_out' %}" class="{% if request.path == '/shops/do/pos_uve_out/' %}on{% endif %}">{% icon "supply" %}<span>{% trans "Send UVE" %}</span></a>
     <a href="{% url 'shop_op' 'pos_uve_in' %}" class="{% if request.path == '/shops/do/pos_uve_in/' %}on{% endif %}">{% icon "payment" %}<span>{% trans "Receive UVE" %}</span></a>
     <a href="{% url 'paybacks' %}" class="{% if u == 'paybacks' %}on{% endif %}">{% icon "payment" %}<span>{% trans "Agent paybacks" %}</span></a>

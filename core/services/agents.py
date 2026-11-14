@@ -291,9 +291,9 @@ def request_payback(user, *, desk=None, shop=None, cash=None, uve=None, mtn=None
         raise BusinessError(_("Enter what you pay back in cash, UVE and / or MTN float."), "amount")
     if shop is not None and vals["mtn"]:
         raise BusinessError(_("A shop receives cash or UVE, not MTN float."), "method")
-    # paid at a cashier: the cashier records the payment himself (Payments), so the agent's record is his own
-    # follow-up only — never sent to the cashier, never posted, so a payment is never counted twice
-    extra = {} if shop is not None else {"status": P.Status.RECORDED}
+    # paid at a cashier or a shop: the receiver records the payment himself (Payments / "An agent pays the shop"),
+    # so the agent's record is his own follow-up only — never sent for approval, never posted, never counted twice
+    extra = {"status": P.Status.RECORDED}
     return _create(P, idempotency_key, agent=agent, desk=desk, shop=shop, **vals, **extra,
                    reference=(reference or "").strip(), note=(note or "").strip(), recorded_by=user)
 

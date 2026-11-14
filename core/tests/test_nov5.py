@@ -70,6 +70,13 @@ class Nov5(OrgMixin, TestCase):
     def test_no_to_paying_a_transfer_back(self):
         ops.record_desk_transfer(self.c_f1, desk=self.c_f2.subzone, cash=D(15000), idempotency_key=uuid.uuid4())
         t = ops.record_entry(self.c_f2, source="DESK", desk=self.c_f1.subzone, product="CASH", amount=D(15000))
+        self.assertEqual(st.unpaid_for_desk(self.c_f2.subzone), [])  # an entry owes nothing back
+        # an entry recorded under the old rule (still owed back) can be answered "no payback"
+        from core.services.admin import admin_override
+
+        with admin_override():
+            Transaction.objects.filter(pk=t.pk).update(to_settle=True)
+        t.refresh_from_db()
         self.assertEqual(len(st.unpaid_for_desk(self.c_f2.subzone)), 1)
         c2 = self.client_for("cashier.fako2")
         self.assertContains(c2.get("/"), f"/transactions/{t.pk}/no-payback/")

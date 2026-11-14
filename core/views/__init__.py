@@ -18,7 +18,7 @@ from .base import act_as, agents_supervision, idle_logout, keepalive, set_lang  
 from .accounts import my_password, user_detail, user_toggle, users  # noqa: F401
 from .shops import (  # noqa: F401,E402
     shop_detail, shop_op, shop_retrievals, shop_retrieve, shop_service, shop_services_report, shop_setup, shop_manage, shop_shift, shop_reconciliations, shop_reconciliation, shop_attendance, shop_reports, shop_purchase,
-    shop_stock, shop_transactions, shops, desk_to_shop,
+    shop_stock, shop_transactions, shops, desk_to_shop, desk_exchange,
 )
 from .capital import capital, capital_op  # noqa: F401,E402
 from .records import transfer_no_payback, transfer_pay  # noqa: F401,E402

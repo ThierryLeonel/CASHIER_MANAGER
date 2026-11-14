@@ -123,5 +123,6 @@ urlpatterns = [
     path("transactions/<int:pk>/no-payback/", v.transfer_no_payback, name="transfer_no_payback"),
     path("shops/opening-balances/", v.shop_opening_balances, name="shop_opening_balances"),
     path("transfer/to-shop/", v.desk_to_shop, name="desk_to_shop"),
+    path("stock-exchange/", v.desk_exchange, name="desk_exchange"),
     path("admin/", admin.site.urls),
 ]

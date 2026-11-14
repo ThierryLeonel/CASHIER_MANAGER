@@ -773,6 +773,30 @@ def customer_balance(cp):
 
 
 
+# ---------------------------------------------------------------- stock exchange with a shop or another cashier
+def stock_exchange(user, *, partner, partner_shop=None, desk=None, give, amount, description="",
+                   idempotency_key=None, acting_for=None):
+    """The cashier exchanges stock with a shop or another cashier: gives cash and receives the same amount in UVE,
+    or gives UVE and receives cash. Only his own drawer and UVE wallet move; the other side records its own
+    exchange. Nothing to confirm, nothing owed."""
+    from .shops import EXCHANGE_KINDS, partner_account
+
+    ctx = cashier_ctx(user, acting_for)
+    if give not in EXCHANGE_KINDS:
+        raise BusinessError(_("Say what you give: cash or UVE."), "give")
+    got = "UVE" if give == "CASH" else "CASH"
+    amount = _positive(amount)
+    out_acct = own_account(ctx.cashier, EXCHANGE_KINDS[give], "give")
+    in_acct = entry_into(ctx, EXCHANGE_KINDS[got])
+    to_acct = partner_account(partner, EXCHANGE_KINDS[give], partner_shop, desk, own_desk=ctx.cashier.subzone_id)
+    from_acct = partner_account(partner, EXCHANGE_KINDS[got], partner_shop, desk, own_desk=ctx.cashier.subzone_id)
+    spec = TxSpec(type=TxType.STOCK_EXCHANGE, lines=[(in_acct, amount), (out_acct, -amount)], receipt=True,
+                  fields=dict(amount=amount, product=give, dest_account=to_acct, source_account=from_acct,
+                              description=(description or "").strip()))
+    with transaction.atomic():
+        return post([spec], ctx, idempotency_key)[0]
+
+
 # ---------------------------------------------------------------- entries: money the cashier received
 ENTRY_SOURCES = ("SHOP", "DESK", "COMPANY", "OTHER")
 ENTRY_KINDS = {"CASH": K.CASH_DRAWER, "UVE": K.UVE, "ER": K.ER, "MTN": K.MTN}
@@ -795,9 +819,10 @@ def entry_into(ctx, kind, chosen=None):
 def record_entry(user, *, source, product=None, amount, shop=None, desk=None, company_account=None, from_whom="",
                  into=None, reference="", description="", another=False, idempotency_key=None, acting_for=None):
     """Entry: cash, UVE, ER or float the cashier RECEIVED and records himself — from a shop, another cashier, a
-    company account (finance, master SIM, bank) or from outside. Only HIS account moves; the sender records his own
-    side, and neither record touches the other's balance. Money from a shop or a cashier is owed back to them (his
-    entry carries that, for "Pay the sender"); money from outside is recorded as capital received."""
+    company account (finance, master SIM, bank) or from outside. Only HIS account goes up (cash → his drawer); the
+    entry says where the money came from. No approval from anyone, no link to the sender's record, nothing owed
+    back: the sender records his own side, and neither record touches the other's balance. Money from outside is
+    recorded as capital received."""
     ctx = cashier_ctx(user, acting_for)
     if source not in ENTRY_SOURCES:
         raise BusinessError(_("Say where the money comes from."), "source")
@@ -827,13 +852,13 @@ def record_entry(user, *, source, product=None, amount, shop=None, desk=None, co
         if product == "MTN":
             raise BusinessError(_("A shop sends cash, UVE or ER."), "product")
         src = shop.account(kind)
-        type_, extra = TxType.SHOP_TO_DESK, {"shop": shop, "to_settle": True}
+        type_, extra = TxType.SHOP_TO_DESK, {"shop": shop}
         legacy = Transaction.objects.filter(type=TxType.SHOP_TO_DESK, shop=shop)
     elif source == "DESK":
         if desk is None or desk.pk == ctx.cashier.subzone_id:
             raise BusinessError(_("Choose the other cashier's desk."), "desk")
         src = desk_account(desk, kind, "product")
-        type_, extra = TxType.INTERNAL_TRANSFER, {"to_settle": True}
+        type_, extra = TxType.INTERNAL_TRANSFER, {}
         legacy = Transaction.objects.filter(type=TxType.INTERNAL_TRANSFER, source_account=src)
     elif source == "COMPANY":
         src = company_account

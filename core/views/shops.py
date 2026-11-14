@@ -20,6 +20,7 @@ from core.models import (
 from core.money import fmt
 from core.services import shop_admin as sa
 from core.services import shop_shifts as ss
+from core.services import operations as ops
 from core.services import shops as sh
 from core.services.days import douala_today
 from core.services.errors import BusinessError
@@ -57,6 +58,10 @@ OPS = {
                   _("Settles what the shop owes an agent."), "payment"),
     "agent_repay": (SF.AgentDealForm, sh.agent_repay, _("An agent pays the shop"),
                     _("The agent pays back what he owes the shop (e.g. a destockage taken on credit)."), "payment"),
+    "agent_payback": (SF.ShopAgentPaybackForm, sh.receive_agent_payback, _("An agent pays the company"),
+                      _("A commercial agent pays what he owes the company into the shop (cash and / or UVE). The shop "
+                        "records it: its drawer / UVE go up and the agent's debt goes down. Nothing to confirm."),
+                      "payment"),
     "pos_uve_out": (SF.PosUveForm, sh.uve_to_pos, _("Send UVE"), "", "supply"),
     "pos_uve_in": (SF.PosUveForm, sh.uve_from_pos, _("Receive UVE"), "", "payment"),
     "to_cashier": (SF.ToCashierForm, sh.to_cashier, _("Transfer to a cashier"),
@@ -67,7 +72,12 @@ OPS = {
                   "shop records it as an entry."), "transfer"),
     "entry": (SF.ShopEntryForm, sh.entry, _("Entry: money received"),
               _("Cash, UVE or ER the shop received from a cashier, another shop or a company account. Only the "
-                "shop's account moves; it is linked to the sender's record."), "download"),
+                "shop's account goes up (cash → the drawer). No approval and nothing to confirm: the sender records "
+                "his own side."), "download"),
+    "exchange": (SF.ShopExchangeForm, sh.exchange, _("Stock exchange (cash ↔ UVE)"),
+                 _("Exchange with a cashier or another shop: give UVE and receive the same amount in cash, or give "
+                   "cash and receive UVE. Only the shop's drawer and UVE wallet move; the other side records its "
+                   "own exchange. Nothing to confirm."), "convert"),
     "sale": (SF.SaleForm, sh.sell, _("Sale"), "", "store"),
     "expense": (SF.ShopExpenseForm, sh.expense, _("Shop expense"),
                 _("An expense of the shop (rent, electricity, transport…), paid from its cash drawer or UVE."),
@@ -114,13 +124,14 @@ def _activity(shops, d_from, d_to):
     """Per shop: totals of the period by operation, commissions, counted services, retrievals and sales."""
     period_q = Transaction.objects.filter(business_date__gte=d_from, business_date__lte=d_to,
                                           correction__isnull=True).exclude(type=TxType.REVERSAL)
-    txq = period_q.filter(shop__in=shops)
+    txq = period_q.filter(shop__in=shops).exclude(sh.cashier_record_q()).exclude(type=TxType.SHOP_TO_SHOP,
+                                                                                is_entry=True)
     by = {}
     for row in txq.values("shop_id", "type").annotate(n=Count("id"), amt=Sum("amount"), com=Sum("commission")):
         d = by.setdefault(row["shop_id"], {})
         d[row["type"]] = row
     # transfers received from other shops, on the receiving shop's line
-    for row in period_q.filter(type=TxType.SHOP_TO_SHOP, dest_account__shop__in=shops) \
+    for row in period_q.filter(sh.shop_received_q(shops)) \
             .values("dest_account__shop_id").annotate(n=Count("id"), amt=Sum("amount")):
         by.setdefault(row["dest_account__shop_id"], {})[RECEIVED] = dict(row, com=None)
     svc = {}
@@ -255,6 +266,9 @@ def shop_op(request, op):
                                 _("The shop rate is not set yet."))
     if op == "sale":
         return render(request, "core/shop/sale.html", {"form": form})
+    if op == "exchange":
+        return render(request, "core/exchange_form.html", {"form": form, "title": title, "intro": intro,
+                                                           "icon": icon})
     if op == "entry":
         return render(request, "core/entry_receive.html", {"form": form, "title": title, "intro": intro,
                                                            "icon": icon, "shop_entry": True})
@@ -281,8 +295,33 @@ def desk_to_shop(request):
             return resp
     return render(request, "core/entry_form.html", {
         "form": form, "title": _("Transfer to a shop"), "icon": "transfer",
-        "intro": _("Cash and / or UVE sent from your desk to a shop, in one record. The shop sees it in its "
-                   "entries.")})
+        "intro": _("Cash and / or UVE sent from your desk to a shop. Only your account goes down; the shop is not "
+                   "notified and records what it received as an entry.")})
+
+
+@roles_required(R.CASHIER, R.SUPERADMIN)
+def desk_exchange(request):
+    """Cashier side: stock exchange (cash ↔ UVE) with a shop or another cashier."""
+    from .base import acting_cashier
+
+    acting = acting_cashier(request) if request.user.is_superadmin else None
+    if request.user.is_superadmin and acting is None:
+        return redirect(f"/act-as/?next={request.path}")
+    form = SF.DeskExchangeForm(acting or request.user, request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        resp = run_service(
+            request, form, lambda: ops.stock_exchange(request.user, idempotency_key=form.cleaned_data["idem"],
+                                                      acting_for=acting, **form.params()),
+            success=lambda t: _("%(type)s %(ref)s recorded: %(amt)s FCFA.") % {
+                "type": t.display_type, "ref": t.reference, "amt": fmt(t.amount)},
+            on_success=lambda t: redirect("txn_detail", pk=t.pk))
+        if resp:
+            return resp
+    return render(request, "core/exchange_form.html", {
+        "form": form, "title": _("Stock exchange (cash ↔ UVE)"), "icon": "convert",
+        "intro": _("Exchange with a shop or another cashier: give UVE and receive the same amount in cash, or give "
+                   "cash and receive UVE. Only your drawer and UVE wallet move; the other side records its own "
+                   "exchange. Nothing to confirm.")})
 
 
 @roles_required(*SHOP_DESK)

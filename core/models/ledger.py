@@ -212,6 +212,8 @@ class TxType(models.TextChoices):
     FLOAT_EXCHANGE = "FLOAT_EXCHANGE", _("Float exchanged for UVE")
     SHOP_POS_UVE_OUT = "SHOP_POS_UVE_OUT", _("Shop: UVE sent to an agent / POS")
     SHOP_POS_UVE_IN = "SHOP_POS_UVE_IN", _("Shop: UVE received from an agent / POS")
+    SHOP_EXCHANGE = "SHOP_EXCHANGE", _("Shop: stock exchange (cash ↔ UVE)")
+    STOCK_EXCHANGE = "STOCK_EXCHANGE", _("Stock exchange (cash ↔ UVE)")
 
 
 class Product(models.TextChoices):
@@ -366,6 +368,9 @@ class Transaction(models.Model):
                     TxType.CAPITAL_MOVE: _("Entry from a company account"),
                     TxType.DESK_TO_SHOP: _("Entry from a cashier"), TxType.SHOP_TO_SHOP: _("Entry from a shop"),
                     TxType.CAPITAL_IN: _("Entry from outside")}.get(self.type, _("Entry"))
+        if self.type in (TxType.SHOP_EXCHANGE, TxType.STOCK_EXCHANGE):
+            return _("Stock exchange: gave cash, received UVE") if self.product == "CASH" else \
+                _("Stock exchange: gave UVE, received cash")
         if self.type == TxType.SUPPLY:
             return _("Supply to POS") if self.supply_channel == "POS" else _("Supply to agent")
         if self.type == TxType.FLOAT_EXCHANGE and self.counterparty_id:

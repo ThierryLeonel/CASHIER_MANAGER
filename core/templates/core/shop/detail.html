@@ -29,6 +29,8 @@
   <a class="qa" href="{% url 'shop_retrieve' %}"><span class="qa-ic">{% icon "users" 22 %}</span><strong>{% trans "SIM retrieval" %}</strong><span class="d">{% trans "Person and SIM registered" %}</span></a>
   {% endif %}
   <a class="qa" href="{% url 'shop_op' 'to_cashier' %}"><span class="qa-ic">{% icon "transfer" 22 %}</span><strong>{% trans "Transfer to a cashier" %}</strong><span class="d">{% trans "Cash and / or UVE" %}</span></a>
+  <a class="qa" href="{% url 'shop_op' 'agent_payback' %}"><span class="qa-ic">{% icon "payment" 22 %}</span><strong>{% trans "An agent pays the company" %}</strong><span class="d">{% trans "Cash and / or UVE" %}</span></a>
+  <a class="qa" href="{% url 'shop_op' 'exchange' %}"><span class="qa-ic">{% icon "convert" 22 %}</span><strong>{% trans "Stock exchange" %}</strong><span class="d">{% trans "Cash ↔ UVE with a cashier or a shop" %}</span></a>
   <a class="qa" href="{% url 'shop_op' 'to_shop' %}"><span class="qa-ic">{% icon "store" 22 %}</span><strong>{% trans "Transfer to another shop" %}</strong><span class="d">{% trans "Cash and / or UVE" %}</span></a>
   <a class="qa" href="{% url 'shop_op' 'pos_uve_out' %}"><span class="qa-ic">{% icon "supply" 22 %}</span><strong>{% trans "Send UVE" %}</strong><span class="d">{% trans "To an agent or POS" %}</span></a>
   <a class="qa" href="{% url 'shop_op' 'pos_uve_in' %}"><span class="qa-ic">{% icon "payment" 22 %}</span><strong>{% trans "Receive UVE" %}</strong><span class="d">{% trans "From an agent or POS" %}</span></a>

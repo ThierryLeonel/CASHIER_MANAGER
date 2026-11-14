@@ -77,6 +77,21 @@ class AgentDealForm(ShopForm):
             del self.fields["pay"]
 
 
+class ShopAgentPaybackForm(ShopForm):
+    """A commercial agent pays what he owes the company into the shop: the shop records it itself."""
+
+    agent = CustomerField(label=_("Commercial agent"), kind=Counterparty.Kind.AGENT)
+    cash = MoneyField(label=_("Cash"), required=False)
+    uve = MoneyField(label=_("UVE"), required=False)
+    description = forms.CharField(label=_("Note"), required=False, max_length=255)
+
+    def clean(self):
+        cd = super().clean()
+        if not cd.get("cash") and not cd.get("uve"):
+            self.add_error("cash", _("Enter the amount received in cash and / or UVE."))
+        return cd
+
+
 class PosUveForm(ShopForm):
     """UVE sent to, or received from, a commercial agent or a POS."""
 
@@ -543,4 +558,61 @@ class PurchaseForm(ShopForm):
         d = super().params()
         for k in ("category", "quantity"):
             d.pop(k, None)
+        return d
+
+
+def _exchange_fields(form, user, own_shop_id=None, own_desk_id=None):
+    from core.services.operations import transfer_desks
+
+    form.fields["partner"] = forms.ChoiceField(label=_("Exchange with"), widget=forms.RadioSelect, initial="DESK",
+                                               choices=[("DESK", _("A cashier")), ("SHOP", _("A shop"))])
+    form.fields["desk"] = forms.ModelChoiceField(label=_("Cashier desk (subzone)"), required=False,
+                                                 queryset=transfer_desks().exclude(pk=own_desk_id or 0))
+    form.fields["partner_shop"] = forms.ModelChoiceField(label=_("Shop"), required=False,
+                                                         queryset=Shop.objects.filter(active=True)
+                                                         .exclude(pk=own_shop_id or 0))
+    form.fields["give"] = forms.ChoiceField(label=_("What you give"), widget=forms.RadioSelect, initial="UVE",
+                                            choices=[("UVE", _("I give UVE and receive cash")),
+                                                     ("CASH", _("I give cash and receive UVE"))])
+    form.fields["amount"] = MoneyField(label=_("Amount (FCFA)"))
+    form.fields["description"] = forms.CharField(label=_("Note"), required=False, max_length=255)
+
+
+def _exchange_clean(form, cd):
+    if cd.get("partner") == "DESK" and not cd.get("desk"):
+        form.add_error("desk", _("Choose the other cashier's desk."))
+    if cd.get("partner") == "SHOP" and not cd.get("partner_shop"):
+        form.add_error("partner_shop", _("Choose the other shop."))
+    return cd
+
+
+class ShopExchangeForm(ShopForm):
+    """Stock exchange of the shop with a cashier or another shop (cash ↔ UVE)."""
+
+    def __init__(self, user, *args, **kwargs):
+        super().__init__(user, *args, **kwargs)
+        _exchange_fields(self, user, own_shop_id=user.shop_id)
+
+    def clean(self):
+        return _exchange_clean(self, super().clean())
+
+
+class DeskExchangeForm(forms.Form):
+    """Cashier side: stock exchange with a shop or another cashier (cash ↔ UVE)."""
+
+    idem = forms.UUIDField(widget=forms.HiddenInput)
+
+    def __init__(self, user, *args, **kwargs):
+        self.user = user
+        super().__init__(*args, **kwargs)
+        if not self.is_bound:
+            self.initial.setdefault("idem", uuid.uuid4())
+        _exchange_fields(self, user, own_desk_id=user.subzone_id)
+
+    def clean(self):
+        return _exchange_clean(self, super().clean())
+
+    def params(self):
+        d = dict(self.cleaned_data)
+        d.pop("idem", None)
         return d
