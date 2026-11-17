@@ -4707,6 +4707,10 @@ msgstr "Rien d'enregistré pour l'instant."
 msgid "Nothing waiting."
 msgstr "Rien en attente."
 
+#, python-format
+msgid "Nothing was cleared: %(why)s"
+msgstr "Rien n'a été vidé : %(why)s"
+
 msgid "Nothing was imported. Fix the rows below and upload the file again."
 msgstr ""
 "Rien n'a été importé. Corrigez les lignes ci-dessous et chargez le fichier à"

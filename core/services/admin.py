@@ -292,8 +292,9 @@ def _clear_agent_portal(agent=None):
     return counts
 
 
-def _delete_txn_ids(ids):
-    """Delete these ledger transactions together with their correction rows (all or nothing; balances checked)."""
+def _delete_txn_ids(ids, check=True):
+    """Delete these ledger transactions together with their correction rows (all or nothing; balances checked,
+    except when clearing data: a wholesale clean-up may leave a drawer below zero — that is what remains)."""
     ids = set(ids)
     corrs = Correction.objects.filter(Q(original_id__in=ids) | Q(reversal_txn_id__in=ids)
                                       | Q(replacement_txn_id__in=ids))
@@ -307,7 +308,8 @@ def _delete_txn_ids(ids):
     _release_shop_rows(ids)
     Entry.objects.filter(transaction_id__in=ids).delete()
     _sql_delete_transactions("id = ANY(%s)", [ids])
-    _check_assets(acct_ids, before)
+    if check:
+        _check_assets(acct_ids, before)
     return len(ids)
 
 
@@ -340,12 +342,14 @@ def _clear_counterparties(kind):
         if not more:
             break
         ids |= more
-    counts["transactions"] = _delete_txn_ids(ids)
+    counts["transactions"] = _delete_txn_ids(ids, check=False)
     accts.delete()
     if kind == "AGENT":
         from core.models import AgentDeclaration
 
         AgentDeclaration.objects.filter(agent_id__in=cp_ids).delete()
+        # a market supervisor keeps his login: only the link to his own agent account (SIM) goes
+        User.objects.filter(counterparty_id__in=cp_ids).exclude(role=User.Role.AGENT).update(counterparty=None)
         users = User.objects.filter(counterparty_id__in=cp_ids)
         counts["agent_logins"] = users.count()
         AuditEvent.objects.filter(user__in=users).update(user=None)
@@ -362,7 +366,8 @@ def _clear_user_records(target):
 
     AgentDeclaration.objects.filter(Q(recorded_by=target) | Q(agent_id=target.counterparty_id or 0)).delete()
     counts = {"transactions": _delete_txn_ids(
-        Transaction.objects.filter(Q(entered_by=target) | Q(cashier=target)).values_list("id", flat=True))}
+        Transaction.objects.filter(Q(entered_by=target) | Q(cashier=target)).values_list("id", flat=True),
+        check=False)}
     counts["shop_shifts"] = ShopShift.objects.filter(user=target).count()
     ShopShift.objects.filter(user=target).delete()
     counts["service_counts"] = ServiceCount.objects.filter(recorded_by=target).count()
@@ -452,15 +457,11 @@ def clear_data(user, *, scope, password, confirm_text, agent=None, target_user=N
             for c in corrs:  # a correction goes with its original, reversal and replacement
                 ids |= {c.original_id, c.reversal_txn_id} | ({c.replacement_txn_id} if c.replacement_txn_id else set())
             ids = list(ids)
-            acct_ids = list(Entry.objects.filter(transaction_id__in=ids).values_list("account_id", flat=True)
-                            .distinct())
             counts["transactions"] = len(ids)
-            before = asset_balances(acct_ids)
             Discrepancy.objects.filter(correction__in=corrs).update(correction=None)
             corrs.delete()
             Entry.objects.filter(transaction_id__in=ids).delete()
             _sql_delete_transactions("id = ANY(%s)", [ids])
-            _check_assets(acct_ids, before)
             AuditEvent.objects.create(user=user, action="data_cleared", detail={"scope": scope, **counts})
         return dict(counts)
     with admin_override():
@@ -485,6 +486,7 @@ def clear_data(user, *, scope, password, confirm_text, agent=None, target_user=N
             counts["cash_managers"] = CashManager.objects.count()
             AuditEvent.objects.filter(user__role=User.Role.AGENT).update(user=None)
             User.objects.filter(role=User.Role.AGENT).delete()
+            User.objects.filter(counterparty__isnull=False).update(counterparty=None)  # market supervisors' SIM link
             Account.objects.filter(kind__in=[Account.Kind.CUSTOMER, Account.Kind.CASH_MANAGER]).delete()
             Account.objects.filter(kind=Account.Kind.SHOP_PAYABLE).delete()  # shops' positions with agents
             Counterparty.objects.update(microzone=None)

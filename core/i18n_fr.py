@@ -1856,6 +1856,7 @@ FR = {
     'matches': 'correspond',
     'There is a difference: the note is required. Explain it before closing.': 'Il y a un écart : la note est obligatoire. Expliquez-le avant de clôturer.',
     # commercial agent portal
+    "Nothing was cleared: %(why)s": "Rien n'a été vidé : %(why)s",
     '%(ref)s is already paid to the cashier.': '%(ref)s est déjà payé au caissier.',
     '%(ref)s: %(amt)s FCFA UVE sent to the cashier of %(desk)s for %(agent)s.': "%(ref)s : %(amt)s FCFA d'UVE envoyés au caissier de %(desk)s pour %(agent)s.",
     'Agent payments': "Paiements d'agents",

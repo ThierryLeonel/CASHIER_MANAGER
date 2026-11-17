@@ -654,3 +654,10 @@ Every transaction stores its **recording cashier** (`Transaction.cashier`), and 
 - `test_clear_all.py` records every kind of row (pay now, stock exchange, entries, declarations, initial capital,
   agent paybacks at a shop, credit with an agent), then clears each option alone and several together through the
   web page.
+- Second clear fix, found by running every clear option on a copy of the large demo database:
+  - "Everything" / agents list failed when a market supervisor's login was linked to his own agent account
+    (ProtectedError → 500). Now that link is removed and his login is kept.
+  - Clearing could stop on "would make a drawer negative". The balance check is skipped when clearing: a wholesale
+    clean-up leaves what remains.
+  - The clear page never shows a bare 500 any more: any unexpected error is logged and shown as "Nothing was
+    cleared: …", with the reason, and nothing is half-deleted.

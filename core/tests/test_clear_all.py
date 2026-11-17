@@ -38,6 +38,9 @@ class ClearEverything(OrgMixin, TestCase):
         ag.declare(au, kind="OPENING", recv_cash=D(1000))
         ag.request_payback(au, shop=shop, cash=D(1000))
         self.agent_user = au
+        own = Counterparty.objects.create(kind="AGENT", business_sim="655001122", name="Supervisor SIM")
+        self.mk = User.objects.create_user("mkclear", password=PW, role=User.Role.MARKET,
+                                           subzone=self.p1.microzone.subzone, counterparty=own)
 
     def _run(self, scopes, **kw):
         adm.clear_many(self.admin, scopes=scopes, password=PW, confirm_text="DELETE", **kw)
@@ -60,3 +63,7 @@ class ClearEverything(OrgMixin, TestCase):
         self.assertIn(r.status_code, (200, 302))
         self.assertFalse(Transaction.objects.exists())
         self.assertFalse(Counterparty.objects.filter(kind__in=["POS", "AGENT"]).exists())
+        self.mk.refresh_from_db()
+        self.assertIsNone(self.mk.counterparty_id)  # the supervisor keeps his login
+        r = c.post("/administration/clear/", {"scope": ["everything"], "password": PW, "confirm_text": "DELETE"})
+        self.assertIn(r.status_code, (200, 302))

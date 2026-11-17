@@ -113,6 +113,11 @@ def clear_data(request):
             return redirect("admin_home")
         except BusinessError as e:
             form.add_error(e.field if e.field in form.fields else None, e.message)
+        except Exception as e:  # noqa: BLE001 - never a bare error page: nothing was cleared, say why
+            import logging
+
+            logging.getLogger("core").exception("clear data failed")
+            form.add_error(None, _("Nothing was cleared: %(why)s") % {"why": f"{type(e).__name__}: {str(e)[:300]}"})
     return render(request, "core/admin_clear.html", {"form": form})
 
 
