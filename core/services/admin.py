@@ -275,17 +275,20 @@ CLEAR_SCOPES = ("transactions", "everything", "shops", "agents", "user", "pos_li
 def _clear_agent_portal(agent=None):
     """The commercial agents' own records with their POS and clients (supplies, client payments, transfers between
     agents, float exchanges, paybacks). Company ledger entries — office supplies and confirmed payments — stay."""
-    from core.models import AgentClientEntry, AgentExchange, AgentPayback
+    from core.models import AgentClientEntry, AgentDeclaration, AgentExchange, AgentPayback
 
     entries, paybacks, exchanges = AgentClientEntry.objects.all(), AgentPayback.objects.all(), \
         AgentExchange.objects.all()
+    declarations = AgentDeclaration.objects.all()
     if agent is not None:
         entries, paybacks, exchanges = entries.filter(agent=agent), paybacks.filter(agent=agent), \
             exchanges.filter(agent=agent)
-    counts = {"agent_records": entries.count() + paybacks.count() + exchanges.count()}
+        declarations = declarations.filter(agent=agent)
+    counts = {"agent_records": entries.count() + paybacks.count() + exchanges.count() + declarations.count()}
     entries.delete()
     paybacks.delete()
     exchanges.delete()
+    declarations.delete()  # their daily declarations (and initial capital)
     return counts
 
 
@@ -340,6 +343,9 @@ def _clear_counterparties(kind):
     counts["transactions"] = _delete_txn_ids(ids)
     accts.delete()
     if kind == "AGENT":
+        from core.models import AgentDeclaration
+
+        AgentDeclaration.objects.filter(agent_id__in=cp_ids).delete()
         users = User.objects.filter(counterparty_id__in=cp_ids)
         counts["agent_logins"] = users.count()
         AuditEvent.objects.filter(user__in=users).update(user=None)
@@ -352,6 +358,9 @@ def _clear_counterparties(kind):
 def _clear_user_records(target):
     """Everything one user recorded: ledger entries he entered (or that belong to his desk as cashier), his shifts,
     services counted and SIM retrievals; for a commercial agent, his portal records."""
+    from core.models import AgentDeclaration
+
+    AgentDeclaration.objects.filter(Q(recorded_by=target) | Q(agent_id=target.counterparty_id or 0)).delete()
     counts = {"transactions": _delete_txn_ids(
         Transaction.objects.filter(Q(entered_by=target) | Q(cashier=target)).values_list("id", flat=True))}
     counts["shop_shifts"] = ShopShift.objects.filter(user=target).count()
@@ -424,6 +433,14 @@ def clear_data(user, *, scope, password, confirm_text, agent=None, target_user=N
                 "scope": scope, "agent": agent.name if agent else None,
                 "user": target_user.username if target_user else None, **counts})
         return dict(counts)
+    if scope in ("shops", "transactions", "everything"):
+        from core.models import PaybackForward
+
+        PaybackForward.objects.all().delete()  # "pay now" links go with the shop transactions they join
+    if scope == "everything":
+        from core.models import AgentDeclaration
+
+        AgentDeclaration.objects.all().delete()
     if scope == "shops":
         with admin_override():
             counts.update(_clear_shop_operations())

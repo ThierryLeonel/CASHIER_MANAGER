@@ -645,3 +645,12 @@ Every transaction stores its **recording cashier** (`Transaction.cashier`), and 
   - Check boxes in the transactions list for the super admin, "Select all", then "Delete selected".
   - A confirmation page lists them and asks for a reason. Each is deleted with its linked rows and checked; any
     that cannot be deleted are listed with why.
+
+## Fix: Clear data error 500
+- Clearing agents (agents list, one agent's portal records, one user, everything) failed with a 500. The new daily
+  declarations (`AgentDeclaration`, PROTECT on agent and recorder) blocked deleting the agents and their logins.
+- Fixed: declarations go with the agent / agent list / user / everything they belong to. The "PAY NOW" links
+  (`PaybackForward`) go with the shop / all transactions they join.
+- `test_clear_all.py` records every kind of row (pay now, stock exchange, entries, declarations, initial capital,
+  agent paybacks at a shop, credit with an agent), then clears each option alone and several together through the
+  web page.
