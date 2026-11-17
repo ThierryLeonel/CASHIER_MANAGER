@@ -38,6 +38,11 @@ class ClearEverything(OrgMixin, TestCase):
         ag.declare(au, kind="OPENING", recv_cash=D(1000))
         ag.request_payback(au, shop=shop, cash=D(1000))
         self.agent_user = au
+        # an older entry answered "no payback" (TransferNoPayback points at it)
+        from core.models import TransferNoPayback
+
+        old = ops.record_entry(self.c_f2, source="DESK", desk=self.c_f1.subzone, product="CASH", amount=D(500))
+        TransferNoPayback.objects.create(transfer=old, decided_by=self.c_f2)
         own = Counterparty.objects.create(kind="AGENT", business_sim="655001122", name="Supervisor SIM")
         self.mk = User.objects.create_user("mkclear", password=PW, role=User.Role.MARKET,
                                            subzone=self.p1.microzone.subzone, counterparty=own)

@@ -75,7 +75,15 @@ def _check_assets(account_ids, before=None):
 def _sql_delete_transactions(where, params):
     """Raw delete: the rows reference each other (reversal -> original), and
     PostgreSQL checks those foreign keys at commit, so order does not matter."""
+    from core.models import PaybackForward, TransferNoPayback
+
+    sub = f"SELECT id FROM core_transaction WHERE {where}"
     with connection.cursor() as cur:
+        # rows that only point at these transactions go with them (a raw delete skips Django's cascades)
+        for model, cols in ((TransferNoPayback, ("transfer_id",)), (PaybackForward, ("payback_id", "transfer_id"))):
+            for col in cols:
+                cur.execute(f"DELETE FROM {model._meta.db_table} WHERE {col} IN ({sub})", params)
+        cur.execute(f"UPDATE core_transaction SET transit_match_id = NULL WHERE transit_match_id IN ({sub})", params)
         cur.execute(f"DELETE FROM core_transaction WHERE {where}", params)
 
 

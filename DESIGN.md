@@ -661,3 +661,8 @@ Every transaction stores its **recording cashier** (`Transaction.cashier`), and 
     clean-up leaves what remains.
   - The clear page never shows a bare 500 any more: any unexpected error is logged and shown as "Nothing was
     cleared: …", with the reason, and nothing is half-deleted.
+- Third clear fix: "no payback" answers on older entries (`TransferNoPayback`, Django CASCADE) and "pay now" links
+  blocked the raw SQL delete of transactions (a raw delete skips Django's cascades), giving an IntegrityError.
+  `_sql_delete_transactions` now first deletes the rows that only point at the transactions being deleted
+  (TransferNoPayback, PaybackForward) and clears `transit_match`. Covered in `test_clear_all.py`; the test fails
+  without the fix.
