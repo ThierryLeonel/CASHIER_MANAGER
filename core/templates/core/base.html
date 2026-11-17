@@ -56,6 +56,7 @@
     <div class="side-group">{% trans "Record" %}</div>
     {% if user.is_superadmin %}<a href="{% url 'act_as' %}" class="acting{% if u == 'act_as' %} on{% endif %}">{% icon "users" %}<span>{% if acting_cashier %}{% blocktrans with c=acting_cashier %}For: {{ c }}{% endblocktrans %}{% else %}{% trans "Choose a cashier…" %}{% endif %}</span></a>{% endif %}
     <a href="{% url 'supply_agent' %}" class="{% if u == 'supply_agent' %}on{% endif %}">{% icon "supply" %}<span>{% trans "Supply to agent" %}</span></a>
+    <a href="{% url 'supply_several' %}" class="{% if u == 'supply_several' %}on{% endif %}">{% icon "supply" %}<span>{% trans "Supply several agents" %}</span></a>
     <a href="{% url 'supply_pos' %}" class="{% if u == 'supply_pos' %}on{% endif %}">{% icon "store" %}<span>{% trans "Supply to POS" %}</span></a>
     <a href="{% url 'collection_new' %}" class="{% if u == 'collection_new' %}on{% endif %}">{% icon "payment" %}<span>{% trans "Payment" %}</span></a>
     <a href="{% url 'destockage_new' %}" class="{% if u == 'destockage_new' %}on{% endif %}">{% icon "destock" %}<span>{% trans "Destockage" %}</span></a>
@@ -117,10 +118,12 @@
     <a href="{% url 'report' 'pos_stock' %}" class="{% if request.path == '/reports/pos_stock/' %}on{% endif %}">{% icon "alert" %}<span>{% trans "POS stock" %}</span></a>
     <a href="{% url 'report' 'pos_coverage' %}" class="{% if request.path == '/reports/pos_coverage/' %}on{% endif %}">{% icon "chart" %}<span>{% trans "POS supplied" %}</span></a>
     {% if not user.is_market %}<a href="{% url 'report' 'supply_due' %}" class="{% if request.path == '/reports/supply_due/' %}on{% endif %}">{% icon "wallet" %}<span>{% trans "Supplies due" %}</span></a>
-    <a href="{% url 'report' 'statement' %}" class="{% if request.path == '/reports/statement/' %}on{% endif %}">{% icon "statement" %}<span>{% trans "Agent / POS statement" %}</span></a>{% else %}{% if not user.sells %}<a href="{% url 'agent_declaration' %}" class="{% if u == 'agent_declaration' %}on{% endif %}">{% icon "list" %}<span>{% trans "My daily declaration" %}</span></a>{% endif %}{% endif %}
+    <a href="{% url 'report' 'statement' %}" class="{% if request.path == '/reports/statement/' %}on{% endif %}">{% icon "statement" %}<span>{% trans "Agent / POS statement" %}</span></a>
+    <a href="{% url 'report' 'daily_debt' %}" class="{% if request.path == '/reports/daily_debt/' %}on{% endif %}">{% icon "calendar" %}<span>{% trans "What agents owe daily" %}</span></a>{% else %}{% if not user.sells %}<a href="{% url 'agent_declaration' %}" class="{% if u == 'agent_declaration' %}on{% endif %}">{% icon "list" %}<span>{% trans "My daily declaration" %}</span></a>{% endif %}{% endif %}
     {% if not user.is_market %}<a href="{% url 'paybacks' %}" class="{% if u == 'paybacks' %}on{% endif %}">{% icon "payment" %}<span>{% trans "Agent paybacks" %}</span></a>{% endif %}
     <a href="{% url 'declarations' %}" class="{% if u == 'declarations' %}on{% endif %}">{% icon "list" %}<span>{% trans "Daily declarations" %}</span></a>
-    {% if not user.is_market %}<a href="{% url 'agent_capital' %}" class="{% if u == 'agent_capital' %}on{% endif %}">{% icon "wallet" %}<span>{% trans "Agents' capital" %}</span></a>{% endif %}
+    {% if not user.is_market %}<a href="{% url 'agent_capital' %}" class="{% if u == 'agent_capital' %}on{% endif %}">{% icon "wallet" %}<span>{% trans "Agents' capital" %}</span></a>
+    <a href="{% url 'agent_openings' %}" class="{% if u == 'agent_openings' %}on{% endif %}">{% icon "key" %}<span>{% trans "Agents' opening balances" %}</span></a>{% endif %}
     <a href="{% url 'txn_list' %}" class="{% if u == 'txn_list' or u == 'txn_detail' or u == 'receipt' %}on{% endif %}">{% icon "list" %}<span>{% if user.is_cashier %}{% trans "My records" %}{% else %}{% trans "Transactions" %}{% endif %}</span></a>
     <a href="{% url 'reports' %}" class="{% if u == 'reports' %}on{% endif %}">{% icon "chart" %}<span>{% trans "All reports" %}</span></a>
     <a href="{% url 'call_database' %}">{% icon "download" %}<span>{% trans "Download call database" %}</span></a>

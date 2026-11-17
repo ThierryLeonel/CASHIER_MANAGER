@@ -682,6 +682,45 @@ def record_opening_balance(user, *, account, amount, business_date=None, descrip
         return post([spec], ctx, idempotency_key)[0]
 
 
+def record_agent_openings(user, *, items, business_date=None, description="", idempotency_key=None):
+    """Opening balances of several commercial agents at once: items = [(agent, signed amount)], + the agent owes
+    the company, - the company owes the agent. All or nothing."""
+    perm.require_role(user, perm.AGENT_OPENING_ROLES)
+    if not items:
+        raise BusinessError(_("Enter at least one agent's opening balance."))
+    key = idempotency_key or uuid.uuid4()
+    ctx = Ctx(entered_by=user, cashier=None, day=None, business_date=business_date or douala_today())
+    out = []
+    with transaction.atomic():
+        for agent, amount in items:
+            acct = agent.account
+            lock_accounts([acct.id])
+            try:
+                spec = build_opening(ctx, account=acct, amount=amount, description=description)
+            except BusinessError as e:
+                raise BusinessError(f"{agent.name}: {e.message}")
+            out.append(post([spec], ctx, uuid.uuid5(key, f"opening-{agent.pk}"))[0])
+    return out
+
+
+def record_supply_batch(user, *, items, accounts=None, description="", idempotency_key=None, acting_for=None):
+    """One cashier supplies several commercial agents at once: items = [(agent, {product: amount})]. Each agent gets
+    his own supply record (and receipt); all or nothing."""
+    if not items:
+        raise BusinessError(_("Add at least one commercial agent."))
+    key = idempotency_key or uuid.uuid4()
+    out = []
+    with transaction.atomic():
+        for i, (agent, parts) in enumerate(items):
+            try:
+                out.append(record_supplies(user, customer=agent, parts=parts, description=description,
+                                           idempotency_key=uuid.uuid5(key, f"row-{i}"), acting_for=acting_for,
+                                           accounts=accounts))
+            except BusinessError as e:
+                raise BusinessError(f"{agent.name}: {e.message}")
+    return out
+
+
 # ---------------------------------------------------------------- responsibility transfers
 TRANSFERABLE_TYPES = (TxType.SUPPLY, TxType.DESTOCKAGE, TxType.OPENING_BALANCE)
 

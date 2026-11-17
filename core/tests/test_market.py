@@ -371,8 +371,8 @@ class AgentCapitalTests(OrgMixin, TestCase):
         bal = ops.customer_balance(self.a1)
         c = self.client_class()
         self.assertTrue(c.login(username="manager", password=PW))
-        r = c.post("/agents/capital/", {"idem": str(uuid.uuid4()), "agent": self.a1.business_sim, "movement": "GIVE",
-                                        "amount": "500 000"})
+        r = c.post("/agents/capital/", {"idem": str(uuid.uuid4()), "r0-agent": self.a1.business_sim,
+                                        "movement": "GIVE", "r0-amount": "500 000"})
         self.assertEqual(r.status_code, 302, r.content[:2000])
         self.assertEqual(ag.capital_of(self.a1), D(500000))
         self.assertEqual(ops.customer_balance(self.a1), bal)  # the trading balance does not move
@@ -405,3 +405,116 @@ class AgentCapitalTests(OrgMixin, TestCase):
                                           commit=True)
             self.assertTrue(ok, res)
         self.assertEqual(ag.capital_of(self.a1), D(450000))
+
+
+class BatchSupplyCapitalOpeningTests(OrgMixin, TestCase):
+    """Several agents in one form: supplies by a cashier, capital, opening balances; and what is owed day by day."""
+
+    def setUp(self):
+        self.make_org()
+        self.fund_all()
+
+    def login(self, username):
+        c = self.client_class()
+        self.assertTrue(c.login(username=username, password=PW))
+        return c
+
+    def test_cashier_supplies_several_agents(self):
+        from core.models import Transaction, TxType
+        from core.services import operations as ops
+
+        c = self.login("cashier.fako1")
+        self.assertContains(c.get("/supply/several/"), "Supply several agents")
+        before = {a.pk: ops.customer_balance(a) for a in (self.a1, self.a2, self.a3)}
+        n0 = Transaction.objects.filter(type=TxType.SUPPLY).count()
+        # one wrong row (a POS, not an agent): nothing at all is recorded
+        r = c.post("/supply/several/", {"idem": str(uuid.uuid4()), "uve": "40 000", "r0-agent": self.a1.business_sim,
+                                        "r1-agent": self.p1.business_sim, "r2-agent": self.a3.business_sim})
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(Transaction.objects.filter(type=TxType.SUPPLY).count(), n0)
+        # same amount for each, one agent with his own amount
+        idem = str(uuid.uuid4())
+        data = {"idem": idem, "uve": "300 000", "r0-agent": self.a1.business_sim, "r1-agent": self.a2.business_sim,
+                "r2-agent": self.a3.business_sim, "r2-uve": "100 000", "r2-cash": "50 000"}
+        r = c.post("/supply/several/", data)
+        self.assertEqual(r.status_code, 302, r.content[:3000])
+        self.assertEqual(ops.customer_balance(self.a1) - before[self.a1.pk], D(300000))
+        self.assertEqual(ops.customer_balance(self.a2) - before[self.a2.pk], D(300000))
+        self.assertEqual(ops.customer_balance(self.a3) - before[self.a3.pk], D(150000))
+        self.assertEqual(Transaction.objects.filter(type=TxType.SUPPLY).count(), n0 + 4)
+        c.post("/supply/several/", data)  # sent twice: recorded once
+        self.assertEqual(Transaction.objects.filter(type=TxType.SUPPLY).count(), n0 + 4)
+        # all or nothing in the service too: the second agent's supply is refused, the first is undone
+        from core.services.errors import BusinessError
+
+        n1 = Transaction.objects.filter(type=TxType.SUPPLY).count()
+        with self.assertRaises(BusinessError):
+            ops.record_supply_batch(self.c_f1, items=[(self.a1, {"UVE": D(1000)}), (self.a2, {})],
+                                    idempotency_key=uuid.uuid4())
+        self.assertEqual(Transaction.objects.filter(type=TxType.SUPPLY).count(), n1)
+        # a row without agent is refused
+        r = c.post("/supply/several/", {"idem": str(uuid.uuid4()), "r0-uve": "1 000"})
+        self.assertContains(r, "Choose the commercial agent.")
+
+    def test_capital_for_ten_agents_at_once(self):
+        from core.services import agents as ag
+
+        extra = [Counterparty.objects.create(kind=Counterparty.Kind.AGENT, business_sim=f"6990000{i:02d}",
+                                             name=f"Agent batch {i}") for i in range(7)]
+        agents = [self.a1, self.a2, self.a3] + extra
+        c = self.login("finance")
+        data = {"idem": str(uuid.uuid4()), "movement": "GIVE", "amount": "500 000"}
+        for i, a in enumerate(agents):
+            data[f"r{i}-agent"] = a.business_sim
+        r = c.post("/agents/capital/", data)
+        self.assertEqual(r.status_code, 302, r.content[:3000])
+        for a in agents:
+            self.assertEqual(ag.capital_of(a), D(500000))
+        c.post("/agents/capital/", data)  # twice: once
+        self.assertEqual(sum(ag.capital_map().values()), D(5000000))
+
+    def test_agent_opening_balances_and_daily_debt(self):
+        from core.services import agents as ag
+        from core.services import operations as ops
+
+        c = self.login("manager")
+        page = c.get("/agents/opening-balances/")
+        self.assertContains(page, "Agents without an opening balance")
+        r = c.post("/agents/opening-balances/", {
+            "idem": str(uuid.uuid4()), "business_date": "2026-01-01", f"own_{self.a1.pk}": "200 000",
+            f"due_{self.a2.pk}": "50 000", f"cap_{self.a1.pk}": "1 000 000", f"own_{self.a3.pk}": ""})
+        self.assertEqual(r.status_code, 302, r.content[:3000])
+        self.assertEqual(ops.customer_balance(self.a1), D(200000))
+        self.assertEqual(ops.customer_balance(self.a2), D(-50000))
+        self.assertEqual(ag.capital_of(self.a1), D(1000000))
+        page = c.get("/agents/opening-balances/")
+        self.assertContains(page, "Recorded opening balances")
+        self.assertNotContains(page, f'name="own_{self.a1.pk}"')  # done once
+        # both sides for one agent: refused
+        r = c.post("/agents/opening-balances/", {"idem": str(uuid.uuid4()), f"own_{self.a3.pk}": "1",
+                                                 f"due_{self.a3.pk}": "1"})
+        self.assertContains(r, "Fill only one side")
+        # a cashier cannot
+        self.assertEqual(self.login("cashier.fako1").get("/agents/opening-balances/").status_code, 403)
+        # today: supplied 600 000, paid 450 000 -> owes 150 000 for today; global = 200 000 + 150 000
+        ops.record_supplies(self.c_f1, customer=self.a1, parts={"UVE": D(600000)}, idempotency_key=uuid.uuid4())
+        ops.record_payment(self.c_f1, payer=self.a1, parts={"CASH": D(450000)}, idempotency_key=uuid.uuid4())
+        s = ag.debt_today(self.a1)
+        self.assertEqual(s["today_company_supplied"], D(600000))
+        self.assertEqual(s["today_paid"], D(450000))
+        self.assertEqual(s["today_owed"], D(150000))
+        self.assertEqual(s["previous_debt"], D(200000))
+        self.assertEqual(ops.customer_balance(self.a1), D(350000))
+        rep = c.get("/reports/daily_debt/?preset=day")
+        self.assertContains(rep, "Owed for the period (supplied − paid)")
+        self.assertContains(rep, "Total payable to the company")
+        st = c.get(f"/reports/statement/?preset=all&customer_sim={self.a1.business_sim}")
+        self.assertContains(st, "What is owed, day by day")
+        self.assertContains(st, "Global debt (previous + the day)")
+        au = User.objects.get(counterparty=self.a1)
+        home = self.login(au.username).get("/")
+        self.assertContains(home, "Owed for today")
+        # the market supervisor does not get the debt report
+        mk = User.objects.filter(role=User.Role.MARKET).first()
+        if mk:
+            self.assertNotEqual(self.login(mk.username).get("/reports/daily_debt/").status_code, 200)

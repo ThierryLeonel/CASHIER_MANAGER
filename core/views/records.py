@@ -106,35 +106,122 @@ def stock_download(request):
 
 @roles_required(R.MANAGER, R.FINANCE, R.SUPERADMIN)
 def agent_capital(request):
-    """Capital given to commercial agents (payable back): record a movement; see each agent's capital, trading
-    balance and total payable to the company."""
-    from core import forms_shop as SF
+    """Capital given to commercial agents (payable back): record it for one or several agents at once (e.g. ten
+    agents who each received 500 000 FCFA); see each agent's capital, trading balance and total payable."""
+    from core import forms_batch as FB
     from core.models import AgentCapital
-    from core.services import agents as ag
 
-    form = SF.AgentCapitalForm(request.POST or None)
-    if request.method == "POST" and form.is_valid():
-        cd = form.cleaned_data
-        try:
-            c = ag.record_capital(request.user, agent=cd["agent"], movement=cd["movement"], amount=cd["amount"],
-                                  business_date=cd.get("business_date"), note=cd.get("note") or "",
-                                  idempotency_key=cd["idem"])
-        except BusinessError as e:
-            form.add_error(e.field if e.field in form.fields else None, e.message)
-        else:
-            messages.success(request, _("%(ref)s saved: %(agent)s — capital to pay back now %(c)s FCFA.") % {
-                "ref": c.reference, "agent": c.agent.name, "c": fmt(ag.capital_of(c.agent))})
-            return redirect("agent_capital")
+    data = request.POST if request.method == "POST" else None
+    form = FB.CapitalBatchForm(data)
+    rows = FB.row_forms(FB.CapitalRowForm, data)
+    if data is not None:
+        valid = [form.is_valid()] + [r.is_valid() for r in rows]
+        items = form.items(rows) if all(valid) else None
+        if items:
+            cd = form.cleaned_data
+            try:
+                done = ag.record_capital_batch(request.user, items=items, movement=cd["movement"],
+                                               business_date=cd.get("business_date"), note=cd.get("note") or "",
+                                               idempotency_key=cd["idem"])
+            except BusinessError as e:
+                form.add_error(None, e.message)
+            else:
+                messages.success(request, _("Capital saved for %(n)s agent(s): %(amt)s FCFA in total.") % {
+                    "n": len(done), "amt": fmt(sum(abs(c.amount) for c in done))})
+                return redirect("agent_capital")
     caps = ag.capital_map()
     agents = Counterparty.objects.filter(pk__in=[k for k, v in caps.items() if v]).order_by("name")
-    rows = []
+    out = []
     for a in agents:
         bal = ops.customer_balance(a)
-        rows.append({"agent": a, "capital": caps[a.pk], "balance": bal, "total": bal + caps[a.pk]})
-    tot = {k: sum((r[k] for r in rows), Decimal(0)) for k in ("capital", "balance", "total")}
+        out.append({"agent": a, "capital": caps[a.pk], "balance": bal, "total": bal + caps[a.pk]})
+    tot = {k: sum((r[k] for r in out), Decimal(0)) for k in ("capital", "balance", "total")}
     return render(request, "core/agent_capital.html", {
-        "form": form, "rows": rows, "tot": tot,
+        "form": form, "batch_rows": rows, "shown": FB.shown_rows(rows), "rows": out, "tot": tot,
         "recent": AgentCapital.objects.select_related("agent", "recorded_by")[:20], "customers": True})
+
+
+@roles_required(R.MANAGER, R.FINANCE, R.SUPERADMIN)
+def agent_openings(request):
+    """The commercial agents' opening status, many at once: what each owed the company (or the company owed him)
+    when the system started, and the capital he had received."""
+    from django.db import transaction
+
+    from core.forms import MoneyField
+    from core.services.days import douala_today
+
+    from django import forms as djforms
+
+    opening_q = Transaction.objects.filter(type=TxType.OPENING_BALANCE, opening_for_account__kind=Account.Kind.CUSTOMER,
+                                           opening_for_account__counterparty__kind=Counterparty.Kind.AGENT)
+    opened = set(opening_q.values_list("opening_for_account__counterparty_id", flat=True))
+    caps = ag.capital_map()
+    q = (request.GET.get("q") or request.POST.get("q") or "").strip()
+    agents = Counterparty.objects.filter(kind=Counterparty.Kind.AGENT, active=True).exclude(pk__in=opened) \
+        .select_related("microzone__subzone").order_by("name")
+    if q:
+        agents = agents.filter(Q(name__icontains=q) | Q(business_sim__icontains=q.replace(" ", ""))
+                               | Q(microzone__name__icontains=q) | Q(microzone__subzone__name__icontains=q))
+    total = agents.count()
+    agents = list(agents[:200])
+    money = MoneyField(required=False)
+    rows, errors = [], False
+    for a in agents:
+        r = {"agent": a, "capital_now": caps.get(a.pk) or Decimal(0), "err": ""}
+        for k in ("own", "due", "cap"):
+            raw = request.POST.get(f"{k}_{a.pk}", "") if request.method == "POST" else ""
+            r[f"{k}_raw"] = raw
+            try:
+                r[k] = money.clean(raw)
+            except djforms.ValidationError as e:
+                r[k], r["err"], errors = None, " ".join(e.messages), True
+        if r.get("own") and r.get("due"):
+            r["err"], errors = _("Fill only one side: what the agent owes, or what the company owes him."), True
+        rows.append(r)
+    bdate, note = douala_today(), (request.POST.get("note") or "").strip()
+    if request.method == "POST":
+        try:
+            from datetime import date
+
+            bdate = date.fromisoformat(request.POST.get("business_date") or "") if request.POST.get(
+                "business_date") else douala_today()
+        except ValueError:
+            messages.error(request, _("Enter a valid business date."))
+            errors = True
+        openings = [(r["agent"], r["own"] or -r["due"]) for r in rows if r.get("own") or r.get("due")]
+        capitals = [(r["agent"], r["cap"]) for r in rows if r.get("cap")]
+        if not errors and not (openings or capitals):
+            messages.error(request, _("Enter at least one agent's opening balance or capital."))
+        elif not errors:
+            try:
+                idem = uuid.UUID(request.POST.get("idem"))
+            except (TypeError, ValueError):
+                idem = uuid.uuid4()
+            try:
+                with transaction.atomic():
+                    done = ops.record_agent_openings(request.user, items=openings, business_date=bdate,
+                                                     description=note, idempotency_key=idem) if openings else []
+                    caps_done = ag.record_capital_batch(
+                        request.user, items=capitals, movement="GIVE", business_date=bdate,
+                        note=note or _("Opening capital"), idempotency_key=uuid.uuid5(idem, "capital")) \
+                        if capitals else []
+            except BusinessError as e:
+                messages.error(request, e.message)
+            except PermissionDenied as e:
+                messages.error(request, str(e))
+            else:
+                messages.success(request, _("Opening balances recorded: %(o)s · capital recorded: %(c)s.") % {
+                    "o": len(done), "c": len(caps_done)})
+                return redirect(reverse("agent_openings") + (f"?q={q}" if q else ""))
+    done = list(opening_q.select_related("opening_for_account__counterparty", "entered_by").order_by("-posted_at")[:300])
+    signs = {e.transaction_id: e.amount for e in Entry.objects.filter(transaction__in=done,
+                                                                       account__kind=Account.Kind.CUSTOMER)}
+    for t in done:
+        t.signed = signs.get(t.pk, t.amount)
+    return render(request, "core/agent_openings.html", {
+        "rows": rows, "total": total, "q": q, "done": done, "idem": uuid.uuid4(), "today": bdate, "note": note,
+        "owed": sum((t.signed for t in done if t.signed > 0 and not t.is_corrected), Decimal(0)),
+        "due": -sum((t.signed for t in done if t.signed < 0 and not t.is_corrected), Decimal(0))})
 
 
 @roles_required(*MARKET_VIEW)

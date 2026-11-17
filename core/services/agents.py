@@ -441,6 +441,27 @@ def pos_owed(agent, pos):
     return (agg["t"] or Z) + (agg["e"] or Z) + (agg["c"] or Z) - (agg["p"] or Z)
 
 
+def debt_today(cp, day=None):
+    """What the agent / POS owes for one day: supplied by the company that day − paid that day; and the debt brought
+    forward from before the day (opening balance included)."""
+    from django.db.models import Sum
+
+    from core.models import Entry
+    from core.reports.defs import PAID_TYPES, SUPPLIED_TYPES
+
+    day = day or douala_today()
+    acct = cp.account
+    base = Entry.objects.filter(account=acct)
+    s = lambda qs: qs.aggregate(x=Sum("amount"))["x"] or Z  # noqa: E731
+    today = base.filter(business_date=day)
+    supplied = s(today.filter(transaction__type__in=SUPPLIED_TYPES) | today.filter(
+        transaction__type=TxType.REVERSAL, transaction__reverses__type__in=SUPPLIED_TYPES))
+    paid = -s(today.filter(transaction__type__in=PAID_TYPES) | today.filter(
+        transaction__type=TxType.REVERSAL, transaction__reverses__type__in=PAID_TYPES))
+    return {"today_company_supplied": supplied, "today_paid": paid, "today_owed": supplied - paid,
+            "previous_debt": s(base.filter(business_date__lt=day))}
+
+
 def summary(agent):
     from .ledger import balance
 
@@ -449,7 +470,9 @@ def summary(agent):
     pend_total = sum((p.total for p in pend), Z)
     clients = clients_owing(agent)
     today = douala_today()
+    day = debt_today(agent, today)
     return {
+        **day,
         "owed_company": owed_company,
         "pending": pend.count(), "pending_total": pend_total,
         "after_pending": owed_company - pend_total,
@@ -835,6 +858,27 @@ def record_capital(user, *, agent, movement, amount, business_date=None, note=""
             "agent": agent.name, "c": fmt(capital_of(agent))}, "amount")
     return _create(AgentCapital, idempotency_key, agent=agent, amount=a if movement == "GIVE" else -a,
                    business_date=business_date or douala_today(), note=(note or "").strip(), recorded_by=user)
+
+
+def record_capital_batch(user, *, items, movement, business_date=None, note="", idempotency_key=None):
+    """Capital given to (or paid back by) several agents at once: items = [(agent, amount)]. All or nothing."""
+    import uuid
+
+    from django.db import transaction
+
+    if not items:
+        raise BusinessError(_("Add at least one commercial agent."))
+    key = idempotency_key or uuid.uuid4()
+    out = []
+    with transaction.atomic():
+        for i, (agent, amount) in enumerate(items):
+            try:
+                out.append(record_capital(user, agent=agent, movement=movement, amount=amount,
+                                          business_date=business_date, note=note,
+                                          idempotency_key=uuid.uuid5(key, f"cap-{i}")))
+            except BusinessError as e:
+                raise BusinessError(f"{agent.name}: {e.message}")
+    return out
 
 
 def set_capital(user, agent, target, note=""):

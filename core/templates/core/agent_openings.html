@@ -1,0 +1,33 @@
+{% extends "core/base.html" %}{% load i18n cashier %}
+{% block title %}{% trans "Agents' opening balances" %}{% endblock %}
+{% block topbar %}{% trans "Agents' opening balances" %}{% endblock %}
+{% block content %}
+<h1>{% trans "Agents' opening balances" %}</h1>
+<p class="small muted meta">{% trans "Where each commercial agent stood when the system started: what he owed the company, or what the company owed him, and the capital he had received. What an agent owes the company = opening balance + supplies − payments, plus his capital to pay back." %}</p>
+<div class="bal-row">
+  <div class="bal k-CASH_DRAWER"><span class="bal-label">{% trans "Opening: agents owe the company" %}</span><span class="bal-value">{{ owed|fcfa }}</span><span class="bal-unit">FCFA</span></div>
+  <div class="bal k-UVE"><span class="bal-label">{% trans "Opening: the company owes agents" %}</span><span class="bal-value">{{ due|fcfa }}</span><span class="bal-unit">FCFA</span></div>
+</div>
+<form method="get" class="panel grid" style="align-items:end"><div class="field"><label for="oq">{% trans "Find agents" %}</label><input id="oq" type="text" name="q" value="{{ q }}" placeholder="{% trans 'Name, SIM, microzone or subzone' %}"></div><button class="btn" type="submit">{% trans "Search" %}</button></form>
+<form method="post" class="panel">{% csrf_token %}
+  <input type="hidden" name="idem" value="{{ idem }}"><input type="hidden" name="q" value="{{ q }}">
+  <h2 style="margin-top:0">{% trans "Agents without an opening balance" %} <span class="muted small">({{ total }})</span></h2>
+  <div class="grid">
+    <div class="field"><label for="ob-date">{% trans "Balance as of (go-live date)" %}</label><input id="ob-date" type="date" name="business_date" value="{{ today|date:'Y-m-d' }}"></div>
+    <div class="field"><label for="ob-note">{% trans "Note" %}</label><input id="ob-note" type="text" name="note" maxlength="255" value="{{ note }}"></div>
+  </div>
+  <p class="small muted">{% trans "Fill only the agents to record; leave the others empty. For each agent fill one side only." %}</p>
+  <div class="tbl-wrap"><table class="t"><thead><tr><th>{% trans "Agent" %}</th><th class="money">{% trans "Agent owes the company" %}</th><th class="money">{% trans "Company owes the agent" %}</th><th class="money">{% trans "Capital received (to pay back)" %}</th></tr></thead>
+  <tbody>{% for r in rows %}<tr>
+    <td data-label="{% trans 'Agent' %}">{{ r.agent.name }} <span class="muted small">{{ r.agent.business_sim|sim }}{% if r.agent.microzone %} · {{ r.agent.microzone.name }}{% endif %}</span>{% if r.err %}<div class="err small">{{ r.err }}</div>{% endif %}</td>
+    <td class="money" data-label="{% trans 'Agent owes the company' %}"><input class="money" type="text" inputmode="numeric" autocomplete="off" name="own_{{ r.agent.pk }}" value="{{ r.own_raw }}" placeholder="0" aria-label="{% trans 'Agent owes the company' %} · {{ r.agent.name }}"></td>
+    <td class="money" data-label="{% trans 'Company owes the agent' %}"><input class="money" type="text" inputmode="numeric" autocomplete="off" name="due_{{ r.agent.pk }}" value="{{ r.due_raw }}" placeholder="0" aria-label="{% trans 'Company owes the agent' %} · {{ r.agent.name }}"></td>
+    <td class="money" data-label="{% trans 'Capital received (to pay back)' %}">{% if r.capital_now %}<span class="small muted">{{ r.capital_now|fcfa }}</span>{% else %}<input class="money" type="text" inputmode="numeric" autocomplete="off" name="cap_{{ r.agent.pk }}" value="{{ r.cap_raw }}" placeholder="0" aria-label="{% trans 'Capital received (to pay back)' %} · {{ r.agent.name }}">{% endif %}</td>
+  </tr>{% empty %}<tr><td colspan="4" class="muted">{% trans "Every agent already has an opening balance." %}</td></tr>{% endfor %}</tbody></table></div>
+  {% if total > rows|length %}<p class="small muted">{% blocktrans with n=rows|length %}Showing the first {{ n }}; search to find the others.{% endblocktrans %}</p>{% endif %}
+  {% if rows %}<div class="actions"><button class="btn primary" type="submit">{% trans "Record opening balances" %}</button></div>{% endif %}
+</form>
+{% if done %}<h2>{% trans "Recorded opening balances" %}</h2>
+<div class="tbl-wrap"><table class="t"><thead><tr><th>{% trans "Business date" %}</th><th>{% trans "Reference" %}</th><th>{% trans "Agent" %}</th><th>{% trans "Status" %}</th><th class="money">{% trans "Amount" %}</th><th>{% trans "By" %}</th></tr></thead>
+<tbody>{% for t in done %}<tr{% if t.is_corrected %} class="muted"{% endif %}><td>{{ t.business_date|date:"d/m/Y" }}</td><td><a href="{% url 'txn_detail' t.pk %}">{{ t.reference }}</a></td><td>{{ t.opening_for_account.counterparty.name }}</td><td>{% if t.signed > 0 %}{% trans "owes the company" %}{% else %}{% trans "the company owes him" %}{% endif %}{% if t.is_corrected %} · {% trans "corrected" %}{% endif %}</td><td class="money">{{ t.signed|absval|fcfa }}</td><td class="small">{{ t.entered_by }}</td></tr>{% endfor %}</tbody></table></div>{% endif %}
+{% endblock %}

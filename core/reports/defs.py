@@ -249,6 +249,7 @@ def statement(f):
                 Col("business_date", _("Business date"), "date"), Col("reference", _("Reference")),
                 Col("movement", _("Movement")), Col("note", _("Note")),
                 Col("given", _("Given"), "money", True), Col("returned", _("Paid back"), "money", True)], crow))
+    rep.tables.append(debt_by_day(entries, opening, cp, f))
     mcols = [
         Col("posted_at", _("Recorded at"), "datetime"),
         Col("reference", _("Reference")), Col("receipt", _("Receipt")), Col("type", _("Type")),
@@ -259,6 +260,75 @@ def statement(f):
     rep.tables.append(Table(_("Movements by day (positive = owed to company, negative balance = supply due to the agent / POS)"),
                             mcols, group_rows(rows, mcols, key=lambda r: r["business_date"],
                                               label=lambda d: d.strftime("%d/%m/%Y"), sort=lambda d: d)))
+    return rep
+
+
+def debt_by_day(entries, opening, cp, f):
+    """What the agent / POS owes, day by day: debt brought forward + supplied that day − paid that day (= owed for
+    the day) = global debt at the end of the day; for an agent, plus the capital to pay back = total payable."""
+    from core.models import AgentCapital
+
+    days = defaultdict(lambda: defaultdict(Decimal))
+    for e in entries:
+        et = effective_type(e.transaction)
+        d = days[e.business_date]
+        if et in SUPPLIED_TYPES:
+            d["supplied"] += e.amount
+        elif et in PAID_TYPES:
+            d["paid"] -= e.amount
+        else:
+            d["other"] += e.amount
+    is_agent = cp.kind == Counterparty.Kind.AGENT
+    caps = list(AgentCapital.objects.filter(agent=cp).order_by("business_date").values_list("business_date", "amount")) \
+        if is_agent else []
+    rows, prev = [], opening
+    for day in sorted(days):
+        d = days[day]
+        today = d["supplied"] - d["paid"]
+        end = prev + today + d["other"]
+        cap = sum((a for bd, a in caps if bd <= day), Z)
+        row = dict(day=day, previous=prev, supplied=d["supplied"], paid=d["paid"], today=today, other=d["other"],
+                   end=end)
+        if is_agent:
+            row.update(capital=cap, total=end + cap)
+        rows.append(row)
+        prev = end
+    cols = [Col("day", _("Business date"), "date"), Col("previous", _("Debt brought forward"), "money"),
+            Col("supplied", _("Supplied that day"), "money", True), Col("paid", _("Paid that day"), "money", True),
+            Col("today", _("Owed for the day (supplied − paid)"), "money", True),
+            Col("other", _("Opening / corrections"), "money", True),
+            Col("end", _("Global debt (previous + the day)"), "money")]
+    if is_agent:
+        cols += [Col("capital", _("Capital to pay back"), "money"),
+                 Col("total", _("Total payable to the company"), "money")]
+    return Table(_("What is owed, day by day"), cols, rows,
+                 note=_("Owed for the day = supplied that day − paid that day. Global debt = debt brought forward + "
+                        "owed for the day (+ opening balances and corrections). Total payable = global debt + capital "
+                        "to pay back."))
+
+
+def daily_debt(f):
+    """Every agent and POS: debt brought forward, supplied and paid in the period (= owed for the period), global
+    debt, capital and total payable to the company."""
+    rep = Report("daily_debt", _("What agents and POS owe, today and in total"), f.text())
+    rows = _customer_rows(f, only="nonzero")
+    for r in rows:
+        r["today"] = r["supplied"] - r["paid"]
+        r["previous"] = r["closing"] - r["today"]
+        r["total_end"] = r["closing"] + r["capital"]
+    cols = [Col("customer", _("Agent / POS")), Col("microzones", _("Microzones")),
+            Col("previous", _("Debt brought forward (openings included)"), "money", True),
+            Col("supplied", _("Supplied"), "money", True), Col("paid", _("Paid"), "money", True),
+            Col("today", _("Owed for the period (supplied − paid)"), "money", True),
+            Col("closing", _("Global debt (previous + period)"), "money", True),
+            Col("capital", _("Capital to pay back"), "money", True),
+            Col("total_end", _("Total payable to the company"), "money", True)]
+    t = group_by_subzone(_("By subzone"), rows, cols, note=_(
+        "Choose Daily to see what each agent and POS owes for that day: supplied that day − paid that day. Global "
+        "debt = debt brought forward (opening balance included) + the day. Total payable = global debt + capital."))
+    rep.tables.append(t)
+    tot = t.totals() or {}
+    rep.summary = [(c.label, tot.get(c.key, Z), "money") for c in cols if c.total]
     return rep
 
 
@@ -1384,6 +1454,7 @@ REPORTS = {
     "supply_payment": (_l("Daily supplies versus payments"), supply_payment),
     "pos_stock": (_l("POS and agent stock levels"), pos_stock),
     "pos_coverage": (_l("POS supplied by commercial agents"), pos_coverage),
+    "daily_debt": (_l("What agents and POS owe, today and in total"), daily_debt),
 }
 
 
@@ -1409,4 +1480,6 @@ REPORT_CARDS = {
     "supply_payment": ("payment", _l("Each day, what was supplied against what was paid, and per agent / POS")),
     "pos_stock": ("store", _l("ER, UVE and commission of each POS and agent as last imported; POS out of stock")),
     "pos_coverage": ("chart", _l("Different POS each commercial agent supplied per day, week and month")),
+    "daily_debt": ("calendar", _l("Supplied − paid for the day, debt brought forward, global debt, capital and total "
+                                  "payable")),
 }

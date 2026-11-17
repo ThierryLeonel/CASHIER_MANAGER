@@ -66,6 +66,38 @@ def supply_agent(request):
 
 
 @roles_required(*DESK)
+def supply_several(request):
+    """One cashier supplies several commercial agents at once (e.g. 500 000 FCFA of UVE to each of three agents):
+    each agent gets his own supply record."""
+    from core import forms_batch as FB
+
+    desk, acting = _desk(request)
+    if desk is None:
+        messages.info(request, _("Choose the cashier you are recording for."))
+        return redirect(f"/act-as/?next={request.path}")
+    data = request.POST if request.method == "POST" else None
+    form = FB.MultiSupplyForm(desk, data)
+    rows = FB.row_forms(FB.SupplyRowForm, data)
+    if data is not None:
+        valid = [form.is_valid()] + [r.is_valid() for r in rows]
+        items = form.items(rows) if all(valid) else None
+        if items:
+            resp = run_service(
+                request, form,
+                lambda: ops.record_supply_batch(request.user, items=items, accounts=form.supply_accounts(),
+                                                description=form.cleaned_data.get("description", ""),
+                                                idempotency_key=form.cleaned_data["idem"], acting_for=acting),
+                success=lambda res: _("Agents supplied: %(n)s · total %(amt)s FCFA.") % {
+                    "n": len(res), "amt": fmt(sum(t.amount for ts in res for t in ts))},
+                on_success=lambda res: redirect("supply_several"))
+            if resp:
+                return resp
+    return render(request, "core/supply_several.html", {
+        "form": form, "rows": rows, "shown": FB.shown_rows(rows), "customers": True,
+        "title": _("Supply several agents")})
+
+
+@roles_required(*DESK)
 def supply_pos(request):
     return _entry(request, F.PosSupplyForm, ops.record_supplies, _("Supply to a point of sale (POS)"),
                   _("Exceptional direct supply to a POS. The POS owes the company, unless you name an agent who "

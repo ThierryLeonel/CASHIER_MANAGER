@@ -9,9 +9,12 @@
   <div class="bal k-CASH_DRAWER"><span class="bal-label">{% trans "Trading balance" %}</span><span class="bal-value">{{ tot.balance|fcfa }}</span><span class="bal-unit">FCFA</span></div>
   <div class="bal k-TOTAL"><span class="bal-label">{% trans "Total payable to the company" %}</span><span class="bal-value">{{ tot.total|fcfa }}</span><span class="bal-unit">FCFA</span></div>
 </div>
+<p class="small"><a href="{% url 'agent_openings' %}">{% trans "Agents' opening balances" %} →</a></p>
 <form method="post" class="panel">{% csrf_token %}
   <h2 style="margin-top:0">{% trans "Record capital" %}</h2>
+  <p class="small muted">{% trans "One agent or several at once, e.g. ten agents who each received 500 000 FCFA: fill the same amount once, then add the agents." %}</p>
   {% include "core/inc/fields.html" %}
+  {% include "core/inc/batch_rows.html" with rows=batch_rows shown=shown %}
   <div class="actions"><button class="btn primary" type="submit">{% trans "Save" %}</button></div>
 </form>
 <h2>{% trans "By agent" %}</h2>

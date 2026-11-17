@@ -759,8 +759,14 @@ msgstr "Ajouter une boutique"
 msgid "Add a staff member"
 msgstr "Ajouter un membre du personnel"
 
+msgid "Add an agent"
+msgstr "Ajouter un agent"
+
 msgid "Add an item"
 msgstr "Ajouter un article"
+
+msgid "Add at least one commercial agent."
+msgstr "Ajoutez au moins un agent commercial."
 
 msgid "Add items"
 msgstr "Ajouter des articles"
@@ -861,6 +867,9 @@ msgstr "Numéro de l'agent"
 msgid "Agent or POS (business SIM)"
 msgstr "Agent ou POS (SIM business)"
 
+msgid "Agent owes the company"
+msgstr "L'agent doit à l'entreprise"
+
 #, python-format
 msgid "Agent payback %(code)s"
 msgstr "Remboursement agent %(code)s"
@@ -944,11 +953,21 @@ msgstr "Dû par les agents"
 msgid "Agents owe the shop"
 msgstr "Les agents doivent à la boutique"
 
+#, python-format
+msgid "Agents supplied: %(n)s · total %(amt)s FCFA."
+msgstr "Agents approvisionnés : %(n)s · total %(amt)s FCFA."
+
 msgid "Agents versus POS"
 msgstr "Agents ou PDV"
 
+msgid "Agents without an opening balance"
+msgstr "Agents sans solde d'ouverture"
+
 msgid "Agents' capital"
 msgstr "Capital des agents"
+
+msgid "Agents' opening balances"
+msgstr "Soldes d'ouverture des agents"
 
 msgid ""
 "Agents, POS and cash managers: positive = owes the company, negative = the "
@@ -1387,6 +1406,9 @@ msgstr "Par guichet et boutique"
 msgid "By shop"
 msgstr "Par boutique"
 
+msgid "By subzone"
+msgstr "Par sous-zone"
+
 msgid "By transferring UVE to the shop (UVE goes up)"
 msgstr "Par transfert d'UVE à la boutique (l'UVE augmente)"
 
@@ -1482,6 +1504,13 @@ msgstr "Capital remboursé"
 msgid "Capital paid back by the agent"
 msgstr "Capital remboursé par l'agent"
 
+msgid "Capital received (to pay back)"
+msgstr "Capital reçu (à rembourser)"
+
+#, python-format
+msgid "Capital saved for %(n)s agent(s): %(amt)s FCFA in total."
+msgstr "Capital enregistré pour %(n)s agent(s) : %(amt)s FCFA au total."
+
 msgid ""
 "Capital the owners put into the business or take out, and capital moved "
 "between company accounts (cashiers, master SIMs, banks, shops). Each "
@@ -1575,6 +1604,9 @@ msgstr "Caisse ou portefeuille UVE."
 
 msgid "Cash drawer, SIM wallet and bank movements"
 msgstr "Mouvements des caisses, portefeuilles SIM et banques"
+
+msgid "Cash for each agent"
+msgstr "Espèces pour chaque agent"
 
 msgid "Cash given to POS"
 msgstr "Espèces remises au PDV"
@@ -1818,6 +1850,16 @@ msgstr "Vérifiez le prix de %(i)s."
 msgid "Checking every row…"
 msgstr "Vérification de chaque ligne…"
 
+msgid ""
+"Choose Daily to see what each agent and POS owes for that day: supplied that"
+" day − paid that day. Global debt = debt brought forward (opening balance "
+"included) + the day. Total payable = global debt + capital."
+msgstr ""
+"Choisissez Journalier pour voir ce que chaque agent et PDV doit pour ce jour"
+" : approvisionné ce jour − payé ce jour. Dette globale = dette reportée "
+"(solde d'ouverture inclus) + le jour. Total à payer = dette globale + "
+"capital."
+
 msgid "Choose UVE, ER or cash."
 msgstr "Choisissez UVE, ER ou espèces."
 
@@ -1989,6 +2031,9 @@ msgstr ""
 
 msgid "Choose the commercial agent who receives the UVE."
 msgstr "Choisissez l'agent commercial qui reçoit l'UVE."
+
+msgid "Choose the commercial agent."
+msgstr "Choisissez l'agent commercial."
 
 msgid "Choose the company account that sent it."
 msgstr "Choisissez le compte de la société qui l'a envoyé."
@@ -2348,6 +2393,9 @@ msgstr "L'entreprise a reçu"
 
 msgid "Company owes"
 msgstr "L'entreprise doit"
+
+msgid "Company owes the agent"
+msgstr "L'entreprise doit à l'agent"
 
 msgid "Company profile"
 msgstr "Profil de l'entreprise"
@@ -2766,6 +2814,12 @@ msgstr ""
 msgid "Debit (+)"
 msgstr "Débit (+)"
 
+msgid "Debt brought forward"
+msgstr "Dette reportée"
+
+msgid "Debt brought forward (openings included)"
+msgstr "Dette reportée (ouvertures incluses)"
+
 msgid "Debt by product (UVE, Cash, ER)"
 msgstr "Dette par produit (UVE, espèces, ER)"
 
@@ -2994,6 +3048,9 @@ msgstr "L'ER ne peut être transféré qu'entre SIM d'une même zone principale.
 msgid "ER difference"
 msgstr "Écart ER"
 
+msgid "ER for each agent"
+msgstr "ER pour chaque agent"
+
 msgid "ER in shops"
 msgstr "ER en boutiques"
 
@@ -3129,6 +3186,15 @@ msgstr "Saisissez un pourcentage."
 msgid "Enter a quantity."
 msgstr "Saisissez une quantité."
 
+msgid "Enter a valid business date."
+msgstr "Saisissez une date d'activité valide."
+
+msgid "Enter at least one agent's opening balance or capital."
+msgstr "Saisissez au moins un solde d'ouverture ou un capital d'agent."
+
+msgid "Enter at least one agent's opening balance."
+msgstr "Saisissez au moins un solde d'ouverture d'agent."
+
 msgid "Enter at least one amount."
 msgstr "Saisissez au moins un montant."
 
@@ -3148,6 +3214,12 @@ msgstr "Saisissez l'IMEI ou le numéro de série de chaque unité."
 #, python-format
 msgid "Enter the actual balance for %(acct)s."
 msgstr "Saisissez le solde réel de %(acct)s."
+
+msgid ""
+"Enter the amount for this agent, or the same amount for every agent above."
+msgstr ""
+"Saisissez le montant pour cet agent, ou le même montant pour chaque agent "
+"plus haut."
 
 msgid "Enter the amount paid in cash and / or UVE."
 msgstr "Saisissez le montant payé en espèces et / ou UVE."
@@ -3279,6 +3351,9 @@ msgstr ""
 
 msgid "Every POS of my zone"
 msgstr "Tous les POS de ma zone"
+
+msgid "Every agent already has an opening balance."
+msgstr "Chaque agent a déjà un solde d'ouverture."
 
 msgid ""
 "Every report has filters and Excel/PDF downloads that use exactly the same "
@@ -3466,6 +3541,18 @@ msgstr ""
 "calcule tout seul ; chaque part va dans le compte de votre sous-zone pour ce"
 " mode."
 
+msgid "Fill only one side: what the agent owes, or what the company owes him."
+msgstr ""
+"Remplissez un seul côté : ce que l'agent doit, ou ce que l'entreprise lui "
+"doit."
+
+msgid ""
+"Fill only the agents to record; leave the others empty. For each agent fill "
+"one side only."
+msgstr ""
+"Remplissez seulement les agents à enregistrer ; laissez les autres vides. "
+"Pour chaque agent, un seul côté."
+
 msgid "Fill what the client paid you, in one or several ways."
 msgstr "Remplissez ce que le client vous a payé, en un ou plusieurs moyens."
 
@@ -3532,6 +3619,9 @@ msgstr "Responsable financier"
 
 msgid "Find a unit (IMEI / serial, item or client)"
 msgstr "Trouver une unité (IMEI / série, article ou client)"
+
+msgid "Find agents"
+msgstr "Rechercher des agents"
 
 msgid "First name"
 msgstr "Prénom"
@@ -3706,6 +3796,12 @@ msgstr "Donné"
 
 msgid "Global POS"
 msgstr "POS global"
+
+msgid "Global debt (previous + period)"
+msgstr "Dette globale (antérieure + période)"
+
+msgid "Global debt (previous + the day)"
+msgstr "Dette globale (antérieure + le jour)"
 
 msgid "Good deal"
 msgstr "Bon plan"
@@ -4354,6 +4450,9 @@ msgstr "Nom de la personne"
 msgid "Name, SIM or microzone"
 msgstr "Nom, SIM ou microzone"
 
+msgid "Name, SIM, microzone or subzone"
+msgstr "Nom, SIM, microzone ou sous-zone"
+
 msgid "Name, logo, address, NIU and RCCM on receipts and reports"
 msgstr "Nom, logo, adresse, NIU et RCCM sur les reçus et rapports"
 
@@ -4886,6 +4985,13 @@ msgid "On credit (the agent owes the shop)"
 msgstr "À crédit (l'agent doit à la boutique)"
 
 msgid ""
+"One agent or several at once, e.g. ten agents who each received 500 000 "
+"FCFA: fill the same amount once, then add the agents."
+msgstr ""
+"Un agent ou plusieurs à la fois, p. ex. dix agents ayant reçu chacun 500 000"
+" FCFA : saisissez le montant une fois, puis ajoutez les agents."
+
+msgid ""
 "One payment can be made in cash, UVE, MTN float and bank deposit at the same"
 " time. It reduces the agent's or POS's single combined balance."
 msgstr ""
@@ -5136,6 +5242,9 @@ msgstr "Ouverture (système)"
 msgid "Opening + movements = closing"
 msgstr "Ouverture + mouvements = clôture"
 
+msgid "Opening / corrections"
+msgstr "Ouverture / corrections"
+
 msgid ""
 "Opening = balance before the first business date; Closing = balance at the "
 "end of the last business date; Current = balance now, including later "
@@ -5189,6 +5298,14 @@ msgstr ""
 "Les soldes d'ouverture concernent uniquement clients, gestionnaires de cash,"
 " caisses, portefeuilles et banques."
 
+#, python-format
+msgid "Opening balances recorded: %(o)s · capital recorded: %(c)s."
+msgstr ""
+"Soldes d'ouverture enregistrés : %(o)s · capitaux enregistrés : %(c)s."
+
+msgid "Opening capital"
+msgstr "Capital d'ouverture"
+
 msgid "Opening count (cash · UVE · ER)"
 msgstr "Comptage d'ouverture (espèces · UVE · ER)"
 
@@ -5197,6 +5314,12 @@ msgstr "Comptages d'ouverture"
 
 msgid "Opening difference"
 msgstr "Écart d'ouverture"
+
+msgid "Opening: agents owe the company"
+msgstr "Ouverture : les agents doivent à l'entreprise"
+
+msgid "Opening: the company owes agents"
+msgstr "Ouverture : l'entreprise doit aux agents"
 
 msgid "Operation"
 msgstr "Opération"
@@ -5338,6 +5461,24 @@ msgstr "Dû en fin de journée"
 
 msgid "Owed at the start of the day"
 msgstr "Dû en début de journée"
+
+msgid "Owed for the day (supplied − paid)"
+msgstr "Dû pour le jour (approvisionné − payé)"
+
+msgid ""
+"Owed for the day = supplied that day − paid that day. Global debt = debt "
+"brought forward + owed for the day (+ opening balances and corrections). "
+"Total payable = global debt + capital to pay back."
+msgstr ""
+"Dû pour le jour = approvisionné ce jour − payé ce jour. Dette globale = "
+"dette reportée + dû du jour (+ soldes d'ouverture et corrections). Total à "
+"payer = dette globale + capital à rembourser."
+
+msgid "Owed for the period (supplied − paid)"
+msgstr "Dû pour la période (approvisionné − payé)"
+
+msgid "Owed for today"
+msgstr "Dû pour aujourd'hui"
 
 #, python-format
 msgid "Owed in %(p)s (end of period)"
@@ -5590,6 +5731,9 @@ msgstr "Payé maintenant en espèces"
 
 msgid "Paid now in float"
 msgstr "Payé maintenant en float"
+
+msgid "Paid that day"
+msgstr "Payé ce jour"
 
 msgid "Paid to"
 msgstr "Payé à"
@@ -6046,6 +6190,9 @@ msgstr "Enregistrer l'achat"
 msgid "Record the sale"
 msgstr "Enregistrer la vente"
 
+msgid "Record the supplies"
+msgstr "Enregistrer les approvisionnements"
+
 msgid ""
 "Record what the company gives and what the cash manager has served. If only "
 "part is served now (e.g. 8M of 10M), the balance stays open and is recorded "
@@ -6069,6 +6216,9 @@ msgstr "Enregistré par"
 
 msgid "Recorded by the agent (the cashier records the payment)"
 msgstr "Enregistré par l'agent (le caissier enregistre le paiement)"
+
+msgid "Recorded opening balances"
+msgstr "Soldes d'ouverture enregistrés"
 
 msgid "Records"
 msgstr "Enregistrements"
@@ -6320,6 +6470,16 @@ msgstr "Vente d'un article"
 
 msgid "Sales"
 msgstr "Ventes"
+
+msgid "Same amount for every agent (FCFA)"
+msgstr "Même montant pour chaque agent (FCFA)"
+
+msgid ""
+"Same amount for every agent below. Fill a row's own amounts to give that "
+"agent something else."
+msgstr ""
+"Même montant pour chaque agent ci-dessous. Remplissez les montants d'une "
+"ligne pour donner autre chose à cet agent."
 
 msgid "Same as the office"
 msgstr "Identique au bureau"
@@ -6798,6 +6958,10 @@ msgstr "Manquant"
 msgid "Show"
 msgstr "Afficher"
 
+#, python-format
+msgid "Showing the first %(n)s; search to find the others."
+msgstr "Affichage des %(n)s premiers ; recherchez pour trouver les autres."
+
 msgid "Shown in the menu, on the login page, receipts and every report."
 msgstr ""
 "Affiché dans le menu, sur la page de connexion, les reçus et tous les "
@@ -7029,6 +7193,9 @@ msgstr "Approvisionnés le %(d)s"
 msgid "Supplied out"
 msgstr "Approvisionné"
 
+msgid "Supplied that day"
+msgstr "Approvisionné ce jour"
+
 msgid "Supplied to"
 msgstr "Approvisionné à"
 
@@ -7041,6 +7208,13 @@ msgstr "Approvisionné · %(c)s"
 
 msgid "Supplied − paid"
 msgstr "Approvisionné − payé"
+
+msgid ""
+"Supplied − paid for the day, debt brought forward, global debt, capital and "
+"total payable"
+msgstr ""
+"Approvisionné − payé du jour, dette reportée, dette globale, capital et "
+"total à payer"
 
 msgid "Supplier"
 msgstr "Fournisseur"
@@ -7119,11 +7293,28 @@ msgstr "Approvisionnement dû à l'agent / POS"
 msgid "Supply due to you"
 msgstr "Approvisionnement qui vous est dû"
 
+msgid "Supply one agent"
+msgstr "Approvisionner un agent"
+
 msgid "Supply only"
 msgstr "Approvisionnement uniquement"
 
 msgid "Supply recorded"
 msgstr "Approvisionnement enregistré"
+
+msgid "Supply several agents"
+msgstr "Approvisionner plusieurs agents"
+
+msgid ""
+"Supply several commercial agents in one go, e.g. 500 000 FCFA of UVE to each"
+" of three agents. Each agent gets his own supply record and receipt; his "
+"balance increases by what he received. If one supply is refused, nothing is "
+"recorded."
+msgstr ""
+"Approvisionnez plusieurs agents commerciaux en une fois, p. ex. 500 000 FCFA"
+" d'UVE à chacun de trois agents. Chaque agent a son propre enregistrement et"
+" reçu ; son solde augmente de ce qu'il a reçu. Si un approvisionnement est "
+"refusé, rien n'est enregistré."
 
 msgid "Supply this POS"
 msgstr "Approvisionner ce POS"
@@ -7378,6 +7569,9 @@ msgstr "Le responsable d'un déstockage doit être un agent commercial."
 
 msgid "The rest is owed to you."
 msgstr "Le reste vous est dû."
+
+msgid "The same or different amounts to several agents at once"
+msgstr "Montants identiques ou différents à plusieurs agents à la fois"
 
 msgid ""
 "The sender recorded these on his side (his balance went down). Yours goes up"
@@ -8060,6 +8254,9 @@ msgstr "UVE convertie en ER au taux de conversion des boutiques."
 msgid "UVE difference"
 msgstr "Écart UVE"
 
+msgid "UVE for each agent"
+msgstr "UVE pour chaque agent"
+
 msgid "UVE from cashiers"
 msgstr "UVE des caissiers"
 
@@ -8340,6 +8537,9 @@ msgstr ""
 "sont toujours conservés. Action irréversible : faites d'abord une sauvegarde"
 " de la base."
 
+msgid "Used for each agent below whose own amount is empty."
+msgstr "Utilisé pour chaque agent ci-dessous dont le montant est vide."
+
 msgid "User"
 msgstr "Utilisateur"
 
@@ -8379,6 +8579,12 @@ msgstr "Hebdomadaire"
 msgid "Weekly shop report — %(a)s to %(b)s"
 msgstr "Rapport hebdomadaire des boutiques — du %(a)s au %(b)s"
 
+msgid "What agents and POS owe, today and in total"
+msgstr "Ce que doivent les agents et PDV, du jour et au total"
+
+msgid "What agents owe daily"
+msgstr "Dette journalière des agents"
+
 msgid "What are you importing?"
 msgstr "Que voulez-vous importer ?"
 
@@ -8400,6 +8606,9 @@ msgstr ""
 
 msgid "What happened"
 msgstr "Ce qui a eu lieu"
+
+msgid "What is owed, day by day"
+msgstr "Ce qui est dû, jour par jour"
 
 msgid "What is sent"
 msgstr "Ce qui est envoyé"
@@ -8452,6 +8661,17 @@ msgstr "Contact WhatsApp"
 
 msgid "When"
 msgstr "Quand"
+
+msgid ""
+"Where each commercial agent stood when the system started: what he owed the "
+"company, or what the company owed him, and the capital he had received. What"
+" an agent owes the company = opening balance + supplies − payments, plus his"
+" capital to pay back."
+msgstr ""
+"La situation de chaque agent commercial au démarrage du système : ce qu'il "
+"devait à l'entreprise, ou ce qu'elle lui devait, et le capital reçu. Ce "
+"qu'un agent doit à l'entreprise = solde d'ouverture + approvisionnements − "
+"paiements, plus son capital à rembourser."
 
 msgid "Where the money comes from, e.g. owner's savings, bank loan, partner."
 msgstr ""
@@ -8795,6 +9015,10 @@ msgstr "solde + capital"
 msgid "bank"
 msgstr "banque"
 
+#, python-format
+msgid "before today %(p)s"
+msgstr "avant aujourd'hui %(p)s"
+
 msgid "business SIM"
 msgstr "SIM business"
 
@@ -8892,6 +9116,9 @@ msgstr "nom de l'entreprise"
 
 msgid "contact phone"
 msgstr "téléphone de contact"
+
+msgid "corrected"
+msgstr "corrigé"
 
 msgid "count"
 msgstr "nombre"
@@ -9156,6 +9383,9 @@ msgstr "doit"
 msgid "owes now"
 msgstr "doit maintenant"
 
+msgid "owes the company"
+msgstr "doit à l'entreprise"
+
 msgid "paid"
 msgstr "payé"
 
@@ -9325,6 +9555,10 @@ msgstr "arrêté sur erreurs"
 msgid "subzone"
 msgstr "sous-zone"
 
+#, python-format
+msgid "supplied %(a)s − paid %(b)s"
+msgstr "approvisionné %(a)s − payé %(b)s"
+
 msgid "supplier"
 msgstr "fournisseur"
 
@@ -9357,6 +9591,9 @@ msgstr "l'agent doit à la boutique"
 
 msgid "the cashier records the payment"
 msgstr "le caissier enregistre le paiement"
+
+msgid "the company owes him"
+msgstr "l'entreprise lui doit"
 
 msgid "the shop owes the agent"
 msgstr "la boutique doit à l'agent"

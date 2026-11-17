@@ -1,0 +1,20 @@
+{% extends "core/base.html" %}{% load i18n cashier %}
+{% block title %}{{ title }}{% endblock %}
+{% block topbar %}{{ title }}{% endblock %}
+{% block content %}
+<div class="form-head"><span class="form-ic">{% icon "supply" 26 %}</span>
+  <div><h1>{{ title }}</h1><p class="muted">{% trans "Supply several commercial agents in one go, e.g. 500 000 FCFA of UVE to each of three agents. Each agent gets his own supply record and receipt; his balance increases by what he received. If one supply is refused, nothing is recorded." %}</p></div></div>
+<p class="small"><a href="{% url 'supply_agent' %}">{% trans "Supply one agent" %}</a></p>
+<div class="panel">
+<form method="post" class="entry" novalidate id="batch-form">{% csrf_token %}
+  {% include "core/inc/fields.html" %}
+  <h2>{% trans "Agents" %}</h2>
+  {% include "core/inc/batch_rows.html" with rows=rows shown=shown %}
+  <div class="form-foot">
+    <button type="submit" class="btn primary" id="submit-btn">{% trans "Record the supplies" %}</button>
+    <a class="btn" href="{% url 'dashboard' %}">{% trans "Cancel" %}</a>
+    <span class="small muted">{% trans "Only record transactions that are completed and confirmed." %}</span>
+  </div>
+</form></div>
+{% endblock %}
+{% block scripts %}<script>document.getElementById('batch-form').addEventListener('submit',function(){var b=document.getElementById('submit-btn');setTimeout(function(){b.disabled=true;b.textContent='…';},0);});</script>{% endblock %}

@@ -1,0 +1,21 @@
+{% load i18n %}<div class="brows" data-brows>
+{% for r in rows %}<div class="brow"{% if forloop.counter0 >= shown %} hidden{% endif %}>
+  <span class="brow-n">{{ forloop.counter }}</span>
+  {% for f in r.visible_fields %}<div class="field brow-{{ f.name }}">
+    <label for="{{ f.id_for_label }}">{{ f.label }}</label>{{ f }}
+    {% if f.errors %}<ul class="err">{% for e in f.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+  </div>{% endfor %}
+</div>{% endfor %}
+</div>
+<div class="actions"><button type="button" class="btn" data-add-row>+ {% trans "Add an agent" %}</button></div>
+<style>
+.brows{display:flex;flex-direction:column;gap:.5rem;margin:.5rem 0}
+.brow{display:grid;grid-template-columns:2rem minmax(14rem,2fr) repeat(auto-fit,minmax(7rem,1fr));gap:.5rem;align-items:start;border:1px solid var(--line,#ddd);border-radius:10px;padding:.5rem}
+.brow .field{margin:0}.brow-n{font-weight:700;padding-top:1.7rem;color:var(--muted,#888)}
+@media (max-width:640px){.brow{grid-template-columns:1fr 1fr}.brow-n{grid-column:1/-1;padding:0}.brow .brow-agent{grid-column:1/-1}}
+</style>
+<script>
+(function(){var b=document.querySelector('[data-add-row]');if(!b)return;b.addEventListener('click',function(){
+var h=document.querySelector('[data-brows] .brow[hidden]');if(h){h.hidden=false;var i=h.querySelector('input');if(i)i.focus();}
+if(!document.querySelector('[data-brows] .brow[hidden]'))b.hidden=true;});})();
+</script>

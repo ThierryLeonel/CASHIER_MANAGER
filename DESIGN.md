@@ -685,3 +685,34 @@ Every transaction stores its **recording cashier** (`Transaction.cashier`), and 
 - Import kind `agent_capital` (BUSINESS_SIM, CAPITAL, NOTE): brings each agent's capital to the amount in the file
   (difference as one movement; importing again changes nothing).
 - Clear data: capital goes with the agents list / everything / the user who recorded it.
+
+## Several agents in one form; agents' opening balances; what is owed day by day
+
+**What an agent / POS owes the company = opening balance + supplies − payments (trading balance) + capital to pay
+back (agents).**
+
+- **Supply several agents** (`/supply/several/`, cashier and super admin acting for a cashier; menu "Supply several
+  agents" and a cashier home tile):
+  - Header: the same cash / UVE / ER for every agent, where UVE / cash leave from (when the desk has several), note.
+  - Rows (`core/forms_batch.py`, prefixed `r0`…`r19`, 3 shown, "+ Add an agent" unfolds more): agent SIM and,
+    optionally, the row's own cash / UVE / ER (replace the common amounts for that agent).
+  - `ops.record_supply_batch(user, items=[(agent, parts)], …)`: one `record_supplies` per agent (own record and
+    receipt; idempotency uuid5(batch, row)), all in one atomic block — one refusal and nothing is recorded.
+- **Capital for several agents** (`/agents/capital/`): the record form is now a batch — movement, "same amount for
+  every agent", date, note, then rows of agent (+ own amount). `ag.record_capital_batch` (atomic, uuid5 per row).
+- **Agents' opening balances** (`/agents/opening-balances/`, senior manager, finance, super admin —
+  `perm.AGENT_OPENING_ROLES`; Agents space menu):
+  - Grid of active agents without an opening balance (search by name, SIM, microzone, subzone; first 200): "Agent
+    owes the company", "Company owes the agent" (one side only), and "Capital received" for agents with no capital.
+  - `ops.record_agent_openings(user, items=[(agent, signed)], …)`: OPENING_BALANCE on the agent's account (+ owes,
+    − owed), all or nothing; capital via `record_capital_batch` (note "Opening capital"), both in one atomic block.
+  - Totals and the list of recorded openings (status, amount, corrected).
+- **What is owed, day by day**:
+  - New report `daily_debt` "What agents and POS owe, today and in total" (menu "What agents owe daily"; not for the
+    market supervisor or agents): per agent / POS by subzone — debt brought forward (openings included), supplied,
+    paid, owed for the period (supplied − paid), global debt (previous + period), capital, total payable. With the
+    Daily preset: e.g. supplied 2 000 000 and paid 1 500 000 today → owed for today 500 000; global = previous + today.
+  - Statement: new table "What is owed, day by day" (`debt_by_day`): debt brought forward, supplied that day, paid
+    that day, owed for the day, opening / corrections, global debt, and for an agent capital and total payable.
+  - Agent home: tile "Owed for today" (supplied − paid today, and the debt before today), from `ag.debt_today()`
+    (also merged into `summary()`).
