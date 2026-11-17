@@ -86,7 +86,8 @@ def supply_several(request):
                 request, form,
                 lambda: ops.record_supply_batch(request.user, items=items, accounts=form.supply_accounts(),
                                                 description=form.cleaned_data.get("description", ""),
-                                                idempotency_key=form.cleaned_data["idem"], acting_for=acting),
+                                                idempotency_key=form.cleaned_data["idem"], acting_for=acting,
+                                                **form.er_params()),
                 success=lambda res: _("Agents supplied: %(n)s · total %(amt)s FCFA.") % {
                     "n": len(res), "amt": fmt(sum(t.amount for ts in res for t in ts))},
                 on_success=lambda res: redirect("supply_several"))

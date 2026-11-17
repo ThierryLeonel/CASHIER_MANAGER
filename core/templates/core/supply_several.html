@@ -17,4 +17,5 @@
   </div>
 </form></div>
 {% endblock %}
-{% block scripts %}<script>document.getElementById('batch-form').addEventListener('submit',function(){var b=document.getElementById('submit-btn');setTimeout(function(){b.disabled=true;b.textContent='…';},0);});</script>{% endblock %}
+{% block scripts %}<script>document.getElementById('batch-form').addEventListener('submit',function(){var b=document.getElementById('submit-btn');setTimeout(function(){b.disabled=true;b.textContent='…';},0);});</script>
+{% include "core/inc/er_convert.html" %}{% endblock %}

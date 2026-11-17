@@ -141,7 +141,36 @@ class BaseEntryForm(forms.Form):
         return d
 
 
-class _SupplyAmounts(BaseEntryForm):
+class ErConversionFields(forms.Form):
+    """ER supply larger than the ER wallet: how much UVE was converted to ER just before (recorded first). The page
+    asks it in a pop-up; the two fields stay hidden unless the server asks for them."""
+
+    convert_uve = MoneyField(label=_("UVE converted to ER for this supply"), required=False)
+    no_convert = forms.BooleanField(label=_("Supply without conversion (the ER wallet may go below zero)"),
+                                    required=False)
+
+    def er_setup(self, user):
+        from core.models import ConversionRate
+        from core.services.ledger import balance
+
+        er = None
+        try:
+            mz = user.master_zone
+            if mz is not None:
+                er = perm.usable_accounts(user, [K.ER]).filter(sim__is_master=True, sim__master_zone=mz).first()
+        except Exception:  # noqa: BLE001 — only a hint for the pop-up
+            er = None
+        rate = ConversionRate.current()
+        self.fields["convert_uve"].widget.attrs.update({
+            "data-er-balance": str(balance(er)) if er else "", "data-er-account": str(er) if er else "",
+            "data-rate": str(rate.uplift_rate) if rate else "0"})
+
+    def er_params(self):
+        cd = self.cleaned_data
+        return dict(convert_uve=cd.get("convert_uve"), no_convert=bool(cd.get("no_convert")), er_check=True)
+
+
+class _SupplyAmounts(ErConversionFields, BaseEntryForm):
     """Amounts supplied in cash, UVE and ER; each leaves from its account automatically."""
 
     cash = MoneyField(label=_("Cash"), required=False)
@@ -162,6 +191,7 @@ class _SupplyAmounts(BaseEntryForm):
                                           "ER the master SIM; the total is added up for you.")
         self.account_choice("uve_from", K.UVE, ("BOTH", "SUPPLY"), _("UVE leaves from"))
         self.account_choice("cash_from", K.CASH_DRAWER, ("BOTH", "SUPPLY"), _("Cash leaves from"))
+        self.er_setup(user)
 
     def clean(self):
         cd = super().clean()
@@ -191,7 +221,7 @@ class AgentSupplyForm(_SupplyAmounts):
     def params(self):
         return dict(customer=self.cleaned_data["agent"], parts=self.parts(), paid=self.paid(),
                     accounts=self.supply_accounts(),
-                    description=self.cleaned_data.get("description", ""))
+                    description=self.cleaned_data.get("description", ""), **self.er_params())
 
 
 class PosSupplyForm(_SupplyAmounts):
@@ -210,7 +240,7 @@ class PosSupplyForm(_SupplyAmounts):
         customer, recipient = (agent, pos) if agent else (pos, None)
         return dict(customer=customer, recipient=recipient, parts=self.parts(), paid=self.paid(),
                     accounts=self.supply_accounts(),
-                    description=self.cleaned_data.get("description", ""))
+                    description=self.cleaned_data.get("description", ""), **self.er_params())
 
 
 class DestockageForm(BaseEntryForm):

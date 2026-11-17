@@ -161,8 +161,36 @@ def _supply_account(ctx, product, chosen=None):
     return qs.first()
 
 
+def _er_conversion(ctx, er_amount, chosen=None, convert_uve=None, er_check=False, no_convert=False):
+    """ER supply larger than what the ER wallet holds: the UVE the cashier converted to ER just before (on the same
+    master SIM) is recorded as a conversion first, then the supply. Returns the conversion spec or None. With
+    er_check (the forms), a shortfall without a conversion amount is refused unless no_convert is ticked."""
+    if not er_amount:
+        return None
+    er_acct = _supply_account(ctx, Product.ER, chosen)
+    convert_uve = _money(convert_uve or 0)
+    if convert_uve > 0:
+        uve_acct = Account.objects.filter(kind=K.UVE, sim_id=er_acct.sim_id, active=True).first() \
+            if er_acct.sim_id else None
+        if uve_acct is None:
+            raise BusinessError(_("%(acct)s has no UVE wallet on the same SIM to convert from.") % {"acct": er_acct},
+                                "convert_uve")
+        return build_conversion(ctx, uve_account=uve_acct, amount=convert_uve,
+                                description=_("Converted to ER for an ER supply"))
+    if convert_uve < 0:
+        raise BusinessError(_("Amounts cannot be negative."), "convert_uve")
+    if er_check and not no_convert:
+        held = balance(er_acct)
+        if held < er_amount:
+            raise BusinessError(
+                _("%(acct)s holds %(held)s FCFA of ER, less than the %(amt)s FCFA to supply. Enter how much UVE you "
+                  "converted to ER, or tick \"Supply without conversion\".")
+                % {"acct": er_acct, "held": fmt(held), "amt": fmt(er_amount)}, "convert_uve")
+    return None
+
+
 def record_supplies(user, *, customer, parts, recipient=None, description="", idempotency_key=None,
-                    acting_for=None, paid=None, accounts=None):
+                    acting_for=None, paid=None, accounts=None, convert_uve=None, er_check=False, no_convert=False):
     """One supply made of several products at once, e.g. {"CASH": 100000, "UVE": 500000, "ER": 120000}.
 
     Each product leaves from its account automatically and is posted as its own supply, all together (all or
@@ -202,7 +230,15 @@ def record_supplies(user, *, customer, parts, recipient=None, description="", id
             pspec.fields["payment_group"] = pgroup if len(pay) > 1 else None
             pspec.receipt = i == 0
             specs.append(pspec)
+    conv = _er_conversion(ctx, dict(todo).get(Product.ER), (accounts or {}).get(Product.ER), convert_uve, er_check,
+                          no_convert)
+    if conv is not None and idempotency_key:
+        existing = Transaction.objects.filter(idempotency_key=idempotency_key).first()
+        if existing:
+            raise DuplicateSubmission(existing)
     with transaction.atomic():
+        if conv is not None:  # the conversion happened first: record it first, then the supply
+            post([conv], ctx, uuid.uuid5(idempotency_key, "convert") if idempotency_key else None)
         return post(specs, ctx, idempotency_key)
 
 
@@ -703,14 +739,23 @@ def record_agent_openings(user, *, items, business_date=None, description="", id
     return out
 
 
-def record_supply_batch(user, *, items, accounts=None, description="", idempotency_key=None, acting_for=None):
+def record_supply_batch(user, *, items, accounts=None, description="", idempotency_key=None, acting_for=None,
+                        convert_uve=None, er_check=False, no_convert=False):
     """One cashier supplies several commercial agents at once: items = [(agent, {product: amount})]. Each agent gets
-    his own supply record (and receipt); all or nothing."""
+    his own supply record (and receipt); all or nothing. UVE converted to ER for these supplies is recorded first."""
     if not items:
         raise BusinessError(_("Add at least one commercial agent."))
     key = idempotency_key or uuid.uuid4()
+    ctx = cashier_ctx(user, acting_for)
+    er_total = sum((_money(parts.get(Product.ER) or 0) for _a, parts in items), Decimal(0))
+    conv = _er_conversion(ctx, er_total, (accounts or {}).get(Product.ER), convert_uve, er_check, no_convert)
+    first = Transaction.objects.filter(idempotency_key=uuid.uuid5(key, "row-0")).first()
+    if first is not None:
+        raise DuplicateSubmission(first)
     out = []
     with transaction.atomic():
+        if conv is not None:
+            post([conv], ctx, uuid.uuid5(key, "convert"))
         for i, (agent, parts) in enumerate(items):
             try:
                 out.append(record_supplies(user, customer=agent, parts=parts, description=description,

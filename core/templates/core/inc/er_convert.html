@@ -1,0 +1,56 @@
+{% load i18n %}<dialog class="pick-dlg" id="er-dlg" aria-labelledby="er-title">
+  <form method="dialog" class="er-box">
+    <h2 id="er-title">{% trans "Not enough ER in the wallet" %}</h2>
+    <p id="er-msg"></p>
+    <div class="field"><label for="er-uve">{% trans "How much UVE did you convert to ER?" %}</label>
+      <input id="er-uve" type="text" inputmode="numeric" autocomplete="off">
+      <div class="small meta" id="er-gives" style="margin-top:.3rem"></div></div>
+    <div class="actions" style="flex-wrap:wrap">
+      <button type="button" class="btn primary" id="er-ok">{% trans "Record the conversion, then the supply" %}</button>
+      <button type="button" class="btn" id="er-skip">{% trans "Supply without conversion" %}</button>
+      <button type="button" class="btn" id="er-cancel">{% trans "Cancel" %}</button>
+    </div>
+  </form>
+</dialog>
+<script>
+(function () {
+  var cv = document.querySelector('[name=convert_uve]'), nc = document.querySelector('[name=no_convert]'), d = document.getElementById('er-dlg');
+  if (!cv || !d) return;
+  var form = cv.form, f1 = document.getElementById('fld-convert_uve'), f2 = document.getElementById('fld-no_convert');
+  [f1, f2].forEach(function (f) { if (f && !f.querySelector('.err') && !(cv.value && f === f1)) f.hidden = true; });
+  var bal = cv.dataset.erBalance === '' ? null : Number(cv.dataset.erBalance), rate = Number(cv.dataset.rate || 0);
+  function num(v) { return Number(String(v || '').replace(/[^0-9]/g, '')) || 0; }
+  function fcfa(n) { return Math.round(n).toLocaleString('fr-FR').replace(/ | /g, ' '); }
+  function erNeeded() {
+    var er = num((form.querySelector('[name=er]') || {}).value);
+    if (!form.querySelector('[data-brows]')) return er;
+    var tot = 0;  // several agents: a row's own amounts replace the common ones
+    form.querySelectorAll('[data-brows] .brow').forEach(function (r) {
+      var ag = r.querySelector('[name$=-agent]'); if (!ag || !ag.value.trim()) return;
+      var own = ['cash', 'uve', 'er'].some(function (n) { var i = r.querySelector('[name$=-' + n + ']'); return i && num(i.value); });
+      tot += own ? num((r.querySelector('[name$=-er]') || {}).value) : er;
+    });
+    return tot;
+  }
+  function gives() { var u = num(document.getElementById('er-uve').value); document.getElementById('er-gives').textContent = u ? '{{ _("Gives")|escapejs }} ' + fcfa(Math.round(u * (1 + rate))) + ' FCFA {{ _("of ER")|escapejs }}' : ''; }
+  document.getElementById('er-uve').addEventListener('input', gives);
+  function go(submitter) { form.dataset.erok = '1'; d.close(); if (form.requestSubmit) form.requestSubmit(submitter || undefined); else form.submit(); }
+  var lastSubmitter = null;
+  document.addEventListener('submit', function (e) {
+    if (e.target !== form || form.dataset.erok === '1' || bal === null) return;
+    var need = erNeeded();
+    if (!need || need <= bal || num(cv.value) || (nc && nc.checked)) return;
+    e.preventDefault(); e.stopPropagation();
+    lastSubmitter = e.submitter || null;
+    document.getElementById('er-msg').textContent = (cv.dataset.erAccount || 'ER') + ': ' + fcfa(bal) + ' FCFA {{ _("of ER, less than the")|escapejs }} ' + fcfa(need) + ' FCFA {{ _("to supply.")|escapejs }}';
+    var u = document.getElementById('er-uve'); u.value = fcfa(Math.ceil((need - bal) / (1 + rate))); gives();
+    d.showModal ? d.showModal() : d.setAttribute('open', ''); u.focus(); u.select();
+  }, true);
+  document.getElementById('er-ok').addEventListener('click', function () {
+    var u = num(document.getElementById('er-uve').value); if (!u) { document.getElementById('er-uve').focus(); return; }
+    cv.value = String(u); go(lastSubmitter);
+  });
+  document.getElementById('er-skip').addEventListener('click', function () { if (nc) nc.checked = true; go(lastSubmitter); });
+  document.getElementById('er-cancel').addEventListener('click', function () { d.close(); });
+})();
+</script>

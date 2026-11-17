@@ -733,3 +733,20 @@ back (agents).**
     (`/administration/agent-logins/download/`) and "Clear this list".
 - Import kind `agent_logins` (BUSINESS_SIM, USERNAME — empty = the SIM, PASSWORD — required, changed at the first
   sign-in). An agent who already has a login is left as he is.
+
+## ER supply larger than the ER wallet: conversion first, then the supply
+- Supply to agent, Supply to POS and Supply several agents: when the ER to supply is more than the ER wallet (master
+  SIM) holds, pressing Record opens a pop-up "Not enough ER in the wallet" (`inc/er_convert.html`):
+  - It shows the wallet, what it holds and the ER to supply, and asks "How much UVE did you convert to ER?" — prefilled
+    with the UVE needed for the shortfall at the current rate, with the ER it gives.
+  - "Record the conversion, then the supply" fills `convert_uve` and sends the form. "Supply without conversion"
+    ticks `no_convert` (the ER wallet may go below zero, as supplies always could). "Cancel" goes back.
+  - The ER balance and rate come from the form (`ErConversionFields.er_setup`: `data-er-balance`, `data-rate`).
+- Server (`ops._er_conversion`, used by `record_supplies` and `record_supply_batch`):
+  - With `convert_uve`: a CONVERSION (UVE → ER on the same master SIM, at the current rate, note "Converted to ER for
+    an ER supply") is posted first, then the supply, in one database transaction. Idempotency uuid5(key, "convert");
+    a repeated form records nothing twice. The UVE wallet must hold the UVE (otherwise nothing is recorded and the
+    reason is shown).
+  - Forms send `er_check=True`: an ER shortfall with no conversion amount and no "without conversion" tick is refused
+    on the `convert_uve` field (works without JavaScript; the fields then show on the page). Imports and other
+    callers keep the old behaviour.

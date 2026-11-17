@@ -5,7 +5,7 @@ import uuid
 from django import forms
 from django.utils.translation import gettext_lazy as _
 
-from core.forms import BaseEntryForm, CustomerField, MoneyField, K
+from core.forms import BaseEntryForm, CustomerField, ErConversionFields, MoneyField, K
 from core.models import Counterparty, Product
 
 ROWS = 20
@@ -35,7 +35,7 @@ class SupplyRowForm(_Row):
     PRODUCT_FIELDS = (("cash", Product.CASH), ("uve", Product.UVE), ("er", Product.ER))
 
 
-class MultiSupplyForm(BaseEntryForm):
+class MultiSupplyForm(ErConversionFields, BaseEntryForm):
     """The common part: the same amounts for every agent (a row's own amounts replace them), where the stock
     leaves from, and a note."""
 
@@ -50,6 +50,7 @@ class MultiSupplyForm(BaseEntryForm):
                                           "agent something else.")
         self.account_choice("uve_from", K.UVE, ("BOTH", "SUPPLY"), _("UVE leaves from"))
         self.account_choice("cash_from", K.CASH_DRAWER, ("BOTH", "SUPPLY"), _("Cash leaves from"))
+        self.er_setup(user)
 
     def supply_accounts(self):
         cd = self.cleaned_data

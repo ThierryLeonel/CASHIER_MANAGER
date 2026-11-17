@@ -41,6 +41,20 @@ msgstr ""
 " le modifier."
 
 #, python-format
+msgid "%(acct)s has no UVE wallet on the same SIM to convert from."
+msgstr "%(acct)s n'a pas de portefeuille UVE sur la même SIM pour convertir."
+
+#, python-format
+msgid ""
+"%(acct)s holds %(held)s FCFA of ER, less than the %(amt)s FCFA to supply. "
+"Enter how much UVE you converted to ER, or tick \"Supply without "
+"conversion\"."
+msgstr ""
+"%(acct)s contient %(held)s FCFA d'ER, moins que les %(amt)s FCFA à "
+"approvisionner. Saisissez combien d'UVE vous avez converti en ER, ou cochez "
+"« Approvisionner sans conversion »."
+
+#, python-format
 msgid "%(acct)s is not one of your accounts."
 msgstr "%(acct)s n'est pas un de vos comptes."
 
@@ -2517,6 +2531,9 @@ msgstr "Convertir l'UVE en ER"
 msgid "Convert UVE to ER on a SIM"
 msgstr "Convertir l'UVE en ER sur une SIM"
 
+msgid "Converted to ER for an ER supply"
+msgstr "Converti en ER pour un approvisionnement ER"
+
 msgid "Copy"
 msgstr "Copier"
 
@@ -3846,6 +3863,9 @@ msgstr "Indiquez la sous-zone de la microzone %(v)s"
 msgid "Given"
 msgstr "Donné"
 
+msgid "Gives"
+msgstr "Donne"
+
 msgid "Global POS"
 msgstr "POS global"
 
@@ -3884,6 +3904,9 @@ msgstr "Heures"
 
 msgid "How many"
 msgstr "Combien"
+
+msgid "How much UVE did you convert to ER?"
+msgstr "Combien d'UVE avez-vous converti en ER ?"
 
 msgid "I confirm these are the actual counted/read balances."
 msgstr "Je confirme qu'il s'agit des soldes réellement comptés/relevés."
@@ -4873,6 +4896,9 @@ msgstr "Non déclaré"
 
 msgid "Not deleted"
 msgstr "Non supprimées"
+
+msgid "Not enough ER in the wallet"
+msgstr "Pas assez d'ER dans le portefeuille"
 
 msgid "Not now"
 msgstr "Pas maintenant"
@@ -6257,6 +6283,9 @@ msgstr "Enregistrer les services rendus"
 msgid "Record the balance served (or another side)"
 msgstr "Enregistrer le reste servi (ou un autre côté)"
 
+msgid "Record the conversion, then the supply"
+msgstr "Enregistrer la conversion, puis l'approvisionnement"
+
 msgid "Record the entry"
 msgstr "Enregistrer l'entrée"
 
@@ -7416,6 +7445,13 @@ msgstr "Approvisionner un point de vente (PDV)"
 msgid "Supply to agent"
 msgstr "Approvisionnement agent"
 
+msgid "Supply without conversion"
+msgstr "Approvisionner sans conversion"
+
+msgid "Supply without conversion (the ER wallet may go below zero)"
+msgstr ""
+"Approvisionner sans conversion (le portefeuille ER peut passer sous zéro)"
+
 msgid "Surplus"
 msgstr "Excédent"
 
@@ -8339,6 +8375,9 @@ msgstr "UVE convertie en ER et taux utilisés"
 
 msgid "UVE converted to ER at the shops' conversion rate."
 msgstr "UVE convertie en ER au taux de conversion des boutiques."
+
+msgid "UVE converted to ER for this supply"
+msgstr "UVE converti en ER pour cet approvisionnement"
 
 msgid "UVE difference"
 msgstr "Écart UVE"
@@ -9440,6 +9479,12 @@ msgstr "notes"
 msgid "of %(n)s POS"
 msgstr "sur %(n)s POS"
 
+msgid "of ER"
+msgstr "d'ER"
+
+msgid "of ER, less than the"
+msgstr "d'ER, moins que les"
+
 msgid "of which float supply"
 msgstr "dont approvisionnement float"
 
@@ -9696,6 +9741,9 @@ msgstr "l'entreprise lui doit"
 
 msgid "the shop owes the agent"
 msgstr "la boutique doit à l'agent"
+
+msgid "to supply."
+msgstr "à approvisionner."
 
 msgid "today"
 msgstr "aujourd'hui"

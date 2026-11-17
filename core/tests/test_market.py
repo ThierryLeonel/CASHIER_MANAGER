@@ -588,3 +588,72 @@ class AgentLoginsBulkTests(OrgMixin, TestCase):
         res, ok = importer.run_import(admin, "agent_logins", rows[:2], commit=True)  # again: left as they are
         self.assertTrue(ok, res)
         self.assertEqual(User.objects.filter(counterparty__in=[a, b]).count(), 2)
+
+
+class ErSupplyWithConversionTests(OrgMixin, TestCase):
+    """ER supply larger than the ER wallet: the UVE converted to ER is recorded first, then the supply."""
+
+    def setUp(self):
+        self.make_org()
+        self.fund_all()
+        from core.models import ConversionRate
+        if ConversionRate.current() is None:
+            ConversionRate.objects.create(uplift_rate=D("0.04"), set_by=self.admin)
+
+    def test_service(self):
+        from core.models import Transaction, TxType
+        from core.services import operations as ops
+        from core.services.errors import BusinessError
+
+        self.assertEqual(self.er_f1.sim_id, self.uve_f1.sim_id)
+        with self.assertRaises(BusinessError) as cm:
+            ops.record_supplies(self.c_f1, customer=self.a1, parts={"ER": D(1500000)}, er_check=True,
+                                idempotency_key=uuid.uuid4())
+        self.assertEqual(cm.exception.field, "convert_uve")
+        key = uuid.uuid4()
+        rate = __import__("core.models", fromlist=["ConversionRate"]).ConversionRate.current().uplift_rate
+        res = ops.record_supplies(self.c_f1, customer=self.a1, parts={"ER": D(1500000)}, er_check=True,
+                                  convert_uve=D(600000), idempotency_key=key)
+        conv = Transaction.objects.get(type=TxType.CONVERSION, idempotency_key=uuid.uuid5(key, "convert"))
+        self.assertLess(conv.pk, res[0].pk)  # converted first, then supplied
+        er_got = conv.amount_received
+        self.assertEqual(er_got, (D(600000) * (1 + rate)).quantize(D(1)))
+        self.assertEqual(self.bal(self.uve_f1), D(400000))
+        self.assertEqual(self.bal(self.er_f1), D(1000000) + er_got - D(1500000))
+        self.assertEqual(self.cbal(self.a1), D(1500000))
+        from core.services.errors import DuplicateSubmission
+        with self.assertRaises(DuplicateSubmission):  # sent twice: once
+            ops.record_supplies(self.c_f1, customer=self.a1, parts={"ER": D(1500000)}, er_check=True,
+                                convert_uve=D(600000), idempotency_key=key)
+        self.assertEqual(Transaction.objects.filter(type=TxType.CONVERSION).count(), 1)
+        # without conversion, on purpose
+        ops.record_supplies(self.c_f1, customer=self.a1, parts={"ER": D(5000000)}, er_check=True, no_convert=True,
+                            idempotency_key=uuid.uuid4())
+        self.assertLess(self.bal(self.er_f1), 0)
+
+    def test_pages(self):
+        from core.models import Transaction, TxType
+
+        c = self.client_class()
+        self.assertTrue(c.login(username="cashier.fako1", password=PW))
+        page = c.get("/supply/agent/")
+        self.assertContains(page, 'id="er-dlg"')
+        self.assertContains(page, 'data-er-balance="1000000"')
+        r = c.post("/supply/agent/", {"idem": str(uuid.uuid4()), "agent": self.a1.business_sim, "er": "1 500 000"})
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "Supply without conversion")
+        self.assertFalse(Transaction.objects.filter(type=TxType.SUPPLY).exists())
+        r = c.post("/supply/agent/", {"idem": str(uuid.uuid4()), "agent": self.a1.business_sim, "er": "1 500 000",
+                                      "convert_uve": "500 000"})
+        self.assertEqual(r.status_code, 302, r.content[:2000])
+        self.assertEqual(Transaction.objects.filter(type=TxType.CONVERSION).count(), 1)
+        # several agents: 2 x 600 000 ER with 1 000 000 left, 300 000 UVE converted for them
+        self.assertContains(c.get("/supply/several/"), 'id="er-dlg"')
+        r = c.post("/supply/several/", {"idem": str(uuid.uuid4()), "er": "600 000", "r0-agent": self.a2.business_sim,
+                                        "r1-agent": self.a3.business_sim})
+        self.assertContains(r, "Supply without conversion")
+        r = c.post("/supply/several/", {"idem": str(uuid.uuid4()), "er": "600 000", "r0-agent": self.a2.business_sim,
+                                        "r1-agent": self.a3.business_sim, "convert_uve": "300 000"})
+        self.assertEqual(r.status_code, 302, r.content[:2000])
+        self.assertEqual(Transaction.objects.filter(type=TxType.CONVERSION).count(), 2)
+        self.assertEqual(self.cbal(self.a2), D(600000))
