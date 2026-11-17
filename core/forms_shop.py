@@ -654,3 +654,22 @@ class DeskExchangeForm(forms.Form):
         d = dict(self.cleaned_data)
         d.pop("idem", None)
         return d
+
+
+class AgentCapitalForm(forms.Form):
+    """Capital given to a commercial agent, or capital he paid back (payable apart from his trading balance)."""
+
+    idem = forms.UUIDField(widget=forms.HiddenInput)
+    agent = CustomerField(label=_("Commercial agent"), kind=Counterparty.Kind.AGENT)
+    movement = forms.ChoiceField(label=_("Movement"), widget=forms.RadioSelect, initial="GIVE",
+                                 choices=[("GIVE", _("Capital given to the agent")),
+                                          ("RETURN", _("Capital paid back by the agent"))])
+    amount = MoneyField(label=_("Amount (FCFA)"))
+    business_date = forms.DateField(label=_("Business date"), required=False,
+                                    widget=forms.DateInput(attrs={"type": "date"}))
+    note = forms.CharField(label=_("Note"), required=False, max_length=255)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if not self.is_bound:
+            self.initial.setdefault("idem", uuid.uuid4())

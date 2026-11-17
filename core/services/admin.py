@@ -356,6 +356,9 @@ def _clear_counterparties(kind):
         from core.models import AgentDeclaration
 
         AgentDeclaration.objects.filter(agent_id__in=cp_ids).delete()
+        from core.models import AgentCapital
+
+        AgentCapital.objects.filter(agent_id__in=cp_ids).delete()  # their capital goes with them
         # a market supervisor keeps his login: only the link to his own agent account (SIM) goes
         User.objects.filter(counterparty_id__in=cp_ids).exclude(role=User.Role.AGENT).update(counterparty=None)
         users = User.objects.filter(counterparty_id__in=cp_ids)
@@ -373,6 +376,9 @@ def _clear_user_records(target):
     from core.models import AgentDeclaration
 
     AgentDeclaration.objects.filter(Q(recorded_by=target) | Q(agent_id=target.counterparty_id or 0)).delete()
+    from core.models import AgentCapital
+
+    AgentCapital.objects.filter(recorded_by=target).delete()
     counts = {"transactions": _delete_txn_ids(
         Transaction.objects.filter(Q(entered_by=target) | Q(cashier=target)).values_list("id", flat=True),
         check=False)}
@@ -454,6 +460,9 @@ def clear_data(user, *, scope, password, confirm_text, agent=None, target_user=N
         from core.models import AgentDeclaration
 
         AgentDeclaration.objects.all().delete()
+        from core.models import AgentCapital
+
+        AgentCapital.objects.all().delete()
     if scope == "shops":
         with admin_override():
             counts.update(_clear_shop_operations())

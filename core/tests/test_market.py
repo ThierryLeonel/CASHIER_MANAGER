@@ -352,3 +352,56 @@ class Requests5(OrgMixin, TestCase):
         # his own statement only
         self.assertEqual(c.get("/reports/statement/").status_code, 200)
         self.assertContains(c.get(f"/reports/statement/?customer_sim={self.a1.business_sim}"), mk.counterparty.name)
+
+
+
+class AgentCapitalTests(OrgMixin, TestCase):
+    def setUp(self):
+        self.make_org()
+        self.fund_all()
+
+    def test_capital_is_apart_but_adds_to_total_payable(self):
+        from core.services import agents as ag
+        from core.services import importer
+        from core.services import operations as ops
+
+        from .test_admin import xlsx_bytes
+
+        ops.record_supplies(self.c_f1, customer=self.a1, parts={"UVE": D(40000)}, idempotency_key=uuid.uuid4())
+        bal = ops.customer_balance(self.a1)
+        c = self.client_class()
+        self.assertTrue(c.login(username="manager", password=PW))
+        r = c.post("/agents/capital/", {"idem": str(uuid.uuid4()), "agent": self.a1.business_sim, "movement": "GIVE",
+                                        "amount": "500 000"})
+        self.assertEqual(r.status_code, 302, r.content[:2000])
+        self.assertEqual(ag.capital_of(self.a1), D(500000))
+        self.assertEqual(ops.customer_balance(self.a1), bal)  # the trading balance does not move
+        page = c.get("/agents/capital/")
+        self.assertContains(page, "Total payable to the company")
+        st = c.get(f"/reports/statement/?preset=all&customer_sim={self.a1.business_sim}")
+        self.assertContains(st, "Capital to pay back")
+        self.assertContains(st, "Total payable to the company (balance + capital)")
+        self.assertContains(c.get("/reports/customers/?preset=all"), "Total payable (balance + capital)")
+        # paid back, not more than held
+        with self.assertRaises(Exception):
+            ag.record_capital(self.admin, agent=self.a1, movement="RETURN", amount=D(600000))
+        ag.record_capital(self.admin, agent=self.a1, movement="RETURN", amount=D(100000))
+        self.assertEqual(ag.capital_of(self.a1), D(400000))
+        # the agent sees it on his home page
+        au = User.objects.get(counterparty=self.a1)
+        ac = self.client_class()
+        self.assertTrue(ac.login(username=au.username, password=PW))
+        home = ac.get("/")
+        self.assertContains(home, "Capital to pay back")
+        self.assertEqual(ag.summary(self.a1)["total_payable"], bal + D(400000))
+        # a cashier cannot record capital; the market supervisor never sees it
+        cc = self.client_class()
+        self.assertTrue(cc.login(username="cashier.fako1", password=PW))
+        self.assertEqual(cc.get("/agents/capital/").status_code, 403)
+        # import sets the capital (again = no change)
+        rows = [importer.TEMPLATES["agent_capital"][0], [self.a1.business_sim, "450000", "start"]]
+        for _ in range(2):
+            res, ok = importer.run_import(self.admin, "agent_capital", importer.read_rows("c.xlsx", xlsx_bytes(rows)),
+                                          commit=True)
+            self.assertTrue(ok, res)
+        self.assertEqual(ag.capital_of(self.a1), D(450000))

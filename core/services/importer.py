@@ -18,7 +18,7 @@ from openpyxl.styles import Font
 from core.models import (
     Account, BankAccount, CashManager, Counterparty, ExpenseCategory, MicroZone, PaymentMethod, Product, User, Zone,
 )
-from core.money import MoneyError, to_money
+from core.money import MoneyError, fmt, to_money
 from core.simnumbers import SimNumberError, normalize_sim
 
 from . import operations as ops
@@ -49,6 +49,8 @@ TEMPLATES = {
                      [["POS", "692345678", "Molyko", 1500, 2000, 10000]]),
     "cash_managers": (["name", "phone", "notes"], [["Cash manager Buea", "650123456", ""],
                                                    ["Mama Rose (no SIM)", "", "phone is optional"]]),
+    "agent_capital": (["BUSINESS_SIM", "CAPITAL", "NOTE"],
+                      [["691234567", "500000", "initial capital"], ["691234568", "300000", ""]]),
     "opening": (["kind", "identifier", "amount", "date", "note"],
                 [["CUSTOMER", "691234567", "150000", "2026-11-01", "owed at launch"],
                  ["CASH_DRAWER", "cashier.fako1", "500000", "2026-11-01", ""],
@@ -486,6 +488,22 @@ def _row_cash_manager(user, r):
     return _("created %(cp)s") % {"cp": cm}
 
 
+def _row_agent_capital(user, r):
+    """Capital of a commercial agent (payable back): the row gives the capital he holds now; the difference with
+    what is recorded is added as one movement (importing the same file again changes nothing)."""
+    from core.services import agents as ag
+
+    cp = _customer(_sim(r.get("business_sim"), _("business SIM")))
+    if cp.kind != K_AGENT:
+        raise BusinessError(_("%(cp)s is not a commercial agent.") % {"cp": cp})
+    raw = r.get("capital")
+    if raw in (None, ""):
+        raise BusinessError(_("Enter the capital."))
+    m = ag.set_capital(user, cp, raw, note=_s(r.get("note")) or str(_("Imported capital")))
+    return _("%(cp)s · capital %(c)s FCFA") % {"cp": cp, "c": fmt(ag.capital_of(cp))} + ("" if m else " · " + str(
+        _("unchanged")))
+
+
 def _row_opening(user, r):
     kind = _s(r.get("kind")).upper()
     ident = r.get("identifier")
@@ -761,7 +779,7 @@ def _row_stock(user, r, only_changes=False):
     return f"{cp} · ER {er if er is not None else '—'} · UVE {uve if uve is not None else '—'}{flag}"
 
 
-HANDLERS = {"customers_update": _row_customer_update, "stock": _row_stock, "stock_update": _row_stock_update, "customers": _row_customer, "cash_managers": _row_cash_manager, "opening": _row_opening,
+HANDLERS = {"agent_capital": _row_agent_capital, "customers_update": _row_customer_update, "stock": _row_stock, "stock_update": _row_stock_update, "customers": _row_customer, "cash_managers": _row_cash_manager, "opening": _row_opening,
             "transactions": _row_transaction, "shops": _row_shop, "shop_staff": _row_shop_staff,
             "shop_items": _row_shop_item, "shop_stock": _row_shop_stock,
             "shop_transactions": _row_shop_transaction}

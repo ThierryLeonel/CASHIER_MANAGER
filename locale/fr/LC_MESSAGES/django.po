@@ -39,6 +39,10 @@ msgid "%(acct)s: enter a whole FCFA amount."
 msgstr "%(acct)s : saisissez un montant entier en FCFA."
 
 #, python-format
+msgid "%(agent)s has only %(c)s FCFA of capital to pay back."
+msgstr "%(agent)s n'a que %(c)s FCFA de capital à rembourser."
+
+#, python-format
 msgid "%(agent)s now runs %(n)s road(s)."
 msgstr "%(agent)s a maintenant %(n)s route(s)."
 
@@ -139,8 +143,16 @@ msgid "%(cp)s is not a %(kind)s."
 msgstr "%(cp)s n'est pas : %(kind)s."
 
 #, python-format
+msgid "%(cp)s is not a commercial agent."
+msgstr "%(cp)s n'est pas un agent commercial."
+
+#, python-format
 msgid "%(cp)s registered."
 msgstr "%(cp)s enregistré."
+
+#, python-format
+msgid "%(cp)s · capital %(c)s FCFA"
+msgstr "%(cp)s · capital %(c)s FCFA"
 
 #, python-format
 msgid "%(cp)s · unchanged"
@@ -279,6 +291,11 @@ msgid ""
 "%(ref)s resolves a closing difference. Reopen or keep it; it cannot be "
 "deleted."
 msgstr "%(ref)s résout un écart de clôture ; elle ne peut pas être supprimée."
+
+#, python-format
+msgid "%(ref)s saved: %(agent)s — capital to pay back now %(c)s FCFA."
+msgstr ""
+"%(ref)s enregistré : %(agent)s — capital à rembourser maintenant %(c)s FCFA."
 
 #, python-format
 msgid "%(ref)s saved: received %(r)s FCFA, paid %(p)s FCFA."
@@ -930,6 +947,9 @@ msgstr "Les agents doivent à la boutique"
 msgid "Agents versus POS"
 msgstr "Agents ou PDV"
 
+msgid "Agents' capital"
+msgstr "Capital des agents"
+
 msgid ""
 "Agents, POS and cash managers: positive = owes the company, negative = the "
 "company owes them (supply due). Drawers, wallets and banks: positive only."
@@ -1352,6 +1372,9 @@ msgstr "Nom commercial (nom du compte OM)"
 msgid "By"
 msgstr "Par"
 
+msgid "By agent"
+msgstr "Par agent"
+
 msgid "By cashing out to the shop (UVE goes up)"
 msgstr "Par retrait (cash-out) vers la boutique (l'UVE augmente)"
 
@@ -1426,11 +1449,38 @@ msgstr ""
 msgid "Capital (net)"
 msgstr "Capital (net)"
 
+msgid "Capital (payable back, apart from the trading balance)"
+msgstr "Capital (à rembourser, à part du solde commercial)"
+
+msgid "Capital given"
+msgstr "Capital donné"
+
+msgid "Capital given to commercial agents (payable back)"
+msgstr "Capital donné aux agents commerciaux (à rembourser)"
+
+msgid ""
+"Capital given to commercial agents is payable back to the company. It is "
+"kept apart from their trading balance; together they make the total each "
+"agent owes the company."
+msgstr ""
+"Le capital donné aux agents commerciaux est à rembourser à l'entreprise. Il "
+"est séparé de leur solde commercial ; ensemble, ils forment le total que "
+"chaque agent doit à l'entreprise."
+
+msgid "Capital given to the agent"
+msgstr "Capital donné à l'agent"
+
 msgid "Capital injection"
 msgstr "Apport de capital"
 
 msgid "Capital movements"
 msgstr "Mouvements de capital"
+
+msgid "Capital paid back"
+msgstr "Capital remboursé"
+
+msgid "Capital paid back by the agent"
+msgstr "Capital remboursé par l'agent"
 
 msgid ""
 "Capital the owners put into the business or take out, and capital moved "
@@ -1440,6 +1490,9 @@ msgstr ""
 "Capital que les propriétaires apportent ou retirent, et capital déplacé "
 "entre les comptes de l'entreprise (caissiers, SIM maîtres, banques, "
 "boutiques). Chaque mouvement enregistre sa source et son objet."
+
+msgid "Capital to pay back"
+msgstr "Capital à rembourser"
 
 msgid "Capital transfer"
 msgstr "Transfert de capital"
@@ -1780,6 +1833,9 @@ msgstr "Choisissez un guichet caissier de votre zone."
 
 msgid "Choose a cashier…"
 msgstr "Choisir un caissier…"
+
+msgid "Choose a commercial agent."
+msgstr "Choisissez un agent commercial."
 
 msgid "Choose a company account that is not yours."
 msgstr "Choisissez un compte de la société qui n'est pas le vôtre."
@@ -3120,6 +3176,9 @@ msgstr "Saisissez le montant."
 msgid "Enter the bank deposit reference."
 msgstr "Saisissez la référence du versement bancaire."
 
+msgid "Enter the capital."
+msgstr "Saisissez le capital."
+
 msgid "Enter the client's name."
 msgstr "Saisissez le nom du client."
 
@@ -3642,6 +3701,9 @@ msgstr "Indiquez le motif."
 msgid "Give the subzone of microzone %(v)s"
 msgstr "Indiquez la sous-zone de la microzone %(v)s"
 
+msgid "Given"
+msgstr "Donné"
+
 msgid "Global POS"
 msgstr "POS global"
 
@@ -3763,6 +3825,9 @@ msgstr "Importer les %(good)s lignes valides et ignorer les lignes en erreur"
 
 msgid "Imported"
 msgstr "Importé"
+
+msgid "Imported capital"
+msgstr "Capital importé"
 
 msgid "Importing…"
 msgstr "Import en cours…"
@@ -4446,6 +4511,9 @@ msgstr ""
 msgid "No capital movement in this period."
 msgstr "Aucun mouvement de capital sur cette période."
 
+msgid "No capital recorded yet."
+msgstr "Aucun capital enregistré."
+
 msgid "No cash manager yet."
 msgstr "Aucun gestionnaire de cash pour l'instant."
 
@@ -4969,6 +5037,13 @@ msgid ""
 msgstr ""
 "Seul le destinataire de ce transfert le rembourse, tant qu'il reste quelque "
 "chose de dû."
+
+msgid ""
+"Only the senior manager, finance or the super administrator records agents' "
+"capital."
+msgstr ""
+"Seuls le manager principal, la finance ou le super administrateur "
+"enregistrent le capital des agents."
 
 msgid "Only the senior shop manager closes someone else's shift."
 msgstr ""
@@ -5944,6 +6019,9 @@ msgstr "Enregistrer une dépense"
 msgid "Record as a cashier"
 msgstr "Enregistrer pour un caissier"
 
+msgid "Record capital"
+msgstr "Enregistrer du capital"
+
 msgid "Record opening balance"
 msgstr "Enregistrer le solde d'ouverture"
 
@@ -6287,6 +6365,9 @@ msgstr "Dites ce que vous donnez : espèces ou UVE."
 
 msgid "Say where the money comes from."
 msgstr "Indiquez d'où vient l'argent."
+
+msgid "Say whether the capital was given or paid back."
+msgstr "Dites si le capital a été donné ou remboursé."
 
 msgid "Say who receives the money or where it goes."
 msgstr "Indiquez qui reçoit l'argent ou où il va."
@@ -7741,6 +7822,18 @@ msgstr "Total payé"
 msgid "Total paid back"
 msgstr "Total remboursé"
 
+msgid "Total payable"
+msgstr "Total à payer"
+
+msgid "Total payable (balance + capital)"
+msgstr "Total à payer (solde + capital)"
+
+msgid "Total payable to the company"
+msgstr "Total à payer à l'entreprise"
+
+msgid "Total payable to the company (balance + capital)"
+msgstr "Total à payer à l'entreprise (solde + capital)"
+
 msgid "Total payment"
 msgstr "Total du paiement"
 
@@ -7767,6 +7860,9 @@ msgstr "Totaux par mode"
 
 msgid "Totals by product"
 msgstr "Totaux par produit"
+
+msgid "Trading balance"
+msgstr "Solde commercial"
 
 msgid "Transaction"
 msgstr "Transaction"
@@ -8693,6 +8789,9 @@ msgstr "montant reçu"
 msgid "and"
 msgstr "et"
 
+msgid "balance + capital"
+msgstr "solde + capital"
+
 msgid "bank"
 msgstr "banque"
 
@@ -9286,6 +9385,9 @@ msgstr "type doit être AGENT ou POS"
 #, python-format
 msgid "type must be one of %(v)s"
 msgstr "type doit être l'un de %(v)s"
+
+msgid "unchanged"
+msgstr "inchangé"
 
 msgid "unit cost"
 msgstr "coût unitaire"

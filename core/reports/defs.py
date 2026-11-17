@@ -210,11 +210,17 @@ def statement(f):
                          credit=-e.amount if e.amount < 0 else Z, balance=running,
                          corrected=hasattr(t, "correction"), _id=t.id))
     current = ops.customer_balance(cp)
+    from core.services.agents import capital_of
+
+    cap = capital_of(cp) if cp.kind == Counterparty.Kind.AGENT else Z
     rep.summary = [
         (_("Agent / POS"), f"{cp} ({cp.get_kind_display()})", "text"),
         (_("Opening balance"), opening, "money"),
         (_("Closing balance (end of period)"), running, "money"),
         (_("Current balance (now)"), current, "money"),
+    ] + ([(_("Capital to pay back"), cap, "money"),
+          (_("Total payable to the company (balance + capital)"), current + cap, "money")]
+         if cp.kind == Counterparty.Kind.AGENT else []) + [
         (_("Supplied UVE"), by_product["UVE"], "money"), (_("Supplied ER"), by_product["ER"], "money"),
         (_("Supplied cash"), by_product["CASH"], "money"), (_("Float supply"), by_product["FLOAT"], "money"),
         (_("Destockage"), by_product["DESTOCKAGE"], "money"),
@@ -231,6 +237,18 @@ def statement(f):
     piv.append({"label": _("Total paid"), "_sub": True, "amount": sum(by_method.values(), Z)})
     rep.tables.append(Table(_("Supplied and paid in the period"),
                             [Col("label", _("Product / method")), Col("amount", _("Amount"), "money")], piv))
+    if cp.kind == Counterparty.Kind.AGENT:
+        from core.models import AgentCapital
+
+        crow = [dict(business_date=c.business_date, reference=c.reference,
+                     movement=str(_("Capital given") if c.amount > 0 else _("Capital paid back")), note=c.note,
+                     given=max(c.amount, Z), returned=max(-c.amount, Z))
+                for c in AgentCapital.objects.filter(agent=cp).order_by("business_date", "created_at")]
+        if crow:
+            rep.tables.append(Table(_("Capital (payable back, apart from the trading balance)"), [
+                Col("business_date", _("Business date"), "date"), Col("reference", _("Reference")),
+                Col("movement", _("Movement")), Col("note", _("Note")),
+                Col("given", _("Given"), "money", True), Col("returned", _("Paid back"), "money", True)], crow))
     mcols = [
         Col("posted_at", _("Recorded at"), "datetime"),
         Col("reference", _("Reference")), Col("receipt", _("Receipt")), Col("type", _("Type")),
@@ -269,6 +287,9 @@ def _customer_rows(f, kind=None, only=None):
         other=Sum("amount", filter=tq & Q(transaction__type__in=[TxType.REVERSAL, TxType.OPENING_BALANCE])),
     )
     data = {r["account_id"]: r for r in agg}
+    from core.services.agents import capital_map
+
+    caps = capital_map([c.pk for c in by_cp.values() if c.kind == "AGENT"], upto=f.date_to)
     rows = []
     for aid, cp in accts.items():
         r = data.get(aid, {})
@@ -280,10 +301,13 @@ def _customer_rows(f, kind=None, only=None):
                    agent=(mz.agent.name if mz and mz.agent_id else ""), opening=money(r.get("opening")),
                    supplied=money(r.get("supplied")), paid=-money(r.get("paid")),
                    transfers=money(r.get("transfers")), other=money(r.get("other")),
-                   closing=closing, owed=max(closing, Z), due=max(-closing, Z), current=money(r.get("cur")))
+                   closing=closing, owed=max(closing, Z), due=max(-closing, Z), current=money(r.get("cur")),
+                   capital=money(caps.get(cp.pk)))
+        row["total_payable"] = row["current"] + row["capital"]  # trading balance + capital to pay back
         if only == "due" and closing >= 0:
             continue
-        if only == "nonzero" and not any(row[k] for k in ("opening", "supplied", "paid", "closing", "current")):
+        if only == "nonzero" and not any(row[k] for k in ("opening", "supplied", "paid", "closing", "current",
+                                                          "capital")):
             continue
         rows.append(row)
     return rows
@@ -306,6 +330,8 @@ PIVOT_CUSTOMER_COLS = [
     Col("paid", _l("Paid"), "money", True), Col("adjusted", _l("Transfers / corrections"), "money", True),
     Col("closing", _l("Closing (+ owes, − credit)"), "money", True),
     Col("current", _l("Balance now (+ owes, − credit)"), "money", True),
+    Col("capital", _l("Capital to pay back"), "money", True),
+    Col("total_payable", _l("Total payable (balance + capital)"), "money", True),
 ]
 
 

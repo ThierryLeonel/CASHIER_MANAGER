@@ -458,6 +458,8 @@ def summary(agent):
         "stock": stock_estimate(agent),
         "today_supplied": sum(supplied_by_product(agent, business_date=today).values(), Z),
         "zone": zone_of(agent),
+        "capital": capital_of(agent),
+        "total_payable": owed_company + capital_of(agent),  # trading balance + capital to pay back
     }
 
 
@@ -783,3 +785,61 @@ def office_by_day(agent, d_from, d_to):
         m = {"UVE": "paid_uve", "MTN": "paid_float"}.get(t.payment_method, "paid_cash")
         row(t.business_date)[m] += t.amount
     return out
+
+
+# ---------------------------------------------------------------- capital given to agents (payable back)
+CAPITAL_ROLES = ("MANAGER", "FINANCE", "SUPERADMIN")
+
+
+def capital_of(agent, upto=None):
+    """Capital the agent still has to pay back (given − paid back), up to a business date if given."""
+    from django.db.models import Sum as S
+
+    from core.models import AgentCapital
+
+    qs = AgentCapital.objects.filter(agent=agent)
+    if upto is not None:
+        qs = qs.filter(business_date__lte=upto)
+    return qs.aggregate(s=S("amount"))["s"] or Z
+
+
+def capital_map(agent_ids=None, upto=None):
+    from django.db.models import Sum as S
+
+    from core.models import AgentCapital
+
+    qs = AgentCapital.objects.all()
+    if agent_ids is not None:
+        qs = qs.filter(agent_id__in=agent_ids)
+    if upto is not None:
+        qs = qs.filter(business_date__lte=upto)
+    return {r["agent"]: r["s"] for r in qs.values("agent").annotate(s=S("amount"))}
+
+
+def record_capital(user, *, agent, movement, amount, business_date=None, note="", idempotency_key=None):
+    """Senior manager / finance / super admin: capital given to a commercial agent, or capital he paid back."""
+    from core.models import AgentCapital
+
+    if user.role not in CAPITAL_ROLES:
+        raise PermissionDenied(_("Only the senior manager, finance or the super administrator records agents' "
+                                 "capital."))
+    if agent is None or agent.kind != Counterparty.Kind.AGENT:
+        raise BusinessError(_("Choose a commercial agent."), "agent")
+    if movement not in ("GIVE", "RETURN"):
+        raise BusinessError(_("Say whether the capital was given or paid back."), "movement")
+    a = _amt(amount, "amount")
+    if a <= 0:
+        raise BusinessError(_("Enter the amount."), "amount")
+    if movement == "RETURN" and a > capital_of(agent):
+        raise BusinessError(_("%(agent)s has only %(c)s FCFA of capital to pay back.") % {
+            "agent": agent.name, "c": fmt(capital_of(agent))}, "amount")
+    return _create(AgentCapital, idempotency_key, agent=agent, amount=a if movement == "GIVE" else -a,
+                   business_date=business_date or douala_today(), note=(note or "").strip(), recorded_by=user)
+
+
+def set_capital(user, agent, target, note=""):
+    """Import: bring the agent's capital to this amount (adds the difference as one movement)."""
+    diff = _amt(target, "capital") - capital_of(agent) if target not in (None, "") else Z
+    if not diff:
+        return None
+    return record_capital(user, agent=agent, movement="GIVE" if diff > 0 else "RETURN", amount=abs(diff), note=note)

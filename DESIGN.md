@@ -666,3 +666,22 @@ Every transaction stores its **recording cashier** (`Transaction.cashier`), and 
   `_sql_delete_transactions` now first deletes the rows that only point at the transactions being deleted
   (TransferNoPayback, PaybackForward) and clears `transit_match`. Covered in `test_clear_all.py`; the test fails
   without the fix.
+
+## Agents' capital (payable back, apart from the trading balance)
+- `AgentCapital` (migration 0059): + capital given to a commercial agent, − capital he paid back.
+  - `ag.capital_of`, `ag.capital_map`, `ag.record_capital` (senior manager, finance, super admin; a pay-back cannot
+    exceed the capital held), `ag.set_capital` (import).
+  - Not posted to the ledger, so the trading balance does not move.
+- **Total payable to the company = trading balance (customer account) + capital to pay back.**
+- `/agents/capital/` (Agents space menu "Agents' capital", not for the market supervisor):
+  - Record a movement (agent SIM, given / paid back, amount, date, note).
+  - Totals, the list by agent (capital, trading balance, total payable, statement link) and the latest movements.
+- Statement report (agent): summary adds "Capital to pay back" and "Total payable to the company (balance +
+  capital)", plus a capital movements table.
+- Balances report: columns "Capital to pay back" and "Total payable (balance + capital)" (capital up to the end of
+  the period).
+- Agent home page: "Capital to pay back" and "Total payable to the company" tiles when he holds capital. `summary()`
+  has `capital` and `total_payable`.
+- Import kind `agent_capital` (BUSINESS_SIM, CAPITAL, NOTE): brings each agent's capital to the amount in the file
+  (difference as one movement; importing again changes nothing).
+- Clear data: capital goes with the agents list / everything / the user who recorded it.

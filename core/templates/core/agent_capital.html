@@ -1,0 +1,23 @@
+{% extends "core/base.html" %}{% load i18n cashier %}
+{% block title %}{% trans "Agents' capital" %}{% endblock %}
+{% block topbar %}{% trans "Agents' capital" %}{% endblock %}
+{% block content %}
+<h1>{% trans "Agents' capital" %}</h1>
+<p class="small muted meta">{% trans "Capital given to commercial agents is payable back to the company. It is kept apart from their trading balance; together they make the total each agent owes the company." %}</p>
+<div class="bal-row">
+  <div class="bal k-UVE"><span class="bal-label">{% trans "Capital to pay back" %}</span><span class="bal-value">{{ tot.capital|fcfa }}</span><span class="bal-unit">FCFA</span></div>
+  <div class="bal k-CASH_DRAWER"><span class="bal-label">{% trans "Trading balance" %}</span><span class="bal-value">{{ tot.balance|fcfa }}</span><span class="bal-unit">FCFA</span></div>
+  <div class="bal k-TOTAL"><span class="bal-label">{% trans "Total payable to the company" %}</span><span class="bal-value">{{ tot.total|fcfa }}</span><span class="bal-unit">FCFA</span></div>
+</div>
+<form method="post" class="panel">{% csrf_token %}
+  <h2 style="margin-top:0">{% trans "Record capital" %}</h2>
+  {% include "core/inc/fields.html" %}
+  <div class="actions"><button class="btn primary" type="submit">{% trans "Save" %}</button></div>
+</form>
+<h2>{% trans "By agent" %}</h2>
+<div class="tbl-wrap"><table class="t"><thead><tr><th>{% trans "Agent" %}</th><th class="money">{% trans "Capital to pay back" %}</th><th class="money">{% trans "Trading balance" %}</th><th class="money">{% trans "Total payable" %}</th></tr></thead>
+<tbody>{% for r in rows %}<tr><td><a href="{% url 'report' 'statement' %}?preset=all&amp;customer_sim={{ r.agent.business_sim }}">{{ r.agent.name }}</a> <span class="muted small">{{ r.agent.business_sim|sim }}</span></td><td class="money">{{ r.capital|fcfa }}</td><td class="money">{{ r.balance|fcfa }}</td><td class="money"><strong>{{ r.total|fcfa }}</strong></td></tr>{% empty %}<tr><td colspan="4" class="muted">{% trans "No capital recorded yet." %}</td></tr>{% endfor %}</tbody></table></div>
+{% if recent %}<h2>{% trans "Latest movements" %}</h2>
+<div class="tbl-wrap"><table class="t"><thead><tr><th>{% trans "Business date" %}</th><th>{% trans "Reference" %}</th><th>{% trans "Agent" %}</th><th>{% trans "Movement" %}</th><th class="money">{% trans "Amount" %}</th><th>{% trans "By" %}</th></tr></thead>
+<tbody>{% for c in recent %}<tr><td>{{ c.business_date|date:"d/m/Y" }}</td><td>{{ c.reference }}</td><td>{{ c.agent.name }}</td><td>{% if c.amount > 0 %}{% trans "Capital given" %}{% else %}{% trans "Capital paid back" %}{% endif %}{% if c.note %} · <span class="muted">{{ c.note }}</span>{% endif %}</td><td class="money">{{ c.amount|absval|fcfa }}</td><td class="small">{{ c.recorded_by }}</td></tr>{% endfor %}</tbody></table></div>{% endif %}
+{% endblock %}

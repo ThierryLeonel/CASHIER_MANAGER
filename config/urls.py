@@ -93,6 +93,7 @@ urlpatterns = [
     path("agent/my-sim/", v.market_sim, name="market_sim"),
     path("agent/declaration/", v.agent_declaration, name="agent_declaration"),
     path("agents/declarations/", v.declarations, name="declarations"),
+    path("agents/capital/", v.agent_capital, name="agent_capital"),
     path("agent/destocash/record/", v.agent_destock_record, name="agent_destock_record"),
     path("supervision/agents/", v.agents_supervision, name="agents_supervision"),
     path("customers/call-database/", v.call_database, name="call_database"),

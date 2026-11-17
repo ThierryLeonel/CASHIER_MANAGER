@@ -104,6 +104,39 @@ def stock_download(request):
     return resp
 
 
+@roles_required(R.MANAGER, R.FINANCE, R.SUPERADMIN)
+def agent_capital(request):
+    """Capital given to commercial agents (payable back): record a movement; see each agent's capital, trading
+    balance and total payable to the company."""
+    from core import forms_shop as SF
+    from core.models import AgentCapital
+    from core.services import agents as ag
+
+    form = SF.AgentCapitalForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        cd = form.cleaned_data
+        try:
+            c = ag.record_capital(request.user, agent=cd["agent"], movement=cd["movement"], amount=cd["amount"],
+                                  business_date=cd.get("business_date"), note=cd.get("note") or "",
+                                  idempotency_key=cd["idem"])
+        except BusinessError as e:
+            form.add_error(e.field if e.field in form.fields else None, e.message)
+        else:
+            messages.success(request, _("%(ref)s saved: %(agent)s — capital to pay back now %(c)s FCFA.") % {
+                "ref": c.reference, "agent": c.agent.name, "c": fmt(ag.capital_of(c.agent))})
+            return redirect("agent_capital")
+    caps = ag.capital_map()
+    agents = Counterparty.objects.filter(pk__in=[k for k, v in caps.items() if v]).order_by("name")
+    rows = []
+    for a in agents:
+        bal = ops.customer_balance(a)
+        rows.append({"agent": a, "capital": caps[a.pk], "balance": bal, "total": bal + caps[a.pk]})
+    tot = {k: sum((r[k] for r in rows), Decimal(0)) for k in ("capital", "balance", "total")}
+    return render(request, "core/agent_capital.html", {
+        "form": form, "rows": rows, "tot": tot,
+        "recent": AgentCapital.objects.select_related("agent", "recorded_by")[:20], "customers": True})
+
+
 @roles_required(*MARKET_VIEW)
 def declarations(request):
     """The agents' daily declarations (their own records of what they received from and paid to the office)."""

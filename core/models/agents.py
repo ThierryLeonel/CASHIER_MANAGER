@@ -265,3 +265,24 @@ class AgentDeclaration(models.Model):
     @property
     def paid(self):
         return sum((getattr(self, f) for f in self.PAID), Z)
+
+
+class AgentCapital(models.Model):
+    """Working capital the company gave a commercial agent (positive) or that he paid back (negative). It is payable
+    back to the company, kept apart from his trading balance; both together make what he owes the company."""
+
+    agent = models.ForeignKey(Counterparty, on_delete=models.PROTECT, related_name="capital_moves",
+                              limit_choices_to={"kind": "AGENT"})
+    amount = models.DecimalField(_("amount"), **MONEY)  # + given to the agent, − paid back by him
+    business_date = models.DateField(db_index=True)
+    note = models.CharField(_("note"), max_length=255, blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    recorded_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name="+")
+    idem = models.UUIDField(null=True, blank=True, unique=True, editable=False)
+
+    class Meta:
+        ordering = ["-business_date", "-created_at"]
+
+    @property
+    def reference(self):
+        return f"KC-{self.pk:06d}"

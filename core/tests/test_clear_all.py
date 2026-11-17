@@ -37,6 +37,7 @@ class ClearEverything(OrgMixin, TestCase):
         ag.declare(au, recv_uve=D(1000))
         ag.declare(au, kind="OPENING", recv_cash=D(1000))
         ag.request_payback(au, shop=shop, cash=D(1000))
+        ag.record_capital(self.admin, agent=self.a1, movement="GIVE", amount=D(50000))
         self.agent_user = au
         # an older entry answered "no payback" (TransferNoPayback points at it)
         from core.models import TransferNoPayback
