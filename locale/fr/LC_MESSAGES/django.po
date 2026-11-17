@@ -15,12 +15,22 @@ msgid "% of my POS"
 msgstr "% de mes POS"
 
 #, python-format
+msgid "%(a)s already has a login."
+msgstr "%(a)s a déjà un identifiant."
+
+#, python-format
 msgid ""
 "%(a)s cannot be transferred into %(b)s. Transfer the same product (cash ↔ "
 "bank is allowed)."
 msgstr ""
 "%(a)s ne peut pas être transféré vers %(b)s. Transférez le même produit "
 "(espèces ↔ banque est permis)."
+
+#, python-format
+msgid "%(a)s is a POS: only commercial agents may have a login."
+msgstr ""
+"%(a)s est un PDV : seuls les agents commerciaux peuvent avoir un "
+"identifiant."
 
 #, python-format
 msgid ""
@@ -960,6 +970,9 @@ msgstr "Agents approvisionnés : %(n)s · total %(amt)s FCFA."
 msgid "Agents versus POS"
 msgstr "Agents ou PDV"
 
+msgid "Agents without a login"
+msgstr "Agents sans identifiant"
+
 msgid "Agents without an opening balance"
 msgstr "Agents sans solde d'ouverture"
 
@@ -1181,6 +1194,10 @@ msgstr "Arrive dans"
 msgid "As of"
 msgstr "Au"
 
+msgid "Ask each agent to choose his own password at the first sign-in"
+msgstr ""
+"Demander à chaque agent de choisir son mot de passe à la première connexion"
+
 msgid ""
 "Ask the administrator to link your login to your own agent account (your "
 "business SIM) to supply POS."
@@ -1361,6 +1378,9 @@ msgstr "SIM business"
 #, python-format
 msgid "Business SIM %(sim)s is already registered to %(cp)s."
 msgstr "La SIM business %(sim)s est déjà attribuée à %(cp)s."
+
+msgid "Business SIM (username)"
+msgstr "SIM business (identifiant)"
 
 msgid "Business SIM number"
 msgstr "Numéro de SIM business"
@@ -2122,6 +2142,9 @@ msgstr "Effacer les données"
 msgid "Clear the list"
 msgstr "Vider la liste"
 
+msgid "Clear this list"
+msgstr "Effacer cette liste"
+
 msgid "Client"
 msgstr "Client"
 
@@ -2295,6 +2318,9 @@ msgstr "Supervision des agents commerciaux"
 
 msgid "Commercial agents who owe the shop"
 msgstr "Agents commerciaux qui doivent à la boutique"
+
+msgid "Commercial agents' logins"
+msgstr "Identifiants des agents commerciaux"
 
 msgid ""
 "Commercial agents' records only: their supplies to POS, shops and clients, "
@@ -2622,8 +2648,28 @@ msgstr "Erreur de comptage/lecture – aucune écriture"
 msgid "Country of origin"
 msgstr "Pays d'origine"
 
+#, python-format
+msgid "Create logins for all %(n)s agents of this list"
+msgstr "Créer les identifiants des %(n)s agents de cette liste"
+
+msgid "Create logins for several agents at once"
+msgstr "Créer les identifiants de plusieurs agents à la fois"
+
+msgid "Create logins for the selected agents"
+msgstr "Créer les identifiants des agents sélectionnés"
+
 msgid "Create the account"
 msgstr "Créer le compte"
+
+msgid ""
+"Create the logins of many commercial agents at once. The username is the "
+"agent's business SIM; the temporary password is generated for each agent (or"
+" the one you type, for all) and must be changed at the first sign-in."
+msgstr ""
+"Créez les identifiants de nombreux agents commerciaux à la fois. "
+"L'identifiant est la SIM business de l'agent ; le mot de passe temporaire "
+"est généré pour chaque agent (ou celui que vous saisissez, pour tous) et "
+"doit être changé à la première connexion."
 
 msgid "Created by this file"
 msgstr "Créé par ce fichier"
@@ -3165,6 +3211,9 @@ msgstr "Modifier le service"
 msgid "Effective from"
 msgstr "En vigueur depuis"
 
+msgid "Empty: one generated per agent"
+msgstr "Vide : un généré par agent"
+
 msgid "End of day"
 msgstr "Fin de journée"
 
@@ -3354,6 +3403,9 @@ msgstr "Tous les POS de ma zone"
 
 msgid "Every agent already has an opening balance."
 msgstr "Chaque agent a déjà un solde d'ouverture."
+
+msgid "Every commercial agent of this list has a login."
+msgstr "Chaque agent commercial de cette liste a un identifiant."
 
 msgid ""
 "Every report has filters and Excel/PDF downloads that use exactly the same "
@@ -4182,6 +4234,17 @@ msgstr "Déconnexion"
 msgid "Log out now"
 msgstr "Se déconnecter maintenant"
 
+#, python-format
+msgid ""
+"Logins created: %(n)s. Copy or download the passwords now: they are shown "
+"only on this page."
+msgstr ""
+"Identifiants créés : %(n)s. Copiez ou téléchargez les mots de passe "
+"maintenant : ils ne sont affichés que sur cette page."
+
+msgid "Logins for several agents"
+msgstr "Identifiants de plusieurs agents"
+
 msgid "Logo"
 msgstr "Logo"
 
@@ -4495,6 +4558,9 @@ msgstr "Nouvel écart"
 
 msgid "New exchange"
 msgstr "Nouvel échange"
+
+msgid "New logins — copy or download them now"
+msgstr "Nouveaux identifiants — copiez-les ou téléchargez-les maintenant"
 
 msgid ""
 "New money put into the business by the owners. It increases the chosen "
@@ -5347,6 +5413,9 @@ msgstr "Facultatif."
 msgid "Or create a new microzone"
 msgstr "Ou créer une nouvelle microzone"
 
+msgid "Or upload a sheet"
+msgstr "Ou importer un fichier"
+
 msgid "Orange Money cash-in"
 msgstr "Orange Money : dépôt (cash-in)"
 
@@ -5788,6 +5857,13 @@ msgstr "Mot de passe de %(u)s remplacé."
 
 msgid "Password to set"
 msgstr "Mot de passe à définir"
+
+msgid ""
+"Passwords are stored encrypted: after you clear this list nobody can read "
+"them again (they can only be replaced)."
+msgstr ""
+"Les mots de passe sont chiffrés : une fois cette liste effacée, personne ne "
+"peut plus les lire (ils peuvent seulement être remplacés)."
 
 msgid ""
 "Passwords are stored encrypted: nobody can read them, not even the "
@@ -6493,6 +6569,9 @@ msgstr ""
 msgid "Same product (cash, UVE, ER, MTN), or cash ↔ bank."
 msgstr "Même produit (espèces, UVE, ER, MTN), ou espèces ↔ banque."
 
+msgid "Same temporary password for all (optional)"
+msgstr "Même mot de passe temporaire pour tous (facultatif)"
+
 msgid "Save"
 msgstr "Enregistrer"
 
@@ -6588,6 +6667,9 @@ msgstr "Tout sélectionner sur cette page"
 
 msgid "Select an agent or POS business SIM to see the statement."
 msgstr "Choisissez la SIM business d'un agent ou POS pour voir le relevé."
+
+msgid "Select at least one commercial agent without a login."
+msgstr "Sélectionnez au moins un agent commercial sans identifiant."
 
 msgid "Select the correction that explains this difference."
 msgstr "Choisissez la correction qui explique cet écart."
@@ -7379,6 +7461,9 @@ msgstr "Contact téléphonique"
 msgid "Templates"
 msgstr "Modèles"
 
+msgid "Temporary password"
+msgstr "Mot de passe temporaire"
+
 msgid ""
 "Temporary password — give it to the person now. It will not be shown again."
 msgstr ""
@@ -7675,6 +7760,10 @@ msgstr "Le bonus doit être compris entre 0 et 100 %."
 
 msgid "The uploaded file has expired. Upload it again."
 msgstr "Le fichier chargé a expiré. Chargez-le à nouveau."
+
+#, python-format
+msgid "The username %(u)s is already taken."
+msgstr "L'identifiant %(u)s est déjà pris."
 
 msgid "The whole agent / POS base (Excel, import format)"
 msgstr "Toute la base agents / POS (Excel, format d'import)"
@@ -8718,6 +8807,9 @@ msgstr "Pourquoi ? par ex. rien reçu"
 msgid "With"
 msgstr "Avec"
 
+msgid "With a login"
+msgstr "Avec identifiant"
+
 msgid "With agents"
 msgstr "Avec les agents"
 
@@ -8732,6 +8824,9 @@ msgstr "Retirer du capital"
 
 msgid "Withdrawn"
 msgstr "Retiré"
+
+msgid "Without a login"
+msgstr "Sans identifiant"
 
 msgid "Work attendance (shifts)"
 msgstr "Présences au travail (services)"
@@ -8999,6 +9094,10 @@ msgstr "agents et PDV"
 
 msgid "agents, cash control and balances"
 msgstr "agents, contrôle de caisse et soldes"
+
+#, python-format
+msgid "already has the login %(u)s"
+msgstr "a déjà l'identifiant %(u)s"
 
 msgid "amount"
 msgstr "montant"

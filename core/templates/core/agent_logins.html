@@ -1,0 +1,51 @@
+{% extends "core/base.html" %}{% load i18n cashier %}
+{% block title %}{% trans "Commercial agents' logins" %}{% endblock %}
+{% block topbar %}{% trans "Commercial agents' logins" %}{% endblock %}
+{% block content %}
+<h1>{% trans "Commercial agents' logins" %}</h1>
+<p class="small muted meta">{% trans "Create the logins of many commercial agents at once. The username is the agent's business SIM; the temporary password is generated for each agent (or the one you type, for all) and must be changed at the first sign-in." %} <a href="{% url 'import_data' %}?kind=agent_logins">{% trans "Or upload a sheet" %}</a></p>
+
+{% if new %}<div class="panel" style="border-color:var(--acc,#f60)">
+  <h2 style="margin-top:0">{% trans "New logins — copy or download them now" %}</h2>
+  <p class="small meta">{% trans "Passwords are stored encrypted: after you clear this list nobody can read them again (they can only be replaced)." %}</p>
+  <div class="tbl-wrap"><table class="t"><thead><tr><th>{% trans "Agent" %}</th><th>{% trans "Business SIM" %}</th><th>{% trans "Username" %}</th><th>{% trans "Temporary password" %}</th></tr></thead>
+  <tbody>{% for r in new %}<tr><td>{{ r.0 }}</td><td>{{ r.1|sim }}</td><td><strong>{{ r.2 }}</strong></td><td><code>{{ r.3 }}</code></td></tr>{% endfor %}</tbody></table></div>
+  <div class="actions"><a class="btn primary" href="{% url 'agent_logins_download' %}">⬇ {% trans "Download (Excel)" %}</a>
+  <form method="post" action="{% url 'agent_logins_download' %}" style="display:inline">{% csrf_token %}<button class="btn" type="submit">{% trans "Clear this list" %}</button></form></div>
+</div>{% endif %}
+
+<nav class="lvl-tabs rec-chips">
+  <a class="{% if has != 'with' %}on{% endif %}" href="?has=without">{% trans "Without a login" %}</a>
+  <a class="{% if has == 'with' %}on{% endif %}" href="?has=with">{% trans "With a login" %} ({{ with_count }})</a>
+</nav>
+<form method="get" class="panel grid" style="align-items:end"><input type="hidden" name="has" value="{{ has }}">
+  <div class="field"><label for="al-q">{% trans "Search" %}</label><input id="al-q" type="text" name="q" value="{{ q }}" placeholder="{% trans 'Name, SIM or microzone' %}"></div>
+  <div class="field"><label for="al-z">{% trans "Zone" %}</label><select id="al-z" name="zone"><option value="">—</option>{% for z in zones %}<option value="{{ z.pk }}"{% if zone == z.pk|stringformat:'s' %} selected{% endif %}>{{ z }}</option>{% endfor %}</select></div>
+  <div class="field"><button class="btn" type="submit">{% trans "Search" %}</button></div>
+</form>
+
+{% if has == 'with' %}
+<div class="tbl-wrap"><table class="t"><thead><tr><th>{% trans "Agent" %}</th><th>{% trans "Business SIM" %}</th><th>{% trans "Username" %}</th><th>{% trans "Status" %}</th><th></th></tr></thead>
+<tbody>{% for a in page %}<tr><td>{{ a.name }}</td><td>{{ a.business_sim|sim }}</td><td>{{ a.login_user.username }}</td>
+<td>{% if a.login_user.is_active %}<span class="badge ok">{% trans "Active" %}</span>{% else %}<span class="badge bad">{% trans "Deactivated" %}</span>{% endif %}{% if a.login_user.must_change_password %} <span class="badge acc">{% trans "must change password" %}</span>{% endif %}</td>
+<td class="keep"><a class="btn small" href="{% url 'user_detail' a.login_user.pk %}">{% trans "Password / status" %}</a></td></tr>
+{% empty %}<tr><td colspan="5" class="muted">{% trans "Nothing found." %}</td></tr>{% endfor %}</tbody></table></div>
+{% else %}
+<form method="post" class="panel" id="al-form">{% csrf_token %}
+  <h2 style="margin-top:0">{% trans "Agents without a login" %} <span class="muted small">({{ total }})</span></h2>
+  <div class="grid">
+    <div class="field"><label for="al-pw">{% trans "Same temporary password for all (optional)" %}</label><input id="al-pw" type="text" name="password" autocomplete="new-password" placeholder="{% trans 'Empty: one generated per agent' %}"></div>
+    <div class="field"><label class="check"><input type="checkbox" name="must_change" checked> {% trans "Ask each agent to choose his own password at the first sign-in" %}</label></div>
+  </div>
+  <div class="tbl-wrap"><table class="t no-stack"><thead><tr><th><input type="checkbox" id="al-all" aria-label="{% trans 'Select all' %}"></th><th>{% trans "Agent" %}</th><th>{% trans "Business SIM (username)" %}</th><th>{% trans "Microzone" %}</th></tr></thead>
+  <tbody>{% for a in page %}<tr><td><input type="checkbox" name="ids" value="{{ a.pk }}" aria-label="{{ a.name }}"></td><td>{{ a.name }}</td><td>{{ a.business_sim }}</td><td>{{ a.microzone.name|default:"—" }}{% if a.microzone.subzone %} <span class="muted small">· {{ a.microzone.subzone }}</span>{% endif %}</td></tr>
+  {% empty %}<tr><td colspan="4" class="muted">{% trans "Every commercial agent of this list has a login." %}</td></tr>{% endfor %}</tbody></table></div>
+  {% if page %}<div class="actions">
+    <button class="btn primary" type="submit" name="scope" value="selected">{% trans "Create logins for the selected agents" %}</button>
+    <button class="btn" type="submit" name="scope" value="all">{% blocktrans with n=total %}Create logins for all {{ n }} agents of this list{% endblocktrans %}</button>
+  </div>{% endif %}
+</form>
+{% endif %}
+<div class="pager">{% if page.has_previous %}<a class="btn small" href="?has={{ has }}&q={{ q|urlencode }}&zone={{ zone }}&page={{ page.previous_page_number }}">←</a>{% endif %}<span class="muted small">{{ page.number }} / {{ page.paginator.num_pages }}</span>{% if page.has_next %}<a class="btn small" href="?has={{ has }}&q={{ q|urlencode }}&zone={{ zone }}&page={{ page.next_page_number }}">→</a>{% endif %}</div>
+{% endblock %}
+{% block scripts %}<script>(function(){var a=document.getElementById('al-all');if(!a)return;a.addEventListener('change',function(){document.querySelectorAll('#al-form input[name=ids]').forEach(function(c){c.checked=a.checked;});});})();</script>{% endblock %}

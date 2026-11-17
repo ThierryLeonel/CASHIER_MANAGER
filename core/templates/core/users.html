@@ -7,7 +7,7 @@
 <form class="filters panel" method="get">
   <div class="field"><label>{% trans "Search (name, username, staff ID)" %}</label><input type="text" name="q" value="{{ q }}"></div>
   <div class="field"><label>{% trans "Status" %}</label><select name="status"><option value="">—</option><option value="active" {% if status == 'active' %}selected{% endif %}>{% trans "Active" %}</option><option value="inactive" {% if status == 'inactive' %}selected{% endif %}>{% trans "Deactivated" %}</option></select></div>
-  <div class="field"><button class="btn" type="submit">{% trans "Search" %}</button> <a class="btn primary" href="{% url 'admin:core_user_add' %}">+ {% trans "New user" %}</a></div>
+  <div class="field"><button class="btn" type="submit">{% trans "Search" %}</button> <a class="btn primary" href="{% url 'admin:core_user_add' %}">+ {% trans "New user" %}</a> <a class="btn" href="{% url 'agent_logins' %}">+ {% trans "Logins for several agents" %}</a></div>
 </form>
 <div class="tbl-wrap"><table class="t">
 <thead><tr><th>{% trans "Name" %}</th><th>{% trans "Username" %}</th><th>{% trans "Staff ID" %}</th><th>{% trans "Role" %}</th><th>{% trans "Zone" %}</th><th>{% trans "Last sign-in" %}</th><th>{% trans "Status" %}</th><th></th></tr></thead>

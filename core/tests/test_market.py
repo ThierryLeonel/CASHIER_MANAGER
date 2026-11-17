@@ -518,3 +518,73 @@ class BatchSupplyCapitalOpeningTests(OrgMixin, TestCase):
         mk = User.objects.filter(role=User.Role.MARKET).first()
         if mk:
             self.assertNotEqual(self.login(mk.username).get("/reports/daily_debt/").status_code, 200)
+
+
+class AgentLoginsBulkTests(OrgMixin, TestCase):
+    """The super admin creates the logins of many commercial agents at once (page or sheet)."""
+
+    def setUp(self):
+        self.make_org()
+
+    def test_bulk_create_from_page(self):
+        new = [Counterparty.objects.create(kind=Counterparty.Kind.AGENT, business_sim=f"6980000{i:02d}",
+                                           name=f"Agent login {i}") for i in range(3)]
+        c = self.client_class()
+        self.assertTrue(c.login(username="admin", password=PW))
+        page = c.get("/administration/agent-logins/")
+        self.assertContains(page, "Agents without a login")
+        self.assertContains(page, "698000000")
+        r = c.post("/administration/agent-logins/", {"scope": "selected", "ids": [new[0].pk, new[1].pk],
+                                                     "must_change": "on"})
+        self.assertEqual(r.status_code, 302)
+        for cp in new[:2]:
+            u = User.objects.get(counterparty=cp)
+            self.assertEqual((u.username, u.role, u.must_change_password), (cp.business_sim, User.Role.AGENT, True))
+        self.assertFalse(User.objects.filter(counterparty=new[2]).exists())
+        page = c.get("/administration/agent-logins/")
+        self.assertContains(page, "New logins — copy or download them now")
+        x = c.get("/administration/agent-logins/download/")
+        self.assertEqual(x["Content-Type"].split(";")[0],
+                         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+        # the generated password works
+        from openpyxl import load_workbook
+        import io
+        ws = load_workbook(io.BytesIO(x.content)).active
+        row = [list(r) for r in ws.iter_rows(min_row=2, values_only=True)][0]
+        a = self.client_class()
+        self.assertTrue(a.login(username=row[2], password=row[3]))
+        c.post("/administration/agent-logins/download/")
+        self.assertNotContains(c.get("/administration/agent-logins/"), "copy or download them now")
+        # everyone left in the filtered list, with one typed password
+        r = c.post("/administration/agent-logins/?q=Agent%20login", {"scope": "all", "password": "Temp-Pass-2026!"})
+        self.assertEqual(r.status_code, 302)
+        self.assertTrue(User.objects.get(counterparty=new[2]).check_password("Temp-Pass-2026!"))
+        self.assertContains(c.get("/administration/agent-logins/?has=with"), new[2].business_sim)
+        # weak password: nothing created
+        extra = Counterparty.objects.create(kind=Counterparty.Kind.AGENT, business_sim="698000099", name="Weak")
+        r = c.post("/administration/agent-logins/", {"scope": "selected", "ids": [extra.pk], "password": "123"})
+        self.assertFalse(User.objects.filter(counterparty=extra).exists())
+        # only the super admin
+        m = self.client_class()
+        self.assertTrue(m.login(username="manager", password=PW))
+        self.assertEqual(m.get("/administration/agent-logins/").status_code, 403)
+
+    def test_import_sheet(self):
+        from core.services import importer
+
+        a = Counterparty.objects.create(kind=Counterparty.Kind.AGENT, business_sim="698100001", name="Sheet A")
+        b = Counterparty.objects.create(kind=Counterparty.Kind.AGENT, business_sim="698100002", name="Sheet B")
+        admin = User.objects.get(username="admin")
+        rows = [{"business_sim": "698100001", "username": "", "password": "Temp-Pass-2026!"},
+                {"business_sim": "698100002", "username": "sheet.b", "password": "Temp-Pass-2026!"},
+                {"business_sim": self.p1.business_sim, "username": "", "password": "Temp-Pass-2026!"}]
+        res, ok = importer.run_import(admin, "agent_logins", rows, commit=True)
+        self.assertFalse(ok)  # the POS row fails: nothing imported
+        self.assertFalse(User.objects.filter(counterparty=a).exists())
+        res, ok = importer.run_import(admin, "agent_logins", rows[:2], commit=True)
+        self.assertTrue(ok, res)
+        self.assertEqual(User.objects.get(counterparty=a).username, "698100001")
+        self.assertEqual(User.objects.get(counterparty=b).username, "sheet.b")
+        res, ok = importer.run_import(admin, "agent_logins", rows[:2], commit=True)  # again: left as they are
+        self.assertTrue(ok, res)
+        self.assertEqual(User.objects.filter(counterparty__in=[a, b]).count(), 2)

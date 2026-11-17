@@ -818,6 +818,7 @@ class ImportForm(forms.Form):
              ("customers_update", _("Agents and POS — update their information (only the filled cells change)")), ("cash_managers", _("Cash managers")),
              ("opening", _("Opening balances (cashiers, agents, cash managers, banks and shops)")),
              ("agent_capital", _("Capital given to commercial agents (payable back)")),
+             ("agent_logins", _("Commercial agents' logins")),
              ("transactions", _("Transactions (supplies, payments, expenses)")),
              ("shops", _("Shops")), ("shop_staff", _("Shop staff and their duties")),
              ("shop_items", _("Shop items and categories")), ("shop_stock", _("Shop stock (IMEI / serial numbers)")),

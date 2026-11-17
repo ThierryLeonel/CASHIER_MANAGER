@@ -172,6 +172,7 @@
     <a href="{% url 'admin_home' %}" class="{% if u == 'admin_home' %}on{% endif %}">{% icon "settings" %}<span>{% trans "Admin tools" %}</span></a>
     <div class="side-group">{% trans "Settings" %}</div>
     <a href="{% url 'users' %}" class="{% if u == 'users' or u == 'user_detail' %}on{% endif %}">{% icon "users" %}<span>{% trans "Users & passwords" %}</span></a>
+    <a href="{% url 'agent_logins' %}" class="{% if u == 'agent_logins' %}on{% endif %}">{% icon "users" %}<span>{% trans "Commercial agents' logins" %}</span></a>
     <a href="{% url 'company_profile' %}" class="{% if u == 'company_profile' %}on{% endif %}">{% icon "settings" %}<span>{% trans "Company profile" %}</span></a>
     <a href="{% url 'conversion_rate' %}" class="{% if u == 'conversion_rate' %}on{% endif %}">{% icon "percent" %}<span>{% trans "Conversion rate" %}</span></a>
     <a href="{% url 'admin:index' %}">{% icon "key" %}<span>{% trans "Configuration" %}</span></a>

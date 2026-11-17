@@ -13,6 +13,7 @@
 <div class="quick">
   <a class="qa main" href="{% url 'act_as' %}"><span class="qa-ic">{% icon "users" 22 %}</span><strong>{% trans "Record as a cashier" %}</strong><span class="d">{% if acting %}{% blocktrans with c=acting %}Now recording for {{ c }}{% endblocktrans %}{% else %}{% trans "Enter supplies, payments and more for any cashier" %}{% endif %}</span></a>
   <a class="qa" href="{% url 'users' %}"><span class="qa-ic">{% icon "users" 22 %}</span><strong>{% trans "Users & passwords" %}</strong><span class="d">{% trans "Reset passwords, activate or deactivate accounts" %}</span></a>
+  <a class="qa" href="{% url 'agent_logins' %}"><span class="qa-ic">{% icon "users" 22 %}</span><strong>{% trans "Commercial agents' logins" %}</strong><span class="d">{% trans "Create logins for several agents at once" %}</span></a>
   <a class="qa" href="{% url 'company_profile' %}"><span class="qa-ic">{% icon "settings" 22 %}</span><strong>{% trans "Company profile" %}</strong><span class="d">{% trans "Name, logo, address, NIU and RCCM on receipts and reports" %}</span></a>
   <a class="qa" href="{% url 'import_data' %}"><span class="qa-ic">{% icon "upload" 22 %}</span><strong>{% trans "Import CSV / Excel" %}</strong><span class="d">{% trans "Agents, POS, opening balances, transactions" %}</span></a>
   <a class="qa" href="{% url 'call_database' %}"><span class="qa-ic">{% icon "download" 22 %}</span><strong>{% trans "Download agents & POS" %}</strong><span class="d">{% trans "The whole agent / POS base (Excel, import format)" %}</span></a>

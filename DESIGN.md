@@ -716,3 +716,20 @@ back (agents).**
     that day, owed for the day, opening / corrections, global debt, and for an agent capital and total payable.
   - Agent home: tile "Owed for today" (supplied − paid today, and the debt before today), from `ag.debt_today()`
     (also merged into `summary()`).
+
+## Logins for many commercial agents at once
+- `/administration/agent-logins/` (super admin; Admin menu "Commercial agents' logins", Administration home tile,
+  button on Users & passwords):
+  - Tabs "Without a login" / "With a login" (username, active, must change password, link to Password / status).
+    Search by name, SIM or microzone; filter by zone; 100 per page.
+  - Tick agents (select all on the page) → "Create logins for the selected agents", or "Create logins for all N agents
+    of this list" (up to 1 000 per click).
+  - Username = the agent's business SIM (suffix -2, -3… if taken). Temporary password: generated per agent, or the
+    same one typed for all (password rules checked). "Ask each agent to choose his own password at the first sign-in"
+    (default on).
+  - `acc.create_agent_login` / `acc.create_agent_logins` (role AGENT, linked to the agent account, all or nothing,
+    audit `agent_login_created`). POS and agents who already have a login are refused.
+  - The new usernames and passwords are shown once on the page (kept in the session) with "Download (Excel)"
+    (`/administration/agent-logins/download/`) and "Clear this list".
+- Import kind `agent_logins` (BUSINESS_SIM, USERNAME — empty = the SIM, PASSWORD — required, changed at the first
+  sign-in). An agent who already has a login is left as he is.

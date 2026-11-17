@@ -85,6 +85,83 @@ def user_toggle(request, pk):
     return redirect(nxt) if nxt.startswith("/") and not nxt.startswith("//") else redirect("user_detail", pk=pk)
 
 
+@roles_required(R.SUPERADMIN)
+def agent_logins(request):
+    """Logins for many commercial agents at once: tick the agents (or take the whole filtered list); each gets the
+    business SIM as username and a temporary password (generated, or the same one typed for all), to be changed at
+    the first sign-in. The new usernames and passwords are shown once and can be downloaded."""
+    from core.models import Counterparty, Zone
+
+    q = (request.GET.get("q") or "").strip()
+    has = request.GET.get("has") or "without"
+    zone = request.GET.get("zone") or ""
+    qs = Counterparty.objects.filter(kind=Counterparty.Kind.AGENT, active=True).select_related(
+        "microzone__subzone", "login_user").order_by("name")
+    if has == "with":
+        qs = qs.filter(login_user__isnull=False)
+    else:
+        qs = qs.filter(login_user__isnull=True)
+    if q:
+        qs = qs.filter(Q(name__icontains=q) | Q(business_sim__icontains=q.replace(" ", ""))
+                       | Q(microzone__name__icontains=q))
+    if zone.isdigit():
+        qs = qs.filter(Q(microzone__subzone_id=zone) | Q(microzone__subzone__parent_id=zone) | Q(master_zone_id=zone))
+    if request.method == "POST" and has != "with":
+        pw = (request.POST.get("password") or "").strip() or None
+        if request.POST.get("scope") == "all":
+            agents = list(qs[:1000])
+        else:
+            ids = [int(i) for i in request.POST.getlist("ids") if i.isdigit()]
+            agents = list(qs.filter(pk__in=ids))
+        try:
+            done = acc.create_agent_logins(request.user, agents, password=pw,
+                                           must_change=bool(request.POST.get("must_change")))
+        except BusinessError as e:
+            messages.error(request, e.message)
+        else:
+            request.session["agent_logins_new"] = [[cp.name, cp.business_sim, u.username, p] for cp, u, p in done]
+            messages.success(request, _("Logins created: %(n)s. Copy or download the passwords now: they are shown "
+                                        "only on this page.") % {"n": len(done)})
+            return redirect(request.get_full_path())
+    page = Paginator(qs, 100).get_page(request.GET.get("page"))
+    return render(request, "core/agent_logins.html", {
+        "page": page, "q": q, "has": has, "zone": zone, "total": page.paginator.count,
+        "zones": Zone.objects.filter(active=True).order_by("parent_id", "name"),
+        "new": request.session.get("agent_logins_new") or [],
+        "with_count": Counterparty.objects.filter(kind=Counterparty.Kind.AGENT, login_user__isnull=False).count()})
+
+
+@roles_required(R.SUPERADMIN)
+def agent_logins_download(request):
+    """The logins just created (usernames and temporary passwords) as an Excel file; ?clear=1 forgets them."""
+    import io
+
+    from django.http import HttpResponse
+    from openpyxl import Workbook
+    from openpyxl.styles import Font
+
+    rows = request.session.get("agent_logins_new") or []
+    if request.method == "POST" or request.GET.get("clear"):
+        request.session.pop("agent_logins_new", None)
+        return redirect("agent_logins")
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "logins"
+    ws.append([_("Agent"), _("Business SIM"), _("Username"), _("Temporary password")])
+    for c in ws[1]:
+        c.font = Font(bold=True)
+    for r in rows:
+        ws.append(r)
+    for col, w in zip("ABCD", (32, 16, 18, 20)):
+        ws.column_dimensions[col].width = w
+    buf = io.BytesIO()
+    wb.save(buf)
+    resp = HttpResponse(buf.getvalue(),
+                        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    resp["Content-Disposition"] = 'attachment; filename="agent_logins.xlsx"'
+    return resp
+
+
 @login_required
 def my_password(request):
     form = PasswordChangeForm(request.user, request.POST or None)

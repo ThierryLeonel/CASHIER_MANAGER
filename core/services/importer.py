@@ -49,6 +49,8 @@ TEMPLATES = {
                      [["POS", "692345678", "Molyko", 1500, 2000, 10000]]),
     "cash_managers": (["name", "phone", "notes"], [["Cash manager Buea", "650123456", ""],
                                                    ["Mama Rose (no SIM)", "", "phone is optional"]]),
+    "agent_logins": (["BUSINESS_SIM", "USERNAME", "PASSWORD"],
+                     [["691234567", "", "Temp-Pass-2026!"], ["691234568", "ekane.agent", "Temp-Pass-2026!"]]),
     "agent_capital": (["BUSINESS_SIM", "CAPITAL", "NOTE"],
                       [["691234567", "500000", "initial capital"], ["691234568", "300000", ""]]),
     "opening": (["kind", "identifier", "amount", "date", "note"],
@@ -642,6 +644,22 @@ def _row_shop_staff(user, r):
     return _("created %(cp)s") % {"cp": u.username}
 
 
+def _row_agent_login(user, r):
+    """A commercial agent's login: his business SIM, a username (empty = the SIM) and a temporary password, changed
+    at the first sign-in. An agent who already has a login is left as he is."""
+    from . import accounts as acc
+
+    cp = _customer(_sim(r.get("business_sim"), _("business SIM")), kind=Counterparty.Kind.AGENT)
+    existing = User.objects.filter(counterparty=cp).first()
+    if existing:
+        return _("already has the login %(u)s") % {"u": existing.username}
+    pw = _s(r.get("password"))
+    if not pw:
+        raise BusinessError(_("password is required for a new account (it must be changed at the first sign-in)"))
+    u, _pw = acc.create_agent_login(user, cp, username=_s(r.get("username")), password=pw)
+    return _("created %(cp)s") % {"cp": u.username}
+
+
 def _row_shop_item(user, r):
     from core.models import ItemCategory, ShopItem
 
@@ -779,7 +797,7 @@ def _row_stock(user, r, only_changes=False):
     return f"{cp} · ER {er if er is not None else '—'} · UVE {uve if uve is not None else '—'}{flag}"
 
 
-HANDLERS = {"agent_capital": _row_agent_capital, "customers_update": _row_customer_update, "stock": _row_stock, "stock_update": _row_stock_update, "customers": _row_customer, "cash_managers": _row_cash_manager, "opening": _row_opening,
+HANDLERS = {"agent_logins": _row_agent_login, "agent_capital": _row_agent_capital, "customers_update": _row_customer_update, "stock": _row_stock, "stock_update": _row_stock_update, "customers": _row_customer, "cash_managers": _row_cash_manager, "opening": _row_opening,
             "transactions": _row_transaction, "shops": _row_shop, "shop_staff": _row_shop_staff,
             "shop_items": _row_shop_item, "shop_stock": _row_shop_stock,
             "shop_transactions": _row_shop_transaction}
