@@ -701,3 +701,17 @@ class TemplateFormatDownloadTests(OrgMixin, TestCase):
         only = load_workbook(io.BytesIO(c.get("/customers/call-database/?format=template&kind=POS").content)).active
         self.assertEqual({r[0] for r in only.iter_rows(min_row=2, values_only=True)}, {"POS"})
         self.assertContains(c.get("/administration/import/"), "template format")
+
+
+class PasswordEyeTests(OrgMixin, TestCase):
+    """The show / hide password script is on every page with a password box, Configuration included."""
+
+    def setUp(self):
+        self.make_org()
+
+    def test_script_loaded(self):
+        self.assertContains(self.client.get("/login/"), "core/pwreveal.js")
+        c = self.client_class()
+        self.assertTrue(c.login(username="admin", password=PW))
+        self.assertContains(c.get("/account/password/"), "core/pwreveal.js")
+        self.assertContains(c.get("/admin/core/user/add/"), "core/pwreveal.js")

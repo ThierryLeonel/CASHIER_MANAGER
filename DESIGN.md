@@ -763,3 +763,11 @@ back (agents).**
   BUSINESS_SIM, empty cells keep the old value) — round trip covered by `TemplateFormatDownloadTests`.
 - Without `format=template` the call database download is unchanged (template columns + agent in charge, active,
   stock).
+
+## Show / hide password (eye button)
+- `core/static/core/pwreveal.js`, loaded by `base.html` (every page: sign-in, My password, Users & passwords,
+  temporary passwords…) and by `config/templates/admin/base_site.html` (Configuration › Users add / change).
+- Every `input[type=password]` gets an eye button inside the box: click to show the password, click again to hide it
+  (icon eye / eye crossed, title and aria-label "Show password" / "Hide password", French on French pages,
+  `aria-pressed`). Boxes added later are handled too (MutationObserver).
+- Before a form is sent the boxes are switched back to password, so browsers still offer to save the password.
