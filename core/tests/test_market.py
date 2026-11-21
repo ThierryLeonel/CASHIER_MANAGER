@@ -657,3 +657,47 @@ class ErSupplyWithConversionTests(OrgMixin, TestCase):
         self.assertEqual(r.status_code, 302, r.content[:2000])
         self.assertEqual(Transaction.objects.filter(type=TxType.CONVERSION).count(), 2)
         self.assertEqual(self.cbal(self.a2), D(600000))
+
+
+class TemplateFormatDownloadTests(OrgMixin, TestCase):
+    """The super admin downloads the agents / POS exactly in the template format, edits and uploads it back."""
+
+    def setUp(self):
+        self.make_org()
+
+    def test_download_edit_upload(self):
+        import io
+
+        from openpyxl import Workbook, load_workbook
+
+        from core.services import importer
+
+        c = self.client_class()
+        self.assertTrue(c.login(username="admin", password=PW))
+        x = c.get("/customers/call-database/?format=template")
+        self.assertIn("agents-pos-", x["Content-Disposition"])
+        wb = load_workbook(io.BytesIO(x.content))
+        tpl = load_workbook(io.BytesIO(importer.template_xlsx("customers")))
+        self.assertEqual(wb.sheetnames, tpl.sheetnames)
+        ws = wb.active
+        head = [c.value for c in ws[1]]
+        self.assertEqual(head, importer.TEMPLATES["customers"][0])
+        self.assertEqual(ws.max_column, len(head))  # nothing more than the template
+        rows = list(ws.iter_rows(min_row=2, values_only=True))
+        sims = [r[5] for r in rows]
+        self.assertIn(self.a1.business_sim, sims)
+        self.assertIn(self.p1.business_sim, sims)
+        # edit a name and upload it back with "Update agent / POS info"
+        i = sims.index(self.a1.business_sim)
+        ws.cell(i + 2, 7).value = "Renamed by sheet"
+        buf = io.BytesIO()
+        wb.save(buf)
+        data = importer.read_rows("agents.xlsx", buf.getvalue())
+        res, ok = importer.run_import(User.objects.get(username="admin"), "customers_update", data, commit=True)
+        self.assertTrue(ok, res)
+        self.a1.refresh_from_db()
+        self.assertEqual(self.a1.name, "Renamed by sheet")
+        # agents only / POS only
+        only = load_workbook(io.BytesIO(c.get("/customers/call-database/?format=template&kind=POS").content)).active
+        self.assertEqual({r[0] for r in only.iter_rows(min_row=2, values_only=True)}, {"POS"})
+        self.assertContains(c.get("/administration/import/"), "template format")

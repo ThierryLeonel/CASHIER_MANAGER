@@ -3068,6 +3068,9 @@ msgstr "Télécharger le stock des POS (Excel)"
 msgid "Download agents & POS"
 msgstr "Télécharger agents & POS"
 
+msgid "Download agents & POS (template format)"
+msgstr "Télécharger agents et PDV (format du modèle)"
+
 msgid "Download call database"
 msgstr "Télécharger la base d'appel"
 
@@ -3466,6 +3469,9 @@ msgstr ""
 msgid "Everything above, plus agents, POS, agent logins and cash managers"
 msgstr ""
 "Tout ce qui précède, plus agents, PDV, accès agents et gestionnaires de cash"
+
+msgid "Exactly the agent / POS template: edit it and upload it back"
+msgstr "Exactement le modèle agents / PDV : modifiez-le et réimportez-le"
 
 msgid "Exceptional direct POS transactions and outstanding amounts"
 msgstr "Transactions directes exceptionnelles avec les PDV et montants dus"
@@ -6590,6 +6596,13 @@ msgid "Same as the office"
 msgstr "Identique au bureau"
 
 msgid ""
+"Same columns as the agent / POS template: edit it and upload it back with "
+"Update agent / POS info"
+msgstr ""
+"Mêmes colonnes que le modèle agents / PDV : modifiez-le et réimportez-le "
+"avec Mettre à jour les infos agents / PDV"
+
+msgid ""
 "Same kind as the source: MTN float to MTN float, UVE to UVE, bank to bank."
 msgstr ""
 "Même type que la source : float MTN vers float MTN, UVE vers UVE, banque "
@@ -8093,6 +8106,16 @@ msgstr "Vers le guichet (sous-zone)"
 
 msgid "To the shop"
 msgstr "Vers la boutique"
+
+msgid ""
+"To update agents and POS: download them in the template format, change the "
+"cells in Excel (leave BUSINESS_SIM as it is), then upload the file with "
+"Update agent / POS info. Empty cells keep what is there."
+msgstr ""
+"Pour mettre à jour agents et PDV : téléchargez-les au format du modèle, "
+"modifiez les cellules dans Excel (sans changer BUSINESS_SIM), puis importez "
+"le fichier avec Mettre à jour les infos agents / PDV. Les cellules vides "
+"gardent la valeur actuelle."
 
 msgid "Today"
 msgstr "Aujourd'hui"

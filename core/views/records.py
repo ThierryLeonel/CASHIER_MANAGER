@@ -266,9 +266,15 @@ def call_database(request):
     if request.GET.get("kind") in ("AGENT", "POS"):
         qs = qs.filter(kind=request.GET["kind"])
     qs = qs.order_by("kind", "microzone__subzone__name", "microzone__name", "name")
-    resp = HttpResponse(importer.call_xlsx(qs.iterator(chunk_size=2000), company().out_of_stock_er),
-                        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-    resp["Content-Disposition"] = f'attachment; filename="call-database-{timezone.localdate().isoformat()}.xlsx"'
+    rows = qs.iterator(chunk_size=2000)
+    if request.GET.get("format") == "template":  # exactly the agent / POS template, to edit and upload back
+        data, name = importer.customers_xlsx(rows), "agents-pos"
+    else:
+        data, name = importer.call_xlsx(rows, company().out_of_stock_er), "call-database"
+    if request.GET.get("kind") in ("AGENT", "POS"):
+        name += "-" + request.GET["kind"].lower()
+    resp = HttpResponse(data, content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    resp["Content-Disposition"] = f'attachment; filename="{name}-{timezone.localdate().isoformat()}.xlsx"'
     return resp
 
 

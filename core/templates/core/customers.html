@@ -10,7 +10,9 @@
   <div class="field"><button class="btn" type="submit">{% trans "Search" %}</button>{% if not user.is_market %} <a class="btn primary" href="{% url 'customer_new' %}">+ {% trans "Register" %}</a>{% endif %}</div>
 </form>
 <div class="stock-actions">
-  <a class="btn" href="{% url 'call_database' %}">⬇ {% trans "Download call database" %}</a>
+  <a class="btn" href="{% url 'call_database' %}">⬇ {% trans "Download call database" %}</a>{% if user.is_superadmin %}
+  <a class="btn" href="{% url 'call_database' %}?format=template">⬇ {% trans "Download agents & POS (template format)" %}</a>
+  <a class="btn" href="{% url 'import_data' %}?kind=customers_update">⟳ {% trans "Update agent / POS info" %}</a>{% endif %}
   <a class="btn" href="{% url 'stock_download' %}">⬇ {% trans "Download POS stock (Excel)" %}</a>
   <a class="btn" href="{% url 'report' 'pos_stock' %}">{% trans "Stock report" %}</a>
   {% if user.is_superadmin %}<a class="btn primary" href="{% url 'import_data' %}?kind=stock_update">⟳ {% trans "Update POS stock" %}</a>{% endif %}

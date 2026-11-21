@@ -943,6 +943,33 @@ def clear_stock(user):
     return n
 
 
+def customers_xlsx(counterparties):
+    """The agent / POS base exactly in the agent / POS template format (same sheet, same columns, same order, nothing
+    more), so it can be edited and uploaded again ("Update agent / POS info", or "Agents and POS")."""
+    head = TEMPLATES["customers"][0]
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "customers"
+    ws.append(head)
+    for cp in counterparties:
+        mz = cp.microzone
+        sub = mz.subzone if mz else None
+        zone = cp.master_zone or (sub.parent if sub else None)
+        ws.append([cp.kind, zone.name if zone else "", sub.name if sub else "", mz.name if mz else "",
+                   cp.om_account_name or "", cp.business_sim, cp.name or "", cp.whatsapp or "", cp.other_phone or "",
+                   cp.address or ""])
+    phones = [i for i, h in enumerate(head, start=1) if _key(h) in PHONE_COLUMNS]
+    for i, h in enumerate(head, start=1):
+        ws.cell(1, i).font = Font(bold=True)
+        ws.column_dimensions[ws.cell(1, i).column_letter].width = max(16, len(h) + 4)
+    for row in range(2, ws.max_row + 1):
+        for col in phones:
+            ws.cell(row, col).number_format = "@"
+    buf = io.BytesIO()
+    wb.save(buf)
+    return buf.getvalue()
+
+
 def call_xlsx(counterparties, threshold):
     """Call database: every agent / POS in the agent / POS import format (the file can be uploaded again), then the
     agent in charge, active and stock columns for calling."""

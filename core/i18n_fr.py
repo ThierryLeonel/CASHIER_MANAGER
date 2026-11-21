@@ -1856,6 +1856,10 @@ FR = {
     'matches': 'correspond',
     'There is a difference: the note is required. Explain it before closing.': 'Il y a un écart : la note est obligatoire. Expliquez-le avant de clôturer.',
     # commercial agent portal
+    'Download agents & POS (template format)': 'Télécharger agents et PDV (format du modèle)',
+    'Exactly the agent / POS template: edit it and upload it back': 'Exactement le modèle agents / PDV : modifiez-le et réimportez-le',
+    'Same columns as the agent / POS template: edit it and upload it back with Update agent / POS info': 'Mêmes colonnes que le modèle agents / PDV : modifiez-le et réimportez-le avec Mettre à jour les infos agents / PDV',
+    'To update agents and POS: download them in the template format, change the cells in Excel (leave BUSINESS_SIM as it is), then upload the file with Update agent / POS info. Empty cells keep what is there.': 'Pour mettre à jour agents et PDV : téléchargez-les au format du modèle, modifiez les cellules dans Excel (sans changer BUSINESS_SIM), puis importez le fichier avec Mettre à jour les infos agents / PDV. Les cellules vides gardent la valeur actuelle.',
     '%(acct)s has no UVE wallet on the same SIM to convert from.': "%(acct)s n'a pas de portefeuille UVE sur la même SIM pour convertir.",
     '%(acct)s holds %(held)s FCFA of ER, less than the %(amt)s FCFA to supply. Enter how much UVE you converted to ER, or tick "Supply without conversion".': "%(acct)s contient %(held)s FCFA d'ER, moins que les %(amt)s FCFA à approvisionner. Saisissez combien d'UVE vous avez converti en ER, ou cochez « Approvisionner sans conversion ».",
     'Converted to ER for an ER supply': 'Converti en ER pour un approvisionnement ER',

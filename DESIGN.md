@@ -750,3 +750,16 @@ back (agents).**
   - Forms send `er_check=True`: an ER shortfall with no conversion amount and no "without conversion" tick is refused
     on the `convert_uve` field (works without JavaScript; the fields then show on the page). Imports and other
     callers keep the old behaviour.
+
+## Agents & POS downloaded exactly in the template format
+- `/customers/call-database/?format=template` (`importer.customers_xlsx`): the agent / POS base with exactly the
+  agent / POS template — sheet `customers`, columns TYPE, ZONE, SUB_ZONE, micro_zone, OM ACCOUNT NAME, BUSINESS_SIM,
+  PERSONAL NAME, WHATSAPP CONTACT, OTHER CONTACT, ADDRESS, nothing more; phone columns stored as text. Optional
+  `&kind=AGENT|POS`. File `agents-pos[-agent|-pos]-<date>.xlsx`.
+- Super admin buttons: Import page ("Download agents & POS (template format)", Agents only, POS only, plus the call
+  database with its extra columns), Administration home tile, and on Agents & POS ("template format" + "Update agent
+  / POS info").
+- Edit the file in Excel and upload it with "Update agent / POS info" (`customers_update`; rows matched by
+  BUSINESS_SIM, empty cells keep the old value) — round trip covered by `TemplateFormatDownloadTests`.
+- Without `format=template` the call database download is unchanged (template columns + agent in charge, active,
+  stock).
