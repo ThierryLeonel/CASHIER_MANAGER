@@ -113,10 +113,10 @@ class RolePermissions(WebBase):
 
     def test_login_lockout(self):
         c = self.client_class()
-        for _ in range(5):
+        for _ in range(6):  # 6 wrong passwords: suspended until the admin resets the password
             c.post("/login/", {"username": "manager", "password": "wrong"})
         r = c.post("/login/", {"username": "manager", "password": PW})
-        self.assertContains(r, "Too many failed attempts")
+        self.assertContains(r, "This account is suspended")
 
 
 class WebFlows(WebBase):

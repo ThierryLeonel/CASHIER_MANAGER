@@ -125,6 +125,7 @@ DATABASES["default"]["TEST"] = {"NAME": env("DB_TEST_NAME", "test_cashier")}
 
 AUTH_USER_MODEL = "core.User"
 LOGIN_URL = "login"
+AUTHENTICATION_BACKENDS = ["core.auth.SuspensionAwareBackend"]  # suspended accounts cannot sign in
 LOGIN_REDIRECT_URL = "dashboard"
 LOGOUT_REDIRECT_URL = "login"
 
@@ -164,7 +165,7 @@ if not DEBUG:
     CSRF_COOKIE_SECURE = SESSION_COOKIE_SECURE
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
-LOGIN_MAX_FAILURES = 5
+LOGIN_MAX_FAILURES = 6
 LOGIN_LOCKOUT_SECONDS = 15 * 60
 
 # Shared cache (login lockout across workers/instances) when Redis/Valkey is attached.

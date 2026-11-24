@@ -145,13 +145,28 @@ def login_view(request):
         username = request.POST.get("username", "").strip()
         key = _lock_key(request, username)
         fails = cache.get(key, 0)
-        if fails >= settings.LOGIN_MAX_FAILURES:
+        from core.auth import MAX_WRONG, can_be_suspended
+
+        known = User.objects.filter(username=username, is_active=True).first() if username else None
+        if known is not None and known.suspended_at:
+            error = _("This account is suspended after %(n)s wrong passwords. Ask the administrator to reset your "
+                      "password.") % {"n": MAX_WRONG}
+        elif fails >= settings.LOGIN_MAX_FAILURES:
             error = _("Too many failed attempts. Try again in 15 minutes.")
         else:
             user = authenticate(request, username=username, password=request.POST.get("password", ""))
             if user is None:
                 cache.set(key, fails + 1, settings.LOGIN_LOCKOUT_SECONDS)
                 error = _("Invalid username or password.")
+                if known is not None and can_be_suspended(known):
+                    known.refresh_from_db(fields=["failed_logins", "suspended_at"])
+                    left = MAX_WRONG - known.failed_logins
+                    if known.suspended_at:
+                        error = _("Wrong password %(n)s times: this account is now suspended. Ask the administrator "
+                                  "to reset your password.") % {"n": MAX_WRONG}
+                    elif left <= 3:
+                        error = _("Invalid username or password. %(left)s attempt(s) left before the account is "
+                                  "suspended.") % {"left": left}
             else:
                 cache.delete(key)
                 login(request, user)

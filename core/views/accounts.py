@@ -46,8 +46,11 @@ def users(request):
         qs = qs.filter(is_active=True)
     elif status == "inactive":
         qs = qs.filter(is_active=False)
+    elif status == "suspended":
+        qs = qs.filter(suspended_at__isnull=False)
     page = Paginator(qs, 50).get_page(request.GET.get("page"))
-    return render(request, "core/users.html", {"page": page, "q": q, "status": status})
+    return render(request, "core/users.html", {"page": page, "q": q, "status": status,
+                                               "suspended": User.objects.filter(suspended_at__isnull=False).count()})
 
 
 @roles_required(R.SUPERADMIN)

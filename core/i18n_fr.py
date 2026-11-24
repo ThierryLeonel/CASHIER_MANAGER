@@ -1856,6 +1856,16 @@ FR = {
     'matches': 'correspond',
     'There is a difference: the note is required. Explain it before closing.': 'Il y a un écart : la note est obligatoire. Expliquez-le avant de clôturer.',
     # commercial agent portal
+    'Invalid username or password. %(left)s attempt(s) left before the account is suspended.': 'Identifiant ou mot de passe incorrect. %(left)s essai(s) restant(s) avant la suspension du compte.',
+    'Show them': 'Les afficher',
+    'Suspended': 'Suspendu',
+    'Suspended (wrong passwords)': 'Suspendus (mots de passe erronés)',
+    'Suspended on %(d)s after 6 wrong passwords. Reset the password below to let this user sign in again.': 'Suspendu le %(d)s après 6 mots de passe erronés. Réinitialisez le mot de passe ci-dessous pour que cet utilisateur puisse se reconnecter.',
+    'This account is suspended after %(n)s wrong passwords. Ask the administrator to reset your password.': "Ce compte est suspendu après %(n)s mots de passe erronés. Demandez à l'administrateur de réinitialiser votre mot de passe.",
+    'Wrong password %(n)s times: this account is now suspended. Ask the administrator to reset your password.': "Mot de passe erroné %(n)s fois : ce compte est maintenant suspendu. Demandez à l'administrateur de réinitialiser votre mot de passe.",
+    'Wrong passwords in a row: %(n)s (suspended at 6).': "Mots de passe erronés d'affilée : %(n)s (suspension à 6).",
+    'suspended after wrong passwords': 'suspendu après des mots de passe erronés',
+    'wrong passwords in a row': "mots de passe erronés d'affilée",
     'A PIN must have exactly 4 digits, or 8 digits or more.': 'Un code PIN doit avoir exactement 4 chiffres, ou 8 chiffres ou plus.',
     'Choose a PIN that is not your SIM number and not one digit repeated.': "Choisissez un code PIN qui n'est ni votre numéro SIM ni un seul chiffre répété.",
     'Commercial agents may use a PIN instead: exactly 4 digits, or 8 digits or more.': 'Les agents commerciaux peuvent utiliser un code PIN : exactement 4 chiffres, ou 8 chiffres ou plus.',
@@ -2845,3 +2855,8 @@ FR_PLURAL = {
         ["%(n)s écart de clôture non résolu sur vos comptes.", "%(n)s écarts de clôture non résolus sur vos comptes."],
     ),
 }
+
+FR_PLURAL["%(n)s account is suspended after wrong passwords: reset its password to let it sign in again."] = (
+    "%(n)s accounts are suspended after wrong passwords: reset their passwords to let them sign in again.",
+    ["%(n)s compte est suspendu après des mots de passe erronés : réinitialisez son mot de passe pour qu'il puisse se reconnecter.",
+     "%(n)s comptes sont suspendus après des mots de passe erronés : réinitialisez leurs mots de passe pour qu'ils puissent se reconnecter."])

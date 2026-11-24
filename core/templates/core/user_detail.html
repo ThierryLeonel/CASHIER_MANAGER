@@ -3,7 +3,8 @@
 {% block topbar %}{% trans "Users & passwords" %}{% endblock %}
 {% block back_url %}{% url 'users' %}{% endblock %}
 {% block content %}
-<h1>{{ u.get_full_name|default:u.username }} {% if u.is_active %}<span class="badge ok">{% trans "Active" %}</span>{% else %}<span class="badge bad">{% trans "Deactivated" %}</span>{% endif %}</h1>
+<h1>{{ u.get_full_name|default:u.username }} {% if u.is_active %}<span class="badge ok">{% trans "Active" %}</span>{% else %}<span class="badge bad">{% trans "Deactivated" %}</span>{% endif %}{% if u.suspended_at %} <span class="badge bad">{% trans "Suspended" %}</span>{% endif %}</h1>
+{% if u.suspended_at %}<div class="msg error">{% blocktrans with d=u.suspended_at|date:"d/m/Y H:i" %}Suspended on {{ d }} after 6 wrong passwords. Reset the password below to let this user sign in again.{% endblocktrans %}</div>{% elif u.failed_logins %}<p class="small meta">{% blocktrans with n=u.failed_logins %}Wrong passwords in a row: {{ n }} (suspended at 6).{% endblocktrans %}</p>{% endif %}
 <div class="panel"><dl class="kv">
   <dt>{% trans "Username" %}</dt><dd>{{ u.username }}</dd>
   <dt>{% trans "Staff ID" %}</dt><dd>{{ u.staff_code|default:"—" }}</dd>

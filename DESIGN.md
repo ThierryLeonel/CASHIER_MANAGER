@@ -791,3 +791,20 @@ back (agents).**
   The group of the current page opens by itself; on a page outside the groups the last group opened stays open
   (sessionStorage). Keyboard: Enter / Space. Script after `</nav>` in `base.html`, styles `.side-group.fold`,
   `.side-sub`.
+
+## Account suspended after 6 wrong passwords
+- `User.failed_logins`, `User.suspended_at` (migration 0061); `core/auth.py`:
+  - `user_login_failed` signal: +1 per wrong password for an existing active account (every sign-in page: the app and
+    Configuration). At 6 in a row the account is suspended (`suspended_at`, audit `account_suspended` with the IP).
+  - `user_logged_in`: a successful sign-in resets the count.
+  - `SuspensionAwareBackend` (the only `AUTHENTICATION_BACKENDS`): a suspended account cannot sign in, even with the
+    right password.
+- Sign-in page messages: "N attempt(s) left before the account is suspended" (when 3 or fewer are left), "this account
+  is now suspended", "This account is suspended after 6 wrong passwords. Ask the administrator to reset your password."
+- **Only a password reset by the super admin lifts it** (`acc.reset_password` clears the count and the suspension;
+  audit `unsuspended`). Users & passwords shows a red banner with the number of suspended accounts, a "Suspended"
+  badge and a "Suspended (wrong passwords)" filter; the user page says when and why.
+- Super administrators are never suspended (someone must be able to reset the others); they keep the 15-minute lock of
+  the sign-in page (`LOGIN_MAX_FAILURES` = 6 per username and address). Emergency: `python manage.py unlock_user
+  <username>`.
+- Passwords stay stored as one-way hashes: nobody, the admin included, can read a current password.

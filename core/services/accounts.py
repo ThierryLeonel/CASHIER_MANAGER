@@ -38,9 +38,11 @@ def reset_password(admin, user, *, new_password=None, must_change=True):
         raise BusinessError(" ".join(e.messages), "new_password")
     user.set_password(pw)
     user.must_change_password = bool(must_change) and user.pk != admin.pk
-    user.save(update_fields=["password", "must_change_password"])
+    was_suspended = user.suspended_at is not None
+    user.failed_logins, user.suspended_at = 0, None  # the reset lifts a suspension after wrong passwords
+    user.save(update_fields=["password", "must_change_password", "failed_logins", "suspended_at"])
     log_event(admin, "password_reset", user_id=user.pk, username=user.username, generated=new_password is None,
-              must_change=user.must_change_password)
+              must_change=user.must_change_password, unsuspended=was_suspended)
     return pw
 
 

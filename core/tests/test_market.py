@@ -794,3 +794,60 @@ class AgentPinAndHiddenDebtTests(OrgMixin, TestCase):
         self.assertLess(nav.index("/agent/destocash/"), nav.index("My work"))
         self.assertLess(nav.index("/agent/pos/"), nav.index("My work"))
         self.assertIn("side-sub", html)  # the folding script
+
+
+class LoginSuspensionTests(OrgMixin, TestCase):
+    """6 wrong passwords in a row suspend the account until the super admin resets its password."""
+
+    def setUp(self):
+        self.make_org()
+        from django.core.cache import cache
+        cache.clear()
+
+    def _try(self, username, password, ip):
+        return self.client_class(REMOTE_ADDR=ip).post("/login/", {"username": username, "password": password})
+
+    def test_suspended_after_six_and_reset_by_admin(self):
+        u = User.objects.get(username="cashier.fako1")
+        for i in range(5):
+            r = self._try(u.username, "wrong-pass", f"10.0.0.{i}")
+        self.assertContains(r, "1 attempt(s) left")
+        u.refresh_from_db()
+        self.assertEqual((u.failed_logins, u.suspended_at), (5, None))
+        r = self._try(u.username, "wrong-pass", "10.0.1.1")
+        self.assertContains(r, "now suspended")
+        u.refresh_from_db()
+        self.assertIsNotNone(u.suspended_at)
+        # the right password no longer works, from anywhere, nor through Configuration's sign-in
+        r = self._try(u.username, PW, "10.0.2.2")
+        self.assertContains(r, "This account is suspended")
+        self.assertFalse(self.client_class().login(username=u.username, password=PW))
+        # the admin sees it and resets the password: the account can sign in again
+        a = self.client_class()
+        self.assertTrue(a.login(username="admin", password=PW))
+        self.assertContains(a.get("/administration/users/"), "Show them")
+        self.assertContains(a.get("/administration/users/?status=suspended"), u.username)
+        self.assertContains(a.get(f"/administration/users/{u.pk}/"), "Suspended on")
+        a.post(f"/administration/users/{u.pk}/", {"mode": "set", "new_password": "New-Pass-2026!x"})
+        u.refresh_from_db()
+        self.assertEqual((u.failed_logins, u.suspended_at), (0, None))
+        r = self._try(u.username, "New-Pass-2026!x", "10.0.3.3")
+        self.assertEqual(r.status_code, 302)
+
+    def test_success_resets_counter_and_super_admin_not_suspended(self):
+        u = User.objects.get(username="cashier.fako1")
+        for i in range(4):
+            self._try(u.username, "wrong-pass", f"10.1.0.{i}")
+        self.assertEqual(self._try(u.username, PW, "10.1.1.1").status_code, 302)
+        u.refresh_from_db()
+        self.assertEqual(u.failed_logins, 0)
+        for i in range(8):
+            self._try("admin", "wrong-pass", f"10.2.0.{i}")
+        adm = User.objects.get(username="admin")
+        self.assertIsNone(adm.suspended_at)
+        # the command line lifts a suspension too
+        from django.core.management import call_command
+        User.objects.filter(pk=u.pk).update(suspended_at="2026-01-01T00:00:00Z", failed_logins=6)
+        call_command("unlock_user", u.username, stdout=__import__("io").StringIO())
+        u.refresh_from_db()
+        self.assertIsNone(u.suspended_at)

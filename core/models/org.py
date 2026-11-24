@@ -143,6 +143,11 @@ class User(AbstractUser):
     shop_duties = models.CharField(
         _("shop duties"), max_length=80, blank=True,
         help_text="Shop managers: comma-separated duties (OM, AIRTIME, SALES, SERVICES, AGENTS). Empty = all duties.")
+    failed_logins = models.PositiveSmallIntegerField(_("wrong passwords in a row"), default=0, editable=False)
+    suspended_at = models.DateTimeField(
+        _("suspended after wrong passwords"), null=True, blank=True,
+        help_text="Set after 6 wrong passwords in a row; the account cannot sign in until an administrator resets "
+                  "its password.")
     must_change_password = models.BooleanField(
         _("must change password at next sign-in"), default=False,
         help_text="Set when an administrator resets the password; cleared when the user chooses a new one.")

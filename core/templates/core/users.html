@@ -4,9 +4,10 @@
 {% block content %}
 <h1>{% trans "Users & passwords" %}</h1>
 <p class="muted">{% trans "Passwords are stored encrypted: nobody can read them, not even the administrator. Open a user to give them a new password, or to deactivate or reactivate their account." %}</p>
+{% if suspended %}<div class="msg error">{% blocktrans count n=suspended %}{{ n }} account is suspended after wrong passwords: reset its password to let it sign in again.{% plural %}{{ n }} accounts are suspended after wrong passwords: reset their passwords to let them sign in again.{% endblocktrans %} <a href="?status=suspended">{% trans "Show them" %}</a></div>{% endif %}
 <form class="filters panel" method="get">
   <div class="field"><label>{% trans "Search (name, username, staff ID)" %}</label><input type="text" name="q" value="{{ q }}"></div>
-  <div class="field"><label>{% trans "Status" %}</label><select name="status"><option value="">—</option><option value="active" {% if status == 'active' %}selected{% endif %}>{% trans "Active" %}</option><option value="inactive" {% if status == 'inactive' %}selected{% endif %}>{% trans "Deactivated" %}</option></select></div>
+  <div class="field"><label>{% trans "Status" %}</label><select name="status"><option value="">—</option><option value="active" {% if status == 'active' %}selected{% endif %}>{% trans "Active" %}</option><option value="inactive" {% if status == 'inactive' %}selected{% endif %}>{% trans "Deactivated" %}</option><option value="suspended" {% if status == 'suspended' %}selected{% endif %}>{% trans "Suspended (wrong passwords)" %}</option></select></div>
   <div class="field"><button class="btn" type="submit">{% trans "Search" %}</button> <a class="btn primary" href="{% url 'admin:core_user_add' %}">+ {% trans "New user" %}</a> <a class="btn" href="{% url 'agent_logins' %}">+ {% trans "Logins for several agents" %}</a></div>
 </form>
 <div class="tbl-wrap"><table class="t">
@@ -16,7 +17,7 @@
   <td><strong>{{ u.get_full_name|default:u.username }}</strong></td><td>{{ u.username }}</td><td>{{ u.staff_code|default:"—" }}</td>
   <td>{{ u.get_role_display }}</td><td>{{ u.subzone|default:"—" }}</td>
   <td>{{ u.last_login|date:"d/m/Y H:i"|default:"—" }}</td>
-  <td>{% if u.is_active %}<span class="badge ok">{% trans "Active" %}</span>{% else %}<span class="badge bad">{% trans "Deactivated" %}</span>{% endif %}{% if u.must_change_password %} <span class="badge acc">{% trans "must change password" %}</span>{% endif %}</td>
+  <td>{% if u.is_active %}<span class="badge ok">{% trans "Active" %}</span>{% else %}<span class="badge bad">{% trans "Deactivated" %}</span>{% endif %}{% if u.suspended_at %} <span class="badge bad">{% trans "Suspended" %}</span>{% endif %}{% if u.must_change_password %} <span class="badge acc">{% trans "must change password" %}</span>{% endif %}</td>
   <td class="keep"><a class="btn small" href="{% url 'user_detail' u.pk %}">{% trans "Password / status" %}</a></td>
 </tr>{% empty %}<tr><td colspan="8" class="muted">{% trans "Nothing found." %}</td></tr>{% endfor %}</tbody></table></div>
 <div class="pager">{% if page.has_previous %}<a class="btn small" href="?q={{ q|urlencode }}&status={{ status }}&page={{ page.previous_page_number }}">←</a>{% endif %}<span class="muted small">{{ page.number }} / {{ page.paginator.num_pages }}</span>{% if page.has_next %}<a class="btn small" href="?q={{ q|urlencode }}&status={{ status }}&page={{ page.next_page_number }}">→</a>{% endif %}</div>

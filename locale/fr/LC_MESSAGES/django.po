@@ -4115,6 +4115,14 @@ msgstr "Date invalide %(v)s (utilisez AAAA-MM-JJ ou JJ/MM/AAAA)"
 msgid "Invalid username or password."
 msgstr "Identifiant ou mot de passe incorrect."
 
+#, python-format
+msgid ""
+"Invalid username or password. %(left)s attempt(s) left before the account is"
+" suspended."
+msgstr ""
+"Identifiant ou mot de passe incorrect. %(left)s essai(s) restant(s) avant la"
+" suspension du compte."
+
 msgid "Investigate"
 msgstr "Enquêter"
 
@@ -7097,6 +7105,9 @@ msgstr "Manquant"
 msgid "Show"
 msgstr "Afficher"
 
+msgid "Show them"
+msgstr "Les afficher"
+
 #, python-format
 msgid "Showing the first %(n)s; search to find the others."
 msgstr "Affichage des %(n)s premiers ; recherchez pour trouver les autres."
@@ -7482,6 +7493,20 @@ msgstr ""
 
 msgid "Surplus"
 msgstr "Excédent"
+
+msgid "Suspended"
+msgstr "Suspendu"
+
+msgid "Suspended (wrong passwords)"
+msgstr "Suspendus (mots de passe erronés)"
+
+#, python-format
+msgid ""
+"Suspended on %(d)s after 6 wrong passwords. Reset the password below to let "
+"this user sign in again."
+msgstr ""
+"Suspendu le %(d)s après 6 mots de passe erronés. Réinitialisez le mot de "
+"passe ci-dessous pour que cet utilisateur puisse se reconnecter."
 
 msgid "Swipe to see more"
 msgstr "Glissez pour voir plus"
@@ -7878,6 +7903,14 @@ msgstr "Ce POS me paie"
 
 msgid "This account is deactivated: the user cannot sign in."
 msgstr "Ce compte est désactivé : l'utilisateur ne peut pas se connecter."
+
+#, python-format
+msgid ""
+"This account is suspended after %(n)s wrong passwords. Ask the administrator"
+" to reset your password."
+msgstr ""
+"Ce compte est suspendu après %(n)s mots de passe erronés. Demandez à "
+"l'administrateur de réinitialiser votre mot de passe."
 
 msgid "This belongs to another zone."
 msgstr "Ceci appartient à une autre zone."
@@ -8931,6 +8964,18 @@ msgstr ""
 "aujourd'hui. C'est votre propre enregistrement, affiché à côté de ce que le "
 "bureau a enregistré."
 
+#, python-format
+msgid ""
+"Wrong password %(n)s times: this account is now suspended. Ask the "
+"administrator to reset your password."
+msgstr ""
+"Mot de passe erroné %(n)s fois : ce compte est maintenant suspendu. Demandez"
+" à l'administrateur de réinitialiser votre mot de passe."
+
+#, python-format
+msgid "Wrong passwords in a row: %(n)s (suspended at 6)."
+msgstr "Mots de passe erronés d'affilée : %(n)s (suspension à 6)."
+
 msgid "Yes"
 msgstr "Oui"
 
@@ -9775,6 +9820,9 @@ msgstr "approvisionnement dû à l'agent / POS"
 msgid "supply them"
 msgstr "approvisionnez-les"
 
+msgid "suspended after wrong passwords"
+msgstr "suspendu après des mots de passe erronés"
+
 msgid "tagline (optional)"
 msgstr "slogan (facultatif)"
 
@@ -9852,6 +9900,9 @@ msgstr "utilisé pour"
 msgid "usual master zone"
 msgstr "zone principale habituelle"
 
+msgid "wrong passwords in a row"
+msgstr "mots de passe erronés d'affilée"
+
 msgid "yes"
 msgstr "oui"
 
@@ -9903,3 +9954,16 @@ msgid "%(n)s unresolved closing difference on your accounts."
 msgid_plural "%(n)s unresolved closing differences on your accounts."
 msgstr[0] "%(n)s écart de clôture non résolu sur vos comptes."
 msgstr[1] "%(n)s écarts de clôture non résolus sur vos comptes."
+
+msgid ""
+"%(n)s account is suspended after wrong passwords: reset its password to let "
+"it sign in again."
+msgid_plural ""
+"%(n)s accounts are suspended after wrong passwords: reset their passwords to"
+" let them sign in again."
+msgstr[0] ""
+"%(n)s compte est suspendu après des mots de passe erronés : réinitialisez "
+"son mot de passe pour qu'il puisse se reconnecter."
+msgstr[1] ""
+"%(n)s comptes sont suspendus après des mots de passe erronés : réinitialisez"
+" leurs mots de passe pour qu'ils puissent se reconnecter."
