@@ -60,6 +60,15 @@ def field_kind(field):
 
 
 @register.filter
+def sub(a, b):
+    """a − b for money in templates."""
+    try:
+        return Decimal(a or 0) - Decimal(b or 0)
+    except Exception:
+        return a
+
+
+@register.filter
 def absval(v):
     try:
         return abs(Decimal(v))

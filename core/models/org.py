@@ -664,6 +664,10 @@ class CompanyProfile(models.Model):
                                           decimal_places=0, default=2000)
     low_stock_er = models.DecimalField(_("POS low stock when ER stock is below (FCFA)"), max_digits=14,
                                        decimal_places=0, default=5000)
+    agents_see_debt = models.BooleanField(
+        _("commercial agents see what they owe the company"), default=True,
+        help_text=_("Untick to hide from the commercial agents their total owed to the company (balance, capital, "
+                    "total payable, debt before today and their statement). Their daily work stays visible."))
     logo = models.BinaryField(null=True, blank=True, editable=False)
     logo_updated = models.DateTimeField(null=True, blank=True, editable=False)
     updated_at = models.DateTimeField(auto_now=True)

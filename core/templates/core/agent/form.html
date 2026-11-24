@@ -7,7 +7,7 @@
   <h1>{{ title }}</h1>
 </div>
 {% if s %}<div class="mini-tiles">
-  <div><span>{% if s.owed_company|negative %}{% trans "The company owes you" %}{% else %}{% trans "I owe the company" %}{% endif %}</span><strong>{{ s.owed_company|absval|fcfa }}</strong></div>
+  {% if company.agents_see_debt %}<div><span>{% if s.owed_company|negative %}{% trans "The company owes you" %}{% else %}{% trans "I owe the company" %}{% endif %}</span><strong>{{ s.owed_company|absval|fcfa }}</strong></div>{% endif %}
   {% if s.pending %}<div><span>{% trans "Waiting for confirmation" %}</span><strong>{{ s.pending_total|fcfa }}</strong></div>{% endif %}
 </div>{% endif %}
 <div id="agent-msg" class="agent-msg" aria-live="polite"></div>

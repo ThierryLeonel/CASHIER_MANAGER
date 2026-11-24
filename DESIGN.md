@@ -771,3 +771,23 @@ back (agents).**
   (icon eye / eye crossed, title and aria-label "Show password" / "Hide password", French on French pages,
   `aria-pressed`). Boxes added later are handled too (MutationObserver).
 - Before a form is sent the boxes are switched back to password, so browsers still offer to save the password.
+
+## Agent PINs, hiding agents' debt, agent menu order, foldable menu groups
+- **PIN for commercial agents** (`core/passwords.py`, the only entry of `AUTH_PASSWORD_VALIDATORS`):
+  - An agent's password may be a PIN: exactly 4 digits, or 8 digits or more. Not his SIM / username, not one digit
+    repeated (0000, 11111111). 5–7 digits are refused.
+  - A real password still works for agents. Everyone else keeps the standard rules (10+ characters, not common, not
+    only digits, not like the username).
+  - Applies everywhere passwords are set: My password, the admin's reset, agents' logins (page, sheet), Configuration.
+- **Hide from agents what they owe** — Company profile › "commercial agents see what they owe the company"
+  (`CompanyProfile.agents_see_debt`, default on; migration 0060). Unticked, agents no longer see:
+  - "I owe the company", capital, total payable and "before today" on the home page;
+  - the owed tile on their forms and on Office supply vs payments;
+  - owed at the start / end of the day in the daily reconciliation (it shows "owed for the day (supplied − paid)");
+  - their statement (menu link hidden; the report sends them home with a message).
+  - They keep "Owed for today (supplied − paid)" and all their daily work. Staff see everything as before.
+- **Agent menu:** OOS, Possible destocash and Global POS sit right under Home, before "My work".
+- **Foldable menu groups (every role):** each group title folds / unfolds its links; opening one folds the others.
+  The group of the current page opens by itself; on a page outside the groups the last group opened stays open
+  (sessionStorage). Keyboard: Enter / Space. Script after `</nav>` in `base.html`, styles `.side-group.fold`,
+  `.side-sub`.

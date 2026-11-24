@@ -1856,6 +1856,12 @@ FR = {
     'matches': 'correspond',
     'There is a difference: the note is required. Explain it before closing.': 'Il y a un écart : la note est obligatoire. Expliquez-le avant de clôturer.',
     # commercial agent portal
+    'A PIN must have exactly 4 digits, or 8 digits or more.': 'Un code PIN doit avoir exactement 4 chiffres, ou 8 chiffres ou plus.',
+    'Choose a PIN that is not your SIM number and not one digit repeated.': "Choisissez un code PIN qui n'est ni votre numéro SIM ni un seul chiffre répété.",
+    'Commercial agents may use a PIN instead: exactly 4 digits, or 8 digits or more.': 'Les agents commerciaux peuvent utiliser un code PIN : exactement 4 chiffres, ou 8 chiffres ou plus.',
+    'Untick to hide from the commercial agents their total owed to the company (balance, capital, total payable, debt before today and their statement). Their daily work stays visible.': "Décochez pour masquer aux agents commerciaux le total qu'ils doivent à l'entreprise (solde, capital, total à payer, dette avant aujourd'hui et leur relevé). Leur travail du jour reste visible.",
+    'Your statement is not available. Ask the office for what you owe.': "Votre relevé n'est pas disponible. Demandez au bureau ce que vous devez.",
+    'commercial agents see what they owe the company': "les agents commerciaux voient ce qu'ils doivent à l'entreprise",
     'Download agents & POS (template format)': 'Télécharger agents et PDV (format du modèle)',
     'Exactly the agent / POS template: edit it and upload it back': 'Exactement le modèle agents / PDV : modifiez-le et réimportez-le',
     'Same columns as the agent / POS template: edit it and upload it back with Update agent / POS info': 'Mêmes colonnes que le modèle agents / PDV : modifiez-le et réimportez-le avec Mettre à jour les infos agents / PDV',

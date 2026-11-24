@@ -506,6 +506,9 @@ msgstr ""
 "Échanges 1:1 d'espèces et d'UVE, sans frais. Jamais des ventes, recettes ou "
 "dépenses."
 
+msgid "A PIN must have exactly 4 digits, or 8 digits or more."
+msgstr "Un code PIN doit avoir exactement 4 chiffres, ou 8 chiffres ou plus."
+
 msgid "A POS belongs to a microzone: choose it or create it."
 msgstr "Un PDV appartient à une microzone : choisissez-la ou créez-la."
 
@@ -1901,6 +1904,11 @@ msgstr "Choisissez UVE, ER ou espèces."
 msgid "Choose a %(kind)s account."
 msgstr "Choisissez un compte %(kind)s."
 
+msgid "Choose a PIN that is not your SIM number and not one digit repeated."
+msgstr ""
+"Choisissez un code PIN qui n'est ni votre numéro SIM ni un seul chiffre "
+"répété."
+
 msgid "Choose a UVE wallet to convert from."
 msgstr "Choisissez le portefeuille UVE à convertir."
 
@@ -2296,6 +2304,13 @@ msgstr "Agents commerciaux et PDV"
 
 msgid "Commercial agents and transfers to cashiers"
 msgstr "Agents commerciaux et transferts aux caissiers"
+
+msgid ""
+"Commercial agents may use a PIN instead: exactly 4 digits, or 8 digits or "
+"more."
+msgstr ""
+"Les agents commerciaux peuvent utiliser un code PIN : exactement 4 chiffres,"
+" ou 8 chiffres ou plus."
 
 msgid ""
 "Commercial agents only: delete every agent with his transactions, portal "
@@ -8640,6 +8655,15 @@ msgstr ""
 "Décochez pour fermer la boutique : elle disparaît des listes, son historique"
 " reste."
 
+msgid ""
+"Untick to hide from the commercial agents their total owed to the company "
+"(balance, capital, total payable, debt before today and their statement). "
+"Their daily work stays visible."
+msgstr ""
+"Décochez pour masquer aux agents commerciaux le total qu'ils doivent à "
+"l'entreprise (solde, capital, total à payer, dette avant aujourd'hui et leur"
+" relevé). Leur travail du jour reste visible."
+
 msgid "Untick to stop using this cash manager; past exchanges stay."
 msgstr ""
 "Décochez pour ne plus utiliser ce gestionnaire de cash ; les échanges passés"
@@ -9102,6 +9126,10 @@ msgstr ""
 msgid "Your shift is open since %(t)s."
 msgstr "Votre service est ouvert depuis %(t)s."
 
+msgid "Your statement is not available. Ask the office for what you owe."
+msgstr ""
+"Votre relevé n'est pas disponible. Demandez au bureau ce que vous devez."
+
 msgid "Zone"
 msgstr "Zone"
 
@@ -9262,6 +9290,9 @@ msgstr "le code et le nom sont obligatoires"
 
 msgid "commercial agent in charge"
 msgstr "agent commercial responsable"
+
+msgid "commercial agents see what they owe the company"
+msgstr "les agents commerciaux voient ce qu'ils doivent à l'entreprise"
 
 msgid "commission"
 msgstr "commission"

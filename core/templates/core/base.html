@@ -33,6 +33,9 @@
     {% if show_cash %}<a href="{% url 'dashboard' %}" class="{% if u == 'dashboard' %}on{% endif %}">{% icon "home" %}<span>{% trans "Home" %}</span></a>{% endif %}
 
     {% if user.sells %}
+    {% if user.is_agent %}<a href="{% url 'agent_oos' %}" class="{% if u == 'agent_oos' %}on{% endif %}">{% icon "alert" %}<span>{% trans "OOS" %}</span></a>
+    <a href="{% url 'agent_destock' %}" class="{% if u == 'agent_destock' %}on{% endif %}">{% icon "destock" %}<span>{% trans "Possible destocash" %}</span></a>{% endif %}
+    <a href="{% url 'agent_pos' %}" class="{% if u == 'agent_pos' or u == 'agent_pos_detail' or u == 'agent_pos_edit' %}on{% endif %}">{% icon "store" %}<span>{% trans "Global POS" %}</span></a>
     <div class="side-group">{% trans "My work" %}</div>
     <a href="{% url 'agent_declaration' %}" class="{% if u == 'agent_declaration' %}on{% endif %}">{% icon "list" %}<span>{% trans "Daily declaration" %}</span></a>
     <a href="{% url 'agent_supply' %}" class="{% if u == 'agent_supply' %}on{% endif %}">{% icon "supply" %}<span>{% trans "Supply a client" %}</span></a>
@@ -44,9 +47,6 @@
     <a href="{% url 'agent_debtors' %}" class="{% if u == 'agent_debtors' %}on{% endif %}">{% icon "users" %}<span>{% trans "My debtors" %}</span></a>
     <a href="{% url 'agent_daily' %}" class="{% if u == 'agent_daily' %}on{% endif %}">{% icon "calendar" %}<span>{% trans "Daily reconciliation" %}</span></a>
     <a href="{% url 'agent_office' %}" class="{% if u == 'agent_office' %}on{% endif %}">{% icon "download" %}<span>{% trans "Office supply vs payments" %}</span></a>
-    {% if user.is_agent %}<a href="{% url 'agent_oos' %}" class="{% if u == 'agent_oos' %}on{% endif %}">{% icon "alert" %}<span>{% trans "OOS" %}</span></a>
-    <a href="{% url 'agent_destock' %}" class="{% if u == 'agent_destock' %}on{% endif %}">{% icon "destock" %}<span>{% trans "Possible destocash" %}</span></a>{% endif %}
-    <a href="{% url 'agent_pos' %}" class="{% if u == 'agent_pos' or u == 'agent_pos_detail' or u == 'agent_pos_edit' %}on{% endif %}">{% icon "store" %}<span>{% trans "Global POS" %}</span></a>
     <a href="{% url 'agent_coverage' %}" class="{% if u == 'agent_coverage' %}on{% endif %}">{% icon "chart" %}<span>{% trans "POS supplied" %}</span></a>
     <a href="{% url 'agent_activity' %}" class="{% if u == 'agent_activity' %}on{% endif %}">{% icon "list" %}<span>{% trans "My transactions" %}</span></a>
     {% if user.is_market %}<a href="{% url 'report' 'statement' %}?preset=all&amp;customer_sim={{ user.counterparty.business_sim }}">{% icon "statement" %}<span>{% trans "My statement" %}</span></a>{% endif %}
@@ -158,7 +158,7 @@
     <a href="{% url 'discrepancies' %}" class="{% if u == 'discrepancies' or u == 'discrepancy_detail' %}on{% endif %}">{% icon "alert" %}<span>{% trans "Differences" %}</span></a>
     {% endif %}{% endif %}
 
-    {% if show_cash %}
+    {% if show_cash and not user.is_agent or show_cash and company.agents_see_debt %}
     <div class="side-group">{% trans "Analysis" %}</div>
     <a href="{% url 'reports' %}" class="{% if u == 'reports' or u == 'report' %}on{% endif %}">{% if user.is_agent %}{% icon "statement" %}<span>{% trans "My statement" %}</span>{% else %}{% icon "chart" %}<span>{% trans "Reports" %}</span>{% endif %}</a>
     {% endif %}
@@ -190,6 +190,42 @@
     <a href="{% url 'clear_data' %}" class="{% if u == 'clear_data' %}on{% endif %}">{% icon "trash" %}<span>{% trans "Clear data" %}</span></a>
     {% endif %}
   </nav>
+  <script>
+  /* Menu groups fold: a group's title opens it and folds the others. The group of the page shown is open; on a page
+     outside the groups, the last group opened stays open. */
+  (function () {
+    var nav = document.querySelector('.side-nav'); if (!nav) return;
+    var heads = [].slice.call(nav.querySelectorAll(':scope > .side-group'));
+    if (heads.length < 2) return;
+    var KEY = 'menu-open', subs = [];
+    heads.forEach(function (h, i) {
+      var box = document.createElement('div'), n = h.nextElementSibling;
+      box.className = 'side-sub'; box.id = 'side-sub-' + i;
+      while (n && !n.classList.contains('side-group')) { var nx = n.nextElementSibling; box.appendChild(n); n = nx; }
+      h.parentNode.insertBefore(box, h.nextSibling);
+      h.setAttribute('role', 'button'); h.setAttribute('tabindex', '0'); h.setAttribute('aria-controls', box.id);
+      h.classList.add('fold');
+      subs.push(box);
+    });
+    function open(i, remember) {
+      heads.forEach(function (h, j) {
+        var on = j === i; subs[j].hidden = !on; h.setAttribute('aria-expanded', on ? 'true' : 'false');
+      });
+      if (remember) { try { sessionStorage.setItem(KEY, heads[i] ? heads[i].textContent.trim() : ''); } catch (e) {} }
+    }
+    var cur = subs.findIndex(function (b) { return b.querySelector('a.on'); });
+    if (cur < 0) {
+      var last = null; try { last = sessionStorage.getItem(KEY); } catch (e) {}
+      cur = heads.findIndex(function (h) { return h.textContent.trim() === last; });
+    }
+    open(cur, false);
+    heads.forEach(function (h, i) {
+      function toggle() { open(subs[i].hidden ? i : -1, true); }
+      h.addEventListener('click', toggle);
+      h.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); } });
+    });
+  })();
+  </script>
 
   <div class="side-foot">
     <div class="me">

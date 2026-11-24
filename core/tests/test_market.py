@@ -715,3 +715,82 @@ class PasswordEyeTests(OrgMixin, TestCase):
         self.assertTrue(c.login(username="admin", password=PW))
         self.assertContains(c.get("/account/password/"), "core/pwreveal.js")
         self.assertContains(c.get("/admin/core/user/add/"), "core/pwreveal.js")
+
+
+class AgentPinAndHiddenDebtTests(OrgMixin, TestCase):
+    """Agents may use a 4-digit or 8+ digit PIN; the admin can hide from agents what they owe; agent menu order."""
+
+    def setUp(self):
+        self.make_org()
+        self.agent_user = User.objects.get(counterparty=self.a1)
+
+    def test_pin_rules(self):
+        from django.contrib.auth.password_validation import validate_password
+        from django.core.exceptions import ValidationError
+
+        u = self.agent_user
+        for ok in ("4821", "48213907", "4821390712"):
+            validate_password(ok, u)
+        for bad in ("482", "48213", "4821390", "0000", "11111111", self.a1.business_sim):
+            with self.assertRaises(ValidationError, msg=bad):
+                validate_password(bad, u)
+        validate_password("Strong-Pass-2026!", u)  # a real password is still fine for an agent
+        cashier = User.objects.get(username="cashier.fako1")
+        for bad in ("4821", "48213907"):  # staff keep the standard rules
+            with self.assertRaises(ValidationError):
+                validate_password(bad, cashier)
+        # the agent changes his password to a PIN and signs in with it
+        c = self.client_class()
+        self.assertTrue(c.login(username=u.username, password=PW))
+        r = c.post("/account/password/", {"old_password": PW, "new_password1": "4821", "new_password2": "4821"})
+        self.assertEqual(r.status_code, 302, r.content[:2000])
+        self.assertTrue(self.client_class().login(username=u.username, password="4821"))
+        # the admin sets a PIN when creating agents' logins
+        from core.services import accounts as acc
+        cp = Counterparty.objects.create(kind=Counterparty.Kind.AGENT, business_sim="698200001", name="Pin agent")
+        from core.services.errors import BusinessError
+        with self.assertRaises(BusinessError):
+            acc.create_agent_login(User.objects.get(username="admin"), cp, password="73915")
+        nu, pw = acc.create_agent_login(User.objects.get(username="admin"), cp, password="7391")
+        self.assertTrue(nu.check_password("7391"))
+
+    def test_hide_debt_from_agents(self):
+        from core.models import CompanyProfile
+        from core.services import operations as ops
+
+        self.fund_all()
+        ops.record_supplies(self.c_f1, customer=self.a1, parts={"CASH": D(1000)}, idempotency_key=uuid.uuid4())
+        c = self.client_class()
+        self.assertTrue(c.login(username=self.agent_user.username, password=PW))
+        home = c.get("/")
+        self.assertContains(home, "I owe the company")
+        self.assertContains(home, "Owed for today")
+        self.assertEqual(c.get("/reports/statement/").status_code, 200)
+        co = CompanyProfile.objects.first() or CompanyProfile.objects.create(name="X")
+        co.agents_see_debt = False
+        co.save()
+        home = c.get("/")
+        self.assertNotContains(home, "I owe the company")
+        self.assertNotContains(home, "Total payable to the company")
+        self.assertNotContains(home, "before today")
+        self.assertContains(home, "Owed for today")
+        self.assertNotContains(home, "My statement")
+        r = c.get("/reports/statement/")
+        self.assertEqual(r.status_code, 302)
+        self.assertNotContains(c.get("/agent/office/"), "I owe the company")
+        daily = c.get("/agent/daily/")
+        self.assertNotContains(daily, "Owed at the end of the day")
+        # staff still see the agent's statement
+        m = self.client_class()
+        self.assertTrue(m.login(username="manager", password=PW))
+        self.assertEqual(m.get(f"/reports/statement/?customer_sim={self.a1.business_sim}").status_code, 200)
+
+    def test_agent_menu_order_and_folding(self):
+        c = self.client_class()
+        self.assertTrue(c.login(username=self.agent_user.username, password=PW))
+        html = c.get("/").content.decode()
+        nav = html[html.index('class="side-nav"'):html.index("</nav>")]
+        self.assertLess(nav.index("/agent/oos/"), nav.index("My work"))
+        self.assertLess(nav.index("/agent/destocash/"), nav.index("My work"))
+        self.assertLess(nav.index("/agent/pos/"), nav.index("My work"))
+        self.assertIn("side-sub", html)  # the folding script

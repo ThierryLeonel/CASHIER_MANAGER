@@ -381,6 +381,11 @@ def report(request, key):
             request.user.is_market and key not in MARKET_REPORTS) or (
             request.user.is_market and key == "statement" and not request.user.sells):
         raise Http404
+    from core.services.branding import company
+
+    if request.user.is_agent and not company().agents_see_debt:  # the company hides it from the agents
+        messages.info(request, _("Your statement is not available. Ask the office for what you owe."))
+        return redirect("dashboard")
     title, fn = REPORTS[key]
     data = request.GET.copy()
     data.pop("format", None)

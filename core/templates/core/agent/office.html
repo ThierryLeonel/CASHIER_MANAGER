@@ -7,7 +7,7 @@
   <div class="bal k-UVE"><span class="bal-label">{% trans "Supplied by the office" %}</span><span class="bal-value">{{ totals.supplied|fcfa }}</span><span class="bal-unit">FCFA</span></div>
   <div class="bal k-MTN"><span class="bal-label">{% trans "Paid to the office" %}</span><span class="bal-value">{{ totals.paid|fcfa }}</span><span class="bal-unit">FCFA</span></div>
   <div class="bal k-ER"><span class="bal-label">{% trans "Difference in the period" %}</span><span class="bal-value">{{ totals.net|fcfa }}</span><span class="bal-unit">FCFA</span></div>
-  <div class="bal k-TOTAL"><span class="bal-label">{% if s.owed_company|negative %}{% trans "The company owes you" %}{% else %}{% trans "I owe the company" %}{% endif %}</span><span class="bal-value">{{ s.owed_company|absval|fcfa }}</span><span class="bal-unit">{% trans "today" %}</span></div>
+  {% if company.agents_see_debt %}<div class="bal k-TOTAL"><span class="bal-label">{% if s.owed_company|negative %}{% trans "The company owes you" %}{% else %}{% trans "I owe the company" %}{% endif %}</span><span class="bal-value">{{ s.owed_company|absval|fcfa }}</span><span class="bal-unit">{% trans "today" %}</span></div>{% endif %}
 </div>
 <form class="filters panel" method="get">
   <div class="field"><label>{% trans "From" %}</label><input type="date" name="from" value="{{ d_from|date:'Y-m-d' }}"></div>

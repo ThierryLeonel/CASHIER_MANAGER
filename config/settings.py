@@ -129,10 +129,9 @@ LOGIN_REDIRECT_URL = "dashboard"
 LOGOUT_REDIRECT_URL = "login"
 
 AUTH_PASSWORD_VALIDATORS = [
-    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
-    {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator", "OPTIONS": {"min_length": 10}},
-    {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
-    {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
+    # the standard rules (10+ characters, not common, not only digits, not like the username); commercial agents may
+    # use a PIN of exactly 4 digits, or 8 digits or more (core/passwords.py)
+    {"NAME": "core.passwords.RoleAwarePasswordValidator"},
 ]
 
 # Language / time

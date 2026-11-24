@@ -16,10 +16,11 @@
 <div class="two-col">
 <section><h2>{% trans "My account with the company" %}</h2>
 <div class="tbl-wrap"><table class="t recon"><tbody>
-  <tr><td>{% trans "Owed at the start of the day" %}</td><td class="money">{{ rec.company.opening|fcfa }}</td></tr>
+  {% if company.agents_see_debt %}<tr><td>{% trans "Owed at the start of the day" %}</td><td class="money">{{ rec.company.opening|fcfa }}</td></tr>{% endif %}
   <tr><td>+ {% trans "Supplies and destockage from the office" %}</td><td class="money">{{ rec.company.taken|fcfa }}</td></tr>
   <tr><td>− {% trans "Payments confirmed" %}</td><td class="money">{{ rec.company.paid|fcfa }}</td></tr>
-  <tr class="total"><td><strong>{% trans "Owed at the end of the day" %}</strong></td><td class="money"><strong>{{ rec.company.closing|fcfa }}</strong></td></tr>
+  {% if company.agents_see_debt %}<tr class="total"><td><strong>{% trans "Owed at the end of the day" %}</strong></td><td class="money"><strong>{{ rec.company.closing|fcfa }}</strong></td></tr>
+  {% else %}<tr class="total"><td><strong>{% trans "Owed for the day (supplied − paid)" %}</strong></td><td class="money"><strong>{{ rec.company.taken|sub:rec.company.paid|fcfa }}</strong></td></tr>{% endif %}
 </tbody></table></div>
 {% if rec.pending %}<p class="small muted">{% blocktrans count n=rec.pending %}{{ n }} payment is still waiting for confirmation.{% plural %}{{ n }} payments are still waiting for confirmation.{% endblocktrans %}</p>{% endif %}</section>
 <section><h2>{% trans "My clients" %}</h2>
