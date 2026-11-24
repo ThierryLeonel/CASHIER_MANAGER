@@ -870,7 +870,8 @@ class CompanyProfileForm(forms.ModelForm):
 
         model = CompanyProfile
         fields = ["name", "tagline", "address", "city", "phone", "email", "tax_id", "trade_register",
-                  "receipt_footer", "out_of_stock_er", "low_stock_er", "agents_see_debt"]
+                  "receipt_footer", "out_of_stock_er", "low_stock_er", "agents_see_debt",
+                  "other_view_url"]
         help_texts = {
             "name": _("Shown in the menu, on the login page, receipts and every report."),
             "tagline": _("Short line under the name in the menu. Leave empty for none."),

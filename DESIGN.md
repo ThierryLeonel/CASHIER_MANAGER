@@ -808,3 +808,10 @@ back (agents).**
   the sign-in page (`LOGIN_MAX_FAILURES` = 6 per username and address). Emergency: `python manage.py unlock_user
   <username>`.
 - Passwords stay stored as one-way hashes: nobody, the admin included, can read a current password.
+
+## "Other view" button
+- Menu button **Other view** (orange outline, right under Home, in every workspace) for commercial agents, market
+  supervisors, senior managers, junior (assistant) managers and the super admin (`User.sees_other_view`). Cashiers,
+  finance and shop staff do not have it.
+- Opens `CompanyProfile.other_view_url` in a new tab (default `https://bit.ly/BMTC_DB_MARKET_FOLLOWUP`; migration
+  0062). The super admin can change the address in Company profile, or empty it to remove the button.

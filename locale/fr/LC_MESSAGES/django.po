@@ -8,6 +8,9 @@ msgstr ""
 msgid " · out of stock"
 msgstr " · en rupture"
 
+msgid "\"Other view\" link"
+msgstr "Lien « Autre vue »"
+
 msgid "% of his POS this month"
 msgstr "% de ses POS ce mois"
 
@@ -5351,6 +5354,15 @@ msgstr "Ouvert – en cours d'enquête"
 msgid "Opened"
 msgstr "Ouvert"
 
+msgid ""
+"Opened by the \"Other view\" button of commercial agents, market "
+"supervisors, senior and junior managers and the super admin. Empty: no "
+"button."
+msgstr ""
+"Ouvert par le bouton « Autre vue » des agents commerciaux, superviseurs de "
+"marché, managers senior et junior et du super administrateur. Vide : pas de "
+"bouton."
+
 msgid "Opening"
 msgstr "Ouverture"
 
@@ -5524,6 +5536,9 @@ msgstr "Numéro de l'autre partie"
 
 msgid "Other phone"
 msgstr "Autre téléphone"
+
+msgid "Other view"
+msgstr "Autre vue"
 
 msgid ""
 "Others are still on shift, so the counts are optional (the last person to "

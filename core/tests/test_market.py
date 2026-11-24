@@ -851,3 +851,36 @@ class LoginSuspensionTests(OrgMixin, TestCase):
         call_command("unlock_user", u.username, stdout=__import__("io").StringIO())
         u.refresh_from_db()
         self.assertIsNone(u.suspended_at)
+
+
+class OtherViewButtonTests(OrgMixin, TestCase):
+    """The "Other view" button (link set in Company profile) for agents, market supervisors, senior and junior
+    managers and the super admin."""
+
+    def setUp(self):
+        self.make_org()
+
+    def test_who_sees_it(self):
+        url = "https://bit.ly/BMTC_DB_MARKET_FOLLOWUP"
+        agent = User.objects.get(counterparty=self.a1).username
+        market = User.objects.create_user("market.test", password=PW, role=User.Role.MARKET,
+                                          subzone=User.objects.get(username="cashier.fako1").subzone)
+        for name in (agent, "manager", "junior.fako", "admin", market.username):
+            c = self.client_class()
+            self.assertTrue(c.login(username=name, password=PW), name)
+            r = c.get("/", follow=True)
+            self.assertContains(r, f'href="{url}"', msg_prefix=name)
+            self.assertContains(r, "Other view", msg_prefix=name)
+            self.assertContains(r, 'target="_blank"', msg_prefix=name)
+        for name in ("cashier.fako1", "finance"):
+            c = self.client_class()
+            self.assertTrue(c.login(username=name, password=PW), name)
+            self.assertNotContains(c.get("/", follow=True), url, msg_prefix=name)
+        # the admin changes or removes the link in Company profile
+        from core.models import CompanyProfile
+        co = CompanyProfile.objects.first() or CompanyProfile.objects.create(name="X")
+        co.other_view_url = ""
+        co.save()
+        c = self.client_class()
+        self.assertTrue(c.login(username="manager", password=PW))
+        self.assertNotContains(c.get("/", follow=True), "Other view")

@@ -770,3 +770,8 @@ th.sel, td.sel { width: 34px; text-align: center; }
 .side-group.fold[aria-expanded="true"]::after { transform: rotate(45deg); }
 .side-group.fold:hover, .side-group.fold:focus-visible { color: #fff; outline: none; background: var(--side-hover); }
 .side-sub[hidden] { display: none; }
+
+/* "Other view" (external follow-up link) */
+.side-nav a.other-view { color: #ffd2a8; border: 1px solid rgba(240,122,18,.45); background: rgba(240,122,18,.10); margin: 4px 0; }
+.side-nav a.other-view .ic { color: var(--accent); }
+.side-nav a.other-view:hover { background: rgba(240,122,18,.22); color: #fff; }

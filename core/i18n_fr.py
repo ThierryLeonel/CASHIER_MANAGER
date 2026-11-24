@@ -1856,6 +1856,9 @@ FR = {
     'matches': 'correspond',
     'There is a difference: the note is required. Explain it before closing.': 'Il y a un écart : la note est obligatoire. Expliquez-le avant de clôturer.',
     # commercial agent portal
+    '"Other view" link': 'Lien « Autre vue »',
+    'Opened by the "Other view" button of commercial agents, market supervisors, senior and junior managers and the super admin. Empty: no button.': 'Ouvert par le bouton « Autre vue » des agents commerciaux, superviseurs de marché, managers senior et junior et du super administrateur. Vide : pas de bouton.',
+    'Other view': 'Autre vue',
     'Invalid username or password. %(left)s attempt(s) left before the account is suspended.': 'Identifiant ou mot de passe incorrect. %(left)s essai(s) restant(s) avant la suspension du compte.',
     'Show them': 'Les afficher',
     'Suspended': 'Suspendu',

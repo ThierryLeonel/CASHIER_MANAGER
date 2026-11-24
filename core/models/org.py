@@ -267,6 +267,12 @@ class User(AbstractUser):
                              self.Role.MARKET)
 
     @property
+    def sees_other_view(self):
+        """The "Other view" button (market follow-up link in Company profile)."""
+        R = self.Role
+        return self.role in (R.AGENT, R.MARKET, R.MANAGER, R.JUNIOR, R.SUPERADMIN)
+
+    @property
     def is_junior(self):
         return self.role == self.Role.JUNIOR
 
@@ -669,6 +675,10 @@ class CompanyProfile(models.Model):
                                           decimal_places=0, default=2000)
     low_stock_er = models.DecimalField(_("POS low stock when ER stock is below (FCFA)"), max_digits=14,
                                        decimal_places=0, default=5000)
+    other_view_url = models.URLField(
+        _("\"Other view\" link"), max_length=300, blank=True, default="https://bit.ly/BMTC_DB_MARKET_FOLLOWUP",
+        help_text=_("Opened by the \"Other view\" button of commercial agents, market supervisors, senior and junior "
+                    "managers and the super admin. Empty: no button."))
     agents_see_debt = models.BooleanField(
         _("commercial agents see what they owe the company"), default=True,
         help_text=_("Untick to hide from the commercial agents their total owed to the company (balance, capital, "

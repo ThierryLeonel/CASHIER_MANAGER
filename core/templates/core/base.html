@@ -31,6 +31,7 @@
       {% if user.is_superadmin %}<a href="{% url 'admin_home' %}" role="tab" class="{% if space == 'admin' %}on{% endif %}" aria-selected="{% if space == 'admin' %}true{% else %}false{% endif %}">{% icon "settings" 16 %}<span>{% trans "Admin" %}</span></a>{% endif %}
     </div>{% endif %}
     {% if show_cash %}<a href="{% url 'dashboard' %}" class="{% if u == 'dashboard' %}on{% endif %}">{% icon "home" %}<span>{% trans "Home" %}</span></a>{% endif %}
+    {% if user.sees_other_view and company.other_view_url %}<a href="{{ company.other_view_url }}" class="other-view" target="_blank" rel="noopener noreferrer">{% icon "external" %}<span>{% trans "Other view" %}</span></a>{% endif %}
 
     {% if user.sells %}
     {% if user.is_agent %}<a href="{% url 'agent_oos' %}" class="{% if u == 'agent_oos' %}on{% endif %}">{% icon "alert" %}<span>{% trans "OOS" %}</span></a>
