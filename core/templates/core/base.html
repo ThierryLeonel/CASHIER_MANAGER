@@ -121,6 +121,8 @@
     {% if not user.is_market %}<a href="{% url 'report' 'supply_due' %}" class="{% if request.path == '/reports/supply_due/' %}on{% endif %}">{% icon "wallet" %}<span>{% trans "Supplies due" %}</span></a>
     <a href="{% url 'report' 'statement' %}" class="{% if request.path == '/reports/statement/' %}on{% endif %}">{% icon "statement" %}<span>{% trans "Agent / POS statement" %}</span></a>
     <a href="{% url 'report' 'daily_debt' %}" class="{% if request.path == '/reports/daily_debt/' %}on{% endif %}">{% icon "calendar" %}<span>{% trans "What agents owe daily" %}</span></a>{% else %}{% if not user.sells %}<a href="{% url 'agent_declaration' %}" class="{% if u == 'agent_declaration' %}on{% endif %}">{% icon "list" %}<span>{% trans "My daily declaration" %}</span></a>{% endif %}{% endif %}
+    {% if not user.is_market %}<a href="{% url 'agents_field_activity' %}" class="{% if u == 'agents_field_activity' %}on{% endif %}">{% icon "list" %}<span>{% trans "Agents' field transactions" %}</span></a>
+    <a href="{% url 'agents_debtors' %}" class="{% if u == 'agents_debtors' %}on{% endif %}">{% icon "users" %}<span>{% trans "Agents' outstanding debtors" %}</span></a>{% endif %}
     {% if not user.is_market %}<a href="{% url 'paybacks' %}" class="{% if u == 'paybacks' %}on{% endif %}">{% icon "payment" %}<span>{% trans "Agent paybacks" %}</span></a>{% endif %}
     <a href="{% url 'declarations' %}" class="{% if u == 'declarations' %}on{% endif %}">{% icon "list" %}<span>{% trans "Daily declarations" %}</span></a>
     {% if not user.is_market %}<a href="{% url 'agent_capital' %}" class="{% if u == 'agent_capital' %}on{% endif %}">{% icon "wallet" %}<span>{% trans "Agents' capital" %}</span></a>

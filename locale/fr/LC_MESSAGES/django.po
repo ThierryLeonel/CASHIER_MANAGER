@@ -250,6 +250,10 @@ msgid "%(n)s opening balances recorded, total %(amt)s FCFA."
 msgstr "%(n)s soldes d'ouverture enregistrés, total %(amt)s FCFA."
 
 #, python-format
+msgid "%(n)s records · %(a)s agents"
+msgstr "%(n)s enregistrements · %(a)s agents"
+
+#, python-format
 msgid "%(n)s rows imported."
 msgstr "%(n)s lignes importées."
 
@@ -879,6 +883,9 @@ msgstr "Relevé agent / POS"
 msgid "Agent / client"
 msgstr "Agent / client"
 
+msgid "Agent SIM"
+msgstr "SIM de l'agent"
+
 msgid "Agent and POS balances"
 msgstr "Soldes des agents et POS"
 
@@ -999,8 +1006,14 @@ msgstr "Agents sans solde d'ouverture"
 msgid "Agents' capital"
 msgstr "Capital des agents"
 
+msgid "Agents' field transactions"
+msgstr "Transactions terrain des agents"
+
 msgid "Agents' opening balances"
 msgstr "Soldes d'ouverture des agents"
+
+msgid "Agents' outstanding debtors"
+msgstr "Débiteurs des agents"
 
 msgid ""
 "Agents, POS and cash managers: positive = owes the company, negative = the "
@@ -1437,6 +1450,9 @@ msgstr "Par agent"
 msgid "By cashing out to the shop (UVE goes up)"
 msgstr "Par retrait (cash-out) vers la boutique (l'UVE augmente)"
 
+msgid "By commercial agent"
+msgstr "Par agent commercial"
+
 msgid "By day"
 msgstr "Par jour"
 
@@ -1497,6 +1513,9 @@ msgstr "L'annuler"
 msgid "Cancel the responsibility transfer of %(ref)s before correcting it."
 msgstr ""
 "Annulez le transfert de responsabilité de %(ref)s avant de la corriger."
+
+msgid "Cancelled"
+msgstr "Annulé"
 
 msgid "Capital"
 msgstr "Capital"
@@ -2173,6 +2192,9 @@ msgstr "Effacer cette liste"
 msgid "Client"
 msgstr "Client"
 
+msgid "Client (POS, shop, name or number)"
+msgstr "Client (PDV, boutique, nom ou numéro)"
+
 msgid "Client full name"
 msgstr "Nom complet du client"
 
@@ -2190,6 +2212,9 @@ msgstr "Téléphone du client"
 
 msgid "Client phone (optional)"
 msgstr "Téléphone du client (facultatif)"
+
+msgid "Client type"
+msgstr "Type de client"
 
 msgid "Clients who owe me"
 msgstr "Clients qui me doivent"
@@ -2292,6 +2317,9 @@ msgstr "Agent commercial"
 
 msgid "Commercial agent (business SIM)"
 msgstr "Agent commercial (SIM business)"
+
+msgid "Commercial agent (name or SIM)"
+msgstr "Agent commercial (nom ou SIM)"
 
 msgid "Commercial agent and POS balances"
 msgstr "Soldes des agents commerciaux et POS"
@@ -2904,6 +2932,15 @@ msgstr "Dette reportée (ouvertures incluses)"
 msgid "Debt by product (UVE, Cash, ER)"
 msgstr "Dette par produit (UVE, espèces, ER)"
 
+msgid "Debtor"
+msgstr "Débiteur"
+
+msgid "Debtor (POS, shop, name or number)"
+msgstr "Débiteur (PDV, boutique, nom ou numéro)"
+
+msgid "Debtors"
+msgstr "Débiteurs"
+
 msgid "Debtors & creditors"
 msgstr "Débiteurs & créanciers"
 
@@ -3444,6 +3481,9 @@ msgstr "Chaque agent a déjà un solde d'ouverture."
 
 msgid "Every commercial agent of this list has a login."
 msgstr "Chaque agent commercial de cette liste a un identifiant."
+
+msgid "Every debtor"
+msgstr "Tous les débiteurs"
 
 msgid ""
 "Every report has filters and Excel/PDF downloads that use exactly the same "
@@ -4265,6 +4305,9 @@ msgstr "Écritures comptables"
 msgid "Left"
 msgstr "Reste"
 
+msgid "Left on credit in the period"
+msgstr "Laissé à crédit sur la période"
+
 msgid "Left to pay after those"
 msgstr "Reste à payer après ceux-ci"
 
@@ -4743,6 +4786,9 @@ msgstr ""
 "Aucune zone de caissier n'est connue pour %(agent)s : utilisez Transfert au "
 "caissier."
 
+msgid "No client owes the agents anything."
+msgstr "Aucun client ne doit rien aux agents."
+
 msgid "No client owes you anything."
 msgstr "Aucun client ne vous doit rien."
 
@@ -4985,6 +5031,9 @@ msgstr ""
 msgid "Nothing is owed on this transfer, or you are not its receiver."
 msgstr ""
 "Rien n'est dû sur ce transfert, ou vous n'en êtes pas le destinataire."
+
+msgid "Nothing recorded by the agents for these filters."
+msgstr "Rien d'enregistré par les agents pour ces filtres."
 
 msgid "Nothing recorded in this period."
 msgstr "Rien d'enregistré sur cette période."
@@ -5570,8 +5619,17 @@ msgstr "Extérieur à la société"
 msgid "Outstanding"
 msgstr "Encours"
 
+msgid "Outstanding (FCFA)"
+msgstr "Reste dû (FCFA)"
+
 msgid "Outstanding amount owed"
 msgstr "Montant restant dû"
+
+msgid "Outstanding debtors"
+msgstr "Débiteurs"
+
+msgid "Outstanding with the agents' clients"
+msgstr "Reste dû par les clients des agents"
 
 msgid "Over the period"
 msgstr "Sur la période"
@@ -6230,6 +6288,9 @@ msgstr "Reçu par le PDV"
 
 msgid "Received from"
 msgstr "Reçu de"
+
+msgid "Received from clients"
+msgstr "Reçu des clients"
 
 msgid "Received from the office"
 msgstr "Reçu du bureau"
@@ -7124,6 +7185,10 @@ msgid "Show them"
 msgstr "Les afficher"
 
 #, python-format
+msgid "Showing the first %(n)s; download Excel for all of them."
+msgstr "Affichage des %(n)s premiers ; téléchargez Excel pour tous."
+
+#, python-format
 msgid "Showing the first %(n)s; search to find the others."
 msgstr "Affichage des %(n)s premiers ; recherchez pour trouver les autres."
 
@@ -7341,6 +7406,9 @@ msgstr "UVE approvisionnée"
 
 msgid "Supplied and paid in the period"
 msgstr "Approvisionné et payé sur la période"
+
+msgid "Supplied by agents"
+msgstr "Approvisionné par les agents"
 
 msgid "Supplied by cashiers"
 msgstr "Approvisionné par les caissiers"
@@ -7576,6 +7644,13 @@ msgstr ""
 
 msgid "The POS pays cash now"
 msgstr "Le POS paie en espèces maintenant"
+
+msgid ""
+"The POS, shops and other clients who still owe the commercial agents, from "
+"the agents' own records (supplied − received)."
+msgstr ""
+"Les PDV, boutiques et autres clients qui doivent encore aux agents "
+"commerciaux, d'après les enregistrements des agents (approvisionné − reçu)."
 
 msgid "The SIM, microzone and stock are managed by the office."
 msgstr "La SIM, la microzone et le stock sont gérés par le bureau."
@@ -8357,6 +8432,9 @@ msgstr ""
 "Les transferts se font uniquement entre caisses, portefeuilles ou banques "
 "actifs de l'entreprise."
 
+msgid "Transfers between agents"
+msgstr "Transferts entre agents"
+
 msgid "Transfers between company accounts"
 msgstr "Transferts entre comptes de l'entreprise"
 
@@ -8858,6 +8936,16 @@ msgstr "Ce que le client vous a payé maintenant. Le reste vous est dû."
 
 msgid "What the client paid you on the spot. The rest is owed to you."
 msgstr "Ce que le client vous a payé sur place. Le reste vous est dû."
+
+msgid ""
+"What the commercial agents recorded with their POS, shops and other clients:"
+" supplies, payments received, destocash and transfers between agents. These "
+"are the agents' own records (not the company ledger)."
+msgstr ""
+"Ce que les agents commerciaux ont enregistré avec leurs PDV, boutiques et "
+"autres clients : approvisionnements, paiements reçus, destocash et "
+"transferts entre agents. Ce sont les enregistrements des agents (pas la "
+"comptabilité de l'entreprise)."
 
 msgid "What to clear"
 msgstr "Ce qu'il faut effacer"
@@ -9914,6 +10002,10 @@ msgstr "utilisé pour"
 
 msgid "usual master zone"
 msgstr "zone principale habituelle"
+
+#, python-format
+msgid "with %(n)s agents"
+msgstr "chez %(n)s agents"
 
 msgid "wrong passwords in a row"
 msgstr "mots de passe erronés d'affilée"

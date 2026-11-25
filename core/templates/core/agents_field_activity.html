@@ -1,0 +1,36 @@
+{% extends "core/base.html" %}{% load i18n cashier %}
+{% block title %}{% trans "Agents' field transactions" %}{% endblock %}
+{% block topbar %}{% trans "Agents' field transactions" %}{% endblock %}
+{% block content %}
+<h1>{% trans "Agents' field transactions" %}</h1>
+<p class="small muted meta">{% trans "What the commercial agents recorded with their POS, shops and other clients: supplies, payments received, destocash and transfers between agents. These are the agents' own records (not the company ledger)." %} <a href="{% url 'agents_debtors' %}">{% trans "Outstanding debtors" %} →</a></p>
+<form class="filters panel" method="get">
+  <div class="field"><label for="f-from">{% trans "From" %}</label><input id="f-from" type="date" name="from" value="{{ d_from|date:'Y-m-d' }}"></div>
+  <div class="field"><label for="f-to">{% trans "To" %}</label><input id="f-to" type="date" name="to" value="{{ d_to|date:'Y-m-d' }}"></div>
+  <div class="field"><label for="f-agent">{% trans "Commercial agent (name or SIM)" %}</label><input id="f-agent" type="text" name="agent" value="{{ agent }}"></div>
+  <div class="field"><label for="f-client">{% trans "Client (POS, shop, name or number)" %}</label><input id="f-client" type="text" name="client" value="{{ client }}"></div>
+  {% if kind %}<input type="hidden" name="kind" value="{{ kind }}">{% endif %}
+  <div class="field"><button class="btn" type="submit">{% trans "Search" %}</button> <a class="btn" href="?{{ qs }}{% if qs %}&amp;{% endif %}format=xlsx">⬇ Excel</a></div>
+</form>
+<nav class="lvl-tabs rec-chips">{% for k, label in kinds %}<a class="{% if kind == k %}on{% endif %}" href="?{{ keep }}{% if keep %}&amp;{% endif %}kind={{ k }}">{{ label }}</a>{% endfor %}</nav>
+<div class="bal-row">
+  <div class="bal k-UVE"><span class="bal-label">{% trans "Supplied by agents" %}</span><span class="bal-value">{{ sums.supplied|fcfa }}</span><span class="bal-unit">UVE {{ sums.uve|fcfa }} · ER {{ sums.er|fcfa }} · {% trans "Cash" %} {{ sums.cash|fcfa }}</span></div>
+  <div class="bal k-CASH_DRAWER"><span class="bal-label">{% trans "Received from clients" %}</span><span class="bal-value">{{ sums.paid|fcfa }}</span><span class="bal-unit">FCFA</span></div>
+  <div class="bal k-ER"><span class="bal-label">{% trans "Left on credit in the period" %}</span><span class="bal-value">{{ sums.credit|fcfa }}</span><span class="bal-unit">{% blocktrans with n=sums.n a=sums.agents %}{{ n }} records · {{ a }} agents{% endblocktrans %}</span></div>
+</div>
+<div class="tbl-wrap"><table class="t"><thead><tr>
+  <th>{% trans "Date" %}</th><th>{% trans "Reference" %}</th><th>{% trans "Commercial agent" %}</th><th>{% trans "Operation" %}</th><th>{% trans "Client" %}</th>
+  <th class="money">{% trans "Supplied" %}</th><th class="money">{% trans "Received" %}</th><th class="money">{% trans "On credit" %}</th><th>{% trans "Note" %}</th></tr></thead>
+<tbody>{% for e in page %}<tr{% if e.cancelled_at %} class="muted"{% endif %}>
+  <td>{{ e.business_date|date:"d/m/Y" }} <span class="muted small">{{ e.created_at|time:"H:i" }}</span></td>
+  <td>{{ e.reference }}</td>
+  <td>{{ e.agent.name }} <span class="muted small">{{ e.agent.business_sim|sim }}</span></td>
+  <td>{% if e.client_kind == 'AGENT' %}{% trans "Transfer to an agent" %}{% else %}{{ e.get_kind_display }}{% endif %}{% if e.cancelled_at %} · <span class="badge bad">{% trans "Cancelled" %}</span>{% endif %}</td>
+  <td>{{ e.client_label }} <span class="muted small">{% if e.pos %}{{ e.pos.business_sim|sim }}{% elif e.to_agent %}{{ e.to_agent.business_sim|sim }}{% else %}{{ e.get_client_kind_display }}{% if e.client_phone %} · {{ e.client_phone }}{% endif %}{% endif %}</span></td>
+  <td class="money">{% if e.total %}{{ e.total|fcfa }}<div class="muted small">{% if e.uve %}UVE {{ e.uve|fcfa }} {% endif %}{% if e.er %}ER {{ e.er|fcfa }} {% endif %}{% if e.cash %}{% trans "Cash" %} {{ e.cash|fcfa }}{% endif %}</div>{% endif %}</td>
+  <td class="money">{% if e.paid %}{{ e.paid|fcfa }}{% endif %}</td>
+  <td class="money">{% if e.kind == 'SUPPLY' and e.client_kind != 'AGENT' and e.balance_effect > 0 %}<strong>{{ e.balance_effect|fcfa }}</strong>{% endif %}</td>
+  <td class="small">{{ e.note }}{% if e.cancel_reason %} · {{ e.cancel_reason }}{% endif %}</td>
+</tr>{% empty %}<tr><td colspan="9" class="muted">{% trans "Nothing recorded by the agents for these filters." %}</td></tr>{% endfor %}</tbody></table></div>
+<div class="pager">{% if page.has_previous %}<a class="btn small" href="?{{ keep }}&amp;kind={{ kind }}&amp;page={{ page.previous_page_number }}">←</a>{% endif %}<span class="muted small">{{ page.number }} / {{ page.paginator.num_pages }} · {{ page.paginator.count }}</span>{% if page.has_next %}<a class="btn small" href="?{{ keep }}&amp;kind={{ kind }}&amp;page={{ page.next_page_number }}">→</a>{% endif %}</div>
+{% endblock %}

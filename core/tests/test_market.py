@@ -884,3 +884,60 @@ class OtherViewButtonTests(OrgMixin, TestCase):
         c = self.client_class()
         self.assertTrue(c.login(username="manager", password=PW))
         self.assertNotContains(c.get("/", follow=True), "Other view")
+
+
+class AgentsFieldViewsTests(OrgMixin, TestCase):
+    """The office sees what the commercial agents did in the field and who still owes them."""
+
+    def setUp(self):
+        self.make_org()
+        from core.services import agents as ag
+
+        self.agent_user = User.objects.get(counterparty=self.a1)
+        ag.record_supply(self.agent_user, client_kind="POS", pos_sim=self.p1.business_sim, uve=D(50000),
+                         paid=D(20000), idempotency_key=uuid.uuid4())
+        ag.record_supply(self.agent_user, client_kind="OTHER", client_phone="677112233", er=D(10000),
+                         paid=D(0), idempotency_key=uuid.uuid4())
+        ag.record_client_payment(self.agent_user, client_kind="POS", pos_sim=self.p1.business_sim, amount=D(5000),
+                                 idempotency_key=uuid.uuid4())
+
+    def test_field_transactions(self):
+        c = self.client_class()
+        self.assertTrue(c.login(username="admin", password=PW))
+        r = c.get("/supervision/agents/field/")
+        self.assertContains(r, "field transactions")
+        self.assertContains(r, self.p1.name)
+        self.assertContains(r, "60 000")  # supplied 50 000 + 10 000
+        self.assertContains(r, "25 000")  # received 20 000 + 5 000
+        r = c.get("/supervision/agents/field/?kind=CREDIT")
+        self.assertContains(r, "30 000")
+        r = c.get(f"/supervision/agents/field/?agent={self.a2.business_sim}")
+        self.assertNotContains(r, self.p1.name)
+        x = c.get("/supervision/agents/field/?format=xlsx")
+        self.assertEqual(x["Content-Type"], "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+        for name in ("manager", "finance"):
+            m = self.client_class()
+            self.assertTrue(m.login(username=name, password=PW))
+            self.assertEqual(m.get("/supervision/agents/field/").status_code, 200)
+        cs = self.client_class()
+        self.assertTrue(cs.login(username="cashier.fako1", password=PW))
+        self.assertEqual(cs.get("/supervision/agents/field/").status_code, 403)
+
+    def test_outstanding_debtors(self):
+        from core.views.agent_field import debtor_rows
+
+        rows = debtor_rows()
+        owed = {r["label"]: r["owed"] for r in rows}
+        self.assertEqual(owed[self.p1.name], D(25000))  # 50 000 − 20 000 − 5 000
+        self.assertEqual(owed["677112233"], D(10000))
+        c = self.client_class()
+        self.assertTrue(c.login(username="admin", password=PW))
+        r = c.get("/supervision/agents/debtors/")
+        self.assertContains(r, "35 000")
+        self.assertContains(r, self.a1.name)
+        x = c.get("/supervision/agents/debtors/?format=xlsx")
+        from openpyxl import load_workbook
+        import io
+        ws = load_workbook(io.BytesIO(x.content)).active
+        self.assertEqual(ws.max_row, 3)
+        self.assertContains(c.get("/supervision/agents/"), "outstanding debtors")

@@ -1,0 +1,26 @@
+{% extends "core/base.html" %}{% load i18n cashier %}
+{% block title %}{% trans "Agents' outstanding debtors" %}{% endblock %}
+{% block topbar %}{% trans "Agents' outstanding debtors" %}{% endblock %}
+{% block content %}
+<h1>{% trans "Agents' outstanding debtors" %}</h1>
+<p class="small muted meta">{% trans "The POS, shops and other clients who still owe the commercial agents, from the agents' own records (supplied − received)." %} <a href="{% url 'agents_field_activity' %}">{% trans "Agents' field transactions" %} →</a></p>
+<form class="filters panel" method="get">
+  <div class="field"><label for="d-agent">{% trans "Commercial agent (name or SIM)" %}</label><input id="d-agent" type="text" name="agent" value="{{ agent }}"></div>
+  <div class="field"><label for="d-client">{% trans "Debtor (POS, shop, name or number)" %}</label><input id="d-client" type="text" name="client" value="{{ client }}"></div>
+  <div class="field"><button class="btn" type="submit">{% trans "Search" %}</button> <a class="btn" href="?{{ qs }}{% if qs %}&amp;{% endif %}format=xlsx">⬇ Excel</a></div>
+</form>
+<div class="bal-row">
+  <div class="bal k-ER"><span class="bal-label">{% trans "Outstanding with the agents' clients" %}</span><span class="bal-value">{{ total|fcfa }}</span><span class="bal-unit">FCFA</span></div>
+  <div class="bal k-UVE"><span class="bal-label">{% trans "Debtors" %}</span><span class="bal-value">{{ count }}</span><span class="bal-unit">{% blocktrans with n=agents|length %}with {{ n }} agents{% endblocktrans %}</span></div>
+</div>
+<h2>{% trans "By commercial agent" %}</h2>
+<div class="tbl-wrap"><table class="t"><thead><tr><th>{% trans "Commercial agent" %}</th><th class="money">{% trans "Debtors" %}</th><th class="money">{% trans "Outstanding (FCFA)" %}</th><th></th></tr></thead>
+<tbody>{% for a in agents %}<tr><td>{{ a.agent.name }} <span class="muted small">{{ a.agent.business_sim|sim }}</span></td><td class="money">{{ a.debtors }}</td><td class="money"><strong>{{ a.owed|fcfa }}</strong></td><td class="keep"><a class="btn small" href="?agent={{ a.agent.business_sim }}">{% trans "Details" %}</a> <a class="btn small" href="{% url 'agents_field_activity' %}?agent={{ a.agent.business_sim }}&amp;kind=CREDIT">{% trans "On credit" %}</a></td></tr>
+{% empty %}<tr><td colspan="4" class="muted">{% trans "No client owes the agents anything." %}</td></tr>{% endfor %}</tbody>
+{% if agents %}<tfoot><tr class="total"><td>{% trans "Total" %}</td><td class="money">{{ count }}</td><td class="money">{{ total|fcfa }}</td><td></td></tr></tfoot>{% endif %}</table></div>
+{% if rows %}<h2>{% trans "Every debtor" %}</h2>
+<div class="tbl-wrap"><table class="t"><thead><tr><th>{% trans "Debtor" %}</th><th>{% trans "Commercial agent" %}</th><th class="money">{% trans "Outstanding (FCFA)" %}</th><th>{% trans "Last supply" %}</th><th></th></tr></thead>
+<tbody>{% for r in rows %}<tr><td>{{ r.label }} <span class="muted small">{{ r.kind_label }}{% if r.number %} · {{ r.number|sim }}{% endif %}</span></td><td>{{ r.agent.name }}</td><td class="money"><strong>{{ r.owed|fcfa }}</strong></td><td>{{ r.last_supply|date:"d/m/Y"|default:"—" }}</td>
+<td class="keep">{% if r.number %}<a class="btn small" href="tel:+237{{ r.number }}" title="{% trans 'Call' %}">{% icon "phone" 16 %}</a>{% endif %}</td></tr>{% endfor %}</tbody></table></div>
+{% if count > rows|length %}<p class="small muted">{% blocktrans with n=rows|length %}Showing the first {{ n }}; download Excel for all of them.{% endblocktrans %}</p>{% endif %}{% endif %}
+{% endblock %}

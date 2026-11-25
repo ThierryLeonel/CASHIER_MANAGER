@@ -815,3 +815,19 @@ back (agents).**
   finance and shop staff do not have it.
 - Opens `CompanyProfile.other_view_url` in a new tab (default `https://bit.ly/BMTC_DB_MARKET_FOLLOWUP`; migration
   0062). The super admin can change the address in Company profile, or empty it to remove the button.
+
+## The office sees the agents' field transactions and outstanding debtors
+- Agents space menu (senior manager, finance, super admin; not the market supervisor, cashiers or junior managers),
+  `core/views/agent_field.py`:
+  - **Agents' field transactions** (`/supervision/agents/field/`): every record the agents made in their portal
+    (`AgentClientEntry`): supplies to POS / shops / other clients, payments received, destocash, transfers between
+    agents, cancelled ones greyed. Filters: dates (default the last 7 days), agent (name or SIM), client (POS, shop,
+    name or number); chips All · Supplies · Payments · Destocash · On credit · Transfers between agents · Cancelled.
+    Tiles: supplied by agents (UVE / ER / cash), received from clients, left on credit, number of records and agents.
+    100 per page; Excel download of the filtered list.
+  - **Agents' outstanding debtors** (`/supervision/agents/debtors/`, `debtor_rows()`: one grouped query over the live
+    records, supplied − received > 0): total outstanding, number of debtors, a table by agent (debtors, outstanding,
+    Details / On credit links) and every debtor (POS / shop / other client, number, agent, outstanding, last supply,
+    Call). Filters agent / debtor; Excel download.
+- These are the agents' own records (what POS and clients owe the agents), separate from what the agents owe the
+  company (statements, balances, "What agents owe daily").
