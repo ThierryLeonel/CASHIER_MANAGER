@@ -941,3 +941,45 @@ class AgentsFieldViewsTests(OrgMixin, TestCase):
         ws = load_workbook(io.BytesIO(x.content)).active
         self.assertEqual(ws.max_row, 3)
         self.assertContains(c.get("/supervision/agents/"), "outstanding debtors")
+
+
+class OosTotalsMicrozoneTests(OrgMixin, TestCase):
+    """OOS and possible destocash show the total ER and OM stock of what is listed and filter by microzone, for the
+    agents, the market supervisor and the office."""
+
+    def setUp(self):
+        self.make_org()
+        from core.models import MicroZone
+
+        self.mz = self.a1.microzone or MicroZone.objects.filter(agent=self.a1).first()
+        self.other = MicroZone.objects.exclude(pk=self.mz.pk).filter(subzone=self.mz.subzone).first() or \
+            MicroZone.objects.create(subzone=self.mz.subzone, name="Other road")
+        self.pa = Counterparty.objects.create(kind=Counterparty.Kind.POS, business_sim="698300001", name="POS A",
+                                              microzone=self.mz, er_stock=D(1000), uve_stock=D(40000))
+        self.pb = Counterparty.objects.create(kind=Counterparty.Kind.POS, business_sim="698300002", name="POS B",
+                                              microzone=self.other, er_stock=D(9000), uve_stock=D(60000))
+
+    def test_totals_and_microzone_filter(self):
+        c = self.client_class()
+        self.assertTrue(c.login(username="admin", password=PW))
+        r = c.get("/agent/oos/")
+        self.assertContains(r, "Total ER stock")
+        self.assertContains(r, "Total OM stock")
+        self.assertContains(r, f'value="{self.mz.pk}"')
+        r = c.get(f"/agent/oos/?mz={self.other.pk}")
+        self.assertContains(r, "POS B")
+        self.assertNotContains(r, "POS A")
+        self.assertContains(r, "9 000")
+        self.assertContains(r, "60 000")
+        self.assertContains(r, f"?mz={self.other.pk}&amp;level=OUT")  # tabs keep the microzone
+        r = c.get(f"/agent/destocash/?mz={self.mz.pk}")
+        self.assertContains(r, "POS A")
+        self.assertNotContains(r, "POS B")
+        self.assertContains(r, "40 000")
+        self.assertContains(r, "Total ER stock")
+        # the agent sees the totals of his own POS too
+        a = self.client_class()
+        self.assertTrue(a.login(username=User.objects.get(counterparty=self.a1).username, password=PW))
+        r = a.get("/agent/oos/")
+        self.assertContains(r, "Total ER stock")
+        self.assertContains(a.get("/agent/destocash/"), "Total OM stock")

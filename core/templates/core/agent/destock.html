@@ -6,10 +6,12 @@
 {% include "core/agent/inc/market_sim.html" %}
 <p class="small muted meta">{% trans "Your POS holding OM stock, from the most to the least. Destocash = give the POS cash for its OM." %}{% if last %} {% blocktrans with d=last|date:"d/m/Y H:i" %}Stock of {{ d }}.{% endblocktrans %}{% endif %}</p>
 <div class="bal-row">
-  <div class="bal k-UVE"><span class="bal-label">{% if supervise %}{% trans "OM stock of the POS" %}{% else %}{% trans "OM stock of my POS" %}{% endif %}</span><span class="bal-value">{{ tot.om|default:0|fcfa }}</span><span class="bal-unit">FCFA</span></div>
+  <div class="bal k-UVE"><span class="bal-label">{% trans "Total OM stock" %}</span><span class="bal-value">{{ tot.om|fcfa }}</span><span class="bal-unit">FCFA</span></div>
+  <div class="bal k-ER"><span class="bal-label">{% trans "Total ER stock" %}</span><span class="bal-value">{{ tot.er|fcfa }}</span><span class="bal-unit">FCFA</span></div>
   <div class="bal k-CASH"><span class="bal-label">{% trans "POS with OM stock" %}</span><span class="bal-value">{{ tot.n }}</span><span class="bal-unit">POS</span></div>
 </div>
 <form class="oos-search" method="get">
+  {% if mzs %}<select name="mz" aria-label="{% trans 'Microzone' %}" onchange="this.form.submit()"><option value="">{% trans "All microzones" %}</option>{% for m in mzs %}<option value="{{ m.pk }}"{% if mz == m.pk|stringformat:'s' %} selected{% endif %}>{{ m.name }}{% if m.subzone %} · {{ m.subzone.name }}{% endif %}</option>{% endfor %}<option value="none"{% if mz == 'none' %} selected{% endif %}>{% trans "No microzone" %}</option></select>{% endif %}
   <input type="search" name="q" value="{{ q }}" placeholder="{% trans 'Search (SIM, name or microzone)' %}">
   <button class="btn" type="submit">{% trans "Search" %}</button>
 </form>

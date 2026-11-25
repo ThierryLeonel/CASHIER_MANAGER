@@ -1856,6 +1856,11 @@ FR = {
     'matches': 'correspond',
     'There is a difference: the note is required. Explain it before closing.': 'Il y a un écart : la note est obligatoire. Expliquez-le avant de clôturer.',
     # commercial agent portal
+    '%(n)s POS listed': '%(n)s PDV listés',
+    'All microzones': 'Toutes les microzones',
+    'Total ER stock': 'Stock ER total',
+    'Total OM stock': 'Stock OM total',
+    'Total commission': 'Commission totale',
     '%(n)s records · %(a)s agents': '%(n)s enregistrements · %(a)s agents',
     'Agent SIM': "SIM de l'agent",
     "Agents' field transactions": 'Transactions terrain des agents',

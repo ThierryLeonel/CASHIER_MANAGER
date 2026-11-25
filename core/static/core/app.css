@@ -775,3 +775,9 @@ th.sel, td.sel { width: 34px; text-align: center; }
 .side-nav a.other-view { color: #ffd2a8; border: 1px solid rgba(240,122,18,.45); background: rgba(240,122,18,.10); margin: 4px 0; }
 .side-nav a.other-view .ic { color: var(--accent); }
 .side-nav a.other-view:hover { background: rgba(240,122,18,.22); color: #fff; }
+/* microzone filter on OOS / possible destocash */
+.oos-search { flex-wrap: wrap; }
+.oos-search > .pk, .oos-search > select { flex: 0 1 260px; min-width: 0; }
+@media (max-width: 640px) { form.oos-search > .pk, form.oos-search > select, form.oos-search > input[type=search] { flex: 1 1 100%; width: 100%; } }
+.oos-search input[type=search] { min-height: 48px; padding: 0 14px; border: 1px solid var(--line); border-radius: 12px;
+  background: var(--panel); color: var(--ink); font: inherit; }

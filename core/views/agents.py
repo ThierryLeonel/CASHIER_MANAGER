@@ -169,10 +169,41 @@ def market_sim(request):
     return redirect(nxt)
 
 
+def _stock_filter(request, base):
+    """Search (SIM, name, microzone) and microzone filter of the OOS / possible destocash lists. Returns
+    (filtered queryset, q, chosen microzone id, microzones of the list)."""
+    from core.models import MicroZone
+
+    qs = base
+    q = (request.GET.get("q") or "").strip()
+    if q:
+        digits = "".join(ch for ch in q if ch.isdigit())
+        cond = Q(name__icontains=q) | Q(microzone__name__icontains=q) | Q(om_account_name__icontains=q)
+        if digits:
+            cond |= Q(business_sim__contains=digits[-9:])
+        qs = qs.filter(cond)
+    mzs = MicroZone.objects.filter(id__in=base.exclude(microzone=None).values("microzone_id")) \
+        .select_related("subzone").order_by("subzone__name", "name")
+    mz = request.GET.get("mz") or ""
+    if mz == "none":
+        qs = qs.filter(microzone=None)
+    elif mz.isdigit():
+        qs = qs.filter(microzone_id=int(mz))
+    else:
+        mz = ""
+    return qs, q, mz, mzs
+
+
+def _stock_totals(qs):
+    t = qs.aggregate(er=Sum("er_stock"), om=Sum("uve_stock"), com=Sum("commission_balance"), n=Count("id"))
+    return {k: (v or 0) for k, v in t.items()}
+
+
 @roles_required(R.AGENT, *SUPERVISORS)
 def agent_oos(request):
     """OOS: only the logged-in agent's POS (those of the microzones he is in charge of), from out of stock to the
-    highest ER stock; POS without an imported stock come last."""
+    highest ER stock; POS without an imported stock come last. Total ER / OM stock of what is listed; filter by
+    microzone."""
     from django.core.paginator import Paginator
     from django.db.models import F
 
@@ -180,14 +211,8 @@ def agent_oos(request):
 
     limit, low = company().out_of_stock_er, company().low_stock_er
     mine = _followed_pos(request).select_related("microzone__agent")
-    q = (request.GET.get("q") or "").strip()
-    qs = mine
-    if q:
-        digits = "".join(ch for ch in q if ch.isdigit())
-        cond = Q(name__icontains=q) | Q(microzone__name__icontains=q) | Q(om_account_name__icontains=q)
-        if digits:
-            cond |= Q(business_sim__contains=digits[-9:])
-        qs = qs.filter(cond)
+    base, q, mz, mzs = _stock_filter(request, mine)  # search + microzone: the tabs count inside them
+    qs = base
     level = request.GET.get("level") or ("OUT" if request.GET.get("out") == "1" else "")
     if level == "OUT":
         qs = qs.filter(er_stock__lt=limit)
@@ -195,43 +220,43 @@ def agent_oos(request):
         qs = qs.filter(er_stock__gte=limit, er_stock__lt=low)
     elif level == "IN":
         qs = qs.filter(er_stock__gte=low)
+    else:
+        level = ""
+    tot = _stock_totals(qs)
     qs = qs.order_by(F("er_stock").asc(nulls_last=True), F("uve_stock").asc(nulls_last=True), "name")
     page = Paginator(qs, 200).get_page(request.GET.get("page"))
-    tot = mine.aggregate(er=Sum("er_stock"), uve=Sum("uve_stock"), com=Sum("commission_balance"))
     last = mine.exclude(stock_at=None).order_by("-stock_at").values_list("stock_at", flat=True).first()
     keep = request.GET.copy()
     keep.pop("page", None)
+    tabs = request.GET.copy()
+    for k in ("page", "level", "out"):
+        tabs.pop(k, None)
     return render(request, "core/agent/oos.html", {
         "page": page, "rows": [(p, p.stock_level(limit, low)) for p in page], "limit": limit, "low": low, "q": q,
-        "level": level, "out": level == "OUT", "keep": keep.urlencode(), "last": last, "tot": tot,
-        "n_pos": mine.count(), "n_out": mine.filter(er_stock__lt=limit).count(),
-        "n_low": mine.filter(er_stock__gte=limit, er_stock__lt=low).count(),
-        "n_in": mine.filter(er_stock__gte=low).count(), "n_unknown": mine.filter(er_stock=None).count(),
+        "level": level, "out": level == "OUT", "keep": keep.urlencode(), "tabs": tabs.urlencode(), "last": last,
+        "tot": tot, "mz": mz, "mzs": mzs,
+        "n_pos": base.count(), "n_out": base.filter(er_stock__lt=limit).count(),
+        "n_low": base.filter(er_stock__gte=limit, er_stock__lt=low).count(),
+        "n_in": base.filter(er_stock__gte=low).count(), "n_unknown": base.filter(er_stock=None).count(),
         "supervise": not request.user.sells, "zone": request.user.market_zone})
 
 
 @roles_required(R.AGENT, *SUPERVISORS)
 def agent_destock(request):
-    """Possible destocash: the logged-in agent's POS holding OM (UVE) stock, from the most to the least."""
+    """Possible destocash: the logged-in agent's POS holding OM (UVE) stock, from the most to the least. Total OM and
+    ER stock of what is listed; filter by microzone."""
     from django.core.paginator import Paginator
 
     mine = _followed_pos(request).filter(uve_stock__gt=0).select_related("microzone__agent")
-    q = (request.GET.get("q") or "").strip()
-    qs = mine
-    if q:
-        digits = "".join(ch for ch in q if ch.isdigit())
-        cond = Q(name__icontains=q) | Q(microzone__name__icontains=q) | Q(om_account_name__icontains=q)
-        if digits:
-            cond |= Q(business_sim__contains=digits[-9:])
-        qs = qs.filter(cond)
+    qs, q, mz, mzs = _stock_filter(request, mine)
+    tot = _stock_totals(qs)
     qs = qs.order_by("-uve_stock", "name")
     page = Paginator(qs, 200).get_page(request.GET.get("page"))
     keep = request.GET.copy()
     keep.pop("page", None)
-    tot = mine.aggregate(om=Sum("uve_stock"), n=Count("id"))
     return render(request, "core/agent/destock.html", {
-        "page": page, "q": q, "keep": keep.urlencode(), "tot": tot, "supervise": not request.user.sells,
-        "zone": request.user.market_zone,
+        "page": page, "q": q, "keep": keep.urlencode(), "tot": tot, "mz": mz, "mzs": mzs,
+        "supervise": not request.user.sells, "zone": request.user.market_zone,
         "last": mine.exclude(stock_at=None).order_by("-stock_at").values_list("stock_at", flat=True).first()})
 
 

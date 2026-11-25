@@ -831,3 +831,14 @@ back (agents).**
     Call). Filters agent / debtor; Excel download.
 - These are the agents' own records (what POS and clients owe the agents), separate from what the agents owe the
   company (statements, balances, "What agents owe daily").
+
+## OOS and possible destocash: total ER / OM stock and microzone filter
+- Same for agents, market supervisors (their zone) and the office (`_stock_filter`, `_stock_totals` in
+  `core/views/agents.py`):
+  - **OOS:** tiles "Total ER stock" (with the number of POS listed), "Total OM stock" and "Total commission" for what
+    is listed — after the microzone, the search and the stock tab. The All / Out / Low / In stock tabs count inside
+    the chosen microzone and search, and keep them.
+  - **Possible destocash:** tiles "Total OM stock", "Total ER stock" and "POS with OM stock" for what is listed.
+  - **Microzone filter** (`?mz=<id>`, or `none` for POS without a microzone): a list of the microzones of the POS
+    the person follows, beside the search; it applies at once.
+- The search box got the same look as the other boxes.

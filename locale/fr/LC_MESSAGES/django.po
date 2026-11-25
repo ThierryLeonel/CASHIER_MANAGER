@@ -210,6 +210,10 @@ msgid "%(mz)s is already controlled by %(agent)s."
 msgstr "%(mz)s est déjà contrôlée par %(agent)s."
 
 #, python-format
+msgid "%(n)s POS listed"
+msgstr "%(n)s PDV listés"
+
+#, python-format
 msgid "%(n)s POS moved to %(mz)s."
 msgstr "%(n)s POS déplacés vers %(mz)s."
 
@@ -1070,6 +1074,9 @@ msgstr "Toutes les dates"
 
 msgid "All duties"
 msgstr "Toutes les tâches"
+
+msgid "All microzones"
+msgstr "Toutes les microzones"
 
 msgid "All office records"
 msgstr "Toutes les écritures du bureau"
@@ -8275,6 +8282,12 @@ msgstr "Total %(sub)s"
 msgid "Total (FCFA)"
 msgstr "Total (FCFA)"
 
+msgid "Total ER stock"
+msgstr "Stock ER total"
+
+msgid "Total OM stock"
+msgstr "Stock OM total"
+
 msgid "Total amount"
 msgstr "Montant total"
 
@@ -8286,6 +8299,9 @@ msgstr "Solde total actuel"
 
 msgid "Total balance today, all desks (+ owes, − credit)"
 msgstr "Solde total aujourd'hui, tous guichets (+ doit, − crédit)"
+
+msgid "Total commission"
+msgstr "Commission totale"
 
 msgid "Total costs"
 msgstr "Total des charges"

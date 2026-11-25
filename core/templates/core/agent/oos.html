@@ -5,14 +5,20 @@
 <h1>{% if supervise %}{% trans "POS stock (OOS)" %}{% if zone %} — {{ zone.name }}{% endif %}{% else %}{% trans "My POS stock (OOS)" %}{% endif %}</h1>
 {% include "core/agent/inc/market_sim.html" %}
 <p class="small muted meta">{% blocktrans with n=limit|fcfa l=low|fcfa %}ER stock: out of stock below {{ n }}, low stock below {{ l }} FCFA.{% endblocktrans %}{% if last %} {% blocktrans with d=last|date:"d/m/Y H:i" %}Stock of {{ d }}.{% endblocktrans %}{% endif %}</p>
+<div class="bal-row">
+  <div class="bal k-ER"><span class="bal-label">{% trans "Total ER stock" %}</span><span class="bal-value">{{ tot.er|fcfa }}</span><span class="bal-unit">{% blocktrans with n=tot.n %}{{ n }} POS listed{% endblocktrans %}</span></div>
+  <div class="bal k-UVE"><span class="bal-label">{% trans "Total OM stock" %}</span><span class="bal-value">{{ tot.om|fcfa }}</span><span class="bal-unit">FCFA</span></div>
+  <div class="bal k-CASH_DRAWER"><span class="bal-label">{% trans "Total commission" %}</span><span class="bal-value">{{ tot.com|fcfa }}</span><span class="bal-unit">FCFA</span></div>
+</div>
 <div class="lvl-tabs">
-  <a href="?" class="{% if not level %}on{% endif %}">{% trans "All" %} <b>{{ n_pos }}</b></a>
-  <a href="?level=OUT" class="lvl-out{% if level == 'OUT' %} on{% endif %}">{% trans "Out of stock" %} <b>{{ n_out }}</b></a>
-  <a href="?level=LOW" class="lvl-low{% if level == 'LOW' %} on{% endif %}">{% trans "Low stock" %} <b>{{ n_low }}</b></a>
-  <a href="?level=IN" class="lvl-in{% if level == 'IN' %} on{% endif %}">{% trans "In stock" %} <b>{{ n_in }}</b></a>
+  <a href="?{{ tabs }}" class="{% if not level %}on{% endif %}">{% trans "All" %} <b>{{ n_pos }}</b></a>
+  <a href="?{{ tabs }}{% if tabs %}&amp;{% endif %}level=OUT" class="lvl-out{% if level == 'OUT' %} on{% endif %}">{% trans "Out of stock" %} <b>{{ n_out }}</b></a>
+  <a href="?{{ tabs }}{% if tabs %}&amp;{% endif %}level=LOW" class="lvl-low{% if level == 'LOW' %} on{% endif %}">{% trans "Low stock" %} <b>{{ n_low }}</b></a>
+  <a href="?{{ tabs }}{% if tabs %}&amp;{% endif %}level=IN" class="lvl-in{% if level == 'IN' %} on{% endif %}">{% trans "In stock" %} <b>{{ n_in }}</b></a>
 </div>
 <form class="oos-search" method="get">
   {% if level %}<input type="hidden" name="level" value="{{ level }}">{% endif %}
+  {% if mzs %}<select name="mz" aria-label="{% trans 'Microzone' %}" onchange="this.form.submit()"><option value="">{% trans "All microzones" %}</option>{% for m in mzs %}<option value="{{ m.pk }}"{% if mz == m.pk|stringformat:'s' %} selected{% endif %}>{{ m.name }}{% if m.subzone %} · {{ m.subzone.name }}{% endif %}</option>{% endfor %}<option value="none"{% if mz == 'none' %} selected{% endif %}>{% trans "No microzone" %}</option></select>{% endif %}
   <input type="search" name="q" value="{{ q }}" placeholder="{% trans 'Search (SIM, name or microzone)' %}">
   <button class="btn" type="submit">{% trans "Search" %}</button>
   <a class="btn" href="{% url 'stock_download' %}{% if level == 'OUT' %}?out=1{% endif %}" title="{% trans 'Download (Excel)' %}">⬇</a>
