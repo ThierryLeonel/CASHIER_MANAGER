@@ -1,5 +1,6 @@
 """Market supervisor (read-only over shops, agents / POS), call buttons, destocash in cash / float, call database."""
 import io
+from datetime import timedelta
 import uuid
 
 from django.test import TestCase
@@ -983,3 +984,57 @@ class OosTotalsMicrozoneTests(OrgMixin, TestCase):
         r = a.get("/agent/oos/")
         self.assertContains(r, "Total ER stock")
         self.assertContains(a.get("/agent/destocash/"), "Total OM stock")
+
+
+class DebtorRecordCancelTests(OrgMixin, TestCase):
+    """A mistaken record is cancelled in one tap from the debtors list (agent) or the office pages."""
+
+    def setUp(self):
+        self.make_org()
+        from core.services import agents as ag
+
+        self.au = User.objects.get(counterparty=self.a1)
+        self.e1 = ag.record_supply(self.au, client_kind="POS", pos_sim=self.p1.business_sim, uve=D(30000), paid=D(0),
+                                   idempotency_key=uuid.uuid4())
+        self.e2 = ag.record_supply(self.au, client_kind="POS", pos_sim=self.p1.business_sim, uve=D(5000), paid=D(0),
+                                   idempotency_key=uuid.uuid4())
+
+    def test_agent_cancels_from_debtors(self):
+        from core.services import agents as ag
+
+        c = self.client_class()
+        self.assertTrue(c.login(username=self.au.username, password=PW))
+        page = c.get("/agent/debtors/")
+        self.assertContains(page, "Records (2)")
+        self.assertContains(page, f"/agent/entries/{self.e1.pk}/cancel/")
+        r = c.post(f"/agent/entries/{self.e1.pk}/cancel/", {"next": "/agent/debtors/#d-1"})
+        self.assertRedirects(r, "/agent/debtors/#d-1", fetch_redirect_response=False)
+        self.e1.refresh_from_db()
+        self.assertIsNotNone(self.e1.cancelled_at)
+        self.assertEqual(self.e1.cancel_reason, "Recorded by mistake")
+        self.assertEqual(ag.pos_owed(self.a1, self.p1), D(5000))
+        # an old record: the agent cannot, the office can
+        from core.models import AgentClientEntry
+        AgentClientEntry.objects.filter(pk=self.e2.pk).update(business_date=self.e2.business_date - timedelta(days=10))
+        self.assertNotContains(c.get("/agent/debtors/"), f"/agent/entries/{self.e2.pk}/cancel/")
+        c.post(f"/agent/entries/{self.e2.pk}/cancel/")
+        self.e2.refresh_from_db()
+        self.assertIsNone(self.e2.cancelled_at)
+        # another agent cannot touch it
+        other = User.objects.filter(role=User.Role.AGENT).exclude(pk=self.au.pk).first()
+        if other:
+            o = self.client_class()
+            self.assertTrue(o.login(username=other.username, password=PW))
+            self.assertEqual(o.post(f"/agent/entries/{self.e2.pk}/cancel/").status_code, 404)
+        m = self.client_class()
+        self.assertTrue(m.login(username="finance", password=PW))
+        self.assertContains(m.get("/supervision/agents/field/?from=2000-01-01"), f"/supervision/agents/field/{self.e2.pk}/cancel/")
+        r = m.post(f"/supervision/agents/field/{self.e2.pk}/cancel/", {"next": "/supervision/agents/debtors/"})
+        self.assertRedirects(r, "/supervision/agents/debtors/", fetch_redirect_response=False)
+        self.e2.refresh_from_db()
+        self.assertIsNotNone(self.e2.cancelled_at)
+        self.assertIn("finance", self.e2.cancel_reason.lower())
+        self.assertEqual(ag.pos_owed(self.a1, self.p1), D(0))
+        cs = self.client_class()
+        self.assertTrue(cs.login(username="cashier.fako1", password=PW))
+        self.assertEqual(cs.post(f"/supervision/agents/field/{self.e2.pk}/cancel/").status_code, 403)

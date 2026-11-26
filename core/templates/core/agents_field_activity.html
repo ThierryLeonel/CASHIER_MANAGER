@@ -20,7 +20,7 @@
 </div>
 <div class="tbl-wrap"><table class="t"><thead><tr>
   <th>{% trans "Date" %}</th><th>{% trans "Reference" %}</th><th>{% trans "Commercial agent" %}</th><th>{% trans "Operation" %}</th><th>{% trans "Client" %}</th>
-  <th class="money">{% trans "Supplied" %}</th><th class="money">{% trans "Received" %}</th><th class="money">{% trans "On credit" %}</th><th>{% trans "Note" %}</th></tr></thead>
+  <th class="money">{% trans "Supplied" %}</th><th class="money">{% trans "Received" %}</th><th class="money">{% trans "On credit" %}</th><th>{% trans "Note" %}</th><th></th></tr></thead>
 <tbody>{% for e in page %}<tr{% if e.cancelled_at %} class="muted"{% endif %}>
   <td>{{ e.business_date|date:"d/m/Y" }} <span class="muted small">{{ e.created_at|time:"H:i" }}</span></td>
   <td>{{ e.reference }}</td>
@@ -31,6 +31,7 @@
   <td class="money">{% if e.paid %}{{ e.paid|fcfa }}{% endif %}</td>
   <td class="money">{% if e.kind == 'SUPPLY' and e.client_kind != 'AGENT' and e.balance_effect > 0 %}<strong>{{ e.balance_effect|fcfa }}</strong>{% endif %}</td>
   <td class="small">{{ e.note }}{% if e.cancel_reason %} · {{ e.cancel_reason }}{% endif %}</td>
-</tr>{% empty %}<tr><td colspan="9" class="muted">{% trans "Nothing recorded by the agents for these filters." %}</td></tr>{% endfor %}</tbody></table></div>
+  <td class="keep">{% if not e.cancelled_at %}<form method="post" action="{% url 'agents_field_cancel' e.pk %}" onsubmit="return confirm(this.dataset.q)" data-q="{% blocktrans with r=e.reference %}Cancel {{ r }}? It will count for nothing.{% endblocktrans %}">{% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}"><button class="btn small danger" type="submit">{% trans "Cancel" %}</button></form>{% endif %}</td>
+</tr>{% empty %}<tr><td colspan="10" class="muted">{% trans "Nothing recorded by the agents for these filters." %}</td></tr>{% endfor %}</tbody></table></div>
 <div class="pager">{% if page.has_previous %}<a class="btn small" href="?{{ keep }}&amp;kind={{ kind }}&amp;page={{ page.previous_page_number }}">←</a>{% endif %}<span class="muted small">{{ page.number }} / {{ page.paginator.num_pages }} · {{ page.paginator.count }}</span>{% if page.has_next %}<a class="btn small" href="?{{ keep }}&amp;kind={{ kind }}&amp;page={{ page.next_page_number }}">→</a>{% endif %}</div>
 {% endblock %}

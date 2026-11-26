@@ -1245,6 +1245,9 @@ msgstr ""
 "Demandez à l'administrateur de lier votre connexion à votre propre compte "
 "agent (votre SIM business) pour approvisionner des POS."
 
+msgid "Ask the office"
+msgstr "Demandez au bureau"
+
 msgid "Ask the user to choose their own password at next sign-in"
 msgstr ""
 "Demander à l'utilisateur de choisir son propre mot de passe à la prochaine "
@@ -1509,6 +1512,10 @@ msgstr "Appeler"
 
 msgid "Cancel"
 msgstr "Annuler"
+
+#, python-format
+msgid "Cancel %(r)s? It will count for nothing."
+msgstr "Annuler %(r)s ? Il ne comptera plus."
 
 msgid "Cancel (reverse only)"
 msgstr "Annuler (contre-passation seule)"
@@ -5284,6 +5291,21 @@ msgstr "Seulement en rupture"
 msgid "Only record transactions that are completed and confirmed."
 msgstr "N'enregistrez que des transactions effectuées et confirmées."
 
+#, python-format
+msgid ""
+"Only records of the last %(n)s days can be cancelled here. Ask the office to"
+" cancel it."
+msgstr ""
+"Seuls les enregistrements des %(n)s derniers jours peuvent être annulés ici."
+" Demandez au bureau de l'annuler."
+
+msgid ""
+"Only records of the last 7 days can be cancelled here. Ask the office to "
+"cancel it."
+msgstr ""
+"Seuls les enregistrements des 7 derniers jours peuvent être annulés ici. "
+"Demandez au bureau de l'annuler."
+
 msgid "Only shop managers record shop operations."
 msgstr ""
 "Seuls les gérants de boutique enregistrent les opérations de boutique."
@@ -6430,6 +6452,9 @@ msgstr "Enregistré le (Africa/Douala)"
 
 msgid "Recorded by"
 msgstr "Enregistré par"
+
+msgid "Recorded by mistake"
+msgstr "Enregistré par erreur"
 
 msgid "Recorded by the agent (the cashier records the payment)"
 msgstr "Enregistré par l'agent (le caissier enregistre le paiement)"

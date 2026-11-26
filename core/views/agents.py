@@ -514,6 +514,8 @@ def agent_debtors(request):
                     f"SHOP:{g['shop'].pk}" if g["shop"] else f"OTHER:{g['phone']}")
         g["idem"] = uuid.uuid4()  # one per debtor: a double tap never records twice
         g["wa"] = (f"https://wa.me/237{g['number']}?text=" + quote(g["sms"])) if g.get("number") else ""
+        recs = list(ag.live_entries(agent).filter(**ag._client_filter(g)).order_by("-created_at")[:15])
+        g["records"] = [(e, ag.can_cancel_entry(request.user, e)) for e in recs]
     return render(request, "core/agent/debtors.html", {
         "rows": rows, "total": sum((g["owed"] for g in rows), 0)})
 
@@ -688,7 +690,8 @@ def agent_activity(request):
     agent = request.user.counterparty
     tab = request.GET.get("tab") if request.GET.get("tab") in dict(TABS) else "clients"
     d_from, d_to = _period(request)
-    ctx = {"tab": tab, "tabs": TABS, "d_from": d_from, "d_to": d_to, "today": douala_today(), "me": agent}
+    ctx = {"tab": tab, "tabs": TABS, "d_from": d_from, "d_to": d_to, "today": douala_today(), "me": agent,
+           "cancel_from": douala_today() - timedelta(days=ag.CANCEL_DAYS - 1)}
     if tab == "office":
         qs = ag.office_txns(agent).filter(business_date__gte=d_from, business_date__lte=d_to)
     elif tab == "paybacks":
@@ -727,7 +730,7 @@ def agent_entry_cancel(request, pk):
         messages.success(request, _("%(ref)s cancelled.") % {"ref": e.reference})
     except BusinessError as exc:
         messages.error(request, exc.message)
-    return redirect("agent_activity")
+    return redirect(_safe_next(request) or "agent_activity")
 
 
 @seller_required

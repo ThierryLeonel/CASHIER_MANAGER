@@ -781,3 +781,10 @@ th.sel, td.sel { width: 34px; text-align: center; }
 @media (max-width: 640px) { form.oos-search > .pk, form.oos-search > select, form.oos-search > input[type=search] { flex: 1 1 100%; width: 100%; } }
 .oos-search input[type=search] { min-height: 48px; padding: 0 14px; border: 1px solid var(--line); border-radius: 12px;
   background: var(--panel); color: var(--ink); font: inherit; }
+
+/* debtor records with one-tap cancel */
+.d-records { grid-column: 1 / -1; margin-top: 2px; }
+.d-records .rec-list { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.d-records li { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 8px;
+  border: 1px solid var(--line); border-radius: 10px; }
+.d-records .rec-main { min-width: 0; overflow-wrap: anywhere; }

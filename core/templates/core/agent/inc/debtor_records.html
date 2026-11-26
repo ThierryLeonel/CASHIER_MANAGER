@@ -1,0 +1,5 @@
+{% load i18n cashier %}{% if records %}<details class="d-records"><summary class="btn small">{% trans "Records" %} ({{ records|length }})</summary>
+<ul class="rec-list">{% for e, can in records %}<li>
+  <span class="rec-main"><b>{{ e.business_date|date:"d/m" }}</b> · {% if e.kind == 'SUPPLY' %}{% trans "Supply" %} {{ e.total|fcfa }}{% if e.paid %} · {% trans "paid" %} {{ e.paid|fcfa }}{% endif %}{% else %}{% trans "Payment" %} {{ e.paid|fcfa }}{% endif %} <span class="muted small">{{ e.reference }}</span></span>
+  {% if can %}<form method="post" action="{% url cancel_url e.pk %}" class="rec-cancel" onsubmit="return confirm(this.dataset.q)" data-q="{% blocktrans with r=e.reference %}Cancel {{ r }}? It will count for nothing.{% endblocktrans %}">{% csrf_token %}<input type="hidden" name="next" value="{{ request.path }}#d-{{ anchor }}"><button class="btn small danger" type="submit">{% trans "Cancel" %}</button></form>{% else %}<span class="muted small" title="{% trans 'Only records of the last 7 days can be cancelled here. Ask the office to cancel it.' %}">{% trans "Ask the office" %}</span>{% endif %}
+</li>{% endfor %}</ul></details>{% endif %}

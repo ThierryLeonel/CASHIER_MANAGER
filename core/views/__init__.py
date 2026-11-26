@@ -26,4 +26,4 @@ from .agents import (  # noqa: F401,E402
     agent_activity, agent_collect, agent_entry_cancel, agent_payback, agent_payback_cancel, agent_pos, agent_pos_detail, agent_pos_search, agent_oos, agent_destock, agent_destock_record, market_sim, agent_declaration, agent_coverage, agent_pos_edit,
     agent_daily, agent_debtors, agent_debtor_pay, agent_exchange, agent_exchange_cancel, agent_office, agent_supply, agent_transfer, payback_decide, paybacks,
 )
-from .agent_field import agents_debtors, agents_field_activity  # noqa: F401,E402
+from .agent_field import agents_debtors, agents_field_activity, agents_field_cancel  # noqa: F401,E402

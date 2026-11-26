@@ -1856,6 +1856,11 @@ FR = {
     'matches': 'correspond',
     'There is a difference: the note is required. Explain it before closing.': 'Il y a un écart : la note est obligatoire. Expliquez-le avant de clôturer.',
     # commercial agent portal
+    'Ask the office': 'Demandez au bureau',
+    'Only records of the last 7 days can be cancelled here. Ask the office to cancel it.': "Seuls les enregistrements des 7 derniers jours peuvent être annulés ici. Demandez au bureau de l'annuler.",
+    'Cancel %(r)s? It will count for nothing.': 'Annuler %(r)s ? Il ne comptera plus.',
+    'Only records of the last %(n)s days can be cancelled here. Ask the office to cancel it.': "Seuls les enregistrements des %(n)s derniers jours peuvent être annulés ici. Demandez au bureau de l'annuler.",
+    'Recorded by mistake': 'Enregistré par erreur',
     '%(n)s POS listed': '%(n)s PDV listés',
     'All microzones': 'Toutes les microzones',
     'Total ER stock': 'Stock ER total',

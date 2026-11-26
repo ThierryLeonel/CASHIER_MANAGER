@@ -102,6 +102,7 @@ urlpatterns = [
     path("supervision/agents/", v.agents_supervision, name="agents_supervision"),
     path("supervision/agents/field/", v.agents_field_activity, name="agents_field_activity"),
     path("supervision/agents/debtors/", v.agents_debtors, name="agents_debtors"),
+    path("supervision/agents/field/<int:pk>/cancel/", v.agents_field_cancel, name="agents_field_cancel"),
     path("customers/call-database/", v.call_database, name="call_database"),
     path("agent/pos-supplied/", v.agent_coverage, name="agent_coverage"),
     path("agent/pos/<int:pk>/edit/", v.agent_pos_edit, name="agent_pos_edit"),

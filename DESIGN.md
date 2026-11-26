@@ -842,3 +842,16 @@ back (agents).**
   - **Microzone filter** (`?mz=<id>`, or `none` for POS without a microzone): a list of the microzones of the POS
     the person follows, beside the search; it applies at once.
 - The search box got the same look as the other boxes.
+
+## One-tap cancel of a mistaken agent record
+- **Agent, My debtors:** each debtor has "Records (n)" (his last 15 live records: date, supply / payment, amounts,
+  reference). Each record of the last 7 days has a **Cancel** button: one tap (the phone asks "Cancel AS-…? It will
+  count for nothing.") and the record no longer counts — the debt, stock in hand and reconciliation update; back to
+  the same debtor. Older records show "Ask the office".
+- **Agent, My transactions:** the Cancel button works the same (one tap, last 7 days) instead of today only with a
+  reason.
+- **Office** (senior manager, finance, super admin): Agents' field transactions has a Cancel button on every live
+  record, any date (`/supervision/agents/field/<id>/cancel/`); Agents' outstanding debtors has a "Records" button per
+  debtor that opens that debtor's records.
+- `ag.cancel_entry(user, entry, reason="")` / `ag.can_cancel_entry`: reason optional (default "Recorded by mistake";
+  the office's name is added), audit `agent_entry_cancelled`. Cancelled records are kept and shown greyed.

@@ -259,20 +259,41 @@ def exchange_code(x):
     return _code("UVE", x.other_phone, x.amount) if x.gives == "UVE" else ""
 
 
-def cancel_entry(user, entry, reason):
-    """The agent cancels a mistaken entry of today (it then counts for nothing)."""
-    agent = agent_of(user)
-    if entry.agent_id != agent.pk:
-        raise PermissionDenied(_("This is not your record."))
+CANCEL_DAYS = 7  # an agent cancels his own mistaken records of the last 7 days; the office, any of them
+OFFICE_CANCEL_ROLES = ("MANAGER", "FINANCE", "SUPERADMIN")
+
+
+def can_cancel_entry(user, entry):
+    if entry.is_cancelled:
+        return False
+    if getattr(user, "role", None) in OFFICE_CANCEL_ROLES:
+        return True
+    return entry.agent_id == getattr(user, "counterparty_id", None) and \
+        entry.business_date >= douala_today() - timedelta(days=CANCEL_DAYS - 1)
+
+
+def cancel_entry(user, entry, reason=""):
+    """A mistaken record (supply, payment, transfer to an agent) is cancelled in one tap: it then counts for nothing
+    (debtors, stock in hand, reconciliation). The agent cancels his own records of the last 7 days; the senior manager,
+    finance and the super admin any agent's record. Kept with who cancelled, when and why."""
+    office = getattr(user, "role", None) in OFFICE_CANCEL_ROLES
+    if not office:
+        agent = agent_of(user)
+        if entry.agent_id != agent.pk:
+            raise PermissionDenied(_("This is not your record."))
     if entry.is_cancelled:
         raise BusinessError(_("This record is already cancelled."))
-    if entry.business_date != douala_today():
-        raise BusinessError(_("Only today's records can be cancelled. Record a correcting entry instead."))
-    if not (reason or "").strip():
-        raise BusinessError(_("Say why you cancel this record."), "reason")
+    if not office and entry.business_date < douala_today() - timedelta(days=CANCEL_DAYS - 1):
+        raise BusinessError(_("Only records of the last %(n)s days can be cancelled here. Ask the office to cancel "
+                              "it.") % {"n": CANCEL_DAYS})
+    reason = (reason or "").strip() or _("Recorded by mistake")
     entry.cancelled_at = timezone.now()
-    entry.cancel_reason = reason.strip()
+    entry.cancel_reason = (reason if not office else f"{reason} ({user})")[:255]
     entry.save(update_fields=["cancelled_at", "cancel_reason"])
+    from .operations import log_event
+
+    log_event(user, "agent_entry_cancelled", entry=entry.pk, reference=entry.reference, agent=entry.agent_id,
+              reason=reason, by_office=office)
     return entry
 
 

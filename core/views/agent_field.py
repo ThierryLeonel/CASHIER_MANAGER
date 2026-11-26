@@ -186,3 +186,24 @@ def agents_debtors(request):
         "rows": rows[:1000], "count": len(rows), "agents": agents, "total": total,
         "agent": request.GET.get("agent", ""), "client": request.GET.get("client", ""),
         "qs": request.GET.urlencode()})
+
+
+@roles_required(*FIELD_ROLES)
+def agents_field_cancel(request, pk):
+    """The office cancels an agent's mistaken record in one tap (kept, with who cancelled it)."""
+    from django.contrib import messages
+    from django.shortcuts import get_object_or_404, redirect
+
+    from core.services import agents as ag
+    from core.services.errors import BusinessError
+
+    if request.method != "POST":
+        return redirect("agents_field_activity")
+    e = get_object_or_404(E, pk=pk)
+    try:
+        ag.cancel_entry(request.user, e, request.POST.get("reason"))
+        messages.success(request, _("%(ref)s cancelled.") % {"ref": e.reference})
+    except BusinessError as exc:
+        messages.error(request, exc.message)
+    nxt = request.POST.get("next") or ""
+    return redirect(nxt if nxt.startswith("/") and not nxt.startswith("//") else "agents_field_activity")

@@ -30,6 +30,7 @@
     {% if g.pos %}{% include "core/inc/contact_btns.html" with c=g.pos %}{% else %}{% if g.number %}<button type="button" class="btn small call" data-call data-name="{{ g.label }}" data-biz="" data-personal="{{ g.number }}" title="{% trans 'Call' %}">{% icon "phone" 15 %}</button>{% endif %}{% if g.wa %}<a class="btn small wa" href="{{ g.wa }}" target="_blank" rel="noopener" title="WhatsApp">{% icon "whatsapp" 15 %}</a>{% endif %}{% endif %}
     {% if g.number %}<a class="btn small" href="sms:+237{{ g.number }}?body={{ g.sms|urlencode }}">{% trans "Remind" %}</a>{% endif %}
   </div>
+  {% include "core/agent/inc/debtor_records.html" with records=g.records anchor=forloop.counter cancel_url="agent_entry_cancel" %}
 </div>
 {% empty %}<p class="muted meta">{% trans "No client owes you anything." %}</p>{% endfor %}
 </div>

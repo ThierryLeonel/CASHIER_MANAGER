@@ -21,6 +21,6 @@
 {% if rows %}<h2>{% trans "Every debtor" %}</h2>
 <div class="tbl-wrap"><table class="t"><thead><tr><th>{% trans "Debtor" %}</th><th>{% trans "Commercial agent" %}</th><th class="money">{% trans "Outstanding (FCFA)" %}</th><th>{% trans "Last supply" %}</th><th></th></tr></thead>
 <tbody>{% for r in rows %}<tr><td>{{ r.label }} <span class="muted small">{{ r.kind_label }}{% if r.number %} · {{ r.number|sim }}{% endif %}</span></td><td>{{ r.agent.name }}</td><td class="money"><strong>{{ r.owed|fcfa }}</strong></td><td>{{ r.last_supply|date:"d/m/Y"|default:"—" }}</td>
-<td class="keep">{% if r.number %}<a class="btn small" href="tel:+237{{ r.number }}" title="{% trans 'Call' %}">{% icon "phone" 16 %}</a>{% endif %}</td></tr>{% endfor %}</tbody></table></div>
+<td class="keep"><a class="btn small" href="{% url 'agents_field_activity' %}?from=2000-01-01&amp;agent={{ r.agent.business_sim }}&amp;client={{ r.number|default:r.label|urlencode }}">{% trans "Records" %}</a> {% if r.number %}<a class="btn small" href="tel:+237{{ r.number }}" title="{% trans 'Call' %}">{% icon "phone" 16 %}</a>{% endif %}</td></tr>{% endfor %}</tbody></table></div>
 {% if count > rows|length %}<p class="small muted">{% blocktrans with n=rows|length %}Showing the first {{ n }}; download Excel for all of them.{% endblocktrans %}</p>{% endif %}{% endif %}
 {% endblock %}
